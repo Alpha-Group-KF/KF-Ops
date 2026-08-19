@@ -23,21 +23,23 @@ st.set_page_config(page_title="Kulfi Ops", page_icon="🍦", layout="centered")
 CARTS = ["HOSUR CART 01", "HOSUR CART 02", "HOSUR CART 03"]
 CITY = "HOSUR"
 
-# (code, full name, MRP per unit) - order matches the column order in
-# "Daily Data As Shared" (ML, MM, PS, MN, KB, BM, SG, CH, RA)
+# (code, full name, MRP per unit, cost price per unit) - order matches the
+# column order used across all tabs (ML, MM, PS, MN, KB, BM, SG, CH, RA)
 FLAVORS = [
-    ("ML", "Malai", 40),
-    ("MM", "Mini Malai", 30),
-    ("PS", "Pista", 40),
-    ("MN", "Mango", 40),
-    ("KB", "Kesar Badam", 50),
-    ("BM", "Badam Matka", 80),
-    ("SG", "Shahi Gulab", 50),
-    ("CH", "Chocolate", 50),
-    ("RA", "Roasted Almond", 60),
+    ("ML", "Malai", 40, 22),
+    ("MM", "Mini Malai", 30, 18),
+    ("PS", "Pista", 40, 22),
+    ("MN", "Mango", 40, 22),
+    ("KB", "Kesar Badam", 50, 27.5),
+    ("BM", "Badam Matka", 80, 44),
+    ("SG", "Shahi Gulab", 50, 27.5),
+    ("CH", "Chocolate", 50, 27.5),
+    ("RA", "Roasted Almond", 60, 33),
 ]
 FLAVOR_CODES = [f[0] for f in FLAVORS]
 N_FLAVORS = len(FLAVORS)
+
+PAYMENT_STATUSES = ["Pending", "Partial", "Complete"]
 
 EXPENSE_CATEGORIES = [
     "Cost of Goods",
@@ -56,7 +58,43 @@ DAILY_TOTAL_COLS = 4 + 9 * 4 + 4  # = 44
 
 EXPENSE_HEADER_ROWS = 3
 
+# Fixed column layout of "Stock Received" (1-indexed cols A-BH, 60 total).
+# OrderDate|RecvDate|Location|DATE LOC ID | Ordered x9+Total | Received x9+Total
+# | Diff x9+Total | Cost x9+Total | PaymentAmt|Status|PayDate|PayDetails
+# | Damaged x9+Total | DamagedReturnedOn | Notes
+STOCK_HEADER_ROWS = 4
+STOCK_TOTAL_COLS = 60
+
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+
+
+def _num(x):
+    """Turn a sheet cell (possibly '7,130', ' ₹ 500 ', '(200)', '', or already
+    a number) into a float. Returns 0.0 for anything unparseable/blank."""
+    if x is None:
+        return 0.0
+    if isinstance(x, (int, float)):
+        return float(x)
+    s = str(x).strip()
+    if s == "":
+        return 0.0
+    s = s.replace(",", "").replace("₹", "").replace("Rs.", "").replace("Rs", "").strip()
+    neg = s.startswith("(") and s.endswith(")")
+    if neg:
+        s = s[1:-1]
+    try:
+        v = float(s)
+    except ValueError:
+        return 0.0
+    return -v if neg else v
+
+
+def _pad(row, n):
+    """Google Sheets trims trailing empty cells per row, so a row with a blank
+    Remarks column can come back shorter than expected. Pad it back out."""
+    if len(row) < n:
+        return row + [""] * (n - len(row))
+    return row
 
 
 # ----------------------------------------------------------------------
@@ -94,10 +132,9 @@ def get_opening_balance(cart_name):
     _, rows = load_daily_raw()
     latest = None
     latest_date = None
-    for r in rows:
-        if len(r) < DAILY_TOTAL_COLS:
-            continue
-        if r[1].strip() != cart_name:
+    for raw_r in rows:
+        r = _pad(raw_r, DAILY_TOTAL_COLS)
+        if not r[0].strip() or r[1].strip() != cart_name:
             continue
         try:
             d = datetime.strptime(r[0].split(" ")[0], "%Y-%m-%d")
@@ -112,7 +149,7 @@ def get_opening_balance(cart_name):
     if latest is None:
         return [0] * N_FLAVORS
     closing_start = 4 + 9 * 3  # index of first closing-balance column (0-indexed)
-    return [int(float(latest[closing_start + i] or 0)) for i in range(N_FLAVORS)]
+    return [int(_num(latest[closing_start + i])) for i in range(N_FLAVORS)]
 
 
 def append_daily_entry(entry_date, cart_name, added, sold, opening, total, phonepe, cash, remarks):
@@ -153,11 +190,11 @@ def append_expense(exp_date, description, amount, category, mode, ref_no, paid_t
 def load_expenses_df():
     ws = get_ws("Expenses")
     values = ws.get_all_values()
-    rows = [r for r in values[EXPENSE_HEADER_ROWS:] if any(c.strip() for c in r)]
     cols = ["Date", "Description", "Amount", "Category", "Mode", "Ref No", "Paid To", "Remarks"]
-    df = pd.DataFrame(rows, columns=cols[: len(rows[0])] if rows else cols)
+    rows = [_pad(r, len(cols)) for r in values[EXPENSE_HEADER_ROWS:] if any(c.strip() for c in r)]
+    df = pd.DataFrame(rows, columns=cols)
     if not df.empty:
-        df["Amount"] = pd.to_numeric(df["Amount"], errors="coerce").fillna(0)
+        df["Amount"] = df["Amount"].apply(_num)
         df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
     return df
 
@@ -165,29 +202,88 @@ def load_expenses_df():
 def load_daily_df():
     _, rows = load_daily_raw()
     records = []
-    for r in rows:
-        if len(r) < DAILY_TOTAL_COLS or not r[0].strip():
+    for raw_r in rows:
+        r = _pad(raw_r, DAILY_TOTAL_COLS)
+        if not r[0].strip():
             continue
         try:
             d = pd.to_datetime(r[0])
         except Exception:
             continue
         closing_start = 4 + 9 * 3
-        closing = [int(float(r[closing_start + i] or 0)) for i in range(N_FLAVORS)]
+        closing = [int(_num(r[closing_start + i])) for i in range(N_FLAVORS)]
         sold_start = 4 + 9 * 2
-        sold = [int(float(r[sold_start + i] or 0)) for i in range(N_FLAVORS)]
+        sold = [int(_num(r[sold_start + i])) for i in range(N_FLAVORS)]
+        added_start = 4 + 9 * 1
+        added = [int(_num(r[added_start + i])) for i in range(N_FLAVORS)]
         records.append(
             {
                 "Date": d,
                 "Cart": r[1],
                 "Sold_Total": sum(sold),
                 "Closing_Total": sum(closing),
-                "Total_Collection": float(r[40] or 0),
-                "PhonePe": float(r[41] or 0),
-                "Cash": float(r[42] or 0),
+                "Added_By_Flavor": added,
+                "Total_Collection": _num(r[40]),
+                "PhonePe": _num(r[41]),
+                "Cash": _num(r[42]),
             }
         )
     return pd.DataFrame(records)
+
+
+# ----------------------------------------------------------------------
+# Stock Received (freezer stock-in) helpers
+# ----------------------------------------------------------------------
+def load_stock_raw():
+    ws = get_ws("Stock Received")
+    values = ws.get_all_values()
+    rows = values[STOCK_HEADER_ROWS:]
+    return ws, rows
+
+
+def append_stock_entry(
+    order_date, received_date, location,
+    ordered, received, cost, damaged,
+    payment_amount, payment_status, payment_date, payment_details,
+    damaged_returned_on, notes,
+):
+    diff = [received[i] - ordered[i] for i in range(N_FLAVORS)]
+    date_loc_id = f"{received_date.strftime('%Y-%m-%d')}||{location}"
+    row = (
+        [order_date.strftime("%Y-%m-%d"), received_date.strftime("%Y-%m-%d"), location, date_loc_id]
+        + ordered + [sum(ordered)]
+        + received + [sum(received)]
+        + diff + [sum(diff)]
+        + cost + [sum(cost)]
+        + [payment_amount, payment_status, payment_date.strftime("%Y-%m-%d") if payment_date else "", payment_details]
+        + damaged + [sum(damaged)]
+        + [damaged_returned_on.strftime("%Y-%m-%d") if damaged_returned_on else "", notes]
+    )
+    ws = get_ws("Stock Received")
+    ws.append_row(row, value_input_option="USER_ENTERED")
+
+
+def get_freezer_stock():
+    """Freezer balance per flavour = total ever received into freezer, minus
+    total ever moved out to carts (from Daily Data As Shared)."""
+    _, stock_rows = load_stock_raw()
+    received_totals = [0.0] * N_FLAVORS
+    recv_start = 14
+    for raw_r in stock_rows:
+        r = _pad(raw_r, STOCK_TOTAL_COLS)
+        if not r[0].strip():
+            continue
+        for i in range(N_FLAVORS):
+            received_totals[i] += _num(r[recv_start + i])
+
+    daily_df = load_daily_df()
+    added_totals = [0.0] * N_FLAVORS
+    if not daily_df.empty:
+        for added in daily_df["Added_By_Flavor"]:
+            for i in range(N_FLAVORS):
+                added_totals[i] += added[i]
+
+    return [int(received_totals[i] - added_totals[i]) for i in range(N_FLAVORS)]
 
 
 # ----------------------------------------------------------------------
@@ -195,7 +291,7 @@ def load_daily_df():
 # ----------------------------------------------------------------------
 st.title("🍦 Kulfi Ops")
 
-tab_sale, tab_expense, tab_dash = st.tabs(["Daily Entry", "Expenses", "Dashboard"])
+tab_sale, tab_stock, tab_expense, tab_dash = st.tabs(["Daily Entry", "Freezer Stock", "Expenses", "Dashboard"])
 
 # ---------------- DAILY ENTRY ----------------
 with tab_sale:
@@ -272,6 +368,89 @@ with tab_sale:
             except Exception as e:
                 st.error(f"Could not save - {e}")
 
+# ---------------- FREEZER STOCK ----------------
+with tab_stock:
+    st.subheader("Stock received into freezer")
+    st.caption("Log a new supplier delivery. Ordered and Damaged are optional - fill in what you have.")
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        order_date = st.date_input("Order date", value=date.today(), key="stock_order_date")
+    with c2:
+        received_date = st.date_input("Received date", value=date.today(), key="stock_received_date")
+    with c3:
+        location = st.text_input("Location", value=CITY, key="stock_location")
+
+    flavor_names = [f[1] for f in FLAVORS]
+    default_cost = [f[3] for f in FLAVORS]
+    df_init = pd.DataFrame(
+        {
+            "Flavour": flavor_names,
+            "Ordered": [0] * N_FLAVORS,
+            "Received": [0] * N_FLAVORS,
+            "Cost (₹, total)": [0.0] * N_FLAVORS,
+            "Damaged": [0] * N_FLAVORS,
+        }
+    )
+    st.write("Enter units per flavour:")
+    stock_edited = st.data_editor(
+        df_init,
+        column_config={
+            "Flavour": st.column_config.TextColumn(disabled=True),
+            "Ordered": st.column_config.NumberColumn(min_value=0, step=1),
+            "Received": st.column_config.NumberColumn(min_value=0, step=1),
+            "Cost (₹, total)": st.column_config.NumberColumn(min_value=0.0, step=10.0, help="Total cost for the received quantity of this flavour"),
+            "Damaged": st.column_config.NumberColumn(min_value=0, step=1),
+        },
+        hide_index=True,
+        use_container_width=True,
+        key="stock_editor",
+    )
+
+    ordered = stock_edited["Ordered"].fillna(0).astype(int).tolist()
+    received = stock_edited["Received"].fillna(0).astype(int).tolist()
+    cost = stock_edited["Cost (₹, total)"].fillna(0).astype(float).tolist()
+    damaged = stock_edited["Damaged"].fillna(0).astype(int).tolist()
+
+    st.caption(
+        "Standard cost price per unit — Malai ₹22, Mini Malai ₹18, Pista ₹22, Mango ₹22, "
+        "Kesar Badam ₹27.5, Badam Matka ₹44, Shahi Gulab ₹27.5, Chocolate ₹27.5, Roasted Almond ₹33 "
+        "— multiply by units received for a quick cost estimate per flavour."
+    )
+
+    st.markdown("---")
+    st.write("**Payment**")
+    c4, c5 = st.columns(2)
+    with c4:
+        payment_amount = st.number_input("Payment amount (₹)", min_value=0.0, value=float(sum(cost)), step=10.0)
+    with c5:
+        payment_status = st.selectbox("Payment status", PAYMENT_STATUSES, index=0)
+
+    has_payment_date = st.checkbox("Add payment date", value=False)
+    payment_date = st.date_input("Payment date", value=date.today(), key="stock_payment_date") if has_payment_date else None
+    payment_details = st.text_input("Payment details (optional)", placeholder="e.g. UPI ref / who paid")
+
+    has_damaged_return = st.checkbox("Damaged items were returned", value=False)
+    damaged_returned_on = st.date_input("Damaged items returned on", value=date.today(), key="stock_damaged_date") if has_damaged_return else None
+
+    notes = st.text_input("Notes (optional)", key="stock_notes")
+
+    if st.button("Save stock received", type="primary", use_container_width=True):
+        if sum(received) == 0:
+            st.error("Enter at least one quantity received before saving.")
+        else:
+            try:
+                append_stock_entry(
+                    order_date, received_date, location,
+                    ordered, received, cost, damaged,
+                    payment_amount, payment_status, payment_date, payment_details,
+                    damaged_returned_on, notes,
+                )
+                st.success(f"Saved {sum(received)} units received on {received_date.strftime('%d %b %Y')}.")
+                st.cache_resource.clear()
+            except Exception as e:
+                st.error(f"Could not save - {e}")
+
 # ---------------- EXPENSES ----------------
 with tab_expense:
     st.subheader("Log an expense")
@@ -323,6 +502,14 @@ with tab_dash:
         c1.metric("Revenue today", f"₹{today_rows['Total_Collection'].sum():,.0f}")
         c2.metric("Units sold today", f"{int(today_rows['Sold_Total'].sum())}")
         c3.metric("Stock across carts", f"{int(daily_df.sort_values('Date').groupby('Cart').tail(1)['Closing_Total'].sum())}")
+
+        try:
+            freezer_stock = get_freezer_stock()
+            st.markdown("**Freezer stock (current)**")
+            freezer_df = pd.DataFrame({"Flavour": [f[1] for f in FLAVORS], "Units in freezer": freezer_stock})
+            st.dataframe(freezer_df, hide_index=True, use_container_width=True)
+        except Exception as e:
+            st.caption(f"Could not compute freezer stock ({e}).")
 
         st.markdown("**Revenue, last 14 days**")
         trend = daily_df.groupby(daily_df["Date"].dt.date)["Total_Collection"].sum().tail(14)
