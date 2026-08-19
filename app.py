@@ -487,6 +487,43 @@ with tab_expense:
 # ---------------- DASHBOARD ----------------
 with tab_dash:
     st.subheader("Quick view")
+
+    with st.expander("Data health check — tap here if the dashboard looks empty"):
+        try:
+            wb = get_workbook()
+            tab_names = [ws.title for ws in wb.worksheets()]
+            st.write("Tabs found in your connected Google Sheet:")
+            st.code("\n".join(tab_names))
+        except Exception as e:
+            tab_names = []
+            st.error(f"Could not connect to the Google Sheet at all: {e}")
+
+        for label, tab in [
+            ("Daily Data As Shared", "Daily Data As Shared"),
+            ("Stock Received", "Stock Received"),
+            ("Expenses", "Expenses"),
+        ]:
+            st.markdown(f"**{label}**")
+            if tab not in tab_names:
+                st.warning(f"No tab named exactly `{tab}` was found. Check for a trailing space, "
+                            f"a renamed tab, or extra hidden characters in the tab name in your Google Sheet.")
+                continue
+            try:
+                if tab == "Daily Data As Shared":
+                    _, raw_rows = load_daily_raw()
+                elif tab == "Stock Received":
+                    _, raw_rows = load_stock_raw()
+                else:
+                    ws = get_ws("Expenses")
+                    raw_rows = ws.get_all_values()[EXPENSE_HEADER_ROWS:]
+                non_empty = [r for r in raw_rows if r and r[0].strip()]
+                st.write(f"{len(non_empty)} data row(s) found.")
+                if non_empty:
+                    st.write("First row's first few cells:", non_empty[0][:4])
+                    st.write("Last row's first few cells:", non_empty[-1][:4])
+            except Exception as e:
+                st.error(f"Error reading `{tab}`: {e}")
+
     try:
         daily_df = load_daily_df()
         exp_df = load_expenses_df()
