@@ -97,6 +97,14 @@ def _pad(row, n):
     return row
 
 
+def _row_has_data(r):
+    """The sheet has pre-filled placeholder rows (date + cart already filled
+    in) for future dates that haven't happened yet - every quantity/collection
+    cell on those is blank. Treat a row as 'real' only if at least one of its
+    numeric cells (opening balance through Cash) actually has something in it."""
+    return any(str(c).strip() != "" for c in r[4:43])
+
+
 # ----------------------------------------------------------------------
 # Google Sheets connection
 # ----------------------------------------------------------------------
@@ -134,7 +142,7 @@ def get_opening_balance(cart_name):
     latest_date = None
     for raw_r in rows:
         r = _pad(raw_r, DAILY_TOTAL_COLS)
-        if not r[0].strip() or r[1].strip() != cart_name:
+        if not r[0].strip() or r[1].strip() != cart_name or not _row_has_data(r):
             continue
         try:
             d = datetime.strptime(r[0].split(" ")[0], "%Y-%m-%d")
@@ -204,7 +212,7 @@ def load_daily_df():
     records = []
     for raw_r in rows:
         r = _pad(raw_r, DAILY_TOTAL_COLS)
-        if not r[0].strip():
+        if not r[0].strip() or not _row_has_data(r):
             continue
         try:
             d = pd.to_datetime(r[0])
@@ -511,6 +519,13 @@ with tab_dash:
             try:
                 if tab == "Daily Data As Shared":
                     _, raw_rows = load_daily_raw()
+                    padded = [_pad(r, DAILY_TOTAL_COLS) for r in raw_rows if r and r[0].strip()]
+                    real = [r for r in padded if _row_has_data(r)]
+                    st.write(f"{len(padded)} row(s) with a date, {len(real)} of those have actual sales/stock data "
+                              f"(the rest are blank future placeholder rows already in your sheet).")
+                    if real:
+                        st.write("Most recent real entry:", real[-1][:2])
+                    continue
                 elif tab == "Stock Received":
                     _, raw_rows = load_stock_raw()
                 else:
