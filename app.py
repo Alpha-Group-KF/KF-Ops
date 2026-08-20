@@ -10,6 +10,7 @@ this app just appends new rows in the same format going forward.
 """
 
 import streamlit as st
+import altair as alt
 import gspread
 from google.oauth2.service_account import Credentials
 import pandas as pd
@@ -567,8 +568,24 @@ with tab_dash:
             st.caption(f"Could not compute freezer stock ({e}).")
 
         st.markdown("**Revenue, last 14 days**")
-        trend = daily_df.groupby(daily_df["Date"].dt.date)["Total_Collection"].sum().tail(14)
-        st.bar_chart(trend)
+        trend_df = (
+            daily_df.assign(Day=daily_df["Date"].dt.normalize())
+            .groupby("Day", as_index=False)["Total_Collection"]
+            .sum()
+            .sort_values("Day")
+            .tail(14)
+        )
+        trend_chart = (
+            alt.Chart(trend_df)
+            .mark_bar(color="#3E6B4F")
+            .encode(
+                x=alt.X("Day:T", title="", axis=alt.Axis(format="%d %b", labelAngle=-45)),
+                y=alt.Y("Total_Collection:Q", title="Revenue (₹)", scale=alt.Scale(domain=[0, 25000])),
+                tooltip=[alt.Tooltip("Day:T", title="Date", format="%d %b %Y"), alt.Tooltip("Total_Collection:Q", title="Revenue", format=",.0f")],
+            )
+            .properties(height=280)
+        )
+        st.altair_chart(trend_chart, use_container_width=True)
 
         st.markdown("**Latest stock per cart**")
         latest_per_cart = daily_df.sort_values("Date").groupby("Cart").tail(1)[["Cart", "Date", "Closing_Total"]]
@@ -629,27 +646,30 @@ with tab_dash:
         st.markdown("### Cart-wise average sales by day of the week")
         if not range_df.empty:
             day_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-            dow_df = range_df.copy()
+            dow_df = range_df[range_df["Sold_Total"] > 0].copy()
             dow_df["Day"] = dow_df["Date"].dt.day_name()
 
-            units_pivot = dow_df.pivot_table(
-                index="Cart", columns="Day", values="Sold_Total", aggfunc="mean", fill_value=0, margins=True, margins_name="All carts"
-            )
-            day_cols = [d for d in day_order if d in units_pivot.columns] + ["All carts"]
-            units_pivot = units_pivot.reindex(columns=day_cols)
+            if dow_df.empty:
+                st.caption("No days with actual sales in this date range.")
+            else:
+                units_pivot = dow_df.pivot_table(
+                    index="Cart", columns="Day", values="Sold_Total", aggfunc="mean", fill_value=0, margins=True, margins_name="All carts"
+                )
+                day_cols = [d for d in day_order if d in units_pivot.columns] + ["All carts"]
+                units_pivot = units_pivot.reindex(columns=day_cols)
 
-            rev_pivot = dow_df.pivot_table(
-                index="Cart", columns="Day", values="Total_Collection", aggfunc="mean", fill_value=0, margins=True, margins_name="All carts"
-            )
-            rev_pivot = rev_pivot.reindex(columns=day_cols)
+                rev_pivot = dow_df.pivot_table(
+                    index="Cart", columns="Day", values="Total_Collection", aggfunc="mean", fill_value=0, margins=True, margins_name="All carts"
+                )
+                rev_pivot = rev_pivot.reindex(columns=day_cols)
 
-            st.write("**Avg. units sold** (rows = cart, columns = day of week)")
-            st.dataframe(units_pivot.round(1), use_container_width=True)
+                st.write("**Avg. units sold** (rows = cart, columns = day of week)")
+                st.dataframe(units_pivot.round(1), use_container_width=True)
 
-            st.write("**Avg. revenue (₹)** (rows = cart, columns = day of week)")
-            st.dataframe(rev_pivot.round(0).astype(int), use_container_width=True)
+                st.write("**Avg. revenue (₹)** (rows = cart, columns = day of week)")
+                st.dataframe(rev_pivot.round(0).astype(int), use_container_width=True)
 
-            st.caption("Each cell is the average across however many of that weekday fall in the selected date range. 'All carts' shows the overall average across carts / days.")
+                st.caption("Zero-sales days are excluded, so each cell is the average over the days that weekday actually had sales. 'All carts' shows the overall average across carts / days.")
         else:
             st.caption("No sales in this date range.")
 
