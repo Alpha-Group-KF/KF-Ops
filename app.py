@@ -13,7 +13,7 @@ import streamlit as st
 import gspread
 from google.oauth2.service_account import Credentials
 import pandas as pd
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 st.set_page_config(page_title="Kulfi Ops", page_icon="🍦", layout="centered")
 
@@ -231,6 +231,7 @@ def load_daily_df():
                 "Sold_Total": sum(sold),
                 "Closing_Total": sum(closing),
                 "Added_By_Flavor": added,
+                "Sold_By_Flavor": sold,
                 "Total_Collection": _num(r[40]),
                 "PhonePe": _num(r[41]),
                 "Cash": _num(r[42]),
@@ -573,9 +574,133 @@ with tab_dash:
     else:
         st.info("No sales logged yet - entries you save in the Daily Entry tab will show up here.")
 
-    if not exp_df.empty:
-        st.markdown("**Expenses, last 30 days**")
-        recent_exp = exp_df[exp_df["Date"] >= (today - pd.Timedelta(days=30))]
-        st.metric("Total expenses (30d)", f"₹{recent_exp['Amount'].sum():,.0f}")
-        by_cat = recent_exp.groupby("Category")["Amount"].sum().sort_values(ascending=False)
-        st.bar_chart(by_cat)
+    # ------------------ Date-range reports ------------------
+    if not daily_df.empty or not exp_df.empty:
+        st.markdown("---")
+        st.markdown("## Reports")
+
+        all_dates = []
+        if not daily_df.empty:
+            all_dates += [daily_df["Date"].min().date(), daily_df["Date"].max().date()]
+        if not exp_df.empty and exp_df["Date"].notna().any():
+            all_dates += [exp_df["Date"].min().date(), exp_df["Date"].max().date()]
+        min_d, max_d = min(all_dates), max(all_dates)
+        default_start = max(min_d, max_d - timedelta(days=29))
+
+        rc1, rc2 = st.columns(2)
+        with rc1:
+            range_start = st.date_input("From", value=default_start, min_value=min_d, max_value=max_d, key="report_start")
+        with rc2:
+            range_end = st.date_input("To", value=max_d, min_value=min_d, max_value=max_d, key="report_end")
+
+        if range_start > range_end:
+            st.error("'From' date is after 'To' date - swap them.")
+            range_start, range_end = range_end, range_start
+
+        range_df = daily_df[(daily_df["Date"].dt.date >= range_start) & (daily_df["Date"].dt.date <= range_end)] if not daily_df.empty else daily_df
+        range_exp = exp_df[(exp_df["Date"].dt.date >= range_start) & (exp_df["Date"].dt.date <= range_end)] if not exp_df.empty else exp_df
+
+        total_rev = range_df["Total_Collection"].sum() if not range_df.empty else 0.0
+        total_units = int(range_df["Sold_Total"].sum()) if not range_df.empty else 0
+        total_exp_all = range_exp["Amount"].sum() if not range_exp.empty else 0.0
+
+        mc1, mc2, mc3 = st.columns(3)
+        mc1.metric("Revenue in range", f"₹{total_rev:,.0f}")
+        mc2.metric("Units sold in range", f"{total_units}")
+        mc3.metric("Expenses in range", f"₹{total_exp_all:,.0f}")
+
+        # ---- Cart-wise comparison ----
+        st.markdown("### Cart-wise comparison")
+        if not range_df.empty:
+            cart_grp = (
+                range_df.groupby("Cart")
+                .agg(**{"Revenue (₹)": ("Total_Collection", "sum"), "Units sold": ("Sold_Total", "sum")})
+                .reset_index()
+                .sort_values("Revenue (₹)", ascending=False)
+            )
+            st.dataframe(cart_grp, hide_index=True, use_container_width=True)
+            st.bar_chart(cart_grp.set_index("Cart")["Revenue (₹)"])
+        else:
+            st.caption("No sales in this date range.")
+
+        # ---- Flavour-wise performance ----
+        st.markdown("### Flavour-wise performance")
+        if not range_df.empty:
+            flavor_sold = [0] * N_FLAVORS
+            for arr in range_df["Sold_By_Flavor"]:
+                for i in range(N_FLAVORS):
+                    flavor_sold[i] += arr[i]
+            flavor_df = pd.DataFrame(
+                {
+                    "Flavour": [f[1] for f in FLAVORS],
+                    "Units sold": flavor_sold,
+                    "Est. revenue (₹)": [flavor_sold[i] * FLAVORS[i][2] for i in range(N_FLAVORS)],
+                }
+            ).sort_values("Units sold", ascending=False)
+            st.dataframe(flavor_df, hide_index=True, use_container_width=True)
+            st.bar_chart(flavor_df.set_index("Flavour")["Units sold"])
+            st.caption("Estimated revenue = units sold × MRP per flavour; actual collections may vary slightly (discounts, complementary pieces etc).")
+        else:
+            st.caption("No sales in this date range.")
+
+        # ---- Profit & Loss summary ----
+        st.markdown("### Profit & loss summary")
+        cogs = range_exp[range_exp["Category"] == "Cost of Goods"]["Amount"].sum() if not range_exp.empty else 0.0
+        opex_cats = ["Labour Charges", "Leakage Expense", "Miscellaneous Expense"]
+        opex = range_exp[range_exp["Category"].isin(opex_cats)]["Amount"].sum() if not range_exp.empty else 0.0
+        capital_cats = ["Initial Investment", "Initial Set-up Expense"]
+        capital = range_exp[range_exp["Category"].isin(capital_cats)]["Amount"].sum() if not range_exp.empty else 0.0
+        gross_profit = total_rev - cogs
+        net_profit = gross_profit - opex
+
+        pnl_df = pd.DataFrame(
+            {
+                "Line item": ["Revenue", "Cost of Goods", "Gross profit", "Operating expenses (labour, leakage, misc.)", "Net profit"],
+                "Amount (₹)": [total_rev, -cogs, gross_profit, -opex, net_profit],
+            }
+        )
+        st.dataframe(pnl_df, hide_index=True, use_container_width=True)
+        pc1, pc2 = st.columns(2)
+        pc1.metric("Net profit", f"₹{net_profit:,.0f}")
+        pc2.metric("Margin", f"{(net_profit / total_rev * 100) if total_rev else 0:.1f}%")
+        if capital > 0:
+            st.caption(f"₹{capital:,.0f} of one-time capital/setup costs fell in this range and is shown separately below, not deducted above.")
+
+        # ---- Expense breakdown ----
+        st.markdown("### Expense breakdown by category")
+        if not range_exp.empty:
+            by_cat = range_exp.groupby("Category")["Amount"].sum().sort_values(ascending=False)
+            st.dataframe(
+                by_cat.reset_index().rename(columns={"Amount": "₹"}),
+                hide_index=True,
+                use_container_width=True,
+                column_config={"₹": st.column_config.ProgressColumn("Share", format="₹%.0f", min_value=0, max_value=float(by_cat.max()))},
+            )
+            st.bar_chart(by_cat)
+        else:
+            st.caption("No expenses logged in this date range.")
+
+        # ---- Cash vs PhonePe ----
+        st.markdown("### Cash vs PhonePe / UPI")
+        if not range_df.empty:
+            total_cash = range_df["Cash"].sum()
+            total_phonepe = range_df["PhonePe"].sum()
+            cc1, cc2 = st.columns(2)
+            cc1.metric("Cash", f"₹{total_cash:,.0f}")
+            cc2.metric("PhonePe / UPI", f"₹{total_phonepe:,.0f}")
+            split_df = pd.DataFrame({"Mode": ["Cash", "PhonePe / UPI"], "Amount (₹)": [total_cash, total_phonepe]})
+            st.bar_chart(split_df.set_index("Mode")["Amount (₹)"])
+        else:
+            st.caption("No collections in this date range.")
+
+        # ---- Date-range sales table ----
+        st.markdown("### Sales in this range")
+        if not range_df.empty:
+            sales_table = range_df.sort_values(["Date", "Cart"])[["Date", "Cart", "Sold_Total", "Total_Collection"]].rename(
+                columns={"Sold_Total": "Units sold", "Total_Collection": "Revenue (₹)"}
+            )
+            sales_table["Date"] = sales_table["Date"].dt.strftime("%d %b %Y")
+            st.dataframe(sales_table, hide_index=True, use_container_width=True)
+        else:
+            st.caption("No sales in this date range.")
+
