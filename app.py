@@ -688,12 +688,20 @@ with tab_dash:
         st.warning(f"Could not load data yet ({e}).")
 
     today = pd.Timestamp(date.today())
+    yesterday = today - pd.Timedelta(days=1)
     if not daily_df.empty:
         today_rows = daily_df[daily_df["Date"].dt.date == today.date()]
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Revenue today", f"₹{today_rows['Total_Collection'].sum():,.0f}")
-        c2.metric("Units sold today", f"{int(today_rows['Sold_Total'].sum())}")
-        c3.metric("Stock across carts", f"{int(daily_df.sort_values('Date').groupby('Cart').tail(1)['Closing_Total'].sum())}")
+        yesterday_rows = daily_df[daily_df["Date"].dt.date == yesterday.date()]
+        today_rev = today_rows["Total_Collection"].sum()
+        yesterday_rev = yesterday_rows["Total_Collection"].sum()
+
+        rc1, rc2 = st.columns(2)
+        rc1.metric(f"Revenue — {yesterday.strftime('%d %b')} (yesterday)", f"₹{yesterday_rev:,.0f}")
+        rc2.metric("Revenue — today", f"₹{today_rev:,.0f}", delta=f"₹{today_rev - yesterday_rev:,.0f} vs yesterday")
+
+        c1, c2 = st.columns(2)
+        c1.metric("Units sold today", f"{int(today_rows['Sold_Total'].sum())}")
+        c2.metric("Stock across carts", f"{int(daily_df.sort_values('Date').groupby('Cart').tail(1)['Closing_Total'].sum())}")
 
         try:
             freezer_stock = get_freezer_stock()
