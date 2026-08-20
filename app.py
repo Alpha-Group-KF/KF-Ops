@@ -303,7 +303,9 @@ def get_freezer_stock():
 # ----------------------------------------------------------------------
 st.title("🍦 Kulfi Ops")
 
-tab_sale, tab_stock, tab_expense, tab_dash = st.tabs(["Daily Entry", "Freezer Stock", "Expenses", "Dashboard"])
+tab_sale, tab_stock, tab_analysis, tab_expense, tab_dash = st.tabs(
+    ["Daily Entry", "Freezer Stock", "Freezer Analysis", "Expenses", "Dashboard"]
+)
 
 # ---------------- DAILY ENTRY ----------------
 with tab_sale:
@@ -462,6 +464,140 @@ with tab_stock:
                 st.cache_resource.clear()
             except Exception as e:
                 st.error(f"Could not save - {e}")
+
+# ---------------- FREEZER ANALYSIS ----------------
+with tab_analysis:
+    st.subheader("Freezer stock analysis & reorder planner")
+    st.caption("Uses your recent sales pace to estimate when the freezer will run low, and what to order next.")
+
+    ac1, ac2, ac3 = st.columns(3)
+    with ac1:
+        lookback_days = st.number_input("Lookback window for avg. daily sales (days)", min_value=3, max_value=90, value=14, step=1)
+    with ac2:
+        buffer_days = st.number_input("Minimum buffer to maintain (days)", min_value=0, max_value=14, value=3, step=1)
+    with ac3:
+        cover_days = st.number_input("Next order should cover (days)", min_value=1, max_value=30, value=7, step=1)
+
+    try:
+        daily_df_fa = load_daily_df()
+        freezer_stock_fa = get_freezer_stock()
+    except Exception as e:
+        daily_df_fa = pd.DataFrame()
+        freezer_stock_fa = [0] * N_FLAVORS
+        st.warning(f"Could not load data yet ({e}).")
+
+    if daily_df_fa.empty:
+        st.info("No sales logged yet - once you've saved a few days of sales, this tab will estimate freezer run-out dates.")
+    else:
+        today_fa = date.today()
+        cutoff_fa = today_fa - timedelta(days=lookback_days - 1)
+        window_df = daily_df_fa[(daily_df_fa["Date"].dt.date >= cutoff_fa) & (daily_df_fa["Date"].dt.date <= today_fa)]
+
+        flavor_sold_window = [0] * N_FLAVORS
+        for arr in window_df["Sold_By_Flavor"]:
+            for i in range(N_FLAVORS):
+                flavor_sold_window[i] += arr[i]
+        avg_daily = [s / lookback_days for s in flavor_sold_window]
+
+        rows = []
+        trigger_dates = []
+        for i, f in enumerate(FLAVORS):
+            stock = freezer_stock_fa[i]
+            rate = avg_daily[i]
+            if rate <= 0:
+                days_left = None
+                status = "No recent sales"
+                trigger_date = None
+                suggested_qty = 0
+            else:
+                days_left = stock / rate
+                trigger_date = today_fa + timedelta(days=max(0, days_left - buffer_days))
+                trigger_dates.append(trigger_date)
+                if days_left <= buffer_days:
+                    status = "Order now"
+                elif days_left <= buffer_days + 2:
+                    status = "Order soon"
+                else:
+                    status = "OK"
+                suggested_qty = round(rate * cover_days)
+
+            rows.append(
+                {
+                    "Flavour": f[1],
+                    "Freezer stock": stock,
+                    "Avg. daily sales": round(rate, 1),
+                    "Days of stock left": round(days_left, 1) if days_left is not None else "—",
+                    "Status": status,
+                    f"Suggested next order ({cover_days}d)": suggested_qty,
+                }
+            )
+
+        analysis_df = pd.DataFrame(rows)
+
+        total_stock = sum(freezer_stock_fa)
+        total_rate = sum(avg_daily)
+        overall_days_left = (total_stock / total_rate) if total_rate > 0 else None
+        overall_order_date = min(trigger_dates) if trigger_dates else None
+
+        st.markdown("### Overall picture")
+        oc1, oc2, oc3 = st.columns(3)
+        oc1.metric("Total freezer stock", f"{total_stock} units")
+        oc2.metric("Avg. daily sales (all flavours)", f"{total_rate:.1f} units/day")
+        oc3.metric("Overall days of stock left", f"{overall_days_left:.1f}" if overall_days_left is not None else "—")
+
+        if overall_order_date is not None:
+            if overall_order_date <= today_fa:
+                st.error(f"**Place your next order now** — at least one flavour is already at or below your {buffer_days}-day buffer.")
+            else:
+                days_until = (overall_order_date - today_fa).days
+                st.success(f"**Next order should be placed by {overall_order_date.strftime('%d %b %Y')}** (in {days_until} day{'s' if days_until != 1 else ''}) to keep every flavour above your {buffer_days}-day buffer.")
+        else:
+            st.caption("Not enough recent sales data to estimate a reorder date yet.")
+
+        st.markdown("### Per-flavour breakdown")
+        st.dataframe(
+            analysis_df,
+            hide_index=True,
+            use_container_width=True,
+            column_config={
+                "Status": st.column_config.TextColumn(help="Order now: at/below buffer. Order soon: within 2 days of buffer. OK: comfortably above buffer."),
+            },
+        )
+
+        st.markdown("### Suggested next order (flavour mix based on recent sales)")
+        order_df = analysis_df[["Flavour", f"Suggested next order ({cover_days}d)"]].rename(
+            columns={f"Suggested next order ({cover_days}d)": "Units to order"}
+        )
+        total_suggested = int(order_df["Units to order"].sum())
+        st.dataframe(order_df, hide_index=True, use_container_width=True)
+        st.caption(
+            f"Total suggested order: {total_suggested} units, split across flavours in the same proportion as your last "
+            f"{lookback_days} days of sales — so your best-sellers get restocked the most. Adjust the controls above to "
+            f"widen/narrow the sales window, change your buffer, or size the order differently."
+        )
+
+        st.markdown("### Days of stock left, by flavour")
+        chart_df = analysis_df[analysis_df["Days of stock left"] != "—"].copy()
+        if not chart_df.empty:
+            chart_df["Days of stock left"] = chart_df["Days of stock left"].astype(float)
+            days_chart = (
+                alt.Chart(chart_df)
+                .mark_bar()
+                .encode(
+                    x=alt.X("Flavour:N", sort="-y"),
+                    y=alt.Y("Days of stock left:Q"),
+                    color=alt.condition(
+                        alt.datum["Days of stock left"] <= buffer_days,
+                        alt.value("#B4442E"),
+                        alt.value("#3E6B4F"),
+                    ),
+                    tooltip=["Flavour", "Days of stock left"],
+                )
+                .properties(height=280)
+            )
+            rule = alt.Chart(pd.DataFrame({"y": [buffer_days]})).mark_rule(color="#8B5E34", strokeDash=[4, 4]).encode(y="y:Q")
+            st.altair_chart(days_chart + rule, use_container_width=True)
+            st.caption(f"Dashed line marks your {buffer_days}-day buffer. Red bars are at or below it.")
 
 # ---------------- EXPENSES ----------------
 with tab_expense:
