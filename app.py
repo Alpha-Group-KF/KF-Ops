@@ -688,29 +688,24 @@ with tab_dash:
         st.warning(f"Could not load data yet ({e}).")
 
     today = pd.Timestamp(date.today())
-    yesterday = today - pd.Timedelta(days=1)
-    day_before = today - pd.Timedelta(days=2)
+    day_labels = [today - pd.Timedelta(days=3), today - pd.Timedelta(days=2), today - pd.Timedelta(days=1)]
     if not daily_df.empty:
-        yesterday_rows = daily_df[daily_df["Date"].dt.date == yesterday.date()]
-        day_before_rows = daily_df[daily_df["Date"].dt.date == day_before.date()]
-        yesterday_rev = yesterday_rows["Total_Collection"].sum()
-        day_before_rev = day_before_rows["Total_Collection"].sum()
-        yesterday_units = int(yesterday_rows["Sold_Total"].sum())
-        day_before_units = int(day_before_rows["Sold_Total"].sum())
+        day_rows = [daily_df[daily_df["Date"].dt.date == d.date()] for d in day_labels]
+        day_rev = [r["Total_Collection"].sum() for r in day_rows]
+        day_units = [int(r["Sold_Total"].sum()) for r in day_rows]
 
-        def _signed(n, prefix=""):
-            sign = "+" if n >= 0 else "−"
-            return f"{sign}{prefix}{abs(n):,.0f}"
+        col_names = [d.strftime("%d %b") for d in day_labels]
+        col_names[-1] = col_names[-1] + " (Yesterday)"
 
         compare_df = pd.DataFrame(
             {
                 "Metric": ["Revenue", "Units sold"],
-                f"{day_before.strftime('%d %b')}": [f"₹{day_before_rev:,.0f}", f"{day_before_units}"],
-                f"{yesterday.strftime('%d %b')} (Yesterday)": [f"₹{yesterday_rev:,.0f}", f"{yesterday_units}"],
-                "Change": [_signed(yesterday_rev - day_before_rev, "₹"), _signed(yesterday_units - day_before_units)],
+                col_names[0]: [f"₹{day_rev[0]:,.0f}", f"{day_units[0]}"],
+                col_names[1]: [f"₹{day_rev[1]:,.0f}", f"{day_units[1]}"],
+                col_names[2]: [f"₹{day_rev[2]:,.0f}", f"{day_units[2]}"],
             }
         )
-        st.markdown("**Yesterday vs. the day before**")
+        st.markdown("**Last 3 days**")
         st.dataframe(compare_df, hide_index=True, use_container_width=True)
 
         st.metric("Stock across carts", f"{int(daily_df.sort_values('Date').groupby('Cart').tail(1)['Closing_Total'].sum())}")
