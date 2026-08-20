@@ -204,6 +204,8 @@ def load_expenses_df():
     if not df.empty:
         df["Amount"] = df["Amount"].apply(_num)
         df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
+        df["Category"] = df["Category"].astype(str).str.strip()
+        df["Mode"] = df["Mode"].astype(str).str.strip()
     return df
 
 
