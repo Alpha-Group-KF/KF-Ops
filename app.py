@@ -625,6 +625,34 @@ with tab_dash:
         else:
             st.caption("No sales in this date range.")
 
+        # ---- Cart-wise x day-of-week sales ----
+        st.markdown("### Cart-wise sales by day of the week")
+        if not range_df.empty:
+            day_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+            dow_df = range_df.copy()
+            dow_df["Day"] = dow_df["Date"].dt.day_name()
+
+            units_pivot = dow_df.pivot_table(
+                index="Cart", columns="Day", values="Sold_Total", aggfunc="sum", fill_value=0, margins=True, margins_name="All carts"
+            )
+            day_cols = [d for d in day_order if d in units_pivot.columns] + ["All carts"]
+            units_pivot = units_pivot.reindex(columns=day_cols)
+
+            rev_pivot = dow_df.pivot_table(
+                index="Cart", columns="Day", values="Total_Collection", aggfunc="sum", fill_value=0, margins=True, margins_name="All carts"
+            )
+            rev_pivot = rev_pivot.reindex(columns=day_cols)
+
+            st.write("**Units sold** (rows = cart, columns = day of week)")
+            st.dataframe(units_pivot.astype(int), use_container_width=True)
+
+            st.write("**Revenue (₹)** (rows = cart, columns = day of week)")
+            st.dataframe(rev_pivot.round(0).astype(int), use_container_width=True)
+
+            st.caption("'All carts' row/column shows totals across all carts / all days in the selected range.")
+        else:
+            st.caption("No sales in this date range.")
+
         # ---- Flavour-wise performance ----
         st.markdown("### Flavour-wise performance")
         if not range_df.empty:
