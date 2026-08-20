@@ -519,14 +519,14 @@ with tab_analysis:
                     status = "Order soon"
                 else:
                     status = "OK"
-                suggested_qty = round(rate * cover_days)
+                suggested_qty = int(round(rate * cover_days / 10.0)) * 10
 
             rows.append(
                 {
                     "Flavour": f[1],
                     "Freezer stock": stock,
-                    "Avg. daily sales": round(rate, 1),
-                    "Days of stock left": round(days_left, 1) if days_left is not None else "—",
+                    "Avg. daily sales": round(rate),
+                    "Days of stock left": round(days_left) if days_left is not None else "—",
                     "Status": status,
                     f"Suggested next order ({cover_days}d)": suggested_qty,
                 }
@@ -542,8 +542,8 @@ with tab_analysis:
         st.markdown("### Overall picture")
         oc1, oc2, oc3 = st.columns(3)
         oc1.metric("Total freezer stock", f"{total_stock} units")
-        oc2.metric("Avg. daily sales (all flavours)", f"{total_rate:.1f} units/day")
-        oc3.metric("Overall days of stock left", f"{overall_days_left:.1f}" if overall_days_left is not None else "—")
+        oc2.metric("Avg. daily sales (all flavours)", f"{total_rate:.0f} units/day")
+        oc3.metric("Overall days of stock left", f"{overall_days_left:.0f}" if overall_days_left is not None else "—")
 
         if overall_order_date is not None:
             if overall_order_date <= today_fa:
