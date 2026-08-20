@@ -689,19 +689,31 @@ with tab_dash:
 
     today = pd.Timestamp(date.today())
     yesterday = today - pd.Timedelta(days=1)
+    day_before = today - pd.Timedelta(days=2)
     if not daily_df.empty:
-        today_rows = daily_df[daily_df["Date"].dt.date == today.date()]
         yesterday_rows = daily_df[daily_df["Date"].dt.date == yesterday.date()]
-        today_rev = today_rows["Total_Collection"].sum()
+        day_before_rows = daily_df[daily_df["Date"].dt.date == day_before.date()]
         yesterday_rev = yesterday_rows["Total_Collection"].sum()
+        day_before_rev = day_before_rows["Total_Collection"].sum()
+        yesterday_units = int(yesterday_rows["Sold_Total"].sum())
+        day_before_units = int(day_before_rows["Sold_Total"].sum())
 
-        rc1, rc2 = st.columns(2)
-        rc1.metric(f"Revenue — {yesterday.strftime('%d %b')} (yesterday)", f"₹{yesterday_rev:,.0f}")
-        rc2.metric("Revenue — today", f"₹{today_rev:,.0f}", delta=f"₹{today_rev - yesterday_rev:,.0f} vs yesterday")
+        def _signed(n, prefix=""):
+            sign = "+" if n >= 0 else "−"
+            return f"{sign}{prefix}{abs(n):,.0f}"
 
-        c1, c2 = st.columns(2)
-        c1.metric("Units sold today", f"{int(today_rows['Sold_Total'].sum())}")
-        c2.metric("Stock across carts", f"{int(daily_df.sort_values('Date').groupby('Cart').tail(1)['Closing_Total'].sum())}")
+        compare_df = pd.DataFrame(
+            {
+                "Metric": ["Revenue", "Units sold"],
+                f"{day_before.strftime('%d %b')}": [f"₹{day_before_rev:,.0f}", f"{day_before_units}"],
+                f"{yesterday.strftime('%d %b')} (Yesterday)": [f"₹{yesterday_rev:,.0f}", f"{yesterday_units}"],
+                "Change": [_signed(yesterday_rev - day_before_rev, "₹"), _signed(yesterday_units - day_before_units)],
+            }
+        )
+        st.markdown("**Yesterday vs. the day before**")
+        st.dataframe(compare_df, hide_index=True, use_container_width=True)
+
+        st.metric("Stock across carts", f"{int(daily_df.sort_values('Date').groupby('Cart').tail(1)['Closing_Total'].sum())}")
 
         try:
             freezer_stock = get_freezer_stock()
