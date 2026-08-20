@@ -303,8 +303,8 @@ def get_freezer_stock():
 # ----------------------------------------------------------------------
 st.title("🍦 Kulfi Ops")
 
-tab_sale, tab_stock, tab_analysis, tab_expense, tab_dash = st.tabs(
-    ["Daily Entry", "Freezer Stock", "Freezer Analysis", "Expenses", "Dashboard"]
+tab_dash, tab_sale, tab_stock, tab_analysis, tab_expense = st.tabs(
+    ["Dashboard", "Daily Entry", "Freezer Stock", "Freezer Analysis", "Expenses"]
 )
 
 # ---------------- DAILY ENTRY ----------------
