@@ -19,12 +19,17 @@ from datetime import date, datetime, timedelta
 
 st.set_page_config(page_title="Kulfi Ops", page_icon="🍦", layout="wide")
 
-st.html(
+st.markdown(
     textwrap.dedent(
         """
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+    /* ---------- Main page spacing ---------- */
+    div[data-testid="stAppViewContainer"] section.main > div.block-container {
+        padding-top: 1.5rem !important;
+    }
+
     /* ---------- Fonts & base ---------- */
     html, body, [class*="css"] { font-family: 'Manrope', sans-serif; }
     h1, h2, h3 { font-family: 'Fraunces', serif !important; color: #8A5E17 !important; letter-spacing: -0.01em; }
@@ -101,7 +106,8 @@ st.html(
     div[data-testid="stForm"] { border: 1px solid #E3CBA0; border-radius: 12px; padding: 16px; background: #FFFBF2; }
     </style>
     """
-    )
+    ),
+    unsafe_allow_html=True,
 )
 
 # ----------------------------------------------------------------------
