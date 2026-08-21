@@ -26,7 +26,18 @@ st.html(
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-/* ---------- Fonts & base ---------- */
+    /* ---------- Remove top spacing ---------- */
+    .block-container {
+        padding-top: 1.5rem !important;
+        padding-bottom: 1rem !important;
+        margin-top: 0 !important;
+    }
+    header[data-testid="stHeader"] {
+        background-color: transparent !important;
+        height: 1.5rem !important;
+    }
+
+    /* ---------- Fonts & base ---------- */
     html, body, [class*="css"] { font-family: 'Manrope', sans-serif; }
     h1, h2, h3 { font-family: 'Fraunces', serif !important; color: #8A5E17 !important; letter-spacing: -0.01em; }
     h1 { font-size: 2.3rem !important; }
@@ -541,25 +552,23 @@ def check_login():
     if st.session_state.get("authenticated", False):
         return True
 
-    # 3-column layout centers and shrinks the login form
     _, col_form, _ = st.columns([1, 1.2, 1])
 
     with col_form:
         try:
             st.image("assets/logo.png", width=220)
         except Exception:
-            st.title("🍦 Kulfi Ops")
+            st.title("🍦 Kulfi Ops")[cite: 1]
 
-        st.subheader("Sign in")
+        st.subheader("Sign in")[cite: 1]
         with st.form("login_form"):
             username = st.text_input("Username")
-            password = st.text_input("Password", type="password")
-            submitted = st.form_submit_button("Sign in", type="primary", use_container_width=True)
+            password = st.text_input("Password", type="password")[cite: 1]
+            submitted = st.form_submit_button("Sign in", type="primary", use_container_width=True)[cite: 1]
 
         if submitted:
-            # Fallback to defaults or fetch from st.secrets
             valid_user = st.secrets.get("app_username", "admin")
-            valid_pass = st.secrets.get("app_password", None)
+            valid_pass = st.secrets.get("app_password", None)[cite: 1]
 
             if valid_pass is None:
                 st.error("No `app_password` set in Secrets. Please add credentials to Secrets.")
@@ -567,8 +576,8 @@ def check_login():
                 hmac.compare_digest(username.strip(), valid_user.strip())
                 and hmac.compare_digest(password, valid_pass)
             ):
-                st.session_state["authenticated"] = True
-                st.rerun()
+                st.session_state["authenticated"] = True[cite: 1]
+                st.rerun()[cite: 1]
             else:
                 st.error("Incorrect username or password — try again.")
 
@@ -576,22 +585,22 @@ def check_login():
 
 
 if not check_login():
-    st.stop()
+    st.stop()[cite: 1]
 
 # ----------------------------------------------------------------------
 # UI
 # ----------------------------------------------------------------------
 with st.sidebar:
     try:
-        st.image("assets/logo.png", use_container_width=True)
+        st.image("assets/logo.png", use_container_width=True)[cite: 1]
     except Exception:
-        st.markdown("## 🍦 Kulfi Ops")
+        st.markdown("## 🍦 Kulfi Ops")[cite: 1]
     page = st.radio(
         "Go to",
         ["Dashboard", "Daily Entry", "Freezer Stock", "Freezer Analysis", "Expenses"],
         label_visibility="collapsed",
-    )
-    if page == "Dashboard":
+    )[cite: 1]
+    if page == "Dashboard":[cite: 1]
         st.markdown(
             textwrap.dedent(
                 """
@@ -613,57 +622,57 @@ with st.sidebar:
             """
             ),
             unsafe_allow_html=True,
-        )
-    st.markdown("---")
-    if st.button("Log out", use_container_width=True):
-        st.session_state["authenticated"] = False
-        st.rerun()
+        )[cite: 1]
+    st.markdown("---")[cite: 1]
+    if st.button("Log out", use_container_width=True):[cite: 1]
+        st.session_state["authenticated"] = False[cite: 1]
+        st.rerun()[cite: 1]
 
-st.title(f"🍦 Kulfi Ops — {page}")
+st.title(f"🍦 Kulfi Ops — {page}")[cite: 1]
 
 # ---------------- DAILY ENTRY ----------------
-if page == "Daily Entry":
-    st.subheader("Cart restock & daily sales")
+if page == "Daily Entry":[cite: 1]
+    st.subheader("Cart restock & daily sales")[cite: 1]
 
-    mode = st.radio("Mode", ["New entry", "Edit past entry"], horizontal=True, key="daily_mode")
+    mode = st.radio("Mode", ["New entry", "Edit past entry"], horizontal=True, key="daily_mode")[cite: 1]
 
-    loaded = None
-    editing_row = None
-    if mode == "Edit past entry":
+    loaded = None[cite: 1]
+    editing_row = None[cite: 1]
+    if mode == "Edit past entry":[cite: 1]
         try:
-            daily_entries = list_daily_entries()
+            daily_entries = list_daily_entries()[cite: 1]
         except Exception as e:
-            daily_entries = []
-            st.warning(f"Could not load past entries ({e}).")
-        if not daily_entries:
-            st.info("No past entries found yet.")
+            daily_entries = [][cite: 1]
+            st.warning(f"Could not load past entries ({e}).")[cite: 1]
+        if not daily_entries:[cite: 1]
+            st.info("No past entries found yet.")[cite: 1]
         else:
-            labels = [f"{e['date'].strftime('%d %b %Y')} — {e['cart']}" for e in daily_entries]
-            sel = st.selectbox("Select entry to edit", labels, key="daily_edit_select")
-            loaded = daily_entries[labels.index(sel)]
-            editing_row = loaded["row"]
-            st.caption("Loaded - edit the fields below, then click Update entry to save changes to this same row.")
+            labels = [f"{e['date'].strftime('%d %b %Y')} — {e['cart']}" for e in daily_entries][cite: 1]
+            sel = st.selectbox("Select entry to edit", labels, key="daily_edit_select")[cite: 1]
+            loaded = daily_entries[labels.index(sel)][cite: 1]
+            editing_row = loaded["row"][cite: 1]
+            st.caption("Loaded - edit the fields below, then click Update entry to save changes to this same row.")[cite: 1]
 
-    key_suffix = f"_{editing_row}" if editing_row else "_new"
-    st.caption("One entry per cart per day. Only fill in flavours that actually moved.")
+    key_suffix = f"_{editing_row}" if editing_row else "_new"[cite: 1]
+    st.caption("One entry per cart per day. Only fill in flavours that actually moved.")[cite: 1]
 
-    c1, c2 = st.columns(2)
-    with c1:
-        entry_date = st.date_input("Date", value=(loaded["date"].date() if loaded else date.today()), key=f"daily_date{key_suffix}")
-    with c2:
-        default_cart_idx = CARTS.index(loaded["cart"]) if loaded and loaded["cart"] in CARTS else 0
-        cart_name = st.selectbox("Cart", CARTS, index=default_cart_idx, key=f"daily_cart{key_suffix}")
+    c1, c2 = st.columns(2)[cite: 1]
+    with c1:[cite: 1]
+        entry_date = st.date_input("Date", value=(loaded["date"].date() if loaded else date.today()), key=f"daily_date{key_suffix}")[cite: 1]
+    with c2:[cite: 1]
+        default_cart_idx = CARTS.index(loaded["cart"]) if loaded and loaded["cart"] in CARTS else 0[cite: 1]
+        cart_name = st.selectbox("Cart", CARTS, index=default_cart_idx, key=f"daily_cart{key_suffix}")[cite: 1]
 
-    if loaded:
-        opening = loaded["opening"]
+    if loaded:[cite: 1]
+        opening = loaded["opening"][cite: 1]
     else:
         try:
-            opening = get_opening_balance(cart_name)
+            opening = get_opening_balance(cart_name)[cite: 1]
         except Exception as e:
-            opening = [0] * N_FLAVORS
-            st.warning(f"Could not fetch opening balance automatically ({e}). Starting from 0 - check your figures.")
+            opening = [0] * N_FLAVORS[cite: 1]
+            st.warning(f"Could not fetch opening balance automatically ({e}). Starting from 0 - check your figures.")[cite: 1]
 
-    flavor_names = [f[1] for f in FLAVORS]
+    flavor_names = [f[1] for f in FLAVORS][cite: 1]
     df_init = pd.DataFrame(
         {
             "Flavour": flavor_names,
@@ -671,8 +680,8 @@ if page == "Daily Entry":
             "Added today": loaded["added"] if loaded else [0] * N_FLAVORS,
             "Sold today": loaded["sold"] if loaded else [0] * N_FLAVORS,
         }
-    )
-    st.write("Enter units **added to the cart** (restock) and **units sold**, per flavour:")
+    )[cite: 1]
+    st.write("Enter units **added to the cart** (restock) and **units sold**, per flavour:")[cite: 1]
     edited = st.data_editor(
         df_init,
         column_config={
@@ -684,117 +693,118 @@ if page == "Daily Entry":
         hide_index=True,
         use_container_width=True,
         key=f"daily_editor{key_suffix}",
-    )
+    )[cite: 1]
 
-    added = edited["Added today"].fillna(0).astype(int).tolist()
-    sold = edited["Sold today"].fillna(0).astype(int).tolist()
-    projected_closing = [opening[i] + added[i] - sold[i] for i in range(N_FLAVORS)]
-    if any(c < 0 for c in projected_closing):
-        st.error("Closing balance would go negative for at least one flavour - double check the numbers above.")
+    added = edited["Added today"].fillna(0).astype(int).tolist()[cite: 1]
+    sold = edited["Sold today"].fillna(0).astype(int).tolist()[cite: 1]
+    projected_closing = [opening[i] + added[i] - sold[i] for i in range(N_FLAVORS)][cite: 1]
+    if any(c < 0 for c in projected_closing):[cite: 1]
+        st.error("Closing balance would go negative for at least one flavour - double check the numbers above.")[cite: 1]
 
-    suggested_total = sum(sold[i] * FLAVORS[i][2] for i in range(N_FLAVORS))
-    default_total = loaded["total"] if loaded else float(suggested_total)
-    default_phonepe = loaded["phonepe"] if loaded else 0.0
-    default_cash = loaded["cash"] if loaded else default_total
+    suggested_total = sum(sold[i] * FLAVORS[i][2] for i in range(N_FLAVORS))[cite: 1]
+    default_total = loaded["total"] if loaded else float(suggested_total)[cite: 1]
+    default_phonepe = loaded["phonepe"] if loaded else 0.0[cite: 1]
+    default_cash = loaded["cash"] if loaded else default_total[cite: 1]
 
-    st.markdown("---")
-    st.write("**Today's collection**")
-    c3, c4, c5 = st.columns(3)
-    with c3:
-        total_collection = st.number_input("Total collection (₹)", min_value=0.0, value=float(default_total), step=10.0, key=f"daily_total{key_suffix}")
-    with c4:
-        phonepe = st.number_input("PhonePe / UPI (₹)", min_value=0.0, value=float(default_phonepe), step=10.0, key=f"daily_phonepe{key_suffix}")
-    with c5:
-        cash = st.number_input("Cash (₹)", min_value=0.0, value=float(default_cash), step=10.0, key=f"daily_cash{key_suffix}")
+    st.markdown("---")[cite: 1]
+    st.write("**Today's collection**")[cite: 1]
+    c3, c4, c5 = st.columns(3)[cite: 1]
+    with c3:[cite: 1]
+        total_collection = st.number_input("Total collection (₹)", min_value=0.0, value=float(default_total), step=10.0, key=f"daily_total{key_suffix}")[cite: 1]
+    with c4:[cite: 1]
+        phonepe = st.number_input("PhonePe / UPI (₹)", min_value=0.0, value=float(default_phonepe), step=10.0, key=f"daily_phonepe{key_suffix}")[cite: 1]
+    with c5:[cite: 1]
+        cash = st.number_input("Cash (₹)", min_value=0.0, value=float(default_cash), step=10.0, key=f"daily_cash{key_suffix}")[cite: 1]
 
-    if abs((phonepe + cash) - total_collection) > 0.5:
-        st.warning(f"PhonePe + Cash (₹{phonepe + cash:,.0f}) doesn't match Total collection (₹{total_collection:,.0f}) - fine if intentional, otherwise adjust.")
+    if abs((phonepe + cash) - total_collection) > 0.5:[cite: 1]
+        st.warning(f"PhonePe + Cash (₹{phonepe + cash:,.0f}) doesn't match Total collection (₹{total_collection:,.0f}) - fine if intentional, otherwise adjust.")[cite: 1]
 
-    remarks = st.text_input("Remarks (optional)", value=(loaded["remarks"] if loaded else ""), key=f"daily_remarks{key_suffix}")
+    remarks = st.text_input("Remarks (optional)", value=(loaded["remarks"] if loaded else ""), key=f"daily_remarks{key_suffix}")[cite: 1]
 
-    button_label = "Update entry" if editing_row else "Save daily entry"
-    if st.button(button_label, type="primary", use_container_width=True):
-        if sum(added) == 0 and sum(sold) == 0:
-            st.error("Enter at least one quantity added or sold before saving.")
+    button_label = "Update entry" if editing_row else "Save daily entry"[cite: 1]
+    if st.button(button_label, type="primary", use_container_width=True):[cite: 1]
+        if sum(added) == 0 and sum(sold) == 0:[cite: 1]
+            st.error("Enter at least one quantity added or sold before saving.")[cite: 1]
         else:
             try:
-                if editing_row:
-                    closing = update_daily_entry(editing_row, entry_date, cart_name, added, sold, opening, total_collection, phonepe, cash, remarks)
-                    st.success(f"Updated entry for {cart_name} on {entry_date.strftime('%d %b %Y')}. Closing stock: {sum(closing)} units.")
+                if editing_row:[cite: 1]
+                    closing = update_daily_entry(editing_row, entry_date, cart_name, added, sold, opening, total_collection, phonepe, cash, remarks)[cite: 1]
+                    st.success(f"Updated entry for {cart_name} on {entry_date.strftime('%d %b %Y')}. Closing stock: {sum(closing)} units.")[cite: 1]
                 else:
-                    closing = append_daily_entry(entry_date, cart_name, added, sold, opening, total_collection, phonepe, cash, remarks)
-                    st.success(f"Saved for {cart_name} on {entry_date.strftime('%d %b %Y')}. Closing stock: {sum(closing)} units.")
-                st.cache_resource.clear()
+                    closing = append_daily_entry(entry_date, cart_name, added, sold, opening, total_collection, phonepe, cash, remarks)[cite: 1]
+                    st.success(f"Saved for {cart_name} on {entry_date.strftime('%d %b %Y')}. Closing stock: {sum(closing)} units.")[cite: 1]
+                st.cache_resource.clear()[cite: 1]
             except Exception as e:
-                st.error(f"Could not save - {e}")
+                st.error(f"Could not save - {e}")[cite: 1]
 
-    if editing_row:
-        st.caption("Note: editing a day that isn't the most recent entry for this cart won't automatically recalculate later days' opening/closing balances - check the days after this one if the correction is significant.")
+    if editing_row:[cite: 1]
+        st.caption("Note: editing a day that isn't the most recent entry for this cart won't automatically recalculate later days' opening/closing balances - check the days after this one if the correction is significant.")[cite: 1]
 
 # ---------------- FREEZER STOCK ----------------
-elif page == "Freezer Stock":
-    st.subheader("Stock received into freezer")
+elif page == "Freezer Stock":[cite: 1]
+    st.subheader("Stock received into freezer")[cite: 1]
 
-    stock_mode = st.radio("Mode", ["New entry", "Edit past entry"], horizontal=True, key="stock_mode")
+    stock_mode = st.radio("Mode", ["New entry", "Edit past entry"], horizontal=True, key="stock_mode")[cite: 1]
 
-    stock_loaded = None
-    stock_editing_row = None
-    if stock_mode == "Edit past entry":
+    stock_loaded = None[cite: 1]
+    stock_editing_row = None[cite: 1]
+    if stock_mode == "Edit past entry":[cite: 1]
         try:
-            stock_entries = list_stock_entries()
+            stock_entries = list_stock_entries()[cite: 1]
         except Exception as e:
-            stock_entries = []
-            st.warning(f"Could not load past entries ({e}).")
-        if not stock_entries:
-            st.info("No past entries found yet.")
+            stock_entries = [][cite: 1]
+            st.warning(f"Could not load past entries ({e}).")[cite: 1]
+        if not stock_entries:[cite: 1]
+            st.info("No past entries found yet.")[cite: 1]
         else:
-            def _fmt_order_date(s):
-                if not s or not str(s).strip():
-                    return "no order date"
+            def _fmt_order_date(s):[cite: 1]
+                if not s or not str(s).strip():[cite: 1]
+                    return "no order date"[cite: 1]
                 try:
-                    d = pd.to_datetime(s)
-                    return f"ordered {d.strftime('%d %b %Y')}" if not pd.isna(d) else "no order date"
+                    d = pd.to_datetime(s)[cite: 1]
+                    return f"ordered {d.strftime('%d %b %Y')}" if not pd.isna(d) else "no order date"[cite: 1]
                 except Exception:
-                    return "no order date"
+                    return "no order date"[cite: 1]
 
             stock_labels = [
                 f"Received {e['received_date'].strftime('%d %b %Y')} ({_fmt_order_date(e['order_date'])}) — {e['location']}"
                 for e in stock_entries
-            ]
-            stock_sel = st.selectbox("Select entry to edit", stock_labels, key="stock_edit_select")
-            stock_loaded = stock_entries[stock_labels.index(stock_sel)]
-            stock_editing_row = stock_loaded["row"]
-            st.caption("Loaded - edit the fields below, then click Update entry to save changes to this same row.")
+            ][cite: 1]
+            stock_sel = st.selectbox("Select entry to edit", stock_labels, key="stock_edit_select")[cite: 1]
+            stock_loaded = stock_entries[stock_labels.index(stock_sel)][cite: 1]
+            stock_editing_row = stock_loaded["row"][cite: 1]
+            st.caption("Loaded - edit the fields below, then click Update entry to save changes to this same row.")[cite: 1]
 
-    sk = f"_{stock_editing_row}" if stock_editing_row else "_new"
-    st.caption("Log a supplier delivery. Ordered and Damaged are optional - fill in what you have.")
+    sk = f"_{stock_editing_row}" if stock_editing_row else "_new"[cite: 1]
+    st.caption("Log a supplier delivery. Ordered and Damaged are optional - fill in what you have.")[cite: 1]
 
-    def _parse_date_or(s, fallback):
-        if not s or not str(s).strip():
-            return fallback
+    def _parse_date_or(s, fallback):[cite: 1]
+        if not s or not str(s).strip():[cite: 1]
+            return fallback[cite: 1]
         try:
-            d = pd.to_datetime(s)
-            return fallback if pd.isna(d) else d.date()
+            d = pd.to_datetime(s)[cite: 1]
+            return fallback if pd.isna(d) else d.date()[cite: 1]
         except Exception:
-            return fallback
+            return fallback[cite: 1]
 
-    c1, c2, c3 = st.columns(3)
-    with c1:
+    c1, c2, c3 = st.columns(3)[cite: 1]
+    with c1:[cite: 1]
         order_date = st.date_input(
             "Order date",
             value=_parse_date_or(stock_loaded["order_date"], date.today()) if stock_loaded else date.today(),
             key=f"stock_order_date{sk}",
-        )
-    with c2:
+        )[cite: 1]
+    with c2:[cite: 1]
         received_date = st.date_input(
             "Received date",
             value=stock_loaded["received_date"].date() if stock_loaded else date.today(),
             key=f"stock_received_date{sk}",
-        )
-    with c3:
-        location = st.text_input("Location", value=(stock_loaded["location"] if stock_loaded else CITY), key=f"stock_location{sk}")
+        )[cite: 1]
+    with c3:[cite: 1]
+        location = st.text_input("Location", value=(stock_loaded["location"] if stock_loaded else CITY), key=f"stock_location{sk}")[cite: 1]
 
-    flavor_names = [f[1] for f in FLAVORS]
+    flavor_names = [f[1] for f in FLAVORS][cite: 1]
+    default_cost = [f[3] for f in FLAVORS][cite: 1]
     df_init = pd.DataFrame(
         {
             "Flavour": flavor_names,
@@ -803,8 +813,8 @@ elif page == "Freezer Stock":
             "Cost (₹, total)": stock_loaded["cost"] if stock_loaded else [0.0] * N_FLAVORS,
             "Damaged": stock_loaded["damaged"] if stock_loaded else [0] * N_FLAVORS,
         }
-    )
-    st.write("Enter units per flavour:")
+    )[cite: 1]
+    st.write("Enter units per flavour:")[cite: 1]
     stock_edited = st.data_editor(
         df_init,
         column_config={
@@ -817,30 +827,30 @@ elif page == "Freezer Stock":
         hide_index=True,
         use_container_width=True,
         key=f"stock_editor{sk}",
-    )
+    )[cite: 1]
 
-    ordered = stock_edited["Ordered"].fillna(0).astype(int).tolist()
-    received = stock_edited["Received"].fillna(0).astype(int).tolist()
-    cost = stock_edited["Cost (₹, total)"].fillna(0).astype(float).tolist()
-    damaged = stock_edited["Damaged"].fillna(0).astype(int).tolist()
+    ordered = stock_edited["Ordered"].fillna(0).astype(int).tolist()[cite: 1]
+    received = stock_edited["Received"].fillna(0).astype(int).tolist()[cite: 1]
+    cost = stock_edited["Cost (₹, total)"].fillna(0).astype(float).tolist()[cite: 1]
+    damaged = stock_edited["Damaged"].fillna(0).astype(int).tolist()[cite: 1]
 
     st.caption(
         "Standard cost price per unit — Malai ₹22, Mini Malai ₹18, Pista ₹22, Mango ₹22, "
         "Kesar Badam ₹27.5, Badam Matka ₹44, Shahi Gulab ₹27.5, Chocolate ₹27.5, Roasted Almond ₹33 "
         "— multiply by units received for a quick cost estimate per flavour."
-    )
+    )[cite: 1]
 
-    st.markdown("---")
-    st.write("**Payment**")
-    c4, c5 = st.columns(2)
-    with c4:
-        default_payment_amount = stock_loaded["payment_amount"] if stock_loaded else float(sum(cost))
-        payment_amount = st.number_input("Payment amount (₹)", min_value=0.0, value=float(default_payment_amount), step=10.0, key=f"stock_pay_amt{sk}")
-    with c5:
-        default_status_idx = PAYMENT_STATUSES.index(stock_loaded["payment_status"]) if stock_loaded and stock_loaded["payment_status"] in PAYMENT_STATUSES else 0
-        payment_status = st.selectbox("Payment status", PAYMENT_STATUSES, index=default_status_idx, key=f"stock_pay_status{sk}")
+    st.markdown("---")[cite: 1]
+    st.write("**Payment**")[cite: 1]
+    c4, c5 = st.columns(2)[cite: 1]
+    with c4:[cite: 1]
+        default_payment_amount = stock_loaded["payment_amount"] if stock_loaded else float(sum(cost))[cite: 1]
+        payment_amount = st.number_input("Payment amount (₹)", min_value=0.0, value=float(default_payment_amount), step=10.0, key=f"stock_pay_amt{sk}")[cite: 1]
+    with c5:[cite: 1]
+        default_status_idx = PAYMENT_STATUSES.index(stock_loaded["payment_status"]) if stock_loaded and stock_loaded["payment_status"] in PAYMENT_STATUSES else 0[cite: 1]
+        payment_status = st.selectbox("Payment status", PAYMENT_STATUSES, index=default_status_idx, key=f"stock_pay_status{sk}")[cite: 1]
 
-    has_payment_date = st.checkbox("Add payment date", value=bool(stock_loaded and stock_loaded["payment_date"]), key=f"stock_has_paydate{sk}")
+    has_payment_date = st.checkbox("Add payment date", value=bool(stock_loaded and stock_loaded["payment_date"]), key=f"stock_has_paydate{sk}")[cite: 1]
     payment_date = (
         st.date_input(
             "Payment date",
@@ -849,10 +859,10 @@ elif page == "Freezer Stock":
         )
         if has_payment_date
         else None
-    )
-    payment_details = st.text_input("Payment details (optional)", value=(stock_loaded["payment_details"] if stock_loaded else ""), placeholder="e.g. UPI ref / who paid", key=f"stock_pay_details{sk}")
+    )[cite: 1]
+    payment_details = st.text_input("Payment details (optional)", value=(stock_loaded["payment_details"] if stock_loaded else ""), placeholder="e.g. UPI ref / who paid", key=f"stock_pay_details{sk}")[cite: 1]
 
-    has_damaged_return = st.checkbox("Damaged items were returned", value=bool(stock_loaded and stock_loaded["damaged_returned_on"]), key=f"stock_has_damret{sk}")
+    has_damaged_return = st.checkbox("Damaged items were returned", value=bool(stock_loaded and stock_loaded["damaged_returned_on"]), key=f"stock_has_damret{sk}")[cite: 1]
     damaged_returned_on = (
         st.date_input(
             "Damaged items returned on",
@@ -861,91 +871,91 @@ elif page == "Freezer Stock":
         )
         if has_damaged_return
         else None
-    )
+    )[cite: 1]
 
-    notes = st.text_input("Notes (optional)", value=(stock_loaded["notes"] if stock_loaded else ""), key=f"stock_notes{sk}")
+    notes = st.text_input("Notes (optional)", value=(stock_loaded["notes"] if stock_loaded else ""), key=f"stock_notes{sk}")[cite: 1]
 
-    stock_button_label = "Update entry" if stock_editing_row else "Save stock received"
-    if st.button(stock_button_label, type="primary", use_container_width=True):
-        if sum(received) == 0:
-            st.error("Enter at least one quantity received before saving.")
+    stock_button_label = "Update entry" if stock_editing_row else "Save stock received"[cite: 1]
+    if st.button(stock_button_label, type="primary", use_container_width=True):[cite: 1]
+        if sum(received) == 0:[cite: 1]
+            st.error("Enter at least one quantity received before saving.")[cite: 1]
         else:
             try:
-                if stock_editing_row:
+                if stock_editing_row:[cite: 1]
                     update_stock_entry(
                         stock_editing_row, order_date, received_date, location,
                         ordered, received, cost, damaged,
                         payment_amount, payment_status, payment_date, payment_details,
                         damaged_returned_on, notes,
-                    )
-                    st.success(f"Updated entry for {received_date.strftime('%d %b %Y')} at {location}.")
+                    )[cite: 1]
+                    st.success(f"Updated entry for {received_date.strftime('%d %b %Y')} at {location}.")[cite: 1]
                 else:
                     append_stock_entry(
                         order_date, received_date, location,
                         ordered, received, cost, damaged,
                         payment_amount, payment_status, payment_date, payment_details,
                         damaged_returned_on, notes,
-                    )
-                    st.success(f"Saved {sum(received)} units received on {received_date.strftime('%d %b %Y')}.")
-                st.cache_resource.clear()
+                    )[cite: 1]
+                    st.success(f"Saved {sum(received)} units received on {received_date.strftime('%d %b %Y')}.")[cite: 1]
+                st.cache_resource.clear()[cite: 1]
             except Exception as e:
-                st.error(f"Could not save - {e}")
+                st.error(f"Could not save - {e}")[cite: 1]
 
 # ---------------- FREEZER ANALYSIS ----------------
-elif page == "Freezer Analysis":
-    st.subheader("Freezer stock analysis & reorder planner")
-    st.caption("Uses your recent sales pace to estimate when the freezer will run low, and what to order next.")
+elif page == "Freezer Analysis":[cite: 1]
+    st.subheader("Freezer stock analysis & reorder planner")[cite: 1]
+    st.caption("Uses your recent sales pace to estimate when the freezer will run low, and what to order next.")[cite: 1]
 
-    ac1, ac2, ac3 = st.columns(3)
-    with ac1:
-        lookback_days = st.number_input("Lookback window for avg. daily sales (days)", min_value=3, max_value=90, value=14, step=1)
-    with ac2:
-        buffer_days = st.number_input("Minimum buffer to maintain (days)", min_value=0, max_value=14, value=3, step=1)
-    with ac3:
-        cover_days = st.number_input("Next order should cover (days)", min_value=1, max_value=30, value=7, step=1)
+    ac1, ac2, ac3 = st.columns(3)[cite: 1]
+    with ac1:[cite: 1]
+        lookback_days = st.number_input("Lookback window for avg. daily sales (days)", min_value=3, max_value=90, value=14, step=1)[cite: 1]
+    with ac2:[cite: 1]
+        buffer_days = st.number_input("Minimum buffer to maintain (days)", min_value=0, max_value=14, value=3, step=1)[cite: 1]
+    with ac3:[cite: 1]
+        cover_days = st.number_input("Next order should cover (days)", min_value=1, max_value=30, value=7, step=1)[cite: 1]
 
     try:
-        daily_df_fa = load_daily_df()
-        freezer_stock_fa = get_freezer_stock()
+        daily_df_fa = load_daily_df()[cite: 1]
+        freezer_stock_fa = get_freezer_stock()[cite: 1]
     except Exception as e:
-        daily_df_fa = pd.DataFrame()
-        freezer_stock_fa = [0] * N_FLAVORS
-        st.warning(f"Could not load data yet ({e}).")
+        daily_df_fa = pd.DataFrame()[cite: 1]
+        freezer_stock_fa = [0] * N_FLAVORS[cite: 1]
+        st.warning(f"Could not load data yet ({e}).")[cite: 1]
 
-    if daily_df_fa.empty:
-        st.info("No sales logged yet - once you've saved a few days of sales, this tab will estimate freezer run-out dates.")
+    if daily_df_fa.empty:[cite: 1]
+        st.info("No sales logged yet - once you've saved a few days of sales, this tab will estimate freezer run-out dates.")[cite: 1]
     else:
-        today_fa = date.today()
-        cutoff_fa = today_fa - timedelta(days=lookback_days - 1)
-        window_df = daily_df_fa[(daily_df_fa["Date"].dt.date >= cutoff_fa) & (daily_df_fa["Date"].dt.date <= today_fa)]
+        today_fa = date.today()[cite: 1]
+        cutoff_fa = today_fa - timedelta(days=lookback_days - 1)[cite: 1]
+        window_df = daily_df_fa[(daily_df_fa["Date"].dt.date >= cutoff_fa) & (daily_df_fa["Date"].dt.date <= today_fa)][cite: 1]
 
-        flavor_sold_window = [0] * N_FLAVORS
-        for arr in window_df["Sold_By_Flavor"]:
-            for i in range(N_FLAVORS):
-                flavor_sold_window[i] += arr[i]
-        avg_daily = [s / lookback_days for s in flavor_sold_window]
+        flavor_sold_window = [0] * N_FLAVORS[cite: 1]
+        for arr in window_df["Sold_By_Flavor"]:[cite: 1]
+            for i in range(N_FLAVORS):[cite: 1]
+                flavor_sold_window[i] += arr[i][cite: 1]
+        avg_daily = [s / lookback_days for s in flavor_sold_window][cite: 1]
 
-        rows = []
-        trigger_dates = []
-        for i, f in enumerate(FLAVORS):
-            stock = freezer_stock_fa[i]
-            rate = avg_daily[i]
-            if rate <= 0:
-                days_left = None
-                status = "No recent sales"
-                trigger_date = None
-                suggested_qty = 0
+        rows = [][cite: 1]
+        trigger_dates = [][cite: 1]
+        for i, f in enumerate(FLAVORS):[cite: 1]
+            stock = freezer_stock_fa[i][cite: 1]
+            rate = avg_daily[i][cite: 1]
+            if rate <= 0:[cite: 1]
+                days_left = None[cite: 1]
+                status = "No recent sales"[cite: 1]
+                trigger_date = None[cite: 1]
+                suggested_qty = 0[cite: 1]
             else:
-                days_left = stock / rate
-                trigger_date = today_fa + timedelta(days=max(0, days_left - buffer_days))
-                trigger_dates.append(trigger_date)
-                if days_left <= buffer_days:
-                    status = "Order now"
-                elif days_left <= buffer_days + 2:
-                    status = "Order soon"
+                days_left = stock / rate[cite: 1]
+                trigger_date = today_fa + timedelta(days=max(0, days_left - buffer_days))[cite: 1]
+                trigger_dates.append(trigger_date)[cite: 1]
+                if days_left <= buffer_days:[cite: 1]
+                    status = "Order now"[cite: 1]
+                elif days_left <= buffer_days + 2:[cite: 1]
+                    status = "Order soon"[cite: 1]
                 else:
-                    status = "OK"
-                suggested_qty = int(round(rate * cover_days / 10.0)) * 10
+                    status = "OK"[cite: 1]
+                suggested_qty = int(round(rate * cover_days / 10.0)) * 10[cite: 1]
 
             rows.append(
                 {
@@ -956,31 +966,31 @@ elif page == "Freezer Analysis":
                     "Status": status,
                     f"Suggested next order ({cover_days}d)": suggested_qty,
                 }
-            )
+            )[cite: 1]
 
-        analysis_df = pd.DataFrame(rows)
+        analysis_df = pd.DataFrame(rows)[cite: 1]
 
-        total_stock = sum(freezer_stock_fa)
-        total_rate = sum(avg_daily)
-        overall_days_left = (total_stock / total_rate) if total_rate > 0 else None
-        overall_order_date = min(trigger_dates) if trigger_dates else None
+        total_stock = sum(freezer_stock_fa)[cite: 1]
+        total_rate = sum(avg_daily)[cite: 1]
+        overall_days_left = (total_stock / total_rate) if total_rate > 0 else None[cite: 1]
+        overall_order_date = min(trigger_dates) if trigger_dates else None[cite: 1]
 
-        st.markdown("### Overall picture")
-        oc1, oc2, oc3 = st.columns(3)
-        oc1.metric("Total freezer stock", f"{total_stock} units")
-        oc2.metric("Avg. daily sales (all flavours)", f"{total_rate:.0f} units/day")
-        oc3.metric("Overall days of stock left", f"{overall_days_left:.0f}" if overall_days_left is not None else "—")
+        st.markdown("### Overall picture")[cite: 1]
+        oc1, oc2, oc3 = st.columns(3)[cite: 1]
+        oc1.metric("Total freezer stock", f"{total_stock} units")[cite: 1]
+        oc2.metric("Avg. daily sales (all flavours)", f"{total_rate:.0f} units/day")[cite: 1]
+        oc3.metric("Overall days of stock left", f"{overall_days_left:.0f}" if overall_days_left is not None else "—")[cite: 1]
 
-        if overall_order_date is not None:
-            if overall_order_date <= today_fa:
-                st.error(f"**Place your next order now** — at least one flavour is already at or below your {buffer_days}-day buffer.")
+        if overall_order_date is not None:[cite: 1]
+            if overall_order_date <= today_fa:[cite: 1]
+                st.error(f"**Place your next order now** — at least one flavour is already at or below your {buffer_days}-day buffer.")[cite: 1]
             else:
-                days_until = (overall_order_date - today_fa).days
-                st.success(f"**Next order should be placed by {overall_order_date.strftime('%d %b %Y')}** (in {days_until} day{'s' if days_until != 1 else ''}) to keep every flavour above your {buffer_days}-day buffer.")
+                days_until = (overall_order_date - today_fa).days[cite: 1]
+                st.success(f"**Next order should be placed by {overall_order_date.strftime('%d %b %Y')}** (in {days_until} day{'s' if days_until != 1 else ''}) to keep every flavour above your {buffer_days}-day buffer.")[cite: 1]
         else:
-            st.caption("Not enough recent sales data to estimate a reorder date yet.")
+            st.caption("Not enough recent sales data to estimate a reorder date yet.")[cite: 1]
 
-        st.markdown("### Per-flavour breakdown")
+        st.markdown("### Per-flavour breakdown")[cite: 1]
         st.dataframe(
             analysis_df,
             hide_index=True,
@@ -988,24 +998,24 @@ elif page == "Freezer Analysis":
             column_config={
                 "Status": st.column_config.TextColumn(help="Order now: at/below buffer. Order soon: within 2 days of buffer. OK: comfortably above buffer."),
             },
-        )
+        )[cite: 1]
 
-        st.markdown("### Suggested next order (flavour mix based on recent sales)")
+        st.markdown("### Suggested next order (flavour mix based on recent sales)")[cite: 1]
         order_df = analysis_df[["Flavour", f"Suggested next order ({cover_days}d)"]].rename(
             columns={f"Suggested next order ({cover_days}d)": "Units to order"}
-        )
-        total_suggested = int(order_df["Units to order"].sum())
-        st.dataframe(order_df, hide_index=True, use_container_width=True)
+        )[cite: 1]
+        total_suggested = int(order_df["Units to order"].sum())[cite: 1]
+        st.dataframe(order_df, hide_index=True, use_container_width=True)[cite: 1]
         st.caption(
             f"Total suggested order: {total_suggested} units, split across flavours in the same proportion as your last "
             f"{lookback_days} days of sales — so your best-sellers get restocked the most. Adjust the controls above to "
             f"widen/narrow the sales window, change your buffer, or size the order differently."
-        )
+        )[cite: 1]
 
-        st.markdown("### Days of stock left, by flavour")
-        chart_df = analysis_df[analysis_df["Days of stock left"] != "—"].copy()
-        if not chart_df.empty:
-            chart_df["Days of stock left"] = chart_df["Days of stock left"].astype(float)
+        st.markdown("### Days of stock left, by flavour")[cite: 1]
+        chart_df = analysis_df[analysis_df["Days of stock left"] != "—"].copy()[cite: 1]
+        if not chart_df.empty:[cite: 1]
+            chart_df["Days of stock left"] = chart_df["Days of stock left"].astype(float)[cite: 1]
             days_chart = (
                 alt.Chart(chart_df)
                 .mark_bar()
@@ -1020,136 +1030,136 @@ elif page == "Freezer Analysis":
                     tooltip=["Flavour", "Days of stock left"],
                 )
                 .properties(height=280)
-            )
-            rule = alt.Chart(pd.DataFrame({"y": [buffer_days]})).mark_rule(color="#4A2418", strokeDash=[4, 4]).encode(y="y:Q")
-            st.altair_chart(days_chart + rule, use_container_width=True)
-            st.caption(f"Dashed line marks your {buffer_days}-day buffer. Red bars are at or below it.")
+            )[cite: 1]
+            rule = alt.Chart(pd.DataFrame({"y": [buffer_days]})).mark_rule(color="#4A2418", strokeDash=[4, 4]).encode(y="y:Q")[cite: 1]
+            st.altair_chart(days_chart + rule, use_container_width=True)[cite: 1]
+            st.caption(f"Dashed line marks your {buffer_days}-day buffer. Red bars are at or below it.")[cite: 1]
 
 # ---------------- EXPENSES ----------------
-elif page == "Expenses":
-    st.subheader("Log an expense")
+elif page == "Expenses":[cite: 1]
+    st.subheader("Log an expense")[cite: 1]
 
-    exp_mode = st.radio("Mode", ["New entry", "Edit past entry"], horizontal=True, key="exp_mode")
+    exp_mode = st.radio("Mode", ["New entry", "Edit past entry"], horizontal=True, key="exp_mode")[cite: 1]
 
-    exp_loaded = None
-    exp_editing_row = None
-    if exp_mode == "Edit past entry":
+    exp_loaded = None[cite: 1]
+    exp_editing_row = None[cite: 1]
+    if exp_mode == "Edit past entry":[cite: 1]
         try:
-            expense_entries = list_expense_entries()
+            expense_entries = list_expense_entries()[cite: 1]
         except Exception as e:
-            expense_entries = []
-            st.warning(f"Could not load past entries ({e}).")
-        if not expense_entries:
-            st.info("No past entries found yet.")
+            expense_entries = [][cite: 1]
+            st.warning(f"Could not load past entries ({e}).")[cite: 1]
+        if not expense_entries:[cite: 1]
+            st.info("No past entries found yet.")[cite: 1]
         else:
-            exp_labels = [f"{e['date'].strftime('%d %b %Y')} — {e['description'] or e['category']} (₹{e['amount']:,.0f})" for e in expense_entries]
-            exp_sel = st.selectbox("Select entry to edit", exp_labels, key="exp_edit_select")
-            exp_loaded = expense_entries[exp_labels.index(exp_sel)]
-            exp_editing_row = exp_loaded["row"]
-            st.caption("Loaded - edit the fields below, then click Update entry to save changes to this same row.")
+            exp_labels = [f"{e['date'].strftime('%d %b %Y')} — {e['description'] or e['category']} (₹{e['amount']:,.0f})" for e in expense_entries][cite: 1]
+            exp_sel = st.selectbox("Select entry to edit", exp_labels, key="exp_edit_select")[cite: 1]
+            exp_loaded = expense_entries[exp_labels.index(exp_sel)][cite: 1]
+            exp_editing_row = exp_loaded["row"][cite: 1]
+            st.caption("Loaded - edit the fields below, then click Update entry to save changes to this same row.")[cite: 1]
 
-    ek = f"_{exp_editing_row}" if exp_editing_row else "_new"
+    ek = f"_{exp_editing_row}" if exp_editing_row else "_new"[cite: 1]
 
-    c1, c2 = st.columns(2)
-    with c1:
-        exp_date = st.date_input("Date", value=(exp_loaded["date"].date() if exp_loaded else date.today()), key=f"exp_date{ek}")
-    with c2:
-        default_cat_idx = EXPENSE_CATEGORIES.index(exp_loaded["category"]) if exp_loaded and exp_loaded["category"] in EXPENSE_CATEGORIES else 0
-        category = st.selectbox("Category", EXPENSE_CATEGORIES, index=default_cat_idx, key=f"exp_category{ek}")
+    c1, c2 = st.columns(2)[cite: 1]
+    with c1:[cite: 1]
+        exp_date = st.date_input("Date", value=(exp_loaded["date"].date() if exp_loaded else date.today()), key=f"exp_date{ek}")[cite: 1]
+    with c2:[cite: 1]
+        default_cat_idx = EXPENSE_CATEGORIES.index(exp_loaded["category"]) if exp_loaded and exp_loaded["category"] in EXPENSE_CATEGORIES else 0[cite: 1]
+        category = st.selectbox("Category", EXPENSE_CATEGORIES, index=default_cat_idx, key=f"exp_category{ek}")[cite: 1]
 
-    description = st.text_input("Description", value=(exp_loaded["description"] if exp_loaded else ""), placeholder="e.g. Kulfi stock from supplier", key=f"exp_desc{ek}")
-    amount = st.number_input("Amount (₹)", min_value=0.0, value=(exp_loaded["amount"] if exp_loaded else 0.0), step=10.0, key=f"exp_amount{ek}")
+    description = st.text_input("Description", value=(exp_loaded["description"] if exp_loaded else ""), placeholder="e.g. Kulfi stock from supplier", key=f"exp_desc{ek}")[cite: 1]
+    amount = st.number_input("Amount (₹)", min_value=0.0, value=(exp_loaded["amount"] if exp_loaded else 0.0), step=10.0, key=f"exp_amount{ek}")[cite: 1]
 
-    c3, c4 = st.columns(2)
-    with c3:
-        default_mode_idx = PAYMENT_MODES.index(exp_loaded["mode"]) if exp_loaded and exp_loaded["mode"] in PAYMENT_MODES else 0
-        mode = st.selectbox("Payment mode", PAYMENT_MODES, index=default_mode_idx, key=f"exp_mode_select{ek}")
-    with c4:
-        ref_no = st.text_input("Transaction ref. no. (optional)", value=(exp_loaded["ref_no"] if exp_loaded else ""), key=f"exp_ref{ek}")
+    c3, c4 = st.columns(2)[cite: 1]
+    with c3:[cite: 1]
+        default_mode_idx = PAYMENT_MODES.index(exp_loaded["mode"]) if exp_loaded and exp_loaded["mode"] in PAYMENT_MODES else 0[cite: 1]
+        mode = st.selectbox("Payment mode", PAYMENT_MODES, index=default_mode_idx, key=f"exp_mode_select{ek}")[cite: 1]
+    with c4:[cite: 1]
+        ref_no = st.text_input("Transaction ref. no. (optional)", value=(exp_loaded["ref_no"] if exp_loaded else ""), key=f"exp_ref{ek}")[cite: 1]
 
-    paid_to = st.text_input("Paid to (optional)", value=(exp_loaded["paid_to"] if exp_loaded else ""), key=f"exp_paidto{ek}")
-    exp_remarks = st.text_input("Remarks (optional)", value=(exp_loaded["remarks"] if exp_loaded else ""), key=f"exp_remarks{ek}")
+    paid_to = st.text_input("Paid to (optional)", value=(exp_loaded["paid_to"] if exp_loaded else ""), key=f"exp_paidto{ek}")[cite: 1]
+    exp_remarks = st.text_input("Remarks (optional)", value=(exp_loaded["remarks"] if exp_loaded else ""), key=f"exp_remarks{ek}")[cite: 1]
 
-    exp_button_label = "Update entry" if exp_editing_row else "Save expense"
-    if st.button(exp_button_label, type="primary", use_container_width=True):
-        if amount <= 0:
-            st.error("Enter an amount greater than 0.")
+    exp_button_label = "Update entry" if exp_editing_row else "Save expense"[cite: 1]
+    if st.button(exp_button_label, type="primary", use_container_width=True):[cite: 1]
+        if amount <= 0:[cite: 1]
+            st.error("Enter an amount greater than 0.")[cite: 1]
         else:
             try:
-                if exp_editing_row:
-                    update_expense(exp_editing_row, exp_date, description, amount, category, mode, ref_no, paid_to, exp_remarks)
-                    st.success(f"Updated ₹{amount:,.0f} expense under {category}.")
+                if exp_editing_row:[cite: 1]
+                    update_expense(exp_editing_row, exp_date, description, amount, category, mode, ref_no, paid_to, exp_remarks)[cite: 1]
+                    st.success(f"Updated ₹{amount:,.0f} expense under {category}.")[cite: 1]
                 else:
-                    append_expense(exp_date, description, amount, category, mode, ref_no, paid_to, exp_remarks)
-                    st.success(f"Saved ₹{amount:,.0f} expense under {category}.")
-                st.cache_resource.clear()
+                    append_expense(exp_date, description, amount, category, mode, ref_no, paid_to, exp_remarks)[cite: 1]
+                    st.success(f"Saved ₹{amount:,.0f} expense under {category}.")[cite: 1]
+                st.cache_resource.clear()[cite: 1]
             except Exception as e:
-                st.error(f"Could not save - {e}")
+                st.error(f"Could not save - {e}")[cite: 1]
 
 # ---------------- DASHBOARD ----------------
-elif page == "Dashboard":
-    st.subheader("Quick view")
+elif page == "Dashboard":[cite: 1]
+    st.subheader("Quick view")[cite: 1]
 
-    with st.expander("Data health check — tap here if the dashboard looks empty"):
+    with st.expander("Data health check — tap here if the dashboard looks empty"):[cite: 1]
         try:
-            wb = get_workbook()
-            tab_names = [ws.title for ws in wb.worksheets()]
-            st.write("Tabs found in your connected Google Sheet:")
-            st.code("\n".join(tab_names))
+            wb = get_workbook()[cite: 1]
+            tab_names = [ws.title for ws in wb.worksheets()][cite: 1]
+            st.write("Tabs found in your connected Google Sheet:")[cite: 1]
+            st.code("\n".join(tab_names))[cite: 1]
         except Exception as e:
-            tab_names = []
-            st.error(f"Could not connect to the Google Sheet at all: {e}")
+            tab_names = [][cite: 1]
+            st.error(f"Could not connect to the Google Sheet at all: {e}")[cite: 1]
 
         for label, tab in [
             ("Daily Data As Shared", "Daily Data As Shared"),
             ("Stock Received", "Stock Received"),
             ("Expenses", "Expenses"),
-        ]:
-            st.markdown(f"**{label}**")
-            if tab not in tab_names:
+        ]:[cite: 1]
+            st.markdown(f"**{label}**")[cite: 1]
+            if tab not in tab_names:[cite: 1]
                 st.warning(f"No tab named exactly `{tab}` was found. Check for a trailing space, "
-                            f"a renamed tab, or extra hidden characters in the tab name in your Google Sheet.")
-                continue
+                            f"a renamed tab, or extra hidden characters in the tab name in your Google Sheet.")[cite: 1]
+                continue[cite: 1]
             try:
-                if tab == "Daily Data As Shared":
-                    _, raw_rows = load_daily_raw()
-                    padded = [_pad(r, DAILY_TOTAL_COLS) for r in raw_rows if r and r[0].strip()]
-                    real = [r for r in padded if _row_has_data(r)]
+                if tab == "Daily Data As Shared":[cite: 1]
+                    _, raw_rows = load_daily_raw()[cite: 1]
+                    padded = [_pad(r, DAILY_TOTAL_COLS) for r in raw_rows if r and r[0].strip()][cite: 1]
+                    real = [r for r in padded if _row_has_data(r)][cite: 1]
                     st.write(f"{len(padded)} row(s) with a date, {len(real)} of those have actual sales/stock data "
-                              f"(the rest are blank future placeholder rows already in your sheet).")
-                    if real:
-                        st.write("Most recent real entry:", real[-1][:2])
-                    continue
-                elif tab == "Stock Received":
-                    _, raw_rows = load_stock_raw()
+                              f"(the rest are blank future placeholder rows already in your sheet).")[cite: 1]
+                    if real:[cite: 1]
+                        st.write("Most recent real entry:", real[-1][:2])[cite: 1]
+                    continue[cite: 1]
+                elif tab == "Stock Received":[cite: 1]
+                    _, raw_rows = load_stock_raw()[cite: 1]
                 else:
-                    ws = get_ws("Expenses")
-                    raw_rows = ws.get_all_values()[EXPENSE_HEADER_ROWS:]
-                non_empty = [r for r in raw_rows if r and r[0].strip()]
-                st.write(f"{len(non_empty)} data row(s) found.")
-                if non_empty:
-                    st.write("First row's first few cells:", non_empty[0][:4])
-                    st.write("Last row's first few cells:", non_empty[-1][:4])
+                    ws = get_ws("Expenses")[cite: 1]
+                    raw_rows = ws.get_all_values()[EXPENSE_HEADER_ROWS:][cite: 1]
+                non_empty = [r for r in raw_rows if r and r[0].strip()][cite: 1]
+                st.write(f"{len(non_empty)} data row(s) found.")[cite: 1]
+                if non_empty:[cite: 1]
+                    st.write("First row's first few cells:", non_empty[0][:4])[cite: 1]
+                    st.write("Last row's first few cells:", non_empty[-1][:4])[cite: 1]
             except Exception as e:
-                st.error(f"Error reading `{tab}`: {e}")
+                st.error(f"Error reading `{tab}`: {e}")[cite: 1]
 
     try:
-        daily_df = load_daily_df()
-        exp_df = load_expenses_df()
+        daily_df = load_daily_df()[cite: 1]
+        exp_df = load_expenses_df()[cite: 1]
     except Exception as e:
-        daily_df = pd.DataFrame()
-        exp_df = pd.DataFrame()
-        st.warning(f"Could not load data yet ({e}).")
+        daily_df = pd.DataFrame()[cite: 1]
+        exp_df = pd.DataFrame()[cite: 1]
+        st.warning(f"Could not load data yet ({e}).")[cite: 1]
 
-    today = pd.Timestamp(date.today())
-    day_labels = [today - pd.Timedelta(days=3), today - pd.Timedelta(days=2), today - pd.Timedelta(days=1)]
-    if not daily_df.empty:
-        day_rows = [daily_df[daily_df["Date"].dt.date == d.date()] for d in day_labels]
-        day_rev = [r["Total_Collection"].sum() for r in day_rows]
-        day_units = [int(r["Sold_Total"].sum()) for r in day_rows]
+    today = pd.Timestamp(date.today())[cite: 1]
+    day_labels = [today - pd.Timedelta(days=3), today - pd.Timedelta(days=2), today - pd.Timedelta(days=1)][cite: 1]
+    if not daily_df.empty:[cite: 1]
+        day_rows = [daily_df[daily_df["Date"].dt.date == d.date()] for d in day_labels][cite: 1]
+        day_rev = [r["Total_Collection"].sum() for r in day_rows][cite: 1]
+        day_units = [int(r["Sold_Total"].sum()) for r in day_rows][cite: 1]
 
-        col_names = [d.strftime("%d %b") for d in day_labels]
-        col_names[-1] = col_names[-1] + " (Yesterday)"
+        col_names = [d.strftime("%d %b") for d in day_labels][cite: 1]
+        col_names[-1] = col_names[-1] + " (Yesterday)"[cite: 1]
 
         compare_df = pd.DataFrame(
             {
@@ -1158,31 +1168,31 @@ elif page == "Dashboard":
                 col_names[1]: [f"₹{day_rev[1]:,.0f}", f"{day_units[1]}"],
                 col_names[2]: [f"₹{day_rev[2]:,.0f}", f"{day_units[2]}"],
             }
-        )
-        st.markdown('<div id="last-3-days"></div>', unsafe_allow_html=True)
-        st.markdown("**Last 3 days**")
-        st.dataframe(compare_df, hide_index=True, use_container_width=True)
+        )[cite: 1]
+        st.markdown('<div id="last-3-days"></div>', unsafe_allow_html=True)[cite: 1]
+        st.markdown("**Last 3 days**")[cite: 1]
+        st.dataframe(compare_df, hide_index=True, use_container_width=True)[cite: 1]
 
-        st.metric("Stock across carts", f"{int(daily_df.sort_values('Date').groupby('Cart').tail(1)['Closing_Total'].sum())}")
+        st.metric("Stock across carts", f"{int(daily_df.sort_values('Date').groupby('Cart').tail(1)['Closing_Total'].sum())}")[cite: 1]
 
         try:
-            freezer_stock = get_freezer_stock()
-            st.markdown('<div id="freezer-stock-current"></div>', unsafe_allow_html=True)
-            st.markdown("**Freezer stock (current)**")
-            freezer_df = pd.DataFrame({"Flavour": [f[1] for f in FLAVORS], "Units in freezer": freezer_stock})
-            st.dataframe(freezer_df, hide_index=True, use_container_width=True)
+            freezer_stock = get_freezer_stock()[cite: 1]
+            st.markdown('<div id="freezer-stock-current"></div>', unsafe_allow_html=True)[cite: 1]
+            st.markdown("**Freezer stock (current)**")[cite: 1]
+            freezer_df = pd.DataFrame({"Flavour": [f[1] for f in FLAVORS], "Units in freezer": freezer_stock})[cite: 1]
+            st.dataframe(freezer_df, hide_index=True, use_container_width=True)[cite: 1]
         except Exception as e:
-            st.caption(f"Could not compute freezer stock ({e}).")
+            st.caption(f"Could not compute freezer stock ({e}).")[cite: 1]
 
-        st.markdown('<div id="revenue-trend"></div>', unsafe_allow_html=True)
-        st.markdown("**Revenue, last 14 days**")
+        st.markdown('<div id="revenue-trend"></div>', unsafe_allow_html=True)[cite: 1]
+        st.markdown("**Revenue, last 14 days**")[cite: 1]
         trend_df = (
             daily_df.assign(Day=daily_df["Date"].dt.normalize())
             .groupby("Day", as_index=False)["Total_Collection"]
             .sum()
             .sort_values("Day")
             .tail(14)
-        )
+        )[cite: 1]
         trend_chart = (
             alt.Chart(trend_df)
             .mark_bar(color="#E8542A")
@@ -1192,201 +1202,201 @@ elif page == "Dashboard":
                 tooltip=[alt.Tooltip("Day:T", title="Date", format="%d %b %Y"), alt.Tooltip("Total_Collection:Q", title="Revenue", format=",.0f")],
             )
             .properties(height=280)
-        )
-        st.altair_chart(trend_chart, use_container_width=True)
+        )[cite: 1]
+        st.altair_chart(trend_chart, use_container_width=True)[cite: 1]
 
-        st.markdown('<div id="latest-stock-per-cart"></div>', unsafe_allow_html=True)
-        st.markdown("**Latest stock per cart**")
-        latest_per_cart = daily_df.sort_values("Date").groupby("Cart").tail(1)[["Cart", "Date", "Closing_Total"]]
-        st.dataframe(latest_per_cart, hide_index=True, use_container_width=True)
+        st.markdown('<div id="latest-stock-per-cart"></div>', unsafe_allow_html=True)[cite: 1]
+        st.markdown("**Latest stock per cart**")[cite: 1]
+        latest_per_cart = daily_df.sort_values("Date").groupby("Cart").tail(1)[["Cart", "Date", "Closing_Total"]][cite: 1]
+        st.dataframe(latest_per_cart, hide_index=True, use_container_width=True)[cite: 1]
     else:
-        st.info("No sales logged yet - entries you save in the Daily Entry tab will show up here.")
+        st.info("No sales logged yet - entries you save in the Daily Entry tab will show up here.")[cite: 1]
 
     # ------------------ Date-range reports ------------------
-    if not daily_df.empty or not exp_df.empty:
-        st.markdown("---")
-        st.markdown('<div id="reports"></div>', unsafe_allow_html=True)
-        st.markdown("## Reports")
+    if not daily_df.empty or not exp_df.empty:[cite: 1]
+        st.markdown("---")[cite: 1]
+        st.markdown('<div id="reports"></div>', unsafe_allow_html=True)[cite: 1]
+        st.markdown("## Reports")[cite: 1]
 
-        all_dates = []
-        if not daily_df.empty:
-            all_dates += [daily_df["Date"].min().date(), daily_df["Date"].max().date()]
-        if not exp_df.empty and exp_df["Date"].notna().any():
-            all_dates += [exp_df["Date"].min().date(), exp_df["Date"].max().date()]
-        min_d, max_d = min(all_dates), max(all_dates)
-        default_start = max(min_d, max_d - timedelta(days=29))
+        all_dates = [][cite: 1]
+        if not daily_df.empty:[cite: 1]
+            all_dates += [daily_df["Date"].min().date(), daily_df["Date"].max().date()][cite: 1]
+        if not exp_df.empty and exp_df["Date"].notna().any():[cite: 1]
+            all_dates += [exp_df["Date"].min().date(), exp_df["Date"].max().date()][cite: 1]
+        min_d, max_d = min(all_dates), max(all_dates)[cite: 1]
+        default_start = max(min_d, max_d - timedelta(days=29))[cite: 1]
 
-        if "applied_start" not in st.session_state:
-            st.session_state["applied_start"] = default_start
-        if "applied_end" not in st.session_state:
-            st.session_state["applied_end"] = max_d
-        st.session_state["applied_start"] = min(max(st.session_state["applied_start"], min_d), max_d)
-        st.session_state["applied_end"] = min(max(st.session_state["applied_end"], min_d), max_d)
+        if "applied_start" not in st.session_state:[cite: 1]
+            st.session_state["applied_start"] = default_start[cite: 1]
+        if "applied_end" not in st.session_state:[cite: 1]
+            st.session_state["applied_end"] = max_d[cite: 1]
+        st.session_state["applied_start"] = min(max(st.session_state["applied_start"], min_d), max_d)[cite: 1]
+        st.session_state["applied_end"] = min(max(st.session_state["applied_end"], min_d), max_d)[cite: 1]
 
-        with st.form("date_range_form"):
-            rc1, rc2, rc3 = st.columns([2, 2, 1])
-            with rc1:
-                pending_start = st.date_input("From", value=st.session_state["applied_start"], min_value=min_d, max_value=max_d)
-            with rc2:
-                pending_end = st.date_input("To", value=st.session_state["applied_end"], min_value=min_d, max_value=max_d)
-            with rc3:
-                st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
-                apply_clicked = st.form_submit_button("Apply", type="primary", use_container_width=True)
+        with st.form("date_range_form"):[cite: 1]
+            rc1, rc2, rc3 = st.columns([2, 2, 1])[cite: 1]
+            with rc1:[cite: 1]
+                pending_start = st.date_input("From", value=st.session_state["applied_start"], min_value=min_d, max_value=max_d)[cite: 1]
+            with rc2:[cite: 1]
+                pending_end = st.date_input("To", value=st.session_state["applied_end"], min_value=min_d, max_value=max_d)[cite: 1]
+            with rc3:[cite: 1]
+                st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)[cite: 1]
+                apply_clicked = st.form_submit_button("Apply", type="primary", use_container_width=True)[cite: 1]
 
-        if apply_clicked:
-            st.session_state["applied_start"] = pending_start
-            st.session_state["applied_end"] = pending_end
+        if apply_clicked:[cite: 1]
+            st.session_state["applied_start"] = pending_start[cite: 1]
+            st.session_state["applied_end"] = pending_end[cite: 1]
 
-        range_start = st.session_state["applied_start"]
-        range_end = st.session_state["applied_end"]
+        range_start = st.session_state["applied_start"][cite: 1]
+        range_end = st.session_state["applied_end"][cite: 1]
 
-        if range_start > range_end:
-            st.error("'From' date is after 'To' date - swap them and click Apply again.")
-            range_start, range_end = range_end, range_start
+        if range_start > range_end:[cite: 1]
+            st.error("'From' date is after 'To' date - swap them and click Apply again.")[cite: 1]
+            range_start, range_end = range_end, range_start[cite: 1]
 
-        st.caption(f"Showing: {range_start.strftime('%d %b %Y')} – {range_end.strftime('%d %b %Y')}")
+        st.caption(f"Showing: {range_start.strftime('%d %b %Y')} – {range_end.strftime('%d %b %Y')}")[cite: 1]
 
-        range_df = daily_df[(daily_df["Date"].dt.date >= range_start) & (daily_df["Date"].dt.date <= range_end)] if not daily_df.empty else daily_df
-        range_exp = exp_df[(exp_df["Date"].dt.date >= range_start) & (exp_df["Date"].dt.date <= range_end)] if not exp_df.empty else exp_df
+        range_df = daily_df[(daily_df["Date"].dt.date >= range_start) & (daily_df["Date"].dt.date <= range_end)] if not daily_df.empty else daily_df[cite: 1]
+        range_exp = exp_df[(exp_df["Date"].dt.date >= range_start) & (exp_df["Date"].dt.date <= range_end)] if not exp_df.empty else exp_df[cite: 1]
 
-        total_rev = range_df["Total_Collection"].sum() if not range_df.empty else 0.0
-        total_units = int(range_df["Sold_Total"].sum()) if not range_df.empty else 0
-        total_exp_all = range_exp["Amount"].sum() if not range_exp.empty else 0.0
+        total_rev = range_df["Total_Collection"].sum() if not range_df.empty else 0.0[cite: 1]
+        total_units = int(range_df["Sold_Total"].sum()) if not range_df.empty else 0[cite: 1]
+        total_exp_all = range_exp["Amount"].sum() if not range_exp.empty else 0.0[cite: 1]
 
-        mc1, mc2, mc3 = st.columns(3)
-        mc1.metric("Revenue in range", f"₹{total_rev:,.0f}")
-        mc2.metric("Units sold in range", f"{total_units}")
-        mc3.metric("Expenses in range", f"₹{total_exp_all:,.0f}")
+        mc1, mc2, mc3 = st.columns(3)[cite: 1]
+        mc1.metric("Revenue in range", f"₹{total_rev:,.0f}")[cite: 1]
+        mc2.metric("Units sold in range", f"{total_units}")[cite: 1]
+        mc3.metric("Expenses in range", f"₹{total_exp_all:,.0f}")[cite: 1]
 
         # ---- Cart-wise comparison ----
-        st.markdown('<div id="cart-wise-comparison"></div>', unsafe_allow_html=True)
-        st.markdown("### Cart-wise comparison")
-        if not range_df.empty:
+        st.markdown('<div id="cart-wise-comparison"></div>', unsafe_allow_html=True)[cite: 1]
+        st.markdown("### Cart-wise comparison")[cite: 1]
+        if not range_df.empty:[cite: 1]
             cart_grp = (
                 range_df.groupby("Cart")
                 .agg(**{"Revenue (₹)": ("Total_Collection", "sum"), "Units sold": ("Sold_Total", "sum")})
                 .reset_index()
                 .sort_values("Revenue (₹)", ascending=False)
-            )
-            st.dataframe(cart_grp, hide_index=True, use_container_width=True)
-            st.bar_chart(cart_grp.set_index("Cart")["Revenue (₹)"])
+            )[cite: 1]
+            st.dataframe(cart_grp, hide_index=True, use_container_width=True)[cite: 1]
+            st.bar_chart(cart_grp.set_index("Cart")["Revenue (₹)"])[cite: 1]
         else:
-            st.caption("No sales in this date range.")
+            st.caption("No sales in this date range.")[cite: 1]
 
         # ---- Cart-wise x day-of-week sales ----
-        st.markdown('<div id="cart-wise-day-of-week"></div>', unsafe_allow_html=True)
-        st.markdown("### Cart-wise average sales by day of the week")
-        if not range_df.empty:
-            day_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-            dow_df = range_df[range_df["Sold_Total"] > 0].copy()
-            dow_df["Day"] = dow_df["Date"].dt.day_name()
+        st.markdown('<div id="cart-wise-day-of-week"></div>', unsafe_allow_html=True)[cite: 1]
+        st.markdown("### Cart-wise average sales by day of the week")[cite: 1]
+        if not range_df.empty:[cite: 1]
+            day_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"][cite: 1]
+            dow_df = range_df[range_df["Sold_Total"] > 0].copy()[cite: 1]
+            dow_df["Day"] = dow_df["Date"].dt.day_name()[cite: 1]
 
-            if dow_df.empty:
-                st.caption("No days with actual sales in this date range.")
+            if dow_df.empty:[cite: 1]
+                st.caption("No days with actual sales in this date range.")[cite: 1]
             else:
                 units_pivot = dow_df.pivot_table(
                     index="Cart", columns="Day", values="Sold_Total", aggfunc="mean", fill_value=0, margins=True, margins_name="All carts"
-                )
-                day_cols = [d for d in day_order if d in units_pivot.columns] + ["All carts"]
-                units_pivot = units_pivot.reindex(columns=day_cols)
+                )[cite: 1]
+                day_cols = [d for d in day_order if d in units_pivot.columns] + ["All carts"][cite: 1]
+                units_pivot = units_pivot.reindex(columns=day_cols)[cite: 1]
 
                 rev_pivot = dow_df.pivot_table(
                     index="Cart", columns="Day", values="Total_Collection", aggfunc="mean", fill_value=0, margins=True, margins_name="All carts"
-                )
-                rev_pivot = rev_pivot.reindex(columns=day_cols)
+                )[cite: 1]
+                rev_pivot = rev_pivot.reindex(columns=day_cols)[cite: 1]
 
-                st.write("**Avg. units sold** (rows = cart, columns = day of week)")
-                st.dataframe(units_pivot.round(1), use_container_width=True)
+                st.write("**Avg. units sold** (rows = cart, columns = day of week)")[cite: 1]
+                st.dataframe(units_pivot.round(1), use_container_width=True)[cite: 1]
 
-                st.write("**Avg. revenue (₹)** (rows = cart, columns = day of week)")
-                st.dataframe(rev_pivot.round(0).astype(int), use_container_width=True)
+                st.write("**Avg. revenue (₹)** (rows = cart, columns = day of week)")[cite: 1]
+                st.dataframe(rev_pivot.round(0).astype(int), use_container_width=True)[cite: 1]
 
-                st.caption("Zero-sales days are excluded, so each cell is the average over the days that weekday actually had sales. 'All carts' shows the overall average across carts / days.")
+                st.caption("Zero-sales days are excluded, so each cell is the average over the days that weekday actually had sales. 'All carts' shows the overall average across carts / days.")[cite: 1]
         else:
-            st.caption("No sales in this date range.")
+            st.caption("No sales in this date range.")[cite: 1]
 
         # ---- Flavour-wise performance ----
-        st.markdown('<div id="flavour-wise-performance"></div>', unsafe_allow_html=True)
-        st.markdown("### Flavour-wise performance")
-        if not range_df.empty:
-            flavor_sold = [0] * N_FLAVORS
-            for arr in range_df["Sold_By_Flavor"]:
-                for i in range(N_FLAVORS):
-                    flavor_sold[i] += arr[i]
+        st.markdown('<div id="flavour-wise-performance"></div>', unsafe_allow_html=True)[cite: 1]
+        st.markdown("### Flavour-wise performance")[cite: 1]
+        if not range_df.empty:[cite: 1]
+            flavor_sold = [0] * N_FLAVORS[cite: 1]
+            for arr in range_df["Sold_By_Flavor"]:[cite: 1]
+                for i in range(N_FLAVORS):[cite: 1]
+                    flavor_sold[i] += arr[i][cite: 1]
             flavor_df = pd.DataFrame(
                 {
                     "Flavour": [f[1] for f in FLAVORS],
                     "Units sold": flavor_sold,
                     "Est. revenue (₹)": [flavor_sold[i] * FLAVORS[i][2] for i in range(N_FLAVORS)],
                 }
-            ).sort_values("Units sold", ascending=False)
-            st.dataframe(flavor_df, hide_index=True, use_container_width=True)
-            st.bar_chart(flavor_df.set_index("Flavour")["Units sold"])
-            st.caption("Estimated revenue = units sold × MRP per flavour; actual collections may vary slightly (discounts, complementary pieces etc).")
+            ).sort_values("Units sold", ascending=False)[cite: 1]
+            st.dataframe(flavor_df, hide_index=True, use_container_width=True)[cite: 1]
+            st.bar_chart(flavor_df.set_index("Flavour")["Units sold"])[cite: 1]
+            st.caption("Estimated revenue = units sold × MRP per flavour; actual collections may vary slightly (discounts, complementary pieces etc).")[cite: 1]
         else:
-            st.caption("No sales in this date range.")
+            st.caption("No sales in this date range.")[cite: 1]
 
         # ---- Profit & Loss summary ----
-        st.markdown('<div id="profit-loss-summary"></div>', unsafe_allow_html=True)
-        st.markdown("### Profit & loss summary")
-        cogs = range_exp[range_exp["Category"] == "Cost of Goods"]["Amount"].sum() if not range_exp.empty else 0.0
-        opex_cats = ["Labour Charges", "Leakage Expense", "Miscellaneous Expense"]
-        opex = range_exp[range_exp["Category"].isin(opex_cats)]["Amount"].sum() if not range_exp.empty else 0.0
-        capital_cats = ["Initial Investment", "Initial Set-up Expense"]
-        capital = range_exp[range_exp["Category"].isin(capital_cats)]["Amount"].sum() if not range_exp.empty else 0.0
-        gross_profit = total_rev - cogs
-        net_profit = gross_profit - opex
+        st.markdown('<div id="profit-loss-summary"></div>', unsafe_allow_html=True)[cite: 1]
+        st.markdown("### Profit & loss summary")[cite: 1]
+        cogs = range_exp[range_exp["Category"] == "Cost of Goods"]["Amount"].sum() if not range_exp.empty else 0.0[cite: 1]
+        opex_cats = ["Labour Charges", "Leakage Expense", "Miscellaneous Expense"][cite: 1]
+        opex = range_exp[range_exp["Category"].isin(opex_cats)]["Amount"].sum() if not range_exp.empty else 0.0[cite: 1]
+        capital_cats = ["Initial Investment", "Initial Set-up Expense"][cite: 1]
+        capital = range_exp[range_exp["Category"].isin(capital_cats)]["Amount"].sum() if not range_exp.empty else 0.0[cite: 1]
+        gross_profit = total_rev - cogs[cite: 1]
+        net_profit = gross_profit - opex[cite: 1]
 
         pnl_df = pd.DataFrame(
             {
                 "Line item": ["Revenue", "Cost of Goods", "Gross profit", "Operating expenses (labour, leakage, misc.)", "Net profit"],
                 "Amount (₹)": [total_rev, -cogs, gross_profit, -opex, net_profit],
             }
-        )
-        st.dataframe(pnl_df, hide_index=True, use_container_width=True)
-        pc1, pc2 = st.columns(2)
-        pc1.metric("Net profit", f"₹{net_profit:,.0f}")
-        pc2.metric("Margin", f"{(net_profit / total_rev * 100) if total_rev else 0:.1f}%")
-        if capital > 0:
-            st.caption(f"₹{capital:,.0f} of one-time capital/setup costs fell in this range and is shown separately below, not deducted above.")
+        )[cite: 1]
+        st.dataframe(pnl_df, hide_index=True, use_container_width=True)[cite: 1]
+        pc1, pc2 = st.columns(2)[cite: 1]
+        pc1.metric("Net profit", f"₹{net_profit:,.0f}")[cite: 1]
+        pc2.metric("Margin", f"{(net_profit / total_rev * 100) if total_rev else 0:.1f}%")[cite: 1]
+        if capital > 0:[cite: 1]
+            st.caption(f"₹{capital:,.0f} of one-time capital/setup costs fell in this range and is shown separately below, not deducted above.")[cite: 1]
 
         # ---- Expense breakdown ----
-        st.markdown('<div id="expense-breakdown"></div>', unsafe_allow_html=True)
-        st.markdown("### Expense breakdown by category")
-        if not range_exp.empty:
-            by_cat = range_exp.groupby("Category")["Amount"].sum().sort_values(ascending=False)
+        st.markdown('<div id="expense-breakdown"></div>', unsafe_allow_html=True)[cite: 1]
+        st.markdown("### Expense breakdown by category")[cite: 1]
+        if not range_exp.empty:[cite: 1]
+            by_cat = range_exp.groupby("Category")["Amount"].sum().sort_values(ascending=False)[cite: 1]
             st.dataframe(
                 by_cat.reset_index().rename(columns={"Amount": "₹"}),
                 hide_index=True,
                 use_container_width=True,
                 column_config={"₹": st.column_config.ProgressColumn("Share", format="₹%.0f", min_value=0, max_value=float(by_cat.max()))},
-            )
-            st.bar_chart(by_cat)
+            )[cite: 1]
+            st.bar_chart(by_cat)[cite: 1]
         else:
-            st.caption("No expenses logged in this date range.")
+            st.caption("No expenses logged in this date range.")[cite: 1]
 
         # ---- Cash vs PhonePe ----
-        st.markdown('<div id="cash-vs-phonepe"></div>', unsafe_allow_html=True)
-        st.markdown("### Cash vs PhonePe / UPI")
-        if not range_df.empty:
-            total_cash = range_df["Cash"].sum()
-            total_phonepe = range_df["PhonePe"].sum()
-            cc1, cc2 = st.columns(2)
-            cc1.metric("Cash", f"₹{total_cash:,.0f}")
-            cc2.metric("PhonePe / UPI", f"₹{total_phonepe:,.0f}")
-            split_df = pd.DataFrame({"Mode": ["Cash", "PhonePe / UPI"], "Amount (₹)": [total_cash, total_phonepe]})
-            st.bar_chart(split_df.set_index("Mode")["Amount (₹)"])
+        st.markdown('<div id="cash-vs-phonepe"></div>', unsafe_allow_html=True)[cite: 1]
+        st.markdown("### Cash vs PhonePe / UPI")[cite: 1]
+        if not range_df.empty:[cite: 1]
+            total_cash = range_df["Cash"].sum()[cite: 1]
+            total_phonepe = range_df["PhonePe"].sum()[cite: 1]
+            cc1, cc2 = st.columns(2)[cite: 1]
+            cc1.metric("Cash", f"₹{total_cash:,.0f}")[cite: 1]
+            cc2.metric("PhonePe / UPI", f"₹{total_phonepe:,.0f}")[cite: 1]
+            split_df = pd.DataFrame({"Mode": ["Cash", "PhonePe / UPI"], "Amount (₹)": [total_cash, total_phonepe]})[cite: 1]
+            st.bar_chart(split_df.set_index("Mode")["Amount (₹)"])[cite: 1]
         else:
-            st.caption("No collections in this date range.")
+            st.caption("No collections in this date range.")[cite: 1]
 
         # ---- Date-range sales table ----
-        st.markdown('<div id="sales-in-range"></div>', unsafe_allow_html=True)
-        st.markdown("### Sales in this range")
-        if not range_df.empty:
+        st.markdown('<div id="sales-in-range"></div>', unsafe_allow_html=True)[cite: 1]
+        st.markdown("### Sales in this range")[cite: 1]
+        if not range_df.empty:[cite: 1]
             sales_table = range_df.sort_values(["Date", "Cart"])[["Date", "Cart", "Sold_Total", "Total_Collection"]].rename(
                 columns={"Sold_Total": "Units sold", "Total_Collection": "Revenue (₹)"}
-            )
-            sales_table["Date"] = sales_table["Date"].dt.strftime("%d %b %Y")
-            st.dataframe(sales_table, hide_index=True, use_container_width=True)
+            )[cite: 1]
+            sales_table["Date"] = sales_table["Date"].dt.strftime("%d %b %Y")[cite: 1]
+            st.dataframe(sales_table, hide_index=True, use_container_width=True)[cite: 1]
         else:
-            st.caption("No sales in this date range.")
+            st.caption("No sales in this date range.")[cite: 1]
