@@ -499,21 +499,83 @@ if not check_login():
 # ----------------------------------------------------------------------
 st.markdown(
     """
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-    /* Sidebar - bigger nav labels and section title */
-    section[data-testid="stSidebar"] { font-size: 17px; }
-    section[data-testid="stSidebar"] h2 { font-size: 23px !important; }
-    section[data-testid="stSidebar"] .stRadio label p { font-size: 17px !important; }
-    section[data-testid="stSidebar"] .stButton button { font-size: 16px !important; }
-    .dash-jump b { font-size: 15px !important; }
-    .dash-jump a { display:block; padding: 5px 0 5px 14px; font-size: 15px !important;
-                   color:inherit; text-decoration:none; opacity:0.85; }
-    .dash-jump a:hover { opacity:1; text-decoration:underline; }
-
-    /* Top headings across the app */
+    /* ---------- Fonts & base ---------- */
+    html, body, [class*="css"] { font-family: 'Manrope', sans-serif; }
+    h1, h2, h3 { font-family: 'Fraunces', serif !important; color: #2E5039 !important; letter-spacing: -0.01em; }
     h1 { font-size: 2.3rem !important; }
     h2 { font-size: 1.8rem !important; }
     h3 { font-size: 1.4rem !important; }
+    p, span, label, .stMarkdown { color: #2B2118; }
+
+    /* ---------- Sidebar ---------- */
+    section[data-testid="stSidebar"] { font-size: 17px; border-right: 1px solid #E4DAC6; }
+    section[data-testid="stSidebar"] h2 { font-size: 23px !important; color: #2E5039 !important; }
+    section[data-testid="stSidebar"] .stRadio > div { gap: 4px; }
+    section[data-testid="stSidebar"] .stRadio label {
+        background: #FFFEFB;
+        border: 1px solid #E4DAC6;
+        border-radius: 10px;
+        padding: 8px 12px !important;
+        margin-bottom: 2px;
+        transition: background .15s ease, border-color .15s ease;
+    }
+    section[data-testid="stSidebar"] .stRadio label:hover { background: #F6D9BE; border-color: #E2792E; }
+    section[data-testid="stSidebar"] .stRadio label p { font-size: 17px !important; font-weight: 600; }
+    section[data-testid="stSidebar"] .stButton button { font-size: 16px !important; border-radius: 10px !important; }
+
+    /* Jump-to sub-menu */
+    .dash-jump { background: #FFFEFB; border: 1px solid #E4DAC6; border-radius: 10px; padding: 6px 10px; margin-top: 6px; }
+    .dash-jump b { font-size: 15px !important; color: #6b5f50; }
+    .dash-jump a { display:block; padding: 5px 0 5px 6px; font-size: 15px !important;
+                   color:#2E5039 !important; text-decoration:none; border-radius: 6px; }
+    .dash-jump a:hover { background: #F6D9BE; text-decoration:none; }
+
+    /* ---------- Buttons ---------- */
+    .stButton button, [data-testid="stFormSubmitButton"] button, [data-testid="baseButton-primary"] {
+        border-radius: 10px !important;
+        font-weight: 700 !important;
+        border: none !important;
+    }
+    .stButton button[kind="primary"], [data-testid="stFormSubmitButton"] button[kind="primary"] {
+        background: #3E6B4F !important;
+        box-shadow: 0 2px 6px rgba(46,80,57,0.25);
+    }
+    .stButton button[kind="primary"]:hover { background: #2E5039 !important; }
+
+    /* ---------- Metric cards ---------- */
+    div[data-testid="stMetric"] {
+        background: #FFFEFB;
+        border: 1px solid #E4DAC6;
+        border-radius: 14px;
+        padding: 14px 18px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    div[data-testid="stMetricLabel"] { font-weight: 700; color: #6b5f50; }
+    div[data-testid="stMetricValue"] { font-family: 'Fraunces', serif; color: #2E5039; }
+
+    /* ---------- Tables & data editors ---------- */
+    div[data-testid="stDataFrame"], div[data-testid="stDataEditor"] {
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid #E4DAC6;
+    }
+
+    /* ---------- Tabs / radio pills used inside forms ---------- */
+    .stRadio > div[role="radiogroup"] { gap: 8px; }
+    div[role="radiogroup"] label {
+        border: 1px solid #E4DAC6;
+        border-radius: 20px;
+        padding: 4px 14px !important;
+        background: #FFFEFB;
+    }
+
+    /* ---------- Misc ---------- */
+    hr { border-color: #E4DAC6 !important; }
+    [data-testid="stExpander"] { border: 1px solid #E4DAC6 !important; border-radius: 12px !important; }
+    div[data-testid="stForm"] { border: 1px solid #E4DAC6; border-radius: 12px; padding: 16px; background: #FFFEFB; }
     </style>
     """,
     unsafe_allow_html=True,
