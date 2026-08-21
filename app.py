@@ -681,7 +681,19 @@ elif page == "Freezer Stock":
         if not stock_entries:
             st.info("No past entries found yet.")
         else:
-            stock_labels = [f"{e['received_date'].strftime('%d %b %Y')} — {e['location']}" for e in stock_entries]
+            def _fmt_order_date(s):
+                if not s or not str(s).strip():
+                    return "no order date"
+                try:
+                    d = pd.to_datetime(s)
+                    return f"ordered {d.strftime('%d %b %Y')}" if not pd.isna(d) else "no order date"
+                except Exception:
+                    return "no order date"
+
+            stock_labels = [
+                f"Received {e['received_date'].strftime('%d %b %Y')} ({_fmt_order_date(e['order_date'])}) — {e['location']}"
+                for e in stock_entries
+            ]
             stock_sel = st.selectbox("Select entry to edit", stock_labels, key="stock_edit_select")
             stock_loaded = stock_entries[stock_labels.index(stock_sel)]
             stock_editing_row = stock_loaded["row"]
