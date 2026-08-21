@@ -335,6 +335,32 @@ with st.sidebar:
         ["Dashboard", "Daily Entry", "Freezer Stock", "Freezer Analysis", "Expenses"],
         label_visibility="collapsed",
     )
+    if page == "Dashboard":
+        st.markdown(
+            """
+            <style>
+            .dash-jump a { display:block; padding:4px 0 4px 14px; font-size:13.5px;
+                           color:inherit; text-decoration:none; opacity:0.85; }
+            .dash-jump a:hover { opacity:1; text-decoration:underline; }
+            </style>
+            <div class="dash-jump">
+            <b style="font-size:13px;">Jump to</b><br>
+            <a href="#last-3-days">Last 3 days</a>
+            <a href="#freezer-stock-current">Freezer stock (current)</a>
+            <a href="#latest-stock-per-cart">Latest stock per cart</a>
+            <a href="#revenue-trend">Revenue trend (14 days)</a>
+            <a href="#reports">Reports (date range)</a>
+            <a href="#cart-wise-comparison">&nbsp;&nbsp;Cart-wise comparison</a>
+            <a href="#cart-wise-day-of-week">&nbsp;&nbsp;Sales by day of week</a>
+            <a href="#flavour-wise-performance">&nbsp;&nbsp;Flavour-wise performance</a>
+            <a href="#profit-loss-summary">&nbsp;&nbsp;Profit &amp; loss summary</a>
+            <a href="#expense-breakdown">&nbsp;&nbsp;Expense breakdown</a>
+            <a href="#cash-vs-phonepe">&nbsp;&nbsp;Cash vs PhonePe</a>
+            <a href="#sales-in-range">&nbsp;&nbsp;Sales table</a>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
     st.markdown("---")
     if st.button("Log out", use_container_width=True):
         st.session_state["authenticated"] = False
@@ -740,6 +766,7 @@ elif page == "Dashboard":
                 col_names[2]: [f"₹{day_rev[2]:,.0f}", f"{day_units[2]}"],
             }
         )
+        st.markdown('<div id="last-3-days"></div>', unsafe_allow_html=True)
         st.markdown("**Last 3 days**")
         st.dataframe(compare_df, hide_index=True, use_container_width=True)
 
@@ -747,12 +774,14 @@ elif page == "Dashboard":
 
         try:
             freezer_stock = get_freezer_stock()
+            st.markdown('<div id="freezer-stock-current"></div>', unsafe_allow_html=True)
             st.markdown("**Freezer stock (current)**")
             freezer_df = pd.DataFrame({"Flavour": [f[1] for f in FLAVORS], "Units in freezer": freezer_stock})
             st.dataframe(freezer_df, hide_index=True, use_container_width=True)
         except Exception as e:
             st.caption(f"Could not compute freezer stock ({e}).")
 
+        st.markdown('<div id="revenue-trend"></div>', unsafe_allow_html=True)
         st.markdown("**Revenue, last 14 days**")
         trend_df = (
             daily_df.assign(Day=daily_df["Date"].dt.normalize())
@@ -773,6 +802,7 @@ elif page == "Dashboard":
         )
         st.altair_chart(trend_chart, use_container_width=True)
 
+        st.markdown('<div id="latest-stock-per-cart"></div>', unsafe_allow_html=True)
         st.markdown("**Latest stock per cart**")
         latest_per_cart = daily_df.sort_values("Date").groupby("Cart").tail(1)[["Cart", "Date", "Closing_Total"]]
         st.dataframe(latest_per_cart, hide_index=True, use_container_width=True)
@@ -782,6 +812,7 @@ elif page == "Dashboard":
     # ------------------ Date-range reports ------------------
     if not daily_df.empty or not exp_df.empty:
         st.markdown("---")
+        st.markdown('<div id="reports"></div>', unsafe_allow_html=True)
         st.markdown("## Reports")
 
         all_dates = []
@@ -815,6 +846,7 @@ elif page == "Dashboard":
         mc3.metric("Expenses in range", f"₹{total_exp_all:,.0f}")
 
         # ---- Cart-wise comparison ----
+        st.markdown('<div id="cart-wise-comparison"></div>', unsafe_allow_html=True)
         st.markdown("### Cart-wise comparison")
         if not range_df.empty:
             cart_grp = (
@@ -829,6 +861,7 @@ elif page == "Dashboard":
             st.caption("No sales in this date range.")
 
         # ---- Cart-wise x day-of-week sales ----
+        st.markdown('<div id="cart-wise-day-of-week"></div>', unsafe_allow_html=True)
         st.markdown("### Cart-wise average sales by day of the week")
         if not range_df.empty:
             day_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
@@ -860,6 +893,7 @@ elif page == "Dashboard":
             st.caption("No sales in this date range.")
 
         # ---- Flavour-wise performance ----
+        st.markdown('<div id="flavour-wise-performance"></div>', unsafe_allow_html=True)
         st.markdown("### Flavour-wise performance")
         if not range_df.empty:
             flavor_sold = [0] * N_FLAVORS
@@ -880,6 +914,7 @@ elif page == "Dashboard":
             st.caption("No sales in this date range.")
 
         # ---- Profit & Loss summary ----
+        st.markdown('<div id="profit-loss-summary"></div>', unsafe_allow_html=True)
         st.markdown("### Profit & loss summary")
         cogs = range_exp[range_exp["Category"] == "Cost of Goods"]["Amount"].sum() if not range_exp.empty else 0.0
         opex_cats = ["Labour Charges", "Leakage Expense", "Miscellaneous Expense"]
@@ -903,6 +938,7 @@ elif page == "Dashboard":
             st.caption(f"₹{capital:,.0f} of one-time capital/setup costs fell in this range and is shown separately below, not deducted above.")
 
         # ---- Expense breakdown ----
+        st.markdown('<div id="expense-breakdown"></div>', unsafe_allow_html=True)
         st.markdown("### Expense breakdown by category")
         if not range_exp.empty:
             by_cat = range_exp.groupby("Category")["Amount"].sum().sort_values(ascending=False)
@@ -917,6 +953,7 @@ elif page == "Dashboard":
             st.caption("No expenses logged in this date range.")
 
         # ---- Cash vs PhonePe ----
+        st.markdown('<div id="cash-vs-phonepe"></div>', unsafe_allow_html=True)
         st.markdown("### Cash vs PhonePe / UPI")
         if not range_df.empty:
             total_cash = range_df["Cash"].sum()
@@ -930,6 +967,7 @@ elif page == "Dashboard":
             st.caption("No collections in this date range.")
 
         # ---- Date-range sales table ----
+        st.markdown('<div id="sales-in-range"></div>', unsafe_allow_html=True)
         st.markdown("### Sales in this range")
         if not range_df.empty:
             sales_table = range_df.sort_values(["Date", "Cart"])[["Date", "Cart", "Sold_Total", "Total_Collection"]].rename(
