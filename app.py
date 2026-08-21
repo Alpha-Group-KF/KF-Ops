@@ -136,7 +136,19 @@ def load_daily_raw():
     return ws, rows
 
 
-def get_opening_balance(cart_name):
+def _col_letter(n):
+    """1-indexed column number -> spreadsheet column letters (1->A, 27->AA, ...)."""
+    letters = ""
+    while n > 0:
+        n, rem = divmod(n - 1, 26)
+        letters = chr(65 + rem) + letters
+    return letters
+
+
+def _update_row(tab_name, row_number, values):
+    ws = get_ws(tab_name)
+    end_col = _col_letter(len(values))
+    ws.update(f"A{row_number}:{end_col}{row_number}", [values], value_input_option="USER_ENTERED")
     """Find the most recent closing balance for this cart -> becomes opening balance for today."""
     _, rows = load_daily_raw()
     latest = None
@@ -178,6 +190,55 @@ def append_daily_entry(entry_date, cart_name, added, sold, opening, total, phone
     return closing
 
 
+def update_daily_entry(row_number, entry_date, cart_name, added, sold, opening, total, phonepe, cash, remarks):
+    closing = [opening[i] + added[i] - sold[i] for i in range(N_FLAVORS)]
+    date_str = entry_date.strftime("%Y-%m-%d")
+    date_cart_id = f"{date_str}||{cart_name}"
+    row = (
+        [date_str, cart_name, CITY, date_cart_id]
+        + opening
+        + added
+        + sold
+        + closing
+        + [total, phonepe, cash, remarks]
+    )
+    _update_row("Daily Data As Shared", row_number, row)
+    return closing
+
+
+def list_daily_entries():
+    """Real (non-blank-placeholder) rows -> [{row, date, cart, added, sold, opening, total, phonepe, cash, remarks}, ...],
+    most recent first. `row` is the absolute Google Sheet row number, needed to save edits back correctly."""
+    _, rows = load_daily_raw()
+    out = []
+    added_start = 4 + 9 * 1
+    sold_start = 4 + 9 * 2
+    for idx, raw_r in enumerate(rows):
+        r = _pad(raw_r, DAILY_TOTAL_COLS)
+        if not r[0].strip() or not _row_has_data(r):
+            continue
+        try:
+            d = pd.to_datetime(r[0])
+        except Exception:
+            continue
+        out.append(
+            {
+                "row": DAILY_HEADER_ROWS + idx + 1,
+                "date": d,
+                "cart": r[1].strip(),
+                "opening": [int(_num(r[4 + i])) for i in range(N_FLAVORS)],
+                "added": [int(_num(r[added_start + i])) for i in range(N_FLAVORS)],
+                "sold": [int(_num(r[sold_start + i])) for i in range(N_FLAVORS)],
+                "total": _num(r[40]),
+                "phonepe": _num(r[41]),
+                "cash": _num(r[42]),
+                "remarks": r[43].strip() if len(r) > 43 else "",
+            }
+        )
+    out.sort(key=lambda x: (x["date"], x["cart"]), reverse=True)
+    return out
+
+
 # ----------------------------------------------------------------------
 # Expenses helpers
 # ----------------------------------------------------------------------
@@ -194,6 +255,52 @@ def append_expense(exp_date, description, amount, category, mode, ref_no, paid_t
     ]
     ws = get_ws("Expenses")
     ws.append_row(row, value_input_option="USER_ENTERED")
+
+
+def update_expense(row_number, exp_date, description, amount, category, mode, ref_no, paid_to, remarks):
+    row = [
+        exp_date.strftime("%Y-%m-%d"),
+        description,
+        amount,
+        category,
+        mode,
+        ref_no,
+        paid_to,
+        remarks,
+    ]
+    _update_row("Expenses", row_number, row)
+
+
+def list_expense_entries():
+    """Real expense rows -> [{row, date, description, amount, category, mode, ref_no, paid_to, remarks}, ...],
+    most recent first."""
+    ws = get_ws("Expenses")
+    values = ws.get_all_values()
+    cols_n = 8
+    out = []
+    for idx, raw_r in enumerate(values[EXPENSE_HEADER_ROWS:]):
+        r = _pad(raw_r, cols_n)
+        if not any(c.strip() for c in r):
+            continue
+        try:
+            d = pd.to_datetime(r[0])
+        except Exception:
+            continue
+        out.append(
+            {
+                "row": EXPENSE_HEADER_ROWS + idx + 1,
+                "date": d,
+                "description": r[1].strip(),
+                "amount": _num(r[2]),
+                "category": r[3].strip(),
+                "mode": r[4].strip(),
+                "ref_no": r[5].strip(),
+                "paid_to": r[6].strip(),
+                "remarks": r[7].strip(),
+            }
+        )
+    out.sort(key=lambda x: (x["date"], x["row"]), reverse=True)
+    return out
 
 
 def load_expenses_df():
@@ -253,7 +360,7 @@ def load_stock_raw():
     return ws, rows
 
 
-def append_stock_entry(
+def _build_stock_row(
     order_date, received_date, location,
     ordered, received, cost, damaged,
     payment_amount, payment_status, payment_date, payment_details,
@@ -261,7 +368,7 @@ def append_stock_entry(
 ):
     diff = [received[i] - ordered[i] for i in range(N_FLAVORS)]
     date_loc_id = f"{received_date.strftime('%Y-%m-%d')}||{location}"
-    row = (
+    return (
         [order_date.strftime("%Y-%m-%d"), received_date.strftime("%Y-%m-%d"), location, date_loc_id]
         + ordered + [sum(ordered)]
         + received + [sum(received)]
@@ -271,8 +378,67 @@ def append_stock_entry(
         + damaged + [sum(damaged)]
         + [damaged_returned_on.strftime("%Y-%m-%d") if damaged_returned_on else "", notes]
     )
+
+
+def append_stock_entry(
+    order_date, received_date, location,
+    ordered, received, cost, damaged,
+    payment_amount, payment_status, payment_date, payment_details,
+    damaged_returned_on, notes,
+):
+    row = _build_stock_row(
+        order_date, received_date, location, ordered, received, cost, damaged,
+        payment_amount, payment_status, payment_date, payment_details, damaged_returned_on, notes,
+    )
     ws = get_ws("Stock Received")
     ws.append_row(row, value_input_option="USER_ENTERED")
+
+
+def update_stock_entry(
+    row_number, order_date, received_date, location,
+    ordered, received, cost, damaged,
+    payment_amount, payment_status, payment_date, payment_details,
+    damaged_returned_on, notes,
+):
+    row = _build_stock_row(
+        order_date, received_date, location, ordered, received, cost, damaged,
+        payment_amount, payment_status, payment_date, payment_details, damaged_returned_on, notes,
+    )
+    _update_row("Stock Received", row_number, row)
+
+
+def list_stock_entries():
+    """Real Stock Received rows -> list of dicts with a `row` field for saving edits back."""
+    _, rows = load_stock_raw()
+    out = []
+    for idx, raw_r in enumerate(rows):
+        r = _pad(raw_r, STOCK_TOTAL_COLS)
+        if not r[0].strip() and not r[1].strip():
+            continue
+        try:
+            d = pd.to_datetime(r[1]) if r[1].strip() else pd.to_datetime(r[0])
+        except Exception:
+            continue
+        out.append(
+            {
+                "row": STOCK_HEADER_ROWS + idx + 1,
+                "order_date": r[0].strip(),
+                "received_date": d,
+                "location": r[2].strip(),
+                "ordered": [int(_num(r[4 + i])) for i in range(N_FLAVORS)],
+                "received": [int(_num(r[14 + i])) for i in range(N_FLAVORS)],
+                "cost": [_num(r[34 + i]) for i in range(N_FLAVORS)],
+                "damaged": [int(_num(r[48 + i])) for i in range(N_FLAVORS)],
+                "payment_amount": _num(r[44]),
+                "payment_status": r[45].strip(),
+                "payment_date": r[46].strip(),
+                "payment_details": r[47].strip(),
+                "damaged_returned_on": r[58].strip(),
+                "notes": r[59].strip() if len(r) > 59 else "",
+            }
+        )
+    out.sort(key=lambda x: (x["received_date"], x["row"]), reverse=True)
+    return out
 
 
 def get_freezer_stock():
@@ -388,29 +554,52 @@ st.title(f"🍦 Kulfi Ops — {page}")
 # ---------------- DAILY ENTRY ----------------
 if page == "Daily Entry":
     st.subheader("Cart restock & daily sales")
+
+    mode = st.radio("Mode", ["New entry", "Edit past entry"], horizontal=True, key="daily_mode")
+
+    loaded = None
+    editing_row = None
+    if mode == "Edit past entry":
+        try:
+            daily_entries = list_daily_entries()
+        except Exception as e:
+            daily_entries = []
+            st.warning(f"Could not load past entries ({e}).")
+        if not daily_entries:
+            st.info("No past entries found yet.")
+        else:
+            labels = [f"{e['date'].strftime('%d %b %Y')} — {e['cart']}" for e in daily_entries]
+            sel = st.selectbox("Select entry to edit", labels, key="daily_edit_select")
+            loaded = daily_entries[labels.index(sel)]
+            editing_row = loaded["row"]
+            st.caption("Loaded - edit the fields below, then click Update entry to save changes to this same row.")
+
+    key_suffix = f"_{editing_row}" if editing_row else "_new"
     st.caption("One entry per cart per day. Only fill in flavours that actually moved.")
 
     c1, c2 = st.columns(2)
     with c1:
-        entry_date = st.date_input("Date", value=date.today(), key="daily_date")
+        entry_date = st.date_input("Date", value=(loaded["date"].date() if loaded else date.today()), key=f"daily_date{key_suffix}")
     with c2:
-        cart_name = st.selectbox("Cart", CARTS, key="daily_cart")
+        default_cart_idx = CARTS.index(loaded["cart"]) if loaded and loaded["cart"] in CARTS else 0
+        cart_name = st.selectbox("Cart", CARTS, index=default_cart_idx, key=f"daily_cart{key_suffix}")
 
-    try:
-        opening = get_opening_balance(cart_name)
-        opening_ok = True
-    except Exception as e:
-        opening = [0] * N_FLAVORS
-        opening_ok = False
-        st.warning(f"Could not fetch opening balance automatically ({e}). Starting from 0 - check your figures.")
+    if loaded:
+        opening = loaded["opening"]
+    else:
+        try:
+            opening = get_opening_balance(cart_name)
+        except Exception as e:
+            opening = [0] * N_FLAVORS
+            st.warning(f"Could not fetch opening balance automatically ({e}). Starting from 0 - check your figures.")
 
     flavor_names = [f[1] for f in FLAVORS]
     df_init = pd.DataFrame(
         {
             "Flavour": flavor_names,
             "Opening (in cart)": opening,
-            "Added today": [0] * N_FLAVORS,
-            "Sold today": [0] * N_FLAVORS,
+            "Added today": loaded["added"] if loaded else [0] * N_FLAVORS,
+            "Sold today": loaded["sold"] if loaded else [0] * N_FLAVORS,
         }
     )
     st.write("Enter units **added to the cart** (restock) and **units sold**, per flavour:")
@@ -424,7 +613,7 @@ if page == "Daily Entry":
         },
         hide_index=True,
         use_container_width=True,
-        key="daily_editor",
+        key=f"daily_editor{key_suffix}",
     )
 
     added = edited["Added today"].fillna(0).astype(int).tolist()
@@ -434,54 +623,101 @@ if page == "Daily Entry":
         st.error("Closing balance would go negative for at least one flavour - double check the numbers above.")
 
     suggested_total = sum(sold[i] * FLAVORS[i][2] for i in range(N_FLAVORS))
+    default_total = loaded["total"] if loaded else float(suggested_total)
+    default_phonepe = loaded["phonepe"] if loaded else 0.0
+    default_cash = loaded["cash"] if loaded else default_total
+
     st.markdown("---")
     st.write("**Today's collection**")
     c3, c4, c5 = st.columns(3)
     with c3:
-        total_collection = st.number_input("Total collection (₹)", min_value=0.0, value=float(suggested_total), step=10.0)
+        total_collection = st.number_input("Total collection (₹)", min_value=0.0, value=float(default_total), step=10.0, key=f"daily_total{key_suffix}")
     with c4:
-        phonepe = st.number_input("PhonePe / UPI (₹)", min_value=0.0, value=0.0, step=10.0)
+        phonepe = st.number_input("PhonePe / UPI (₹)", min_value=0.0, value=float(default_phonepe), step=10.0, key=f"daily_phonepe{key_suffix}")
     with c5:
-        cash = st.number_input("Cash (₹)", min_value=0.0, value=float(total_collection), step=10.0)
+        cash = st.number_input("Cash (₹)", min_value=0.0, value=float(default_cash), step=10.0, key=f"daily_cash{key_suffix}")
 
     if abs((phonepe + cash) - total_collection) > 0.5:
         st.warning(f"PhonePe + Cash (₹{phonepe + cash:,.0f}) doesn't match Total collection (₹{total_collection:,.0f}) - fine if intentional, otherwise adjust.")
 
-    remarks = st.text_input("Remarks (optional)", key="daily_remarks")
+    remarks = st.text_input("Remarks (optional)", value=(loaded["remarks"] if loaded else ""), key=f"daily_remarks{key_suffix}")
 
-    if st.button("Save daily entry", type="primary", use_container_width=True):
+    button_label = "Update entry" if editing_row else "Save daily entry"
+    if st.button(button_label, type="primary", use_container_width=True):
         if sum(added) == 0 and sum(sold) == 0:
             st.error("Enter at least one quantity added or sold before saving.")
         else:
             try:
-                closing = append_daily_entry(entry_date, cart_name, added, sold, opening, total_collection, phonepe, cash, remarks)
-                st.success(f"Saved for {cart_name} on {entry_date.strftime('%d %b %Y')}. Closing stock: {sum(closing)} units.")
+                if editing_row:
+                    closing = update_daily_entry(editing_row, entry_date, cart_name, added, sold, opening, total_collection, phonepe, cash, remarks)
+                    st.success(f"Updated entry for {cart_name} on {entry_date.strftime('%d %b %Y')}. Closing stock: {sum(closing)} units.")
+                else:
+                    closing = append_daily_entry(entry_date, cart_name, added, sold, opening, total_collection, phonepe, cash, remarks)
+                    st.success(f"Saved for {cart_name} on {entry_date.strftime('%d %b %Y')}. Closing stock: {sum(closing)} units.")
                 st.cache_resource.clear()
             except Exception as e:
                 st.error(f"Could not save - {e}")
 
+    if editing_row:
+        st.caption("Note: editing a day that isn't the most recent entry for this cart won't automatically recalculate later days' opening/closing balances - check the days after this one if the correction is significant.")
+
 # ---------------- FREEZER STOCK ----------------
 elif page == "Freezer Stock":
     st.subheader("Stock received into freezer")
-    st.caption("Log a new supplier delivery. Ordered and Damaged are optional - fill in what you have.")
+
+    stock_mode = st.radio("Mode", ["New entry", "Edit past entry"], horizontal=True, key="stock_mode")
+
+    stock_loaded = None
+    stock_editing_row = None
+    if stock_mode == "Edit past entry":
+        try:
+            stock_entries = list_stock_entries()
+        except Exception as e:
+            stock_entries = []
+            st.warning(f"Could not load past entries ({e}).")
+        if not stock_entries:
+            st.info("No past entries found yet.")
+        else:
+            stock_labels = [f"{e['received_date'].strftime('%d %b %Y')} — {e['location']}" for e in stock_entries]
+            stock_sel = st.selectbox("Select entry to edit", stock_labels, key="stock_edit_select")
+            stock_loaded = stock_entries[stock_labels.index(stock_sel)]
+            stock_editing_row = stock_loaded["row"]
+            st.caption("Loaded - edit the fields below, then click Update entry to save changes to this same row.")
+
+    sk = f"_{stock_editing_row}" if stock_editing_row else "_new"
+    st.caption("Log a supplier delivery. Ordered and Damaged are optional - fill in what you have.")
+
+    def _parse_date_or(s, fallback):
+        try:
+            return pd.to_datetime(s).date()
+        except Exception:
+            return fallback
 
     c1, c2, c3 = st.columns(3)
     with c1:
-        order_date = st.date_input("Order date", value=date.today(), key="stock_order_date")
+        order_date = st.date_input(
+            "Order date",
+            value=_parse_date_or(stock_loaded["order_date"], date.today()) if stock_loaded else date.today(),
+            key=f"stock_order_date{sk}",
+        )
     with c2:
-        received_date = st.date_input("Received date", value=date.today(), key="stock_received_date")
+        received_date = st.date_input(
+            "Received date",
+            value=stock_loaded["received_date"].date() if stock_loaded else date.today(),
+            key=f"stock_received_date{sk}",
+        )
     with c3:
-        location = st.text_input("Location", value=CITY, key="stock_location")
+        location = st.text_input("Location", value=(stock_loaded["location"] if stock_loaded else CITY), key=f"stock_location{sk}")
 
     flavor_names = [f[1] for f in FLAVORS]
     default_cost = [f[3] for f in FLAVORS]
     df_init = pd.DataFrame(
         {
             "Flavour": flavor_names,
-            "Ordered": [0] * N_FLAVORS,
-            "Received": [0] * N_FLAVORS,
-            "Cost (₹, total)": [0.0] * N_FLAVORS,
-            "Damaged": [0] * N_FLAVORS,
+            "Ordered": stock_loaded["ordered"] if stock_loaded else [0] * N_FLAVORS,
+            "Received": stock_loaded["received"] if stock_loaded else [0] * N_FLAVORS,
+            "Cost (₹, total)": stock_loaded["cost"] if stock_loaded else [0.0] * N_FLAVORS,
+            "Damaged": stock_loaded["damaged"] if stock_loaded else [0] * N_FLAVORS,
         }
     )
     st.write("Enter units per flavour:")
@@ -496,7 +732,7 @@ elif page == "Freezer Stock":
         },
         hide_index=True,
         use_container_width=True,
-        key="stock_editor",
+        key=f"stock_editor{sk}",
     )
 
     ordered = stock_edited["Ordered"].fillna(0).astype(int).tolist()
@@ -514,31 +750,59 @@ elif page == "Freezer Stock":
     st.write("**Payment**")
     c4, c5 = st.columns(2)
     with c4:
-        payment_amount = st.number_input("Payment amount (₹)", min_value=0.0, value=float(sum(cost)), step=10.0)
+        default_payment_amount = stock_loaded["payment_amount"] if stock_loaded else float(sum(cost))
+        payment_amount = st.number_input("Payment amount (₹)", min_value=0.0, value=float(default_payment_amount), step=10.0, key=f"stock_pay_amt{sk}")
     with c5:
-        payment_status = st.selectbox("Payment status", PAYMENT_STATUSES, index=0)
+        default_status_idx = PAYMENT_STATUSES.index(stock_loaded["payment_status"]) if stock_loaded and stock_loaded["payment_status"] in PAYMENT_STATUSES else 0
+        payment_status = st.selectbox("Payment status", PAYMENT_STATUSES, index=default_status_idx, key=f"stock_pay_status{sk}")
 
-    has_payment_date = st.checkbox("Add payment date", value=False)
-    payment_date = st.date_input("Payment date", value=date.today(), key="stock_payment_date") if has_payment_date else None
-    payment_details = st.text_input("Payment details (optional)", placeholder="e.g. UPI ref / who paid")
+    has_payment_date = st.checkbox("Add payment date", value=bool(stock_loaded and stock_loaded["payment_date"]), key=f"stock_has_paydate{sk}")
+    payment_date = (
+        st.date_input(
+            "Payment date",
+            value=_parse_date_or(stock_loaded["payment_date"], date.today()) if (stock_loaded and stock_loaded["payment_date"]) else date.today(),
+            key=f"stock_payment_date{sk}",
+        )
+        if has_payment_date
+        else None
+    )
+    payment_details = st.text_input("Payment details (optional)", value=(stock_loaded["payment_details"] if stock_loaded else ""), placeholder="e.g. UPI ref / who paid", key=f"stock_pay_details{sk}")
 
-    has_damaged_return = st.checkbox("Damaged items were returned", value=False)
-    damaged_returned_on = st.date_input("Damaged items returned on", value=date.today(), key="stock_damaged_date") if has_damaged_return else None
+    has_damaged_return = st.checkbox("Damaged items were returned", value=bool(stock_loaded and stock_loaded["damaged_returned_on"]), key=f"stock_has_damret{sk}")
+    damaged_returned_on = (
+        st.date_input(
+            "Damaged items returned on",
+            value=_parse_date_or(stock_loaded["damaged_returned_on"], date.today()) if (stock_loaded and stock_loaded["damaged_returned_on"]) else date.today(),
+            key=f"stock_damaged_date{sk}",
+        )
+        if has_damaged_return
+        else None
+    )
 
-    notes = st.text_input("Notes (optional)", key="stock_notes")
+    notes = st.text_input("Notes (optional)", value=(stock_loaded["notes"] if stock_loaded else ""), key=f"stock_notes{sk}")
 
-    if st.button("Save stock received", type="primary", use_container_width=True):
+    stock_button_label = "Update entry" if stock_editing_row else "Save stock received"
+    if st.button(stock_button_label, type="primary", use_container_width=True):
         if sum(received) == 0:
             st.error("Enter at least one quantity received before saving.")
         else:
             try:
-                append_stock_entry(
-                    order_date, received_date, location,
-                    ordered, received, cost, damaged,
-                    payment_amount, payment_status, payment_date, payment_details,
-                    damaged_returned_on, notes,
-                )
-                st.success(f"Saved {sum(received)} units received on {received_date.strftime('%d %b %Y')}.")
+                if stock_editing_row:
+                    update_stock_entry(
+                        stock_editing_row, order_date, received_date, location,
+                        ordered, received, cost, damaged,
+                        payment_amount, payment_status, payment_date, payment_details,
+                        damaged_returned_on, notes,
+                    )
+                    st.success(f"Updated entry for {received_date.strftime('%d %b %Y')} at {location}.")
+                else:
+                    append_stock_entry(
+                        order_date, received_date, location,
+                        ordered, received, cost, damaged,
+                        payment_amount, payment_status, payment_date, payment_details,
+                        damaged_returned_on, notes,
+                    )
+                    st.success(f"Saved {sum(received)} units received on {received_date.strftime('%d %b %Y')}.")
                 st.cache_resource.clear()
             except Exception as e:
                 st.error(f"Could not save - {e}")
@@ -681,31 +945,59 @@ elif page == "Freezer Analysis":
 elif page == "Expenses":
     st.subheader("Log an expense")
 
+    exp_mode = st.radio("Mode", ["New entry", "Edit past entry"], horizontal=True, key="exp_mode")
+
+    exp_loaded = None
+    exp_editing_row = None
+    if exp_mode == "Edit past entry":
+        try:
+            expense_entries = list_expense_entries()
+        except Exception as e:
+            expense_entries = []
+            st.warning(f"Could not load past entries ({e}).")
+        if not expense_entries:
+            st.info("No past entries found yet.")
+        else:
+            exp_labels = [f"{e['date'].strftime('%d %b %Y')} — {e['description'] or e['category']} (₹{e['amount']:,.0f})" for e in expense_entries]
+            exp_sel = st.selectbox("Select entry to edit", exp_labels, key="exp_edit_select")
+            exp_loaded = expense_entries[exp_labels.index(exp_sel)]
+            exp_editing_row = exp_loaded["row"]
+            st.caption("Loaded - edit the fields below, then click Update entry to save changes to this same row.")
+
+    ek = f"_{exp_editing_row}" if exp_editing_row else "_new"
+
     c1, c2 = st.columns(2)
     with c1:
-        exp_date = st.date_input("Date", value=date.today(), key="exp_date")
+        exp_date = st.date_input("Date", value=(exp_loaded["date"].date() if exp_loaded else date.today()), key=f"exp_date{ek}")
     with c2:
-        category = st.selectbox("Category", EXPENSE_CATEGORIES)
+        default_cat_idx = EXPENSE_CATEGORIES.index(exp_loaded["category"]) if exp_loaded and exp_loaded["category"] in EXPENSE_CATEGORIES else 0
+        category = st.selectbox("Category", EXPENSE_CATEGORIES, index=default_cat_idx, key=f"exp_category{ek}")
 
-    description = st.text_input("Description", placeholder="e.g. Kulfi stock from supplier")
-    amount = st.number_input("Amount (₹)", min_value=0.0, step=10.0)
+    description = st.text_input("Description", value=(exp_loaded["description"] if exp_loaded else ""), placeholder="e.g. Kulfi stock from supplier", key=f"exp_desc{ek}")
+    amount = st.number_input("Amount (₹)", min_value=0.0, value=(exp_loaded["amount"] if exp_loaded else 0.0), step=10.0, key=f"exp_amount{ek}")
 
     c3, c4 = st.columns(2)
     with c3:
-        mode = st.selectbox("Payment mode", PAYMENT_MODES)
+        default_mode_idx = PAYMENT_MODES.index(exp_loaded["mode"]) if exp_loaded and exp_loaded["mode"] in PAYMENT_MODES else 0
+        mode = st.selectbox("Payment mode", PAYMENT_MODES, index=default_mode_idx, key=f"exp_mode_select{ek}")
     with c4:
-        ref_no = st.text_input("Transaction ref. no. (optional)")
+        ref_no = st.text_input("Transaction ref. no. (optional)", value=(exp_loaded["ref_no"] if exp_loaded else ""), key=f"exp_ref{ek}")
 
-    paid_to = st.text_input("Paid to (optional)")
-    exp_remarks = st.text_input("Remarks (optional)", key="exp_remarks")
+    paid_to = st.text_input("Paid to (optional)", value=(exp_loaded["paid_to"] if exp_loaded else ""), key=f"exp_paidto{ek}")
+    exp_remarks = st.text_input("Remarks (optional)", value=(exp_loaded["remarks"] if exp_loaded else ""), key=f"exp_remarks{ek}")
 
-    if st.button("Save expense", type="primary", use_container_width=True):
+    exp_button_label = "Update entry" if exp_editing_row else "Save expense"
+    if st.button(exp_button_label, type="primary", use_container_width=True):
         if amount <= 0:
             st.error("Enter an amount greater than 0.")
         else:
             try:
-                append_expense(exp_date, description, amount, category, mode, ref_no, paid_to, exp_remarks)
-                st.success(f"Saved ₹{amount:,.0f} expense under {category}.")
+                if exp_editing_row:
+                    update_expense(exp_editing_row, exp_date, description, amount, category, mode, ref_no, paid_to, exp_remarks)
+                    st.success(f"Updated ₹{amount:,.0f} expense under {category}.")
+                else:
+                    append_expense(exp_date, description, amount, category, mode, ref_no, paid_to, exp_remarks)
+                    st.success(f"Saved ₹{amount:,.0f} expense under {category}.")
                 st.cache_resource.clear()
             except Exception as e:
                 st.error(f"Could not save - {e}")
