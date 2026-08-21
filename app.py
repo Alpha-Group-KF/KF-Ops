@@ -299,9 +299,42 @@ def get_freezer_stock():
 
 
 # ----------------------------------------------------------------------
+# Login (shared password)
+# ----------------------------------------------------------------------
+def check_login():
+    if st.session_state.get("authenticated", False):
+        return True
+
+    st.title("🍦 Kulfi Ops")
+    st.subheader("Sign in")
+    with st.form("login_form"):
+        pwd = st.text_input("Password", type="password")
+        submitted = st.form_submit_button("Sign in", type="primary", use_container_width=True)
+    if submitted:
+        correct = st.secrets.get("app_password", None)
+        if correct is None:
+            st.error("No app_password is set in Secrets yet - add one before this login screen can work.")
+        elif pwd == correct:
+            st.session_state["authenticated"] = True
+            st.rerun()
+        else:
+            st.error("Incorrect password - try again.")
+    return False
+
+
+if not check_login():
+    st.stop()
+
+# ----------------------------------------------------------------------
 # UI
 # ----------------------------------------------------------------------
 st.title("🍦 Kulfi Ops")
+
+col_title, col_logout = st.columns([5, 1])
+with col_logout:
+    if st.button("Log out"):
+        st.session_state["authenticated"] = False
+        st.rerun()
 
 tab_dash, tab_sale, tab_stock, tab_analysis, tab_expense = st.tabs(
     ["Dashboard", "Daily Entry", "Freezer Stock", "Freezer Analysis", "Expenses"]
