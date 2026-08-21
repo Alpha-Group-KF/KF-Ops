@@ -16,7 +16,7 @@ from google.oauth2.service_account import Credentials
 import pandas as pd
 from datetime import date, datetime, timedelta
 
-st.set_page_config(page_title="Kulfi Ops", page_icon="🍦", layout="centered")
+st.set_page_config(page_title="Kulfi Ops", page_icon="🍦", layout="wide")
 
 # ----------------------------------------------------------------------
 # CONFIG - edit these if your cart names / flavours / sheet ever change
@@ -328,20 +328,22 @@ if not check_login():
 # ----------------------------------------------------------------------
 # UI
 # ----------------------------------------------------------------------
-st.title("🍦 Kulfi Ops")
-
-col_title, col_logout = st.columns([5, 1])
-with col_logout:
-    if st.button("Log out"):
+with st.sidebar:
+    st.markdown("## 🍦 Kulfi Ops")
+    page = st.radio(
+        "Go to",
+        ["Dashboard", "Daily Entry", "Freezer Stock", "Freezer Analysis", "Expenses"],
+        label_visibility="collapsed",
+    )
+    st.markdown("---")
+    if st.button("Log out", use_container_width=True):
         st.session_state["authenticated"] = False
         st.rerun()
 
-tab_dash, tab_sale, tab_stock, tab_analysis, tab_expense = st.tabs(
-    ["Dashboard", "Daily Entry", "Freezer Stock", "Freezer Analysis", "Expenses"]
-)
+st.title(f"🍦 Kulfi Ops — {page}")
 
 # ---------------- DAILY ENTRY ----------------
-with tab_sale:
+if page == "Daily Entry":
     st.subheader("Cart restock & daily sales")
     st.caption("One entry per cart per day. Only fill in flavours that actually moved.")
 
@@ -416,7 +418,7 @@ with tab_sale:
                 st.error(f"Could not save - {e}")
 
 # ---------------- FREEZER STOCK ----------------
-with tab_stock:
+elif page == "Freezer Stock":
     st.subheader("Stock received into freezer")
     st.caption("Log a new supplier delivery. Ordered and Damaged are optional - fill in what you have.")
 
@@ -499,7 +501,7 @@ with tab_stock:
                 st.error(f"Could not save - {e}")
 
 # ---------------- FREEZER ANALYSIS ----------------
-with tab_analysis:
+elif page == "Freezer Analysis":
     st.subheader("Freezer stock analysis & reorder planner")
     st.caption("Uses your recent sales pace to estimate when the freezer will run low, and what to order next.")
 
@@ -633,7 +635,7 @@ with tab_analysis:
             st.caption(f"Dashed line marks your {buffer_days}-day buffer. Red bars are at or below it.")
 
 # ---------------- EXPENSES ----------------
-with tab_expense:
+elif page == "Expenses":
     st.subheader("Log an expense")
 
     c1, c2 = st.columns(2)
@@ -666,7 +668,7 @@ with tab_expense:
                 st.error(f"Could not save - {e}")
 
 # ---------------- DASHBOARD ----------------
-with tab_dash:
+elif page == "Dashboard":
     st.subheader("Quick view")
 
     with st.expander("Data health check — tap here if the dashboard looks empty"):
