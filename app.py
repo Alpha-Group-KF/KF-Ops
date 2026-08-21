@@ -14,9 +14,96 @@ import altair as alt
 import gspread
 from google.oauth2.service_account import Credentials
 import pandas as pd
+import textwrap
 from datetime import date, datetime, timedelta
 
 st.set_page_config(page_title="Kulfi Ops", page_icon="🍦", layout="wide")
+
+st.markdown(
+    textwrap.dedent(
+        """
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+    /* ---------- Fonts & base ---------- */
+    html, body, [class*="css"] { font-family: 'Manrope', sans-serif; }
+    h1, h2, h3 { font-family: 'Fraunces', serif !important; color: #8A5E17 !important; letter-spacing: -0.01em; }
+    h1 { font-size: 2.3rem !important; }
+    h2 { font-size: 1.8rem !important; }
+    h3 { font-size: 1.4rem !important; }
+    p, span, label, .stMarkdown { color: #2A1B10; }
+
+    /* ---------- Sidebar ---------- */
+    section[data-testid="stSidebar"] { font-size: 17px; border-right: 1px solid #E3CBA0; }
+    section[data-testid="stSidebar"] h2 { font-size: 23px !important; color: #8A5E17 !important; }
+    section[data-testid="stSidebar"] .stRadio > div { gap: 4px; }
+    section[data-testid="stSidebar"] .stRadio label {
+        background: #FFFBF2;
+        border: 1px solid #E3CBA0;
+        border-radius: 10px;
+        padding: 8px 12px !important;
+        margin-bottom: 2px;
+        transition: background .15s ease, border-color .15s ease;
+    }
+    section[data-testid="stSidebar"] .stRadio label:hover { background: #F0D9A6; border-color: #E8542A; }
+    section[data-testid="stSidebar"] .stRadio label p { font-size: 17px !important; font-weight: 600; }
+    section[data-testid="stSidebar"] .stButton button { font-size: 16px !important; border-radius: 10px !important; }
+
+    /* Jump-to sub-menu */
+    .dash-jump { background: #FFFBF2; border: 1px solid #E3CBA0; border-radius: 10px; padding: 6px 10px; margin-top: 6px; }
+    .dash-jump b { font-size: 15px !important; color: #7A5A34; }
+    .dash-jump a { display:block; padding: 5px 0 5px 6px; font-size: 15px !important;
+                   color:#8A5E17 !important; text-decoration:none; border-radius: 6px; }
+    .dash-jump a:hover { background: #F0D9A6; text-decoration:none; }
+
+    /* ---------- Buttons ---------- */
+    .stButton button, [data-testid="stFormSubmitButton"] button, [data-testid="baseButton-primary"] {
+        border-radius: 10px !important;
+        font-weight: 700 !important;
+        border: none !important;
+    }
+    .stButton button[kind="primary"], [data-testid="stFormSubmitButton"] button[kind="primary"] {
+        background: #E8542A !important;
+        box-shadow: 0 2px 6px rgba(232,84,42,0.3);
+    }
+    .stButton button[kind="primary"]:hover { background: #C43D17 !important; }
+
+    /* ---------- Metric cards ---------- */
+    div[data-testid="stMetric"] {
+        background: #FFFBF2;
+        border: 1px solid #E3CBA0;
+        border-radius: 14px;
+        padding: 14px 18px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+    div[data-testid="stMetricLabel"] { font-weight: 700; color: #7A5A34; }
+    div[data-testid="stMetricValue"] { font-family: 'Fraunces', serif; color: #4A2418; }
+
+    /* ---------- Tables & data editors ---------- */
+    div[data-testid="stDataFrame"], div[data-testid="stDataEditor"] {
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid #E3CBA0;
+    }
+
+    /* ---------- Tabs / radio pills used inside forms ---------- */
+    .stRadio > div[role="radiogroup"] { gap: 8px; }
+    div[role="radiogroup"] label {
+        border: 1px solid #E3CBA0;
+        border-radius: 20px;
+        padding: 4px 14px !important;
+        background: #FFFBF2;
+    }
+
+    /* ---------- Misc ---------- */
+    hr { border-color: #E3CBA0 !important; }
+    [data-testid="stExpander"] { border: 1px solid #E3CBA0 !important; border-radius: 12px !important; }
+    div[data-testid="stForm"] { border: 1px solid #E3CBA0; border-radius: 12px; padding: 16px; background: #FFFBF2; }
+    </style>
+    """
+    ),
+    unsafe_allow_html=True,
+)
 
 # ----------------------------------------------------------------------
 # CONFIG - edit these if your cart names / flavours / sheet ever change
@@ -474,7 +561,10 @@ def check_login():
     if st.session_state.get("authenticated", False):
         return True
 
-    st.title("🍦 Kulfi Ops")
+    try:
+        st.image("assets/logo.png", width=260)
+    except Exception:
+        st.title("🍦 Kulfi Ops")
     st.subheader("Sign in")
     with st.form("login_form"):
         pwd = st.text_input("Password", type="password")
@@ -497,92 +587,11 @@ if not check_login():
 # ----------------------------------------------------------------------
 # UI
 # ----------------------------------------------------------------------
-st.markdown(
-    """
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-    /* ---------- Fonts & base ---------- */
-    html, body, [class*="css"] { font-family: 'Manrope', sans-serif; }
-    h1, h2, h3 { font-family: 'Fraunces', serif !important; color: #2E5039 !important; letter-spacing: -0.01em; }
-    h1 { font-size: 2.3rem !important; }
-    h2 { font-size: 1.8rem !important; }
-    h3 { font-size: 1.4rem !important; }
-    p, span, label, .stMarkdown { color: #2B2118; }
-
-    /* ---------- Sidebar ---------- */
-    section[data-testid="stSidebar"] { font-size: 17px; border-right: 1px solid #E4DAC6; }
-    section[data-testid="stSidebar"] h2 { font-size: 23px !important; color: #2E5039 !important; }
-    section[data-testid="stSidebar"] .stRadio > div { gap: 4px; }
-    section[data-testid="stSidebar"] .stRadio label {
-        background: #FFFEFB;
-        border: 1px solid #E4DAC6;
-        border-radius: 10px;
-        padding: 8px 12px !important;
-        margin-bottom: 2px;
-        transition: background .15s ease, border-color .15s ease;
-    }
-    section[data-testid="stSidebar"] .stRadio label:hover { background: #F6D9BE; border-color: #E2792E; }
-    section[data-testid="stSidebar"] .stRadio label p { font-size: 17px !important; font-weight: 600; }
-    section[data-testid="stSidebar"] .stButton button { font-size: 16px !important; border-radius: 10px !important; }
-
-    /* Jump-to sub-menu */
-    .dash-jump { background: #FFFEFB; border: 1px solid #E4DAC6; border-radius: 10px; padding: 6px 10px; margin-top: 6px; }
-    .dash-jump b { font-size: 15px !important; color: #6b5f50; }
-    .dash-jump a { display:block; padding: 5px 0 5px 6px; font-size: 15px !important;
-                   color:#2E5039 !important; text-decoration:none; border-radius: 6px; }
-    .dash-jump a:hover { background: #F6D9BE; text-decoration:none; }
-
-    /* ---------- Buttons ---------- */
-    .stButton button, [data-testid="stFormSubmitButton"] button, [data-testid="baseButton-primary"] {
-        border-radius: 10px !important;
-        font-weight: 700 !important;
-        border: none !important;
-    }
-    .stButton button[kind="primary"], [data-testid="stFormSubmitButton"] button[kind="primary"] {
-        background: #3E6B4F !important;
-        box-shadow: 0 2px 6px rgba(46,80,57,0.25);
-    }
-    .stButton button[kind="primary"]:hover { background: #2E5039 !important; }
-
-    /* ---------- Metric cards ---------- */
-    div[data-testid="stMetric"] {
-        background: #FFFEFB;
-        border: 1px solid #E4DAC6;
-        border-radius: 14px;
-        padding: 14px 18px;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.04);
-    }
-    div[data-testid="stMetricLabel"] { font-weight: 700; color: #6b5f50; }
-    div[data-testid="stMetricValue"] { font-family: 'Fraunces', serif; color: #2E5039; }
-
-    /* ---------- Tables & data editors ---------- */
-    div[data-testid="stDataFrame"], div[data-testid="stDataEditor"] {
-        border-radius: 12px;
-        overflow: hidden;
-        border: 1px solid #E4DAC6;
-    }
-
-    /* ---------- Tabs / radio pills used inside forms ---------- */
-    .stRadio > div[role="radiogroup"] { gap: 8px; }
-    div[role="radiogroup"] label {
-        border: 1px solid #E4DAC6;
-        border-radius: 20px;
-        padding: 4px 14px !important;
-        background: #FFFEFB;
-    }
-
-    /* ---------- Misc ---------- */
-    hr { border-color: #E4DAC6 !important; }
-    [data-testid="stExpander"] { border: 1px solid #E4DAC6 !important; border-radius: 12px !important; }
-    div[data-testid="stForm"] { border: 1px solid #E4DAC6; border-radius: 12px; padding: 16px; background: #FFFEFB; }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
 with st.sidebar:
-    st.markdown("## 🍦 Kulfi Ops")
+    try:
+        st.image("assets/logo.png", use_container_width=True)
+    except Exception:
+        st.markdown("## 🍦 Kulfi Ops")
     page = st.radio(
         "Go to",
         ["Dashboard", "Daily Entry", "Freezer Stock", "Freezer Analysis", "Expenses"],
@@ -590,7 +599,8 @@ with st.sidebar:
     )
     if page == "Dashboard":
         st.markdown(
-            """
+            textwrap.dedent(
+                """
             <div class="dash-jump">
             <b style="font-size:15px;">Jump to</b><br>
             <a href="#last-3-days">Last 3 days</a>
@@ -606,7 +616,8 @@ with st.sidebar:
             <a href="#cash-vs-phonepe">&nbsp;&nbsp;Cash vs PhonePe</a>
             <a href="#sales-in-range">&nbsp;&nbsp;Sales table</a>
             </div>
-            """,
+            """
+            ),
             unsafe_allow_html=True,
         )
     st.markdown("---")
@@ -1010,14 +1021,14 @@ elif page == "Freezer Analysis":
                     y=alt.Y("Days of stock left:Q"),
                     color=alt.condition(
                         alt.datum["Days of stock left"] <= buffer_days,
-                        alt.value("#B4442E"),
-                        alt.value("#3E6B4F"),
+                        alt.value("#C43D17"),
+                        alt.value("#C9932E"),
                     ),
                     tooltip=["Flavour", "Days of stock left"],
                 )
                 .properties(height=280)
             )
-            rule = alt.Chart(pd.DataFrame({"y": [buffer_days]})).mark_rule(color="#8B5E34", strokeDash=[4, 4]).encode(y="y:Q")
+            rule = alt.Chart(pd.DataFrame({"y": [buffer_days]})).mark_rule(color="#4A2418", strokeDash=[4, 4]).encode(y="y:Q")
             st.altair_chart(days_chart + rule, use_container_width=True)
             st.caption(f"Dashed line marks your {buffer_days}-day buffer. Red bars are at or below it.")
 
@@ -1181,7 +1192,7 @@ elif page == "Dashboard":
         )
         trend_chart = (
             alt.Chart(trend_df)
-            .mark_bar(color="#3E6B4F")
+            .mark_bar(color="#E8542A")
             .encode(
                 x=alt.X("Day:T", title="", axis=alt.Axis(format="%d %b", labelAngle=-45)),
                 y=alt.Y("Total_Collection:Q", title="Revenue (₹)", scale=alt.Scale(domain=[0, 25000])),
