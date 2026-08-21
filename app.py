@@ -840,15 +840,36 @@ elif page == "Dashboard":
         min_d, max_d = min(all_dates), max(all_dates)
         default_start = max(min_d, max_d - timedelta(days=29))
 
-        rc1, rc2 = st.columns(2)
-        with rc1:
-            range_start = st.date_input("From", value=default_start, min_value=min_d, max_value=max_d, key="report_start")
-        with rc2:
-            range_end = st.date_input("To", value=max_d, min_value=min_d, max_value=max_d, key="report_end")
+        if "applied_start" not in st.session_state:
+            st.session_state["applied_start"] = default_start
+        if "applied_end" not in st.session_state:
+            st.session_state["applied_end"] = max_d
+        # Keep stored range within the currently available data bounds
+        st.session_state["applied_start"] = min(max(st.session_state["applied_start"], min_d), max_d)
+        st.session_state["applied_end"] = min(max(st.session_state["applied_end"], min_d), max_d)
+
+        with st.form("date_range_form"):
+            rc1, rc2, rc3 = st.columns([2, 2, 1])
+            with rc1:
+                pending_start = st.date_input("From", value=st.session_state["applied_start"], min_value=min_d, max_value=max_d)
+            with rc2:
+                pending_end = st.date_input("To", value=st.session_state["applied_end"], min_value=min_d, max_value=max_d)
+            with rc3:
+                st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
+                apply_clicked = st.form_submit_button("Apply", type="primary", use_container_width=True)
+
+        if apply_clicked:
+            st.session_state["applied_start"] = pending_start
+            st.session_state["applied_end"] = pending_end
+
+        range_start = st.session_state["applied_start"]
+        range_end = st.session_state["applied_end"]
 
         if range_start > range_end:
-            st.error("'From' date is after 'To' date - swap them.")
+            st.error("'From' date is after 'To' date - swap them and click Apply again.")
             range_start, range_end = range_end, range_start
+
+        st.caption(f"Showing: {range_start.strftime('%d %b %Y')} – {range_end.strftime('%d %b %Y')}")
 
         range_df = daily_df[(daily_df["Date"].dt.date >= range_start) & (daily_df["Date"].dt.date <= range_end)] if not daily_df.empty else daily_df
         range_exp = exp_df[(exp_df["Date"].dt.date >= range_start) & (exp_df["Date"].dt.date <= range_end)] if not exp_df.empty else exp_df
