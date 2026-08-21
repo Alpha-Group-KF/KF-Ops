@@ -19,7 +19,7 @@ from datetime import date, datetime, timedelta
 
 st.set_page_config(page_title="Kulfi Ops", page_icon="🍦", layout="wide")
 
-st.markdown(
+st.html(
     textwrap.dedent(
         """
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -101,8 +101,7 @@ st.markdown(
     div[data-testid="stForm"] { border: 1px solid #E3CBA0; border-radius: 12px; padding: 16px; background: #FFFBF2; }
     </style>
     """
-    ),
-    unsafe_allow_html=True,
+    )
 )
 
 # ----------------------------------------------------------------------
