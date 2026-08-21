@@ -149,6 +149,9 @@ def _update_row(tab_name, row_number, values):
     ws = get_ws(tab_name)
     end_col = _col_letter(len(values))
     ws.update(f"A{row_number}:{end_col}{row_number}", [values], value_input_option="USER_ENTERED")
+
+
+def get_opening_balance(cart_name):
     """Find the most recent closing balance for this cart -> becomes opening balance for today."""
     _, rows = load_daily_raw()
     latest = None
