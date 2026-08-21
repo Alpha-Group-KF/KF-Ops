@@ -328,6 +328,28 @@ if not check_login():
 # ----------------------------------------------------------------------
 # UI
 # ----------------------------------------------------------------------
+st.markdown(
+    """
+    <style>
+    /* Sidebar - bigger nav labels and section title */
+    section[data-testid="stSidebar"] { font-size: 17px; }
+    section[data-testid="stSidebar"] h2 { font-size: 23px !important; }
+    section[data-testid="stSidebar"] .stRadio label p { font-size: 17px !important; }
+    section[data-testid="stSidebar"] .stButton button { font-size: 16px !important; }
+    .dash-jump b { font-size: 15px !important; }
+    .dash-jump a { display:block; padding: 5px 0 5px 14px; font-size: 15px !important;
+                   color:inherit; text-decoration:none; opacity:0.85; }
+    .dash-jump a:hover { opacity:1; text-decoration:underline; }
+
+    /* Top headings across the app */
+    h1 { font-size: 2.3rem !important; }
+    h2 { font-size: 1.8rem !important; }
+    h3 { font-size: 1.4rem !important; }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 with st.sidebar:
     st.markdown("## 🍦 Kulfi Ops")
     page = st.radio(
@@ -338,13 +360,8 @@ with st.sidebar:
     if page == "Dashboard":
         st.markdown(
             """
-            <style>
-            .dash-jump a { display:block; padding:4px 0 4px 14px; font-size:13.5px;
-                           color:inherit; text-decoration:none; opacity:0.85; }
-            .dash-jump a:hover { opacity:1; text-decoration:underline; }
-            </style>
             <div class="dash-jump">
-            <b style="font-size:13px;">Jump to</b><br>
+            <b style="font-size:15px;">Jump to</b><br>
             <a href="#last-3-days">Last 3 days</a>
             <a href="#freezer-stock-current">Freezer stock (current)</a>
             <a href="#latest-stock-per-cart">Latest stock per cart</a>
