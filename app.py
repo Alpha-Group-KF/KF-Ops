@@ -15,6 +15,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 import pandas as pd
 import textwrap
+import hmac
 from datetime import date, datetime, timedelta
 
 st.set_page_config(page_title="Kulfi Ops", page_icon="🍦", layout="wide")
@@ -110,8 +111,6 @@ st.html(
 CARTS = ["HOSUR CART 01", "HOSUR CART 02", "HOSUR CART 03"]
 CITY = "HOSUR"
 
-# (code, full name, MRP per unit, cost price per unit) - order matches the
-# column order used across all tabs (ML, MM, PS, MN, KB, BM, SG, CH, RA)
 FLAVORS = [
     ("ML", "Malai", 40, 22),
     ("MM", "Mini Malai", 30, 18),
@@ -138,17 +137,11 @@ EXPENSE_CATEGORIES = [
 ]
 PAYMENT_MODES = ["Cash", "UPI / Bank Transfer"]
 
-# Fixed column layout of "Daily Data As Shared" (1-indexed, A=1).
-# Date | Cart | City | DATE CART ID | Opening x9 | Added x9 | Sold x9 | Closing x9 | Total | PhonePe | Cash | Remarks
-DAILY_HEADER_ROWS = 2          # two header rows before data starts
-DAILY_TOTAL_COLS = 4 + 9 * 4 + 4  # = 44
+DAILY_HEADER_ROWS = 2
+DAILY_TOTAL_COLS = 4 + 9 * 4 + 4
 
 EXPENSE_HEADER_ROWS = 3
 
-# Fixed column layout of "Stock Received" (1-indexed cols A-BH, 60 total).
-# OrderDate|RecvDate|Location|DATE LOC ID | Ordered x9+Total | Received x9+Total
-# | Diff x9+Total | Cost x9+Total | PaymentAmt|Status|PayDate|PayDetails
-# | Damaged x9+Total | DamagedReturnedOn | Notes
 STOCK_HEADER_ROWS = 4
 STOCK_TOTAL_COLS = 60
 
@@ -185,10 +178,7 @@ def _pad(row, n):
 
 
 def _row_has_data(r):
-    """The sheet has pre-filled placeholder rows (date + cart already filled
-    in) for future dates that haven't happened yet - every quantity/collection
-    cell on those is blank. Treat a row as 'real' only if at least one of its
-    numeric cells (opening balance through Cash) actually has something in it."""
+    """Treat a row as 'real' only if at least one of its numeric cells has data."""
     return any(str(c).strip() != "" for c in r[4:43])
 
 
@@ -223,7 +213,6 @@ def load_daily_raw():
 
 
 def _col_letter(n):
-    """1-indexed column number -> spreadsheet column letters (1->A, 27->AA, ...)."""
     letters = ""
     while n > 0:
         n, rem = divmod(n - 1, 26)
@@ -238,7 +227,6 @@ def _update_row(tab_name, row_number, values):
 
 
 def get_opening_balance(cart_name):
-    """Find the most recent closing balance for this cart -> becomes opening balance for today."""
     _, rows = load_daily_raw()
     latest = None
     latest_date = None
@@ -258,7 +246,7 @@ def get_opening_balance(cart_name):
             latest = r
     if latest is None:
         return [0] * N_FLAVORS
-    closing_start = 4 + 9 * 3  # index of first closing-balance column (0-indexed)
+    closing_start = 4 + 9 * 3
     return [int(_num(latest[closing_start + i])) for i in range(N_FLAVORS)]
 
 
@@ -296,8 +284,6 @@ def update_daily_entry(row_number, entry_date, cart_name, added, sold, opening, 
 
 
 def list_daily_entries():
-    """Real (non-blank-placeholder) rows -> [{row, date, cart, added, sold, opening, total, phonepe, cash, remarks}, ...],
-    most recent first. `row` is the absolute Google Sheet row number, needed to save edits back correctly."""
     _, rows = load_daily_raw()
     out = []
     added_start = 4 + 9 * 1
@@ -361,8 +347,6 @@ def update_expense(row_number, exp_date, description, amount, category, mode, re
 
 
 def list_expense_entries():
-    """Real expense rows -> [{row, date, description, amount, category, mode, ref_no, paid_to, remarks}, ...],
-    most recent first."""
     ws = get_ws("Expenses")
     values = ws.get_all_values()
     cols_n = 8
@@ -497,7 +481,6 @@ def update_stock_entry(
 
 
 def list_stock_entries():
-    """Real Stock Received rows -> list of dicts with a `row` field for saving edits back."""
     _, rows = load_stock_raw()
     out = []
     for idx, raw_r in enumerate(rows):
@@ -531,8 +514,6 @@ def list_stock_entries():
 
 
 def get_freezer_stock():
-    """Freezer balance per flavour = total ever received into freezer, minus
-    total ever moved out to carts (from Daily Data As Shared)."""
     _, stock_rows = load_stock_raw()
     received_totals = [0.0] * N_FLAVORS
     recv_start = 14
@@ -554,29 +535,43 @@ def get_freezer_stock():
 
 
 # ----------------------------------------------------------------------
-# Login (shared password)
+# Login (shared credentials & narrowed centered form)
 # ----------------------------------------------------------------------
 def check_login():
     if st.session_state.get("authenticated", False):
         return True
 
-    try:
-        st.image("assets/logo.png", width=260)
-    except Exception:
-        st.title("🍦 Kulfi Ops")
-    st.subheader("Sign in")
-    with st.form("login_form"):
-        pwd = st.text_input("Password", type="password")
-        submitted = st.form_submit_button("Sign in", type="primary", use_container_width=True)
-    if submitted:
-        correct = st.secrets.get("app_password", None)
-        if correct is None:
-            st.error("No app_password is set in Secrets yet - add one before this login screen can work.")
-        elif pwd == correct:
-            st.session_state["authenticated"] = True
-            st.rerun()
-        else:
-            st.error("Incorrect password - try again.")
+    # 3-column layout centers and shrinks the login form
+    _, col_form, _ = st.columns([1, 1.2, 1])
+
+    with col_form:
+        try:
+            st.image("assets/logo.png", width=220)
+        except Exception:
+            st.title("🍦 Kulfi Ops")
+
+        st.subheader("Sign in")
+        with st.form("login_form"):
+            username = st.text_input("Username")
+            password = st.text_input("Password", type="password")
+            submitted = st.form_submit_button("Sign in", type="primary", use_container_width=True)
+
+        if submitted:
+            # Fallback to defaults or fetch from st.secrets
+            valid_user = st.secrets.get("app_username", "admin")
+            valid_pass = st.secrets.get("app_password", None)
+
+            if valid_pass is None:
+                st.error("No `app_password` set in Secrets. Please add credentials to Secrets.")
+            elif (
+                hmac.compare_digest(username.strip(), valid_user.strip())
+                and hmac.compare_digest(password, valid_pass)
+            ):
+                st.session_state["authenticated"] = True
+                st.rerun()
+            else:
+                st.error("Incorrect username or password — try again.")
+
     return False
 
 
@@ -800,7 +795,6 @@ elif page == "Freezer Stock":
         location = st.text_input("Location", value=(stock_loaded["location"] if stock_loaded else CITY), key=f"stock_location{sk}")
 
     flavor_names = [f[1] for f in FLAVORS]
-    default_cost = [f[3] for f in FLAVORS]
     df_init = pd.DataFrame(
         {
             "Flavour": flavor_names,
@@ -1226,7 +1220,6 @@ elif page == "Dashboard":
             st.session_state["applied_start"] = default_start
         if "applied_end" not in st.session_state:
             st.session_state["applied_end"] = max_d
-        # Keep stored range within the currently available data bounds
         st.session_state["applied_start"] = min(max(st.session_state["applied_start"], min_d), max_d)
         st.session_state["applied_end"] = min(max(st.session_state["applied_end"], min_d), max_d)
 
@@ -1397,4 +1390,3 @@ elif page == "Dashboard":
             st.dataframe(sales_table, hide_index=True, use_container_width=True)
         else:
             st.caption("No sales in this date range.")
-
