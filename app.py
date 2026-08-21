@@ -691,8 +691,11 @@ elif page == "Freezer Stock":
     st.caption("Log a supplier delivery. Ordered and Damaged are optional - fill in what you have.")
 
     def _parse_date_or(s, fallback):
+        if not s or not str(s).strip():
+            return fallback
         try:
-            return pd.to_datetime(s).date()
+            d = pd.to_datetime(s)
+            return fallback if pd.isna(d) else d.date()
         except Exception:
             return fallback
 
