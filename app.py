@@ -607,8 +607,6 @@ with st.sidebar:
             <div class="dash-jump">
             <b style="font-size:15px;">Jump to</b><br>
             <a href="#last-3-days">Last 3 days</a>
-            <a href="#freezer-stock-current">Freezer stock (current)</a>
-            <a href="#latest-stock-per-cart">Latest stock per cart</a>
             <a href="#revenue-trend">Revenue trend (14 days)</a>
             <a href="#reports">Reports (date range)</a>
             <a href="#cart-wise-comparison">&nbsp;&nbsp;Cart-wise comparison</a>
@@ -618,6 +616,9 @@ with st.sidebar:
             <a href="#expense-breakdown">&nbsp;&nbsp;Expense breakdown</a>
             <a href="#cash-vs-phonepe">&nbsp;&nbsp;Cash vs PhonePe</a>
             <a href="#sales-in-range">&nbsp;&nbsp;Sales table</a>
+            <a href="#inventory-status">Current Inventory Status</a>
+            <a href="#freezer-stock-current">&nbsp;&nbsp;Freezer stock (current)</a>
+            <a href="#latest-stock-per-cart">&nbsp;&nbsp;Latest stock per cart</a>
             </div>
             """
             ),
@@ -1173,17 +1174,6 @@ elif page == "Dashboard":
         st.markdown("**Last 3 days**")
         st.dataframe(compare_df, hide_index=True, use_container_width=True)
 
-        st.metric("Stock across carts", f"{int(daily_df.sort_values('Date').groupby('Cart').tail(1)['Closing_Total'].sum())}")
-
-        try:
-            freezer_stock = get_freezer_stock()
-            st.markdown('<div id="freezer-stock-current"></div>', unsafe_allow_html=True)
-            st.markdown("**Freezer stock (current)**")
-            freezer_df = pd.DataFrame({"Flavour": [f[1] for f in FLAVORS], "Units in freezer": freezer_stock})
-            st.dataframe(freezer_df, hide_index=True, use_container_width=True)
-        except Exception as e:
-            st.caption(f"Could not compute freezer stock ({e}).")
-
         st.markdown('<div id="revenue-trend"></div>', unsafe_allow_html=True)
         st.markdown("**Revenue, last 14 days**")
         trend_df = (
@@ -1204,11 +1194,6 @@ elif page == "Dashboard":
             .properties(height=280)
         )
         st.altair_chart(trend_chart, use_container_width=True)
-
-        st.markdown('<div id="latest-stock-per-cart"></div>', unsafe_allow_html=True)
-        st.markdown("**Latest stock per cart**")
-        latest_per_cart = daily_df.sort_values("Date").groupby("Cart").tail(1)[["Cart", "Date", "Closing_Total"]]
-        st.dataframe(latest_per_cart, hide_index=True, use_container_width=True)
     else:
         st.info("No sales logged yet - entries you save in the Daily Entry tab will show up here.")
 
@@ -1400,3 +1385,25 @@ elif page == "Dashboard":
             st.dataframe(sales_table, hide_index=True, use_container_width=True)
         else:
             st.caption("No sales in this date range.")
+
+    # ------------------ Current Inventory Status ------------------
+    if not daily_df.empty:
+        st.markdown("---")
+        st.markdown('<div id="inventory-status"></div>', unsafe_allow_html=True)
+        st.markdown("## Current Inventory Status")
+
+        st.metric("Stock across carts", f"{int(daily_df.sort_values('Date').groupby('Cart').tail(1)['Closing_Total'].sum())}")
+
+        try:
+            freezer_stock = get_freezer_stock()
+            st.markdown('<div id="freezer-stock-current"></div>', unsafe_allow_html=True)
+            st.markdown("**Freezer stock (current)**")
+            freezer_df = pd.DataFrame({"Flavour": [f[1] for f in FLAVORS], "Units in freezer": freezer_stock})
+            st.dataframe(freezer_df, hide_index=True, use_container_width=True)
+        except Exception as e:
+            st.caption(f"Could not compute freezer stock ({e}).")
+
+        st.markdown('<div id="latest-stock-per-cart"></div>', unsafe_allow_html=True)
+        st.markdown("**Latest stock per cart**")
+        latest_per_cart = daily_df.sort_values("Date").groupby("Cart").tail(1)[["Cart", "Date", "Closing_Total"]]
+        st.dataframe(latest_per_cart, hide_index=True, use_container_width=True)
