@@ -266,8 +266,8 @@ def get_opening_balance(cart_name):
     return [int(_num(latest[closing_start + i])) for i in range(N_FLAVORS)]
 
 
-def append_daily_entry(entry_date, cart_name, added, sold, opening, total, phonepe, cash, remarks):
-    closing = [opening[i] + added[i] - sold[i] for i in range(N_FLAVORS)]
+def append_daily_entry(entry_date, cart_name, added, closing, opening, total, phonepe, cash, remarks):
+    sold = [opening[i] + added[i] - closing[i] for i in range(N_FLAVORS)]
     date_str = entry_date.strftime("%Y-%m-%d")
     date_cart_id = f"{date_str}||{cart_name}"
     row = (
@@ -280,11 +280,11 @@ def append_daily_entry(entry_date, cart_name, added, sold, opening, total, phone
     )
     ws = get_ws("Daily Data As Shared")
     ws.append_row(row, value_input_option="USER_ENTERED")
-    return closing
+    return sold
 
 
-def update_daily_entry(row_number, entry_date, cart_name, added, sold, opening, total, phonepe, cash, remarks):
-    closing = [opening[i] + added[i] - sold[i] for i in range(N_FLAVORS)]
+def update_daily_entry(row_number, entry_date, cart_name, added, closing, opening, total, phonepe, cash, remarks):
+    sold = [opening[i] + added[i] - closing[i] for i in range(N_FLAVORS)]
     date_str = entry_date.strftime("%Y-%m-%d")
     date_cart_id = f"{date_str}||{cart_name}"
     row = (
@@ -296,7 +296,7 @@ def update_daily_entry(row_number, entry_date, cart_name, added, sold, opening, 
         + [total, phonepe, cash, remarks]
     )
     _update_row("Daily Data As Shared", row_number, row)
-    return closing
+    return sold
 
 
 def list_daily_entries():
@@ -304,6 +304,7 @@ def list_daily_entries():
     out = []
     added_start = 4 + 9 * 1
     sold_start = 4 + 9 * 2
+    closing_start = 4 + 9 * 3
     for idx, raw_r in enumerate(rows):
         r = _pad(raw_r, DAILY_TOTAL_COLS)
         if not r[0].strip() or not _row_has_data(r):
@@ -320,6 +321,7 @@ def list_daily_entries():
                 "opening": [int(_num(r[4 + i])) for i in range(N_FLAVORS)],
                 "added": [int(_num(r[added_start + i])) for i in range(N_FLAVORS)],
                 "sold": [int(_num(r[sold_start + i])) for i in range(N_FLAVORS)],
+                "closing": [int(_num(r[closing_start + i])) for i in range(N_FLAVORS)],
                 "total": _num(r[40]),
                 "phonepe": _num(r[41]),
                 "cash": _num(r[42]),
@@ -682,30 +684,34 @@ if page == "Daily Entry":
     df_init = pd.DataFrame(
         {
             "Flavour": flavor_names,
-            "Opening (in cart)": opening,
-            "Added today": loaded["added"] if loaded else [0] * N_FLAVORS,
-            "Sold today": loaded["sold"] if loaded else [0] * N_FLAVORS,
+            "Cart balance from yesterday": opening,
+            "Stock addition to cart today": loaded["added"] if loaded else [0] * N_FLAVORS,
+            "Closing cart balance": loaded["closing"] if loaded else opening,
         }
     )
-    st.write("Enter units **added to the cart** (restock) and **units sold**, per flavour:")
+    st.write("Enter units **added to the cart** (restock) and the **actual closing count** you observe in the cart, per flavour. Today's sales is calculated automatically.")
     edited = st.data_editor(
         df_init,
         column_config={
             "Flavour": st.column_config.TextColumn(disabled=True),
-            "Opening (in cart)": st.column_config.NumberColumn(disabled=True),
-            "Added today": st.column_config.NumberColumn(min_value=0, step=1),
-            "Sold today": st.column_config.NumberColumn(min_value=0, step=1),
+            "Cart balance from yesterday": st.column_config.NumberColumn(disabled=True),
+            "Stock addition to cart today": st.column_config.NumberColumn(min_value=0, step=1),
+            "Closing cart balance": st.column_config.NumberColumn(min_value=0, step=1),
         },
         hide_index=True,
         use_container_width=True,
         key=f"daily_editor{key_suffix}",
     )
 
-    added = edited["Added today"].fillna(0).astype(int).tolist()
-    sold = edited["Sold today"].fillna(0).astype(int).tolist()
-    projected_closing = [opening[i] + added[i] - sold[i] for i in range(N_FLAVORS)]
-    if any(c < 0 for c in projected_closing):
-        st.error("Closing balance would go negative for at least one flavour - double check the numbers above.")
+    added = edited["Stock addition to cart today"].fillna(0).astype(int).tolist()
+    closing = edited["Closing cart balance"].fillna(0).astype(int).tolist()
+    sold = [opening[i] + added[i] - closing[i] for i in range(N_FLAVORS)]
+
+    sold_df = pd.DataFrame({"Flavour": flavor_names, "Today's sales (calculated)": sold})
+    st.dataframe(sold_df, hide_index=True, use_container_width=True)
+
+    if any(s < 0 for s in sold):
+        st.error("Today's sales works out negative for at least one flavour - the closing count entered is higher than opening + added. Double check the numbers above.")
 
     suggested_total = sum(sold[i] * FLAVORS[i][2] for i in range(N_FLAVORS))
     default_total = loaded["total"] if loaded else float(suggested_total)
@@ -729,16 +735,18 @@ if page == "Daily Entry":
 
     button_label = "Update entry" if editing_row else "Save daily entry"
     if st.button(button_label, type="primary", use_container_width=True):
-        if sum(added) == 0 and sum(sold) == 0:
-            st.error("Enter at least one quantity added or sold before saving.")
+        if sum(added) == 0 and closing == opening:
+            st.error("Enter a stock addition or a closing count that differs from yesterday's balance before saving.")
+        elif any(s < 0 for s in sold):
+            st.error("Today's sales works out negative for at least one flavour - fix the closing count before saving.")
         else:
             try:
                 if editing_row:
-                    closing = update_daily_entry(editing_row, entry_date, cart_name, added, sold, opening, total_collection, phonepe, cash, remarks)
-                    st.success(f"Updated entry for {cart_name} on {entry_date.strftime('%d %b %Y')}. Closing stock: {sum(closing)} units.")
+                    saved_sold = update_daily_entry(editing_row, entry_date, cart_name, added, closing, opening, total_collection, phonepe, cash, remarks)
+                    st.success(f"Updated entry for {cart_name} on {entry_date.strftime('%d %b %Y')}. Today's sales: {sum(saved_sold)} units.")
                 else:
-                    closing = append_daily_entry(entry_date, cart_name, added, sold, opening, total_collection, phonepe, cash, remarks)
-                    st.success(f"Saved for {cart_name} on {entry_date.strftime('%d %b %Y')}. Closing stock: {sum(closing)} units.")
+                    saved_sold = append_daily_entry(entry_date, cart_name, added, closing, opening, total_collection, phonepe, cash, remarks)
+                    st.success(f"Saved for {cart_name} on {entry_date.strftime('%d %b %Y')}. Today's sales: {sum(saved_sold)} units.")
                 st.cache_resource.clear()
             except Exception as e:
                 st.error(f"Could not save - {e}")
