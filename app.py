@@ -686,6 +686,10 @@ if page == "Daily Entry":
             opening = [0] * N_FLAVORS
             st.warning(f"Could not fetch opening balance automatically ({e}). Starting from 0 - check your figures.")
 
+    # Fresh widget key per date+cart combo for new entries, so switching either
+    # one always reloads correct defaults instead of retaining stale edits.
+    data_key_suffix = f"_{editing_row}" if editing_row else f"_new_{cart_name}_{entry_date.isoformat()}"
+
     flavor_names = [f[1] for f in FLAVORS]
     df_init = pd.DataFrame(
         {
@@ -706,15 +710,23 @@ if page == "Daily Entry":
         },
         hide_index=True,
         use_container_width=True,
-        key=f"daily_editor{key_suffix}",
+        key=f"daily_editor{data_key_suffix}",
     )
 
     added = edited["Stock addition to cart today"].fillna(0).astype(int).tolist()
     closing = edited["Closing cart balance"].fillna(0).astype(int).tolist()
     sold = [opening[i] + added[i] - closing[i] for i in range(N_FLAVORS)]
 
-    sold_df = pd.DataFrame({"Flavour": flavor_names, "Today's sales (calculated)": sold})
-    st.dataframe(sold_df, hide_index=True, use_container_width=True)
+    summary_df = pd.DataFrame(
+        {
+            "Flavour": flavor_names + ["**Total**"],
+            "Cart balance from yesterday": opening + [sum(opening)],
+            "Stock addition to cart today": added + [sum(added)],
+            "Closing cart balance": closing + [sum(closing)],
+            "Today's sales (calculated)": sold + [sum(sold)],
+        }
+    )
+    st.dataframe(summary_df, hide_index=True, use_container_width=True)
 
     if any(s < 0 for s in sold):
         st.error("Today's sales works out negative for at least one flavour - the closing count entered is higher than opening + added. Double check the numbers above.")
@@ -728,16 +740,16 @@ if page == "Daily Entry":
     st.write("**Today's collection**")
     c3, c4, c5 = st.columns(3)
     with c3:
-        total_collection = st.number_input("Total collection (₹)", min_value=0.0, value=float(default_total), step=10.0, key=f"daily_total{key_suffix}")
+        total_collection = st.number_input("Total collection (₹)", min_value=0.0, value=float(default_total), step=10.0, key=f"daily_total{data_key_suffix}")
     with c4:
-        phonepe = st.number_input("PhonePe / UPI (₹)", min_value=0.0, value=float(default_phonepe), step=10.0, key=f"daily_phonepe{key_suffix}")
+        phonepe = st.number_input("PhonePe / UPI (₹)", min_value=0.0, value=float(default_phonepe), step=10.0, key=f"daily_phonepe{data_key_suffix}")
     with c5:
-        cash = st.number_input("Cash (₹)", min_value=0.0, value=float(default_cash), step=10.0, key=f"daily_cash{key_suffix}")
+        cash = st.number_input("Cash (₹)", min_value=0.0, value=float(default_cash), step=10.0, key=f"daily_cash{data_key_suffix}")
 
     if abs((phonepe + cash) - total_collection) > 0.5:
         st.warning(f"PhonePe + Cash (₹{phonepe + cash:,.0f}) doesn't match Total collection (₹{total_collection:,.0f}) - fine if intentional, otherwise adjust.")
 
-    remarks = st.text_input("Remarks (optional)", value=(loaded["remarks"] if loaded else ""), key=f"daily_remarks{key_suffix}")
+    remarks = st.text_input("Remarks (optional)", value=(loaded["remarks"] if loaded else ""), key=f"daily_remarks{data_key_suffix}")
 
     button_label = "Update entry" if editing_row else "Save daily entry"
     if st.button(button_label, type="primary", use_container_width=True):
