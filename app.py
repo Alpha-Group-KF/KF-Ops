@@ -19,47 +19,65 @@ st.html(
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+    /* Compact full-screen layout to prevent vertical scrolling on Daily Entry */
     .block-container {
-        padding-top: 1.5rem !important;
-        padding-bottom: 1rem !important;
+        padding-top: 0.5rem !important;
+        padding-bottom: 0.2rem !important;
         margin-top: 0 !important;
+        max-width: 98% !important;
     }
     header[data-testid="stHeader"] {
         background-color: transparent !important;
-        height: 1.5rem !important;
+        height: 0.5rem !important;
     }
     html, body, [class*="css"] { font-family: 'Manrope', sans-serif; }
-    h1, h2, h3 { font-family: 'Fraunces', serif !important; color: #8A5E17 !important; letter-spacing: -0.01em; }
-    h1 { font-size: 2.3rem !important; }
-    h2 { font-size: 1.8rem !important; }
-    h3 { font-size: 1.4rem !important; }
+    h1, h2, h3 { font-family: 'Fraunces', serif !important; color: #8A5E17 !important; letter-spacing: -0.01em; margin-bottom: 0.2rem !important; }
+    h1 { font-size: 1.6rem !important; margin-top: 0 !important; }
+    h2 { font-size: 1.3rem !important; }
+    h3 { font-size: 1.1rem !important; }
     p, span, label, .stMarkdown { color: #2A1B10; }
 
-    section[data-testid="stSidebar"] { font-size: 17px; border-right: 1px solid #E3CBA0; }
-    section[data-testid="stSidebar"] h2 { font-size: 23px !important; color: #8A5E17 !important; }
+    /* Compact widgets & labels */
+    div[data-testid="stVerticalBlock"] > div {
+        gap: 0.35rem !important;
+    }
+    .stSelectbox label, .stTextInput label, .stNumberInput label {
+        font-size: 12px !important;
+        font-weight: 700 !important;
+        margin-bottom: 0 !important;
+    }
+    .stSelectbox div[data-baseweb="select"], .stTextInput div[data-baseweb="input"], .stNumberInput div[data-baseweb="input"] {
+        min-height: 32px !important;
+        height: 32px !important;
+    }
+
+    section[data-testid="stSidebar"] { font-size: 16px; border-right: 1px solid #E3CBA0; }
+    section[data-testid="stSidebar"] h2 { font-size: 20px !important; color: #8A5E17 !important; }
     section[data-testid="stSidebar"] .stRadio > div { gap: 4px; }
     section[data-testid="stSidebar"] .stRadio label {
         background: #FFFBF2;
         border: 1px solid #E3CBA0;
-        border-radius: 10px;
-        padding: 8px 12px !important;
+        border-radius: 8px;
+        padding: 6px 10px !important;
         margin-bottom: 2px;
         transition: background .15s ease, border-color .15s ease;
     }
     section[data-testid="stSidebar"] .stRadio label:hover { background: #F0D9A6; border-color: #E8542A; }
-    section[data-testid="stSidebar"] .stRadio label p { font-size: 17px !important; font-weight: 600; }
-    section[data-testid="stSidebar"] .stButton button { font-size: 16px !important; border-radius: 10px !important; }
+    section[data-testid="stSidebar"] .stRadio label p { font-size: 15px !important; font-weight: 600; }
+    section[data-testid="stSidebar"] .stButton button { font-size: 15px !important; border-radius: 8px !important; }
 
-    .dash-jump { background: #FFFBF2; border: 1px solid #E3CBA0; border-radius: 10px; padding: 6px 10px; margin-top: 6px; }
-    .dash-jump b { font-size: 15px !important; color: #7A5A34; }
-    .dash-jump a { display:block; padding: 5px 0 5px 6px; font-size: 15px !important;
+    .dash-jump { background: #FFFBF2; border: 1px solid #E3CBA0; border-radius: 8px; padding: 6px 10px; margin-top: 6px; }
+    .dash-jump b { font-size: 14px !important; color: #7A5A34; }
+    .dash-jump a { display:block; padding: 4px 0 4px 6px; font-size: 13px !important;
                    color:#8A5E17 !important; text-decoration:none; border-radius: 6px; }
     .dash-jump a:hover { background: #F0D9A6; text-decoration:none; }
 
     .stButton button, [data-testid="stFormSubmitButton"] button, [data-testid="baseButton-primary"] {
-        border-radius: 10px !important;
+        border-radius: 8px !important;
         font-weight: 700 !important;
         border: none !important;
+        padding: 0.35rem 0.75rem !important;
+        font-size: 14px !important;
     }
     .stButton button[kind="primary"], [data-testid="stFormSubmitButton"] button[kind="primary"] {
         background: #E8542A !important;
@@ -67,49 +85,46 @@ st.html(
     }
     .stButton button[kind="primary"]:hover { background: #C43D17 !important; }
 
+    /* Compact Metrics */
     div[data-testid="stMetric"] {
         background: #FFFBF2;
         border: 1px solid #E3CBA0;
-        border-radius: 14px;
-        padding: 14px 18px;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+        border-radius: 10px;
+        padding: 6px 12px !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     }
-    div[data-testid="stMetricLabel"] { font-weight: 700; color: #7A5A34; }
-    div[data-testid="stMetricValue"] { font-family: 'Fraunces', serif; color: #4A2418; }
+    div[data-testid="stMetricLabel"] { font-weight: 700; font-size: 12px !important; color: #7A5A34; }
+    div[data-testid="stMetricValue"] { font-family: 'Fraunces', serif; font-size: 1.25rem !important; color: #4A2418; }
 
-    /* Centered table cells & visible bold table headers */
+    /* Glide Data Grid Centering & High-Contrast Bold Headers */
     div[data-testid="stDataFrame"], div[data-testid="stDataEditor"] {
-        border-radius: 12px;
-        border: 1px solid #E3CBA0;
+        border-radius: 10px;
+        border: 1.5px solid #D6B272 !important;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+    }
+    div[data-testid="stDataFrame"] canvas, div[data-testid="stDataEditor"] canvas {
+        border-radius: 10px;
     }
     div[data-testid="stDataFrame"] th, div[data-testid="stDataEditor"] th {
-        font-weight: 800 !important;
-        color: #4A2418 !important;
-        background-color: #F8EEDB !important;
+        font-weight: 900 !important;
+        color: #1A0D00 !important;
+        background-color: #E8CC95 !important;
         text-align: center !important;
         font-size: 14px !important;
+        border-bottom: 2px solid #C4933F !important;
     }
     div[data-testid="stDataFrame"] td, div[data-testid="stDataEditor"] td {
         text-align: center !important;
+        font-size: 13px !important;
     }
     div[data-testid="stDataFrame"] [role="columnheader"], div[data-testid="stDataEditor"] [role="columnheader"] {
-        font-weight: 800 !important;
-        color: #4A2418 !important;
-        background-color: #F8EEDB !important;
+        font-weight: 900 !important;
+        color: #1A0D00 !important;
+        background-color: #E8CC95 !important;
         text-align: center !important;
     }
 
-    .stRadio > div[role="radiogroup"] { gap: 8px; }
-    div[role="radiogroup"] label {
-        border: 1px solid #E3CBA0;
-        border-radius: 20px;
-        padding: 4px 14px !important;
-        background: #FFFBF2;
-    }
-
-    hr { border-color: #E3CBA0 !important; }
-    [data-testid="stExpander"] { border: 1px solid #E3CBA0 !important; border-radius: 12px !important; }
-    div[data-testid="stForm"] { border: 1px solid #E3CBA0; border-radius: 12px; padding: 16px; background: #FFFBF2; }
+    hr { border-color: #E3CBA0 !important; margin: 0.4rem 0 !important; }
     </style>
     """
     )
@@ -660,8 +675,12 @@ if page == "Daily Entry":
     if not daily_entries:
         st.info("No past entries found in the sheet.")
     else:
+        # Two compact side-by-side dropdowns
+        top_c1, top_c2 = st.columns([1.2, 1])
+
         labels = [f"{e['date'].strftime('%d %b %Y')} — {e['cart']}" for e in daily_entries]
-        sel = st.selectbox("Select entry to update sales", labels, key="daily_update_select")
+        with top_c1:
+            sel = st.selectbox("Select entry to update sales", labels, key="daily_update_select")
         loaded = daily_entries[labels.index(sel)]
         editing_row = loaded["row"]
         entry_date = loaded["date"].date()
@@ -678,7 +697,7 @@ if page == "Daily Entry":
 
         staff_options = load_active_staff_list()
 
-        # Retain cart staff from previous entry for this specific cart if blank
+        # Retain staff from past entry for this cart if empty
         default_staff_name = loaded.get("staff_name", "")
         if not default_staff_name:
             for past_e in daily_entries:
@@ -690,7 +709,8 @@ if page == "Daily Entry":
             staff_options.append(default_staff_name)
 
         default_staff_idx = staff_options.index(default_staff_name) if default_staff_name in staff_options else 0
-        staff_name = st.selectbox("Cart staff name", staff_options, index=default_staff_idx, key=k_staff)
+        with top_c2:
+            staff_name = st.selectbox("Cart staff name", staff_options, index=default_staff_idx, key=k_staff)
 
         opening = loaded["opening"]
 
@@ -718,19 +738,19 @@ if page == "Daily Entry":
             }
         )
 
-        st.write("Enter units **added to the cart** and the **actual closing count** observed:")
-
+        # Center-aligned text and number columns with bold/contrast styling
         edited = st.data_editor(
             df_init,
             column_config={
                 "Flavour": st.column_config.TextColumn(disabled=True),
-                "Cart balance from yesterday": st.column_config.NumberColumn(disabled=True),
-                "Stock addition to cart today": st.column_config.NumberColumn(min_value=0, step=1),
-                "Closing cart balance": st.column_config.NumberColumn(min_value=0, step=1),
-                "Sales": st.column_config.NumberColumn(disabled=True),
+                "Cart balance from yesterday": st.column_config.NumberColumn(disabled=True, format="%d"),
+                "Stock addition to cart today": st.column_config.NumberColumn(min_value=0, step=1, format="%d"),
+                "Closing cart balance": st.column_config.NumberColumn(min_value=0, step=1, format="%d"),
+                "Sales": st.column_config.NumberColumn(disabled=True, format="%d"),
             },
             hide_index=True,
             use_container_width=True,
+            height=265,
             key=f"daily_editor{data_key_suffix}",
         )
 
@@ -738,7 +758,6 @@ if page == "Daily Entry":
         closing = edited["Closing cart balance"].fillna(0).astype(int).tolist()
         sold = [opening[i] + added[i] - closing[i] for i in range(N_FLAVORS)]
 
-        # Keep state updated for dynamic live calculations
         st.session_state[k_added_list] = added
         st.session_state[k_closing_list] = closing
 
@@ -767,10 +786,7 @@ if page == "Daily Entry":
         if k_cs not in st.session_state:
             st.session_state[k_cs] = f"{loaded['cash']:.2f}"
 
-        st.markdown("---")
-        st.write("**Today's collection & Staff Advance**")
-
-        c3, c4, c5, c6 = st.columns(4)
+        c3, c4, c5, c6, c7 = st.columns([1.1, 1.1, 1.1, 1.2, 1.1])
         with c3:
             total_collection_str = st.text_input(
                 "Total collection (₹)",
@@ -798,14 +814,26 @@ if page == "Daily Entry":
         cash_val = _num(cash_str)
 
         cash_leakage = total_collection_val - phonepe_val - staff_advance_val - cash_val
-
-        st.write(f"**Cash Leakage:** ₹{cash_leakage:,.2f}")
-
         has_leakage = cash_leakage > 0.001
+
+        with c7:
+            if has_leakage:
+                st.markdown(
+                    f"<div style='margin-top:2px;'><label style='font-size:12px; font-weight:700;'>Cash Leakage (₹)</label><br>"
+                    f"<b style='color:#C41C1C; font-size:16px;'>₹{cash_leakage:,.2f}</b></div>",
+                    unsafe_allow_html=True
+                )
+            else:
+                st.markdown(
+                    f"<div style='margin-top:2px;'><label style='font-size:12px; font-weight:700;'>Cash Leakage (₹)</label><br>"
+                    f"<b style='color:#2A1B10; font-size:15px;'>₹{cash_leakage:,.2f}</b></div>",
+                    unsafe_allow_html=True
+                )
+
         if has_leakage:
             st.markdown(
-                '<p style="color:red; font-weight:bold; font-size:16px;">'
-                'There is a cash leakage - please correct or enter reason in remarks field'
+                '<p style="color:#C41C1C; font-weight:bold; font-size:13px; margin: 2px 0 !important;">'
+                '⚠️ There is a cash leakage - please correct or enter reason in remarks field'
                 '</p>',
                 unsafe_allow_html=True,
             )
@@ -827,7 +855,7 @@ if page == "Daily Entry":
                         total_collection_val, phonepe_val, cash_val, remarks, selected_staff, staff_advance_val
                     )
                     st.cache_resource.clear()
-                    show_success_modal(f"Saved successfully! Sales updated for {cart_name} on {entry_date.strftime('%d %b %Y')}. Sales: {sum(saved_sold)} units.")
+                    show_success_modal(f"Saved successfully! Sales updated for {cart_name} on {entry_date.strftime('%d %b %Y')}. Total Sold: {sum(saved_sold)} units.")
                 except Exception as e:
                     st.error(f"Could not save - {e}")
 
@@ -909,10 +937,10 @@ elif page == "Freezer Stock":
         df_init,
         column_config={
             "Flavour": st.column_config.TextColumn(disabled=True),
-            "Ordered": st.column_config.NumberColumn(min_value=0, step=1),
-            "Received": st.column_config.NumberColumn(min_value=0, step=1),
-            "Cost (₹, total)": st.column_config.NumberColumn(min_value=0.0, step=10.0),
-            "Damaged": st.column_config.NumberColumn(min_value=0, step=1),
+            "Ordered": st.column_config.NumberColumn(min_value=0, step=1, format="%d"),
+            "Received": st.column_config.NumberColumn(min_value=0, step=1, format="%d"),
+            "Cost (₹, total)": st.column_config.NumberColumn(min_value=0.0, step=10.0, format="₹%.2f"),
+            "Damaged": st.column_config.NumberColumn(min_value=0, step=1, format="%d"),
         },
         hide_index=True,
         use_container_width=True,
