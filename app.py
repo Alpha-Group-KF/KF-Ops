@@ -100,7 +100,6 @@ st.html(
     div[data-testid="stDataEditor"] {
         border-radius: 12px;
         border: 1px solid #E3CBA0;
-        /* no overflow:hidden here - it clips the cell-edit popup and makes cells look uneditable */
     }
 
     /* ---------- Tabs / radio pills used inside forms ---------- */
@@ -122,7 +121,7 @@ st.html(
 )
 
 # ----------------------------------------------------------------------
-# CONFIG - edit these if your cart names / flavours / sheet ever change
+# CONFIG - Assumptions & Sheet Details
 # ----------------------------------------------------------------------
 CARTS = ["HOSUR CART 01", "HOSUR CART 02", "HOSUR CART 03"]
 CITY = "HOSUR"
@@ -165,8 +164,6 @@ SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
 
 def _num(x):
-    """Turn a sheet cell (possibly '7,130', ' ₹ 500 ', '(200)', '', or already
-    a number) into a float. Returns 0.0 for anything unparseable/blank."""
     if x is None:
         return 0.0
     if isinstance(x, (int, float)):
@@ -186,15 +183,12 @@ def _num(x):
 
 
 def _pad(row, n):
-    """Google Sheets trims trailing empty cells per row, so a row with a blank
-    Remarks column can come back shorter than expected. Pad it back out."""
     if len(row) < n:
         return row + [""] * (n - len(row))
     return row
 
 
 def _row_has_data(r):
-    """Treat a row as 'real' only if at least one of its numeric cells has data."""
     return any(str(c).strip() != "" for c in r[4:43])
 
 
@@ -243,10 +237,6 @@ def _update_row(tab_name, row_number, values):
 
 
 def get_opening_balance(cart_name, before_date=None):
-    """Closing balance of the most recent entry for this cart, strictly before
-    `before_date` if given (so backfilling a past date pulls the right day's
-    closing instead of whatever the globally-latest entry happens to be).
-    If before_date is None, falls back to the latest entry overall."""
     _, rows = load_daily_raw()
     latest = None
     latest_date = None
@@ -282,7 +272,7 @@ def append_daily_entry(entry_date, cart_name, added, closing, opening, total, ph
         + added
         + sold
         + closing
-        + [total, phonepe, cash, remarks]
+        + [float(total), float(phonepe), float(cash), remarks]
     )
     ws = get_ws("Daily Data As Shared")
     ws.append_row(row, value_input_option="USER_ENTERED")
@@ -299,7 +289,7 @@ def update_daily_entry(row_number, entry_date, cart_name, added, closing, openin
         + added
         + sold
         + closing
-        + [total, phonepe, cash, remarks]
+        + [float(total), float(phonepe), float(cash), remarks]
     )
     _update_row("Daily Data As Shared", row_number, row)
     return sold
@@ -345,7 +335,7 @@ def append_expense(exp_date, description, amount, category, mode, ref_no, paid_t
     row = [
         exp_date.strftime("%Y-%m-%d"),
         description,
-        amount,
+        float(amount),
         category,
         mode,
         ref_no,
@@ -360,7 +350,7 @@ def update_expense(row_number, exp_date, description, amount, category, mode, re
     row = [
         exp_date.strftime("%Y-%m-%d"),
         description,
-        amount,
+        float(amount),
         category,
         mode,
         ref_no,
@@ -448,7 +438,7 @@ def load_daily_df():
 
 
 # ----------------------------------------------------------------------
-# Stock Received (freezer stock-in) helpers
+# Stock Received helpers
 # ----------------------------------------------------------------------
 def load_stock_raw():
     ws = get_ws("Stock Received")
@@ -559,7 +549,7 @@ def get_freezer_stock():
 
 
 # ----------------------------------------------------------------------
-# Login (shared credentials & narrowed centered form)
+# Login
 # ----------------------------------------------------------------------
 def check_login():
     if st.session_state.get("authenticated", False):
@@ -601,7 +591,7 @@ if not check_login():
     st.stop()
 
 # ----------------------------------------------------------------------
-# UI
+# Navigation
 # ----------------------------------------------------------------------
 with st.sidebar:
     try:
@@ -686,8 +676,6 @@ if page == "Daily Entry":
             opening = [0] * N_FLAVORS
             st.warning(f"Could not fetch opening balance automatically ({e}). Starting from 0 - check your figures.")
 
-    # Fresh widget key per date+cart combo for new entries, so switching either
-    # one always reloads correct defaults instead of retaining stale edits.
     data_key_suffix = f"_{editing_row}" if editing_row else f"_new_{cart_name}_{entry_date.isoformat()}"
 
     flavor_names = [f[1] for f in FLAVORS]
@@ -699,7 +687,8 @@ if page == "Daily Entry":
             "Closing cart balance": loaded["closing"] if loaded else opening,
         }
     )
-    st.write("Enter units **added to the cart** (restock) and the **actual closing count** you observe in the cart, per flavour. Today's sales is calculated automatically.")
+    
+    st.write("Enter units **added to the cart** (restock) and the **actual closing count** you observe in the cart, per flavour.")
     edited = st.data_editor(
         df_init,
         column_config={
@@ -717,6 +706,7 @@ if page == "Daily Entry":
     closing = edited["Closing cart balance"].fillna(0).astype(int).tolist()
     sold = [opening[i] + added[i] - closing[i] for i in range(N_FLAVORS)]
 
+    # Single Summary Table (with Totals & Sales Calculated)
     summary_df = pd.DataFrame(
         {
             "Flavour": flavor_names + ["**Total**"],
@@ -729,25 +719,59 @@ if page == "Daily Entry":
     st.dataframe(summary_df, hide_index=True, use_container_width=True)
 
     if any(s < 0 for s in sold):
-        st.error("Today's sales works out negative for at least one flavour - the closing count entered is higher than opening + added. Double check the numbers above.")
+        st.error("Today's sales works out negative for at least one flavour - closing count is higher than opening + added.")
 
-    suggested_total = sum(sold[i] * FLAVORS[i][2] for i in range(N_FLAVORS))
-    default_total = loaded["total"] if loaded else float(suggested_total)
-    default_phonepe = loaded["phonepe"] if loaded else 0.0
-    default_cash = loaded["cash"] if loaded else default_total
+    # Flavour-wise MRP Calculation based on assumptions
+    calculated_total_revenue = float(sum(sold[i] * FLAVORS[i][2] for i in range(N_FLAVORS)))
+
+    # Synchronized Session State for Total, PhonePe, and Cash
+    k_tot = f"daily_total{data_key_suffix}"
+    k_ph = f"daily_phonepe{data_key_suffix}"
+    k_cs = f"daily_cash{data_key_suffix}"
+
+    if k_tot not in st.session_state:
+        st.session_state[k_tot] = float(loaded["total"]) if loaded else max(0.0, calculated_total_revenue)
+    if k_ph not in st.session_state:
+        st.session_state[k_ph] = float(loaded["phonepe"]) if loaded else 0.0
+    if k_cs not in st.session_state:
+        st.session_state[k_cs] = float(loaded["cash"]) if loaded else max(0.0, st.session_state[k_tot] - st.session_state[k_ph])
+
+    # Callbacks for automatic live updates while preserving direct edits
+    def on_phonepe_change():
+        st.session_state[k_cs] = max(0.0, float(st.session_state[k_tot]) - float(st.session_state[k_ph]))
+
+    def on_total_change():
+        st.session_state[k_cs] = max(0.0, float(st.session_state[k_tot]) - float(st.session_state[k_ph]))
 
     st.markdown("---")
     st.write("**Today's collection**")
     c3, c4, c5 = st.columns(3)
     with c3:
-        total_collection = st.number_input("Total collection (₹)", min_value=0.0, value=float(default_total), step=10.0, key=f"daily_total{data_key_suffix}")
+        total_collection = st.number_input(
+            "Total collection (₹)",
+            min_value=0.0,
+            step=10.0,
+            key=k_tot,
+            on_change=on_total_change
+        )
     with c4:
-        phonepe = st.number_input("PhonePe / UPI (₹)", min_value=0.0, value=float(default_phonepe), step=10.0, key=f"daily_phonepe{data_key_suffix}")
+        phonepe = st.number_input(
+            "PhonePe / UPI (₹)",
+            min_value=0.0,
+            step=10.0,
+            key=k_ph,
+            on_change=on_phonepe_change
+        )
     with c5:
-        cash = st.number_input("Cash (₹)", min_value=0.0, value=float(default_cash), step=10.0, key=f"daily_cash{data_key_suffix}")
+        cash = st.number_input(
+            "Cash (₹)",
+            min_value=0.0,
+            step=10.0,
+            key=k_cs
+        )
 
     if abs((phonepe + cash) - total_collection) > 0.5:
-        st.warning(f"PhonePe + Cash (₹{phonepe + cash:,.0f}) doesn't match Total collection (₹{total_collection:,.0f}) - fine if intentional, otherwise adjust.")
+        st.warning(f"PhonePe + Cash (₹{phonepe + cash:,.0f}) doesn't match Total collection (₹{total_collection:,.0f}) - adjust if unintentional.")
 
     remarks = st.text_input("Remarks (optional)", value=(loaded["remarks"] if loaded else ""), key=f"daily_remarks{data_key_suffix}")
 
@@ -756,21 +780,21 @@ if page == "Daily Entry":
         if sum(added) == 0 and closing == opening:
             st.error("Enter a stock addition or a closing count that differs from yesterday's balance before saving.")
         elif any(s < 0 for s in sold):
-            st.error("Today's sales works out negative for at least one flavour - fix the closing count before saving.")
+            st.error("Today's sales works out negative for at least one flavour - fix closing count before saving.")
         else:
             try:
                 if editing_row:
                     saved_sold = update_daily_entry(editing_row, entry_date, cart_name, added, closing, opening, total_collection, phonepe, cash, remarks)
-                    st.success(f"Updated entry for {cart_name} on {entry_date.strftime('%d %b %Y')}. Today's sales: {sum(saved_sold)} units.")
+                    st.success(f"Updated entry for {cart_name} on {entry_date.strftime('%d %b %Y')}. Sales: {sum(saved_sold)} units.")
                 else:
                     saved_sold = append_daily_entry(entry_date, cart_name, added, closing, opening, total_collection, phonepe, cash, remarks)
-                    st.success(f"Saved for {cart_name} on {entry_date.strftime('%d %b %Y')}. Today's sales: {sum(saved_sold)} units.")
+                    st.success(f"Saved for {cart_name} on {entry_date.strftime('%d %b %Y')}. Sales: {sum(saved_sold)} units.")
                 st.cache_resource.clear()
             except Exception as e:
                 st.error(f"Could not save - {e}")
 
     if editing_row:
-        st.caption("Note: editing a day that isn't the most recent entry for this cart won't automatically recalculate later days' opening/closing balances - check the days after this one if the correction is significant.")
+        st.caption("Note: editing a day that isn't the most recent entry won't cascade opening/closing balance adjustments forward automatically.")
 
 # ---------------- FREEZER STOCK ----------------
 elif page == "Freezer Stock":
@@ -808,7 +832,7 @@ elif page == "Freezer Stock":
             st.caption("Loaded - edit the fields below, then click Update entry to save changes to this same row.")
 
     sk = f"_{stock_editing_row}" if stock_editing_row else "_new"
-    st.caption("Log a supplier delivery. Ordered and Damaged are optional - fill in what you have.")
+    st.caption("Log a supplier delivery. Ordered and Damaged are optional.")
 
     def _parse_date_or(s, fallback):
         if not s or not str(s).strip():
@@ -836,7 +860,6 @@ elif page == "Freezer Stock":
         location = st.text_input("Location", value=(stock_loaded["location"] if stock_loaded else CITY), key=f"stock_location{sk}")
 
     flavor_names = [f[1] for f in FLAVORS]
-    default_cost = [f[3] for f in FLAVORS]
     df_init = pd.DataFrame(
         {
             "Flavour": flavor_names,
@@ -853,7 +876,7 @@ elif page == "Freezer Stock":
             "Flavour": st.column_config.TextColumn(disabled=True),
             "Ordered": st.column_config.NumberColumn(min_value=0, step=1),
             "Received": st.column_config.NumberColumn(min_value=0, step=1),
-            "Cost (₹, total)": st.column_config.NumberColumn(min_value=0.0, step=10.0, help="Total cost for the received quantity of this flavour"),
+            "Cost (₹, total)": st.column_config.NumberColumn(min_value=0.0, step=10.0),
             "Damaged": st.column_config.NumberColumn(min_value=0, step=1),
         },
         hide_index=True,
@@ -868,8 +891,7 @@ elif page == "Freezer Stock":
 
     st.caption(
         "Standard cost price per unit — Malai ₹22, Mini Malai ₹18, Pista ₹22, Mango ₹22, "
-        "Kesar Badam ₹27.5, Badam Matka ₹44, Shahi Gulab ₹27.5, Chocolate ₹27.5, Roasted Almond ₹33 "
-        "— multiply by units received for a quick cost estimate per flavour."
+        "Kesar Badam ₹27.5, Badam Matka ₹44, Shahi Gulab ₹27.5, Chocolate ₹27.5, Roasted Almond ₹33."
     )
 
     st.markdown("---")
@@ -892,7 +914,7 @@ elif page == "Freezer Stock":
         if has_payment_date
         else None
     )
-    payment_details = st.text_input("Payment details (optional)", value=(stock_loaded["payment_details"] if stock_loaded else ""), placeholder="e.g. UPI ref / who paid", key=f"stock_pay_details{sk}")
+    payment_details = st.text_input("Payment details (optional)", value=(stock_loaded["payment_details"] if stock_loaded else ""), key=f"stock_pay_details{sk}")
 
     has_damaged_return = st.checkbox("Damaged items were returned", value=bool(stock_loaded and stock_loaded["damaged_returned_on"]), key=f"stock_has_damret{sk}")
     damaged_returned_on = (
@@ -936,7 +958,7 @@ elif page == "Freezer Stock":
 # ---------------- FREEZER ANALYSIS ----------------
 elif page == "Freezer Analysis":
     st.subheader("Freezer stock analysis & reorder planner")
-    st.caption("Uses your recent sales pace to estimate when the freezer will run low, and what to order next.")
+    st.caption("Uses recent sales pace to estimate when freezer stock runs low.")
 
     ac1, ac2, ac3 = st.columns(3)
     with ac1:
@@ -955,7 +977,7 @@ elif page == "Freezer Analysis":
         st.warning(f"Could not load data yet ({e}).")
 
     if daily_df_fa.empty:
-        st.info("No sales logged yet - once you've saved a few days of sales, this tab will estimate freezer run-out dates.")
+        st.info("No sales logged yet.")
     else:
         today_fa = date.today()
         cutoff_fa = today_fa - timedelta(days=lookback_days - 1)
@@ -1001,7 +1023,6 @@ elif page == "Freezer Analysis":
             )
 
         analysis_df = pd.DataFrame(rows)
-
         total_stock = sum(freezer_stock_fa)
         total_rate = sum(avg_daily)
         overall_days_left = (total_stock / total_rate) if total_rate > 0 else None
@@ -1015,34 +1036,19 @@ elif page == "Freezer Analysis":
 
         if overall_order_date is not None:
             if overall_order_date <= today_fa:
-                st.error(f"**Place your next order now** — at least one flavour is already at or below your {buffer_days}-day buffer.")
+                st.error(f"**Place your next order now** — at least one flavour is at or below your {buffer_days}-day buffer.")
             else:
                 days_until = (overall_order_date - today_fa).days
-                st.success(f"**Next order should be placed by {overall_order_date.strftime('%d %b %Y')}** (in {days_until} day{'s' if days_until != 1 else ''}) to keep every flavour above your {buffer_days}-day buffer.")
-        else:
-            st.caption("Not enough recent sales data to estimate a reorder date yet.")
+                st.success(f"**Next order by {overall_order_date.strftime('%d %b %Y')}** (in {days_until} days).")
 
         st.markdown("### Per-flavour breakdown")
-        st.dataframe(
-            analysis_df,
-            hide_index=True,
-            use_container_width=True,
-            column_config={
-                "Status": st.column_config.TextColumn(help="Order now: at/below buffer. Order soon: within 2 days of buffer. OK: comfortably above buffer."),
-            },
-        )
+        st.dataframe(analysis_df, hide_index=True, use_container_width=True)
 
-        st.markdown("### Suggested next order (flavour mix based on recent sales)")
+        st.markdown("### Suggested next order")
         order_df = analysis_df[["Flavour", f"Suggested next order ({cover_days}d)"]].rename(
             columns={f"Suggested next order ({cover_days}d)": "Units to order"}
         )
-        total_suggested = int(order_df["Units to order"].sum())
         st.dataframe(order_df, hide_index=True, use_container_width=True)
-        st.caption(
-            f"Total suggested order: {total_suggested} units, split across flavours in the same proportion as your last "
-            f"{lookback_days} days of sales — so your best-sellers get restocked the most. Adjust the controls above to "
-            f"widen/narrow the sales window, change your buffer, or size the order differently."
-        )
 
         st.markdown("### Days of stock left, by flavour")
         chart_df = analysis_df[analysis_df["Days of stock left"] != "—"].copy()
@@ -1065,7 +1071,6 @@ elif page == "Freezer Analysis":
             )
             rule = alt.Chart(pd.DataFrame({"y": [buffer_days]})).mark_rule(color="#4A2418", strokeDash=[4, 4]).encode(y="y:Q")
             st.altair_chart(days_chart + rule, use_container_width=True)
-            st.caption(f"Dashed line marks your {buffer_days}-day buffer. Red bars are at or below it.")
 
 # ---------------- EXPENSES ----------------
 elif page == "Expenses":
@@ -1099,8 +1104,8 @@ elif page == "Expenses":
         default_cat_idx = EXPENSE_CATEGORIES.index(exp_loaded["category"]) if exp_loaded and exp_loaded["category"] in EXPENSE_CATEGORIES else 0
         category = st.selectbox("Category", EXPENSE_CATEGORIES, index=default_cat_idx, key=f"exp_category{ek}")
 
-    description = st.text_input("Description", value=(exp_loaded["description"] if exp_loaded else ""), placeholder="e.g. Kulfi stock from supplier", key=f"exp_desc{ek}")
-    amount = st.number_input("Amount (₹)", min_value=0.0, value=(exp_loaded["amount"] if exp_loaded else 0.0), step=10.0, key=f"exp_amount{ek}")
+    description = st.text_input("Description", value=(exp_loaded["description"] if exp_loaded else ""), key=f"exp_desc{ek}")
+    amount = st.number_input("Amount (₹)", min_value=0.0, value=(float(exp_loaded["amount"]) if exp_loaded else 0.0), step=10.0, key=f"exp_amount{ek}")
 
     c3, c4 = st.columns(2)
     with c3:
@@ -1140,7 +1145,7 @@ elif page == "Dashboard":
             st.code("\n".join(tab_names))
         except Exception as e:
             tab_names = []
-            st.error(f"Could not connect to the Google Sheet at all: {e}")
+            st.error(f"Could not connect to the Google Sheet: {e}")
 
         for label, tab in [
             ("Daily Data As Shared", "Daily Data As Shared"),
@@ -1149,29 +1154,23 @@ elif page == "Dashboard":
         ]:
             st.markdown(f"**{label}**")
             if tab not in tab_names:
-                st.warning(f"No tab named exactly `{tab}` was found. Check for a trailing space, "
-                            f"a renamed tab, or extra hidden characters in the tab name in your Google Sheet.")
+                st.warning(f"No tab named `{tab}` found.")
                 continue
             try:
                 if tab == "Daily Data As Shared":
                     _, raw_rows = load_daily_raw()
                     padded = [_pad(r, DAILY_TOTAL_COLS) for r in raw_rows if r and r[0].strip()]
                     real = [r for r in padded if _row_has_data(r)]
-                    st.write(f"{len(padded)} row(s) with a date, {len(real)} of those have actual sales/stock data "
-                              f"(the rest are blank future placeholder rows already in your sheet).")
-                    if real:
-                        st.write("Most recent real entry:", real[-1][:2])
-                    continue
+                    st.write(f"{len(padded)} row(s) with date, {len(real)} with data.")
                 elif tab == "Stock Received":
                     _, raw_rows = load_stock_raw()
+                    non_empty = [r for r in raw_rows if r and r[0].strip()]
+                    st.write(f"{len(non_empty)} data row(s) found.")
                 else:
                     ws = get_ws("Expenses")
                     raw_rows = ws.get_all_values()[EXPENSE_HEADER_ROWS:]
-                non_empty = [r for r in raw_rows if r and r[0].strip()]
-                st.write(f"{len(non_empty)} data row(s) found.")
-                if non_empty:
-                    st.write("First row's first few cells:", non_empty[0][:4])
-                    st.write("Last row's first few cells:", non_empty[-1][:4])
+                    non_empty = [r for r in raw_rows if r and r[0].strip()]
+                    st.write(f"{len(non_empty)} data row(s) found.")
             except Exception as e:
                 st.error(f"Error reading `{tab}`: {e}")
 
@@ -1219,16 +1218,16 @@ elif page == "Dashboard":
             .mark_bar(color="#E8542A")
             .encode(
                 x=alt.X("Day:T", title="", axis=alt.Axis(format="%d %b", labelAngle=-45)),
-                y=alt.Y("Total_Collection:Q", title="Revenue (₹)", scale=alt.Scale(domain=[0, 25000])),
+                y=alt.Y("Total_Collection:Q", title="Revenue (₹)"),
                 tooltip=[alt.Tooltip("Day:T", title="Date", format="%d %b %Y"), alt.Tooltip("Total_Collection:Q", title="Revenue", format=",.0f")],
             )
             .properties(height=280)
         )
         st.altair_chart(trend_chart, use_container_width=True)
     else:
-        st.info("No sales logged yet - entries you save in the Daily Entry tab will show up here.")
+        st.info("No sales logged yet.")
 
-    # ------------------ Date-range reports ------------------
+    # ------------------ Reports ------------------
     if not daily_df.empty or not exp_df.empty:
         st.markdown("---")
         st.markdown('<div id="reports"></div>', unsafe_allow_html=True)
@@ -1267,7 +1266,7 @@ elif page == "Dashboard":
         range_end = st.session_state["applied_end"]
 
         if range_start > range_end:
-            st.error("'From' date is after 'To' date - swap them and click Apply again.")
+            st.error("'From' date is after 'To' date.")
             range_start, range_end = range_end, range_start
 
         st.caption(f"Showing: {range_start.strftime('%d %b %Y')} – {range_end.strftime('%d %b %Y')}")
@@ -1284,7 +1283,7 @@ elif page == "Dashboard":
         mc2.metric("Units sold in range", f"{total_units}")
         mc3.metric("Expenses in range", f"₹{total_exp_all:,.0f}")
 
-        # ---- Cart-wise comparison ----
+        # Cart-wise comparison
         st.markdown('<div id="cart-wise-comparison"></div>', unsafe_allow_html=True)
         st.markdown("### Cart-wise comparison")
         if not range_df.empty:
@@ -1296,10 +1295,8 @@ elif page == "Dashboard":
             )
             st.dataframe(cart_grp, hide_index=True, use_container_width=True)
             st.bar_chart(cart_grp.set_index("Cart")["Revenue (₹)"])
-        else:
-            st.caption("No sales in this date range.")
 
-        # ---- Cart-wise x day-of-week sales ----
+        # Cart-wise Day of Week
         st.markdown('<div id="cart-wise-day-of-week"></div>', unsafe_allow_html=True)
         st.markdown("### Cart-wise average sales by day of the week")
         if not range_df.empty:
@@ -1307,9 +1304,7 @@ elif page == "Dashboard":
             dow_df = range_df[range_df["Sold_Total"] > 0].copy()
             dow_df["Day"] = dow_df["Date"].dt.day_name()
 
-            if dow_df.empty:
-                st.caption("No days with actual sales in this date range.")
-            else:
+            if not dow_df.empty:
                 units_pivot = dow_df.pivot_table(
                     index="Cart", columns="Day", values="Sold_Total", aggfunc="mean", fill_value=0, margins=True, margins_name="All carts"
                 )
@@ -1321,17 +1316,13 @@ elif page == "Dashboard":
                 )
                 rev_pivot = rev_pivot.reindex(columns=day_cols)
 
-                st.write("**Avg. units sold** (rows = cart, columns = day of week)")
+                st.write("**Avg. units sold**")
                 st.dataframe(units_pivot.round(1), use_container_width=True)
 
-                st.write("**Avg. revenue (₹)** (rows = cart, columns = day of week)")
+                st.write("**Avg. revenue (₹)**")
                 st.dataframe(rev_pivot.round(0).astype(int), use_container_width=True)
 
-                st.caption("Zero-sales days are excluded, so each cell is the average over the days that weekday actually had sales. 'All carts' shows the overall average across carts / days.")
-        else:
-            st.caption("No sales in this date range.")
-
-        # ---- Flavour-wise performance ----
+        # Flavour-wise performance
         st.markdown('<div id="flavour-wise-performance"></div>', unsafe_allow_html=True)
         st.markdown("### Flavour-wise performance")
         if not range_df.empty:
@@ -1348,64 +1339,34 @@ elif page == "Dashboard":
             ).sort_values("Units sold", ascending=False)
             st.dataframe(flavor_df, hide_index=True, use_container_width=True)
             st.bar_chart(flavor_df.set_index("Flavour")["Units sold"])
-            st.caption("Estimated revenue = units sold × MRP per flavour; actual collections may vary slightly (discounts, complementary pieces etc).")
-        else:
-            st.caption("No sales in this date range.")
 
-        # ---- Profit & Loss summary ----
+        # P&L
         st.markdown('<div id="profit-loss-summary"></div>', unsafe_allow_html=True)
         st.markdown("### Profit & loss summary")
         cogs = range_exp[range_exp["Category"] == "Cost of Goods"]["Amount"].sum() if not range_exp.empty else 0.0
         opex_cats = ["Labour Charges", "Leakage Expense", "Miscellaneous Expense"]
         opex = range_exp[range_exp["Category"].isin(opex_cats)]["Amount"].sum() if not range_exp.empty else 0.0
-        capital_cats = ["Initial Investment", "Initial Set-up Expense"]
-        capital = range_exp[range_exp["Category"].isin(capital_cats)]["Amount"].sum() if not range_exp.empty else 0.0
         gross_profit = total_rev - cogs
         net_profit = gross_profit - opex
 
         pnl_df = pd.DataFrame(
             {
-                "Line item": ["Revenue", "Cost of Goods", "Gross profit", "Operating expenses (labour, leakage, misc.)", "Net profit"],
+                "Line item": ["Revenue", "Cost of Goods", "Gross profit", "Operating expenses", "Net profit"],
                 "Amount (₹)": [total_rev, -cogs, gross_profit, -opex, net_profit],
             }
         )
         st.dataframe(pnl_df, hide_index=True, use_container_width=True)
-        pc1, pc2 = st.columns(2)
-        pc1.metric("Net profit", f"₹{net_profit:,.0f}")
-        pc2.metric("Margin", f"{(net_profit / total_rev * 100) if total_rev else 0:.1f}%")
-        if capital > 0:
-            st.caption(f"₹{capital:,.0f} of one-time capital/setup costs fell in this range and is shown separately below, not deducted above.")
 
-        # ---- Expense breakdown ----
-        st.markdown('<div id="expense-breakdown"></div>', unsafe_allow_html=True)
-        st.markdown("### Expense breakdown by category")
-        if not range_exp.empty:
-            by_cat = range_exp.groupby("Category")["Amount"].sum().sort_values(ascending=False)
-            st.dataframe(
-                by_cat.reset_index().rename(columns={"Amount": "₹"}),
-                hide_index=True,
-                use_container_width=True,
-                column_config={"₹": st.column_config.ProgressColumn("Share", format="₹%.0f", min_value=0, max_value=float(by_cat.max()))},
-            )
-            st.bar_chart(by_cat)
-        else:
-            st.caption("No expenses logged in this date range.")
-
-        # ---- Cash vs PhonePe ----
+        # Cash vs PhonePe
         st.markdown('<div id="cash-vs-phonepe"></div>', unsafe_allow_html=True)
         st.markdown("### Cash vs PhonePe / UPI")
         if not range_df.empty:
             total_cash = range_df["Cash"].sum()
             total_phonepe = range_df["PhonePe"].sum()
-            cc1, cc2 = st.columns(2)
-            cc1.metric("Cash", f"₹{total_cash:,.0f}")
-            cc2.metric("PhonePe / UPI", f"₹{total_phonepe:,.0f}")
             split_df = pd.DataFrame({"Mode": ["Cash", "PhonePe / UPI"], "Amount (₹)": [total_cash, total_phonepe]})
             st.bar_chart(split_df.set_index("Mode")["Amount (₹)"])
-        else:
-            st.caption("No collections in this date range.")
 
-        # ---- Date-range sales table ----
+        # Sales table
         st.markdown('<div id="sales-in-range"></div>', unsafe_allow_html=True)
         st.markdown("### Sales in this range")
         if not range_df.empty:
@@ -1414,15 +1375,12 @@ elif page == "Dashboard":
             )
             sales_table["Date"] = sales_table["Date"].dt.strftime("%d %b %Y")
             st.dataframe(sales_table, hide_index=True, use_container_width=True)
-        else:
-            st.caption("No sales in this date range.")
 
-    # ------------------ Current Inventory Status ------------------
+    # ------------------ Current Inventory ------------------
     if not daily_df.empty:
         st.markdown("---")
         st.markdown('<div id="inventory-status"></div>', unsafe_allow_html=True)
         st.markdown("## Current Inventory Status")
-
         st.metric("Stock across carts", f"{int(daily_df.sort_values('Date').groupby('Cart').tail(1)['Closing_Total'].sum())}")
 
         try:
