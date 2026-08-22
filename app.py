@@ -242,7 +242,11 @@ def _update_row(tab_name, row_number, values):
     ws.update(f"A{row_number}:{end_col}{row_number}", [values], value_input_option="USER_ENTERED")
 
 
-def get_opening_balance(cart_name):
+def get_opening_balance(cart_name, before_date=None):
+    """Closing balance of the most recent entry for this cart, strictly before
+    `before_date` if given (so backfilling a past date pulls the right day's
+    closing instead of whatever the globally-latest entry happens to be).
+    If before_date is None, falls back to the latest entry overall."""
     _, rows = load_daily_raw()
     latest = None
     latest_date = None
@@ -251,12 +255,14 @@ def get_opening_balance(cart_name):
         if not r[0].strip() or r[1].strip() != cart_name or not _row_has_data(r):
             continue
         try:
-            d = datetime.strptime(r[0].split(" ")[0], "%Y-%m-%d")
-        except Exception:
-            try:
-                d = datetime.strptime(r[0], "%d/%m/%Y")
-            except Exception:
+            d = pd.to_datetime(r[0])
+            if pd.isna(d):
                 continue
+            d = d.date()
+        except Exception:
+            continue
+        if before_date is not None and d >= before_date:
+            continue
         if latest_date is None or d > latest_date:
             latest_date = d
             latest = r
@@ -675,7 +681,7 @@ if page == "Daily Entry":
         opening = loaded["opening"]
     else:
         try:
-            opening = get_opening_balance(cart_name)
+            opening = get_opening_balance(cart_name, before_date=entry_date)
         except Exception as e:
             opening = [0] * N_FLAVORS
             st.warning(f"Could not fetch opening balance automatically ({e}). Starting from 0 - check your figures.")
