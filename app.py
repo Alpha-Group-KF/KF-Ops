@@ -19,103 +19,105 @@ st.html(
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-    /* Compact full-screen layout to prevent vertical scrolling on Daily Entry */
+    /* Ultra-compact layout: fits full 9-row table and all fields on one laptop screen */
     .block-container {
-        padding-top: 0.5rem !important;
-        padding-bottom: 0.2rem !important;
+        padding-top: 0.25rem !important;
+        padding-bottom: 0.1rem !important;
         margin-top: 0 !important;
-        max-width: 98% !important;
+        max-width: 99% !important;
     }
     header[data-testid="stHeader"] {
         background-color: transparent !important;
-        height: 0.5rem !important;
+        height: 0.2rem !important;
     }
     html, body, [class*="css"] { font-family: 'Manrope', sans-serif; }
-    h1, h2, h3 { font-family: 'Fraunces', serif !important; color: #8A5E17 !important; letter-spacing: -0.01em; margin-bottom: 0.2rem !important; }
-    h1 { font-size: 1.6rem !important; margin-top: 0 !important; }
-    h2 { font-size: 1.3rem !important; }
-    h3 { font-size: 1.1rem !important; }
-    p, span, label, .stMarkdown { color: #2A1B10; }
+    h1, h2, h3 { font-family: 'Fraunces', serif !important; color: #8A5E17 !important; letter-spacing: -0.01em; margin: 0 !important; }
+    h1 { font-size: 1.3rem !important; margin-top: 0 !important; padding: 0 !important; }
+    h2 { font-size: 1.15rem !important; }
+    h3 { font-size: 1.0rem !important; }
+    p, span, label, .stMarkdown { color: #2A1B10; margin-bottom: 0 !important; }
 
-    /* Compact widgets & labels */
+    /* Ultra-compact gap between blocks */
     div[data-testid="stVerticalBlock"] > div {
-        gap: 0.35rem !important;
+        gap: 0.15rem !important;
     }
     .stSelectbox label, .stTextInput label, .stNumberInput label {
-        font-size: 12px !important;
+        font-size: 11px !important;
         font-weight: 700 !important;
         margin-bottom: 0 !important;
+        padding-bottom: 0 !important;
     }
     .stSelectbox div[data-baseweb="select"], .stTextInput div[data-baseweb="input"], .stNumberInput div[data-baseweb="input"] {
-        min-height: 32px !important;
-        height: 32px !important;
+        min-height: 27px !important;
+        height: 27px !important;
+        font-size: 12px !important;
+    }
+    .stTextInput input {
+        padding-top: 2px !important;
+        padding-bottom: 2px !important;
     }
 
-    section[data-testid="stSidebar"] { font-size: 16px; border-right: 1px solid #E3CBA0; }
-    section[data-testid="stSidebar"] h2 { font-size: 20px !important; color: #8A5E17 !important; }
-    section[data-testid="stSidebar"] .stRadio > div { gap: 4px; }
+    section[data-testid="stSidebar"] { font-size: 15px; border-right: 1px solid #E3CBA0; }
+    section[data-testid="stSidebar"] h2 { font-size: 18px !important; color: #8A5E17 !important; }
+    section[data-testid="stSidebar"] .stRadio > div { gap: 3px; }
     section[data-testid="stSidebar"] .stRadio label {
         background: #FFFBF2;
         border: 1px solid #E3CBA0;
-        border-radius: 8px;
-        padding: 6px 10px !important;
-        margin-bottom: 2px;
+        border-radius: 6px;
+        padding: 4px 8px !important;
+        margin-bottom: 1px;
         transition: background .15s ease, border-color .15s ease;
     }
     section[data-testid="stSidebar"] .stRadio label:hover { background: #F0D9A6; border-color: #E8542A; }
-    section[data-testid="stSidebar"] .stRadio label p { font-size: 15px !important; font-weight: 600; }
-    section[data-testid="stSidebar"] .stButton button { font-size: 15px !important; border-radius: 8px !important; }
+    section[data-testid="stSidebar"] .stRadio label p { font-size: 14px !important; font-weight: 600; }
+    section[data-testid="stSidebar"] .stButton button { font-size: 14px !important; border-radius: 6px !important; }
 
-    .dash-jump { background: #FFFBF2; border: 1px solid #E3CBA0; border-radius: 8px; padding: 6px 10px; margin-top: 6px; }
-    .dash-jump b { font-size: 14px !important; color: #7A5A34; }
-    .dash-jump a { display:block; padding: 4px 0 4px 6px; font-size: 13px !important;
-                   color:#8A5E17 !important; text-decoration:none; border-radius: 6px; }
+    .dash-jump { background: #FFFBF2; border: 1px solid #E3CBA0; border-radius: 6px; padding: 4px 8px; margin-top: 4px; }
+    .dash-jump b { font-size: 13px !important; color: #7A5A34; }
+    .dash-jump a { display:block; padding: 2px 0 2px 4px; font-size: 12px !important;
+                   color:#8A5E17 !important; text-decoration:none; border-radius: 4px; }
     .dash-jump a:hover { background: #F0D9A6; text-decoration:none; }
 
     .stButton button, [data-testid="stFormSubmitButton"] button, [data-testid="baseButton-primary"] {
-        border-radius: 8px !important;
+        border-radius: 6px !important;
         font-weight: 700 !important;
         border: none !important;
-        padding: 0.35rem 0.75rem !important;
-        font-size: 14px !important;
+        padding: 0.25rem 0.6rem !important;
+        font-size: 13px !important;
     }
     .stButton button[kind="primary"], [data-testid="stFormSubmitButton"] button[kind="primary"] {
         background: #E8542A !important;
-        box-shadow: 0 2px 6px rgba(232,84,42,0.3);
+        box-shadow: 0 1px 4px rgba(232,84,42,0.3);
     }
     .stButton button[kind="primary"]:hover { background: #C43D17 !important; }
 
-    /* Compact Metrics */
+    /* Compact Metrics Strip */
     div[data-testid="stMetric"] {
         background: #FFFBF2;
         border: 1px solid #E3CBA0;
-        border-radius: 10px;
-        padding: 6px 12px !important;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        border-radius: 6px;
+        padding: 2px 8px !important;
+        box-shadow: none !important;
     }
-    div[data-testid="stMetricLabel"] { font-weight: 700; font-size: 12px !important; color: #7A5A34; }
-    div[data-testid="stMetricValue"] { font-family: 'Fraunces', serif; font-size: 1.25rem !important; color: #4A2418; }
+    div[data-testid="stMetricLabel"] { font-weight: 700; font-size: 11px !important; color: #7A5A34; }
+    div[data-testid="stMetricValue"] { font-family: 'Fraunces', serif; font-size: 1.05rem !important; color: #4A2418; }
 
-    /* Glide Data Grid Centering & High-Contrast Bold Headers */
+    /* High contrast centered tables */
     div[data-testid="stDataFrame"], div[data-testid="stDataEditor"] {
-        border-radius: 10px;
+        border-radius: 8px;
         border: 1.5px solid #D6B272 !important;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.03);
-    }
-    div[data-testid="stDataFrame"] canvas, div[data-testid="stDataEditor"] canvas {
-        border-radius: 10px;
     }
     div[data-testid="stDataFrame"] th, div[data-testid="stDataEditor"] th {
         font-weight: 900 !important;
         color: #1A0D00 !important;
         background-color: #E8CC95 !important;
         text-align: center !important;
-        font-size: 14px !important;
+        font-size: 13px !important;
         border-bottom: 2px solid #C4933F !important;
     }
     div[data-testid="stDataFrame"] td, div[data-testid="stDataEditor"] td {
         text-align: center !important;
-        font-size: 13px !important;
+        font-size: 12px !important;
     }
     div[data-testid="stDataFrame"] [role="columnheader"], div[data-testid="stDataEditor"] [role="columnheader"] {
         font-weight: 900 !important;
@@ -124,7 +126,7 @@ st.html(
         text-align: center !important;
     }
 
-    hr { border-color: #E3CBA0 !important; margin: 0.4rem 0 !important; }
+    hr { border-color: #E3CBA0 !important; margin: 0.2rem 0 !important; }
     </style>
     """
     )
@@ -636,7 +638,7 @@ with st.sidebar:
             textwrap.dedent(
                 """
             <div class="dash-jump">
-            <b style="font-size:15px;">Jump to</b><br>
+            <b style="font-size:14px;">Jump to</b><br>
             <a href="#last-3-days">Last 3 days</a>
             <a href="#revenue-trend">Revenue trend (14 days)</a>
             <a href="#reports">Reports (date range)</a>
@@ -664,8 +666,6 @@ st.title(f"🍦 Kulfi Ops — {page}")
 
 # ---------------- DAILY ENTRY ----------------
 if page == "Daily Entry":
-    st.subheader("Cart restock & daily sales")
-
     try:
         daily_entries = list_daily_entries()
     except Exception as e:
@@ -675,8 +675,8 @@ if page == "Daily Entry":
     if not daily_entries:
         st.info("No past entries found in the sheet.")
     else:
-        # Two compact side-by-side dropdowns
-        top_c1, top_c2 = st.columns([1.2, 1])
+        # Compact side-by-side selectors
+        top_c1, top_c2 = st.columns([1.3, 1])
 
         labels = [f"{e['date'].strftime('%d %b %Y')} — {e['cart']}" for e in daily_entries]
         with top_c1:
@@ -738,7 +738,7 @@ if page == "Daily Entry":
             }
         )
 
-        # Center-aligned text and number columns with bold/contrast styling
+        # Height 355px shows all 9 flavours comfortably without internal scrollbars
         edited = st.data_editor(
             df_init,
             column_config={
@@ -750,7 +750,7 @@ if page == "Daily Entry":
             },
             hide_index=True,
             use_container_width=True,
-            height=265,
+            height=355,
             key=f"daily_editor{data_key_suffix}",
         )
 
@@ -763,10 +763,10 @@ if page == "Daily Entry":
 
         tot_open, tot_add, tot_close, tot_sold = sum(opening), sum(added), sum(closing), sum(sold)
         m1, m2, m3, m4 = st.columns(4)
-        m1.metric("Opening Balance", f"{tot_open} units")
-        m2.metric("Stock Added", f"{tot_add} units")
-        m3.metric("Closing Balance", f"{tot_close} units")
-        m4.metric("Total Sold", f"{tot_sold} units")
+        m1.metric("Opening Balance", f"{tot_open}")
+        m2.metric("Stock Added", f"{tot_add}")
+        m3.metric("Closing Balance", f"{tot_close}")
+        m4.metric("Total Sold", f"{tot_sold}")
 
         if any(s < 0 for s in sold):
             st.error("Today's sales works out negative for at least one flavour - closing count is higher than opening + added.")
@@ -786,27 +786,16 @@ if page == "Daily Entry":
         if k_cs not in st.session_state:
             st.session_state[k_cs] = f"{loaded['cash']:.2f}"
 
+        # 5 Compact Collection Fields
         c3, c4, c5, c6, c7 = st.columns([1.1, 1.1, 1.1, 1.2, 1.1])
         with c3:
-            total_collection_str = st.text_input(
-                "Total collection (₹)",
-                key=k_tot,
-            )
+            total_collection_str = st.text_input("Total collection (₹)", key=k_tot)
         with c4:
-            phonepe_str = st.text_input(
-                "PhonePe / UPI (₹)",
-                key=k_ph,
-            )
+            phonepe_str = st.text_input("PhonePe / UPI (₹)", key=k_ph)
         with c5:
-            staff_advance_str = st.text_input(
-                "Advance to staff (₹)",
-                key=k_adv,
-            )
+            staff_advance_str = st.text_input("Advance to staff (₹)", key=k_adv)
         with c6:
-            cash_str = st.text_input(
-                "Cash to be Collected (₹)",
-                key=k_cs,
-            )
+            cash_str = st.text_input("Cash to be Collected (₹)", key=k_cs)
 
         total_collection_val = _num(total_collection_str)
         phonepe_val = _num(phonepe_str)
@@ -819,28 +808,33 @@ if page == "Daily Entry":
         with c7:
             if has_leakage:
                 st.markdown(
-                    f"<div style='margin-top:2px;'><label style='font-size:12px; font-weight:700;'>Cash Leakage (₹)</label><br>"
-                    f"<b style='color:#C41C1C; font-size:16px;'>₹{cash_leakage:,.2f}</b></div>",
+                    f"<div style='margin-top:1px;'><label style='font-size:11px; font-weight:700;'>Cash Leakage (₹)</label><br>"
+                    f"<b style='color:#C41C1C; font-size:14px;'>₹{cash_leakage:,.2f}</b></div>",
                     unsafe_allow_html=True
                 )
             else:
                 st.markdown(
-                    f"<div style='margin-top:2px;'><label style='font-size:12px; font-weight:700;'>Cash Leakage (₹)</label><br>"
-                    f"<b style='color:#2A1B10; font-size:15px;'>₹{cash_leakage:,.2f}</b></div>",
+                    f"<div style='margin-top:1px;'><label style='font-size:11px; font-weight:700;'>Cash Leakage (₹)</label><br>"
+                    f"<b style='color:#2A1B10; font-size:14px;'>₹{cash_leakage:,.2f}</b></div>",
                     unsafe_allow_html=True
                 )
 
         if has_leakage:
             st.markdown(
-                '<p style="color:#C41C1C; font-weight:bold; font-size:13px; margin: 2px 0 !important;">'
+                '<p style="color:#C41C1C; font-weight:bold; font-size:12px; margin: 1px 0 !important;">'
                 '⚠️ There is a cash leakage - please correct or enter reason in remarks field'
                 '</p>',
                 unsafe_allow_html=True,
             )
 
-        remarks = st.text_input("Remarks", value=loaded["remarks"], key=f"daily_remarks{data_key_suffix}")
+        # Remarks and Button inline to conserve vertical height
+        rem_col, btn_col = st.columns([3.5, 1.2])
+        with rem_col:
+            remarks = st.text_input("Remarks", value=loaded["remarks"], key=f"daily_remarks{data_key_suffix}", label_visibility="collapsed", placeholder="Enter remarks (mandatory if cash leakage)...")
+        with btn_col:
+            update_btn = st.button("Update sales", type="primary", use_container_width=True)
 
-        if st.button("Update sales", type="primary", use_container_width=True):
+        if update_btn:
             if sum(added) == 0 and closing == opening:
                 st.error("Enter a stock addition or a closing count that differs from yesterday's balance before saving.")
             elif any(s < 0 for s in sold):
