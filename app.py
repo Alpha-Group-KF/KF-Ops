@@ -19,22 +19,60 @@ st.html(
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-    /* Top & bottom block spacing */
+    /* Full responsive layout */
     .block-container {
-        padding-top: 1.2rem !important;
+        padding-top: 1rem !important;
         padding-bottom: 1rem !important;
         margin-top: 0 !important;
+        max-width: 100% !important;
     }
     header[data-testid="stHeader"] {
         background-color: transparent !important;
-        height: 1.2rem !important;
+        height: 1rem !important;
     }
     html, body, [class*="css"] { font-family: 'Manrope', sans-serif; }
     h1, h2, h3 { font-family: 'Fraunces', serif !important; color: #8A5E17 !important; letter-spacing: -0.01em; }
-    h1 { font-size: 1.8rem !important; margin-top: 0 !important; }
-    h2 { font-size: 1.4rem !important; }
-    h3 { font-size: 1.15rem !important; }
+    h1 { font-size: 1.6rem !important; margin-top: 0 !important; }
+    h2 { font-size: 1.3rem !important; }
+    h3 { font-size: 1.1rem !important; }
     p, span, label, .stMarkdown { color: #2A1B10; }
+
+    /* ---------- Mobile Flavor Card Grid ---------- */
+    .flavor-entry-row {
+        background: #FFFDF8;
+        border: 1.5px solid #E3CBA0;
+        border-radius: 10px;
+        padding: 8px 10px;
+        margin-bottom: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+    .flavor-title-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 4px;
+    }
+    .flavor-name {
+        font-weight: 800;
+        font-size: 14px;
+        color: #4A2418;
+    }
+    .badge-open {
+        background: #EFE4CF;
+        color: #5A3E1B;
+        font-weight: 700;
+        font-size: 12px;
+        padding: 2px 8px;
+        border-radius: 12px;
+    }
+    .badge-sold {
+        background: #FCE8E2;
+        color: #C43D17;
+        font-weight: 800;
+        font-size: 12px;
+        padding: 2px 8px;
+        border-radius: 12px;
+    }
 
     /* ---------- Sidebar Navigation & Jump-To Menu ---------- */
     section[data-testid="stSidebar"] { 
@@ -69,7 +107,6 @@ st.html(
         border-radius: 8px !important; 
     }
 
-    /* Jump-to menu */
     .dash-jump { 
         background: #FFFBF2; 
         border: 1px solid #E3CBA0; 
@@ -101,6 +138,7 @@ st.html(
         border-radius: 8px !important;
         font-weight: 700 !important;
         border: none !important;
+        padding: 0.4rem 0.8rem !important;
     }
     .stButton button[kind="primary"], [data-testid="stFormSubmitButton"] button[kind="primary"] {
         background: #E8542A !important;
@@ -129,7 +167,7 @@ st.html(
         color: #4A2418; 
     }
 
-    /* ---------- High Contrast, Prominent Table Headers & Centered Content ---------- */
+    /* High Contrast Bold Table Headers across Reports */
     div[data-testid="stDataFrame"], div[data-testid="stDataEditor"] {
         border-radius: 10px;
         border: 2px solid #8A5E17 !important;
@@ -141,7 +179,6 @@ st.html(
         background-color: #70440E !important;
         text-align: center !important;
         font-size: 14px !important;
-        letter-spacing: 0.02em;
     }
     div[data-testid="stDataFrame"] td, div[data-testid="stDataEditor"] td {
         text-align: center !important;
@@ -302,32 +339,6 @@ def _update_row(tab_name, row_number, values):
     ws = get_ws(tab_name)
     end_col = _col_letter(len(values))
     ws.update(range_name=f"A{row_number}:{end_col}{row_number}", values=[values], value_input_option="USER_ENTERED")
-
-
-def get_opening_balance(cart_name, before_date=None):
-    _, rows = load_daily_raw()
-    latest = None
-    latest_date = None
-    for raw_r in rows:
-        r = _pad(raw_r, DAILY_TOTAL_COLS)
-        if not r[0].strip() or r[1].strip() != cart_name or not _row_has_data(r):
-            continue
-        try:
-            d = pd.to_datetime(r[0])
-            if pd.isna(d):
-                continue
-            d = d.date()
-        except Exception:
-            continue
-        if before_date is not None and d >= before_date:
-            continue
-        if latest_date is None or d > latest_date:
-            latest_date = d
-            latest = r
-    if latest is None:
-        return [0] * N_FLAVORS
-    closing_start = 4 + 9 * 3
-    return [int(_num(latest[closing_start + i])) for i in range(N_FLAVORS)]
 
 
 def update_daily_entry(row_number, entry_date, cart_name, added, closing, opening, total, phonepe, cash, remarks, staff_name="", staff_advance=0.0):
@@ -703,7 +714,6 @@ if page == "Daily Entry":
     if not daily_entries:
         st.info("No past entries found in the sheet.")
     else:
-        # Reduced width side-by-side selectors
         top_c1, top_c2 = st.columns([1.3, 1])
 
         labels = [f"{e['date'].strftime('%d %b %Y')} — {e['cart']}" for e in daily_entries]
@@ -742,53 +752,49 @@ if page == "Daily Entry":
 
         opening = loaded["opening"]
 
-        k_added_list = f"added_list_{editing_row}"
-        k_closing_list = f"closing_list_{editing_row}"
-
-        if k_added_list not in st.session_state:
-            st.session_state[k_added_list] = loaded["added"]
-        if k_closing_list not in st.session_state:
-            st.session_state[k_closing_list] = loaded["closing"]
-
-        curr_added = st.session_state[k_added_list]
-        curr_closing = st.session_state[k_closing_list]
-        curr_sold = [opening[i] + curr_added[i] - curr_closing[i] for i in range(N_FLAVORS)]
-
-        flavor_names = [f[1] for f in FLAVORS]
-        df_init = pd.DataFrame(
-            {
-                "Flavour": flavor_names,
-                "Opening Balance": opening,
-                "Stock Added Today": curr_added,
-                "Closing Balance": curr_closing,
-                "Sales": curr_sold,
-            }
-        )
-
         st.write("Enter units **added to the cart** and the **actual closing count** observed:")
 
-        # Centered number and text columns with high contrast headers
-        edited = st.data_editor(
-            df_init,
-            column_config={
-                "Flavour": st.column_config.TextColumn("Flavour", disabled=True),
-                "Opening Balance": st.column_config.NumberColumn("Opening Balance", disabled=True, format="%d"),
-                "Stock Added Today": st.column_config.NumberColumn("Stock Added Today", min_value=0, step=1, format="%d"),
-                "Closing Balance": st.column_config.NumberColumn("Closing Balance", min_value=0, step=1, format="%d"),
-                "Sales": st.column_config.NumberColumn("Sales", disabled=True, format="%d"),
-            },
-            hide_index=True,
-            use_container_width=True,
-            height=355,
-            key=f"daily_editor{data_key_suffix}",
-        )
+        added = [0] * N_FLAVORS
+        closing = [0] * N_FLAVORS
 
-        added = edited["Stock Added Today"].fillna(0).astype(int).tolist()
-        closing = edited["Closing Balance"].fillna(0).astype(int).tolist()
+        # Render 100% responsive flavor cards (prevents horizontal scroll and accidental sorting)
+        for i, f in enumerate(FLAVORS):
+            k_add = f"add_{editing_row}_{i}"
+            k_cls = f"cls_{editing_row}_{i}"
+            if k_add not in st.session_state:
+                st.session_state[k_add] = loaded["added"][i]
+            if k_cls not in st.session_state:
+                st.session_state[k_cls] = loaded["closing"][i]
+
+            cur_add = st.session_state[k_add]
+            cur_cls = st.session_state[k_cls]
+            cur_sold = opening[i] + cur_add - cur_cls
+
+            st.markdown(
+                f"""
+                <div class="flavor-entry-row">
+                    <div class="flavor-title-bar">
+                        <span class="flavor-name">{f[1]} (₹{f[2]})</span>
+                        <div>
+                            <span class="badge-open">Opening: {opening[i]}</span>
+                            <span class="badge-sold">Sold: {cur_sold}</span>
+                        </div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+            col_a, col_b = st.columns(2)
+            with col_a:
+                added_val = st.number_input("+ Added Stock", min_value=0, step=1, key=k_add)
+            with col_b:
+                closing_val = st.number_input("Closing Count", min_value=0, step=1, key=k_cls)
+
+            added[i] = int(added_val)
+            closing[i] = int(closing_val)
+
         sold = [opening[i] + added[i] - closing[i] for i in range(N_FLAVORS)]
-
-        st.session_state[k_added_list] = added
-        st.session_state[k_closing_list] = closing
 
         tot_open, tot_add, tot_close, tot_sold = sum(opening), sum(added), sum(closing), sum(sold)
         m1, m2, m3, m4 = st.columns(4)
@@ -818,14 +824,12 @@ if page == "Daily Entry":
         st.markdown("---")
         st.write("**Today's collection & Staff Advance**")
 
-        c3, c4, c5, c6, c7 = st.columns([1.1, 1.1, 1.1, 1.2, 1.1])
+        c3, c4 = st.columns(2)
         with c3:
             total_collection_str = st.text_input("Total collection (₹)", key=k_tot)
+            staff_advance_str = st.text_input("Advance to staff (₹)", key=k_adv)
         with c4:
             phonepe_str = st.text_input("PhonePe / UPI (₹)", key=k_ph)
-        with c5:
-            staff_advance_str = st.text_input("Advance to staff (₹)", key=k_adv)
-        with c6:
             cash_str = st.text_input("Cash Collected (₹)", key=k_cs)
 
         total_collection_val = _num(total_collection_str)
@@ -836,26 +840,20 @@ if page == "Daily Entry":
         cash_leakage = total_collection_val - phonepe_val - staff_advance_val - cash_val
         has_leakage = cash_leakage > 0.001
 
-        with c7:
-            if has_leakage:
-                st.markdown(
-                    f"<div style='margin-top:2px;'><label style='font-size:12px; font-weight:700;'>Cash Leakage (₹)</label><br>"
-                    f"<b style='color:#C41C1C; font-size:16px;'>₹{cash_leakage:,.2f}</b></div>",
-                    unsafe_allow_html=True
-                )
-            else:
-                st.markdown(
-                    f"<div style='margin-top:2px;'><label style='font-size:12px; font-weight:700;'>Cash Leakage (₹)</label><br>"
-                    f"<b style='color:#2A1B10; font-size:15px;'>₹{cash_leakage:,.2f}</b></div>",
-                    unsafe_allow_html=True
-                )
-
         if has_leakage:
             st.markdown(
+                f"<div style='margin-top:2px;'><label style='font-size:12px; font-weight:700;'>Cash Leakage:</label> "
+                f"<b style='color:#C41C1C; font-size:16px;'>₹{cash_leakage:,.2f}</b></div>"
                 '<p style="color:#C41C1C; font-weight:bold; font-size:13px; margin: 4px 0 !important;">'
                 '⚠️ There is a cash leakage - please correct or enter reason in remarks field'
                 '</p>',
-                unsafe_allow_html=True,
+                unsafe_allow_html=True
+            )
+        else:
+            st.markdown(
+                f"<div style='margin-top:2px;'><label style='font-size:12px; font-weight:700;'>Cash Leakage:</label> "
+                f"<b style='color:#2A1B10; font-size:14px;'>₹{cash_leakage:,.2f}</b></div>",
+                unsafe_allow_html=True
             )
 
         remarks = st.text_input("Remarks", value=loaded["remarks"], key=f"daily_remarks{data_key_suffix}", placeholder="Enter remarks (mandatory if cash leakage)...")
