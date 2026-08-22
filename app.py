@@ -1,12 +1,5 @@
 """
-Kulfi Ops - simple multi-user data entry app for the kulfi cart business.
-
-Reads/writes directly into the SAME Google Sheet tabs your Excel tracker uses:
-  - "Daily Data As Shared"  (cart restock + daily sales + collections)
-  - "Expenses"              (expense log)
-
-This means your 20 days of existing history stays exactly where it is -
-this app just appends new rows in the same format going forward.
+Kulfi Ops - multi-user data entry app for the kulfi cart business.
 """
 
 import streamlit as st
@@ -26,7 +19,6 @@ st.html(
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-    /* ---------- Remove top spacing ---------- */
     .block-container {
         padding-top: 1.5rem !important;
         padding-bottom: 1rem !important;
@@ -36,8 +28,6 @@ st.html(
         background-color: transparent !important;
         height: 1.5rem !important;
     }
-
-    /* ---------- Fonts & base ---------- */
     html, body, [class*="css"] { font-family: 'Manrope', sans-serif; }
     h1, h2, h3 { font-family: 'Fraunces', serif !important; color: #8A5E17 !important; letter-spacing: -0.01em; }
     h1 { font-size: 2.3rem !important; }
@@ -45,7 +35,6 @@ st.html(
     h3 { font-size: 1.4rem !important; }
     p, span, label, .stMarkdown { color: #2A1B10; }
 
-    /* ---------- Sidebar ---------- */
     section[data-testid="stSidebar"] { font-size: 17px; border-right: 1px solid #E3CBA0; }
     section[data-testid="stSidebar"] h2 { font-size: 23px !important; color: #8A5E17 !important; }
     section[data-testid="stSidebar"] .stRadio > div { gap: 4px; }
@@ -61,14 +50,12 @@ st.html(
     section[data-testid="stSidebar"] .stRadio label p { font-size: 17px !important; font-weight: 600; }
     section[data-testid="stSidebar"] .stButton button { font-size: 16px !important; border-radius: 10px !important; }
 
-    /* Jump-to sub-menu */
     .dash-jump { background: #FFFBF2; border: 1px solid #E3CBA0; border-radius: 10px; padding: 6px 10px; margin-top: 6px; }
     .dash-jump b { font-size: 15px !important; color: #7A5A34; }
     .dash-jump a { display:block; padding: 5px 0 5px 6px; font-size: 15px !important;
                    color:#8A5E17 !important; text-decoration:none; border-radius: 6px; }
     .dash-jump a:hover { background: #F0D9A6; text-decoration:none; }
 
-    /* ---------- Buttons ---------- */
     .stButton button, [data-testid="stFormSubmitButton"] button, [data-testid="baseButton-primary"] {
         border-radius: 10px !important;
         font-weight: 700 !important;
@@ -80,7 +67,6 @@ st.html(
     }
     .stButton button[kind="primary"]:hover { background: #C43D17 !important; }
 
-    /* ---------- Metric cards ---------- */
     div[data-testid="stMetric"] {
         background: #FFFBF2;
         border: 1px solid #E3CBA0;
@@ -91,18 +77,11 @@ st.html(
     div[data-testid="stMetricLabel"] { font-weight: 700; color: #7A5A34; }
     div[data-testid="stMetricValue"] { font-family: 'Fraunces', serif; color: #4A2418; }
 
-    /* ---------- Tables & data editors ---------- */
-    div[data-testid="stDataFrame"] {
-        border-radius: 12px;
-        overflow: hidden;
-        border: 1px solid #E3CBA0;
-    }
-    div[data-testid="stDataEditor"] {
+    div[data-testid="stDataFrame"], div[data-testid="stDataEditor"] {
         border-radius: 12px;
         border: 1px solid #E3CBA0;
     }
 
-    /* ---------- Tabs / radio pills used inside forms ---------- */
     .stRadio > div[role="radiogroup"] { gap: 8px; }
     div[role="radiogroup"] label {
         border: 1px solid #E3CBA0;
@@ -111,7 +90,6 @@ st.html(
         background: #FFFBF2;
     }
 
-    /* ---------- Misc ---------- */
     hr { border-color: #E3CBA0 !important; }
     [data-testid="stExpander"] { border: 1px solid #E3CBA0 !important; border-radius: 12px !important; }
     div[data-testid="stForm"] { border: 1px solid #E3CBA0; border-radius: 12px; padding: 16px; background: #FFFBF2; }
@@ -121,7 +99,7 @@ st.html(
 )
 
 # ----------------------------------------------------------------------
-# CONFIG - Assumptions & Sheet Details
+# CONFIG
 # ----------------------------------------------------------------------
 CARTS = ["HOSUR CART 01", "HOSUR CART 02", "HOSUR CART 03"]
 CITY = "HOSUR"
@@ -153,7 +131,7 @@ EXPENSE_CATEGORIES = [
 PAYMENT_MODES = ["Cash", "UPI / Bank Transfer"]
 
 DAILY_HEADER_ROWS = 2
-DAILY_TOTAL_COLS = 4 + 9 * 4 + 4
+DAILY_TOTAL_COLS = 44  # 4 prefix + 9*4 flav cols + 4 suffix (Total, PhonePe, Cash, Remarks)
 
 EXPENSE_HEADER_ROWS = 3
 
@@ -189,7 +167,7 @@ def _pad(row, n):
 
 
 def _row_has_data(r):
-    return any(str(c).strip() != "" for c in r[4:43])
+    return any(str(c).strip() != "" for c in r[4:44])
 
 
 # ----------------------------------------------------------------------
@@ -233,7 +211,7 @@ def _col_letter(n):
 def _update_row(tab_name, row_number, values):
     ws = get_ws(tab_name)
     end_col = _col_letter(len(values))
-    ws.update(f"A{row_number}:{end_col}{row_number}", [values], value_input_option="USER_ENTERED")
+    ws.update(range_name=f"A{row_number}:{end_col}{row_number}", values=[values], value_input_option="USER_ENTERED")
 
 
 def get_opening_balance(cart_name, before_date=None):
@@ -268,11 +246,11 @@ def append_daily_entry(entry_date, cart_name, added, closing, opening, total, ph
     date_cart_id = f"{date_str}||{cart_name}"
     row = (
         [date_str, cart_name, CITY, date_cart_id]
-        + opening
-        + added
-        + sold
-        + closing
-        + [float(total), float(phonepe), float(cash), remarks]
+        + [int(x) for x in opening]
+        + [int(x) for x in added]
+        + [int(x) for x in sold]
+        + [int(x) for x in closing]
+        + [float(total), float(phonepe), float(cash), str(remarks)]
     )
     ws = get_ws("Daily Data As Shared")
     ws.append_row(row, value_input_option="USER_ENTERED")
@@ -285,11 +263,11 @@ def update_daily_entry(row_number, entry_date, cart_name, added, closing, openin
     date_cart_id = f"{date_str}||{cart_name}"
     row = (
         [date_str, cart_name, CITY, date_cart_id]
-        + opening
-        + added
-        + sold
-        + closing
-        + [float(total), float(phonepe), float(cash), remarks]
+        + [int(x) for x in opening]
+        + [int(x) for x in added]
+        + [int(x) for x in sold]
+        + [int(x) for x in closing]
+        + [float(total), float(phonepe), float(cash), str(remarks)]
     )
     _update_row("Daily Data As Shared", row_number, row)
     return sold
@@ -603,30 +581,6 @@ with st.sidebar:
         ["Dashboard", "Daily Entry", "Freezer Stock", "Freezer Analysis", "Expenses"],
         label_visibility="collapsed",
     )
-    if page == "Dashboard":
-        st.markdown(
-            textwrap.dedent(
-                """
-            <div class="dash-jump">
-            <b style="font-size:15px;">Jump to</b><br>
-            <a href="#last-3-days">Last 3 days</a>
-            <a href="#revenue-trend">Revenue trend (14 days)</a>
-            <a href="#reports">Reports (date range)</a>
-            <a href="#cart-wise-comparison">&nbsp;&nbsp;Cart-wise comparison</a>
-            <a href="#cart-wise-day-of-week">&nbsp;&nbsp;Sales by day of week</a>
-            <a href="#flavour-wise-performance">&nbsp;&nbsp;Flavour-wise performance</a>
-            <a href="#profit-loss-summary">&nbsp;&nbsp;Profit &amp; loss summary</a>
-            <a href="#expense-breakdown">&nbsp;&nbsp;Expense breakdown</a>
-            <a href="#cash-vs-phonepe">&nbsp;&nbsp;Cash vs PhonePe</a>
-            <a href="#sales-in-range">&nbsp;&nbsp;Sales table</a>
-            <a href="#inventory-status">Current Inventory Status</a>
-            <a href="#freezer-stock-current">&nbsp;&nbsp;Freezer stock (current)</a>
-            <a href="#latest-stock-per-cart">&nbsp;&nbsp;Latest stock per cart</a>
-            </div>
-            """
-            ),
-            unsafe_allow_html=True,
-        )
     st.markdown("---")
     if st.button("Log out", use_container_width=True):
         st.session_state["authenticated"] = False
@@ -655,7 +609,7 @@ if page == "Daily Entry":
             sel = st.selectbox("Select entry to edit", labels, key="daily_edit_select")
             loaded = daily_entries[labels.index(sel)]
             editing_row = loaded["row"]
-            st.caption("Loaded - edit the fields below, then click Update entry to save changes to this same row.")
+            st.caption("Loaded - edit fields below, then click Update entry.")
 
     key_suffix = f"_{editing_row}" if editing_row else "_new"
     st.caption("One entry per cart per day. Only fill in flavours that actually moved.")
@@ -674,7 +628,7 @@ if page == "Daily Entry":
             opening = get_opening_balance(cart_name, before_date=entry_date)
         except Exception as e:
             opening = [0] * N_FLAVORS
-            st.warning(f"Could not fetch opening balance automatically ({e}). Starting from 0 - check your figures.")
+            st.warning(f"Could not fetch opening balance automatically ({e}). Starting from 0.")
 
     data_key_suffix = f"_{editing_row}" if editing_row else f"_new_{cart_name}_{entry_date.isoformat()}"
 
@@ -687,8 +641,10 @@ if page == "Daily Entry":
             "Closing cart balance": loaded["closing"] if loaded else opening,
         }
     )
+
+    st.write("Enter units **added to the cart** and the **actual closing count** observed:")
     
-    st.write("Enter units **added to the cart** (restock) and the **actual closing count** you observe in the cart, per flavour.")
+    # SINGLE EDITABLE TABLE ONLY
     edited = st.data_editor(
         df_init,
         column_config={
@@ -706,41 +662,41 @@ if page == "Daily Entry":
     closing = edited["Closing cart balance"].fillna(0).astype(int).tolist()
     sold = [opening[i] + added[i] - closing[i] for i in range(N_FLAVORS)]
 
-    # Single Summary Table (with Totals & Sales Calculated)
-    summary_df = pd.DataFrame(
-        {
-            "Flavour": flavor_names + ["**Total**"],
-            "Cart balance from yesterday": opening + [sum(opening)],
-            "Stock addition to cart today": added + [sum(added)],
-            "Closing cart balance": closing + [sum(closing)],
-            "Today's sales (calculated)": sold + [sum(sold)],
-        }
-    )
-    st.dataframe(summary_df, hide_index=True, use_container_width=True)
+    # Dynamic metrics instead of a second redundant table
+    tot_open, tot_add, tot_close, tot_sold = sum(opening), sum(added), sum(closing), sum(sold)
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Opening Balance", f"{tot_open} units")
+    m2.metric("Stock Added", f"{tot_add} units")
+    m3.metric("Closing Balance", f"{tot_close} units")
+    m4.metric("Total Sold", f"{tot_sold} units")
 
     if any(s < 0 for s in sold):
         st.error("Today's sales works out negative for at least one flavour - closing count is higher than opening + added.")
 
-    # Flavour-wise MRP Calculation based on assumptions
-    calculated_total_revenue = float(sum(sold[i] * FLAVORS[i][2] for i in range(N_FLAVORS)))
+    # 1. Total Collection Auto-calc using MRP from assumptions
+    calculated_mrp_total = float(sum(sold[i] * FLAVORS[i][2] for i in range(N_FLAVORS)))
 
-    # Synchronized Session State for Total, PhonePe, and Cash
     k_tot = f"daily_total{data_key_suffix}"
     k_ph = f"daily_phonepe{data_key_suffix}"
     k_cs = f"daily_cash{data_key_suffix}"
+    k_prev_calc = f"daily_prev_calc{data_key_suffix}"
 
-    if k_tot not in st.session_state:
-        st.session_state[k_tot] = float(loaded["total"]) if loaded else max(0.0, calculated_total_revenue)
+    # Re-sync total when sales table changes
+    if k_tot not in st.session_state or st.session_state.get(k_prev_calc) != calculated_mrp_total:
+        st.session_state[k_tot] = float(loaded["total"]) if (loaded and k_tot not in st.session_state) else max(0.0, calculated_mrp_total)
+        st.session_state[k_prev_calc] = calculated_mrp_total
+
     if k_ph not in st.session_state:
         st.session_state[k_ph] = float(loaded["phonepe"]) if loaded else 0.0
+
     if k_cs not in st.session_state:
         st.session_state[k_cs] = float(loaded["cash"]) if loaded else max(0.0, st.session_state[k_tot] - st.session_state[k_ph])
 
-    # Callbacks for automatic live updates while preserving direct edits
-    def on_phonepe_change():
+    # 2. Cash auto-calculates as Total - PhonePe upon edit
+    def update_cash_on_phonepe():
         st.session_state[k_cs] = max(0.0, float(st.session_state[k_tot]) - float(st.session_state[k_ph]))
 
-    def on_total_change():
+    def update_cash_on_total():
         st.session_state[k_cs] = max(0.0, float(st.session_state[k_tot]) - float(st.session_state[k_ph]))
 
     st.markdown("---")
@@ -752,7 +708,7 @@ if page == "Daily Entry":
             min_value=0.0,
             step=10.0,
             key=k_tot,
-            on_change=on_total_change
+            on_change=update_cash_on_total
         )
     with c4:
         phonepe = st.number_input(
@@ -760,7 +716,7 @@ if page == "Daily Entry":
             min_value=0.0,
             step=10.0,
             key=k_ph,
-            on_change=on_phonepe_change
+            on_change=update_cash_on_phonepe
         )
     with c5:
         cash = st.number_input(
@@ -792,9 +748,6 @@ if page == "Daily Entry":
                 st.cache_resource.clear()
             except Exception as e:
                 st.error(f"Could not save - {e}")
-
-    if editing_row:
-        st.caption("Note: editing a day that isn't the most recent entry won't cascade opening/closing balance adjustments forward automatically.")
 
 # ---------------- FREEZER STOCK ----------------
 elif page == "Freezer Stock":
@@ -829,7 +782,7 @@ elif page == "Freezer Stock":
             stock_sel = st.selectbox("Select entry to edit", stock_labels, key="stock_edit_select")
             stock_loaded = stock_entries[stock_labels.index(stock_sel)]
             stock_editing_row = stock_loaded["row"]
-            st.caption("Loaded - edit the fields below, then click Update entry to save changes to this same row.")
+            st.caption("Loaded - edit fields below, then click Update entry.")
 
     sk = f"_{stock_editing_row}" if stock_editing_row else "_new"
     st.caption("Log a supplier delivery. Ordered and Damaged are optional.")
@@ -1093,7 +1046,7 @@ elif page == "Expenses":
             exp_sel = st.selectbox("Select entry to edit", exp_labels, key="exp_edit_select")
             exp_loaded = expense_entries[exp_labels.index(exp_sel)]
             exp_editing_row = exp_loaded["row"]
-            st.caption("Loaded - edit the fields below, then click Update entry to save changes to this same row.")
+            st.caption("Loaded - edit fields below, then click Update entry.")
 
     ek = f"_{exp_editing_row}" if exp_editing_row else "_new"
 
@@ -1137,43 +1090,6 @@ elif page == "Expenses":
 elif page == "Dashboard":
     st.subheader("Quick view")
 
-    with st.expander("Data health check — tap here if the dashboard looks empty"):
-        try:
-            wb = get_workbook()
-            tab_names = [ws.title for ws in wb.worksheets()]
-            st.write("Tabs found in your connected Google Sheet:")
-            st.code("\n".join(tab_names))
-        except Exception as e:
-            tab_names = []
-            st.error(f"Could not connect to the Google Sheet: {e}")
-
-        for label, tab in [
-            ("Daily Data As Shared", "Daily Data As Shared"),
-            ("Stock Received", "Stock Received"),
-            ("Expenses", "Expenses"),
-        ]:
-            st.markdown(f"**{label}**")
-            if tab not in tab_names:
-                st.warning(f"No tab named `{tab}` found.")
-                continue
-            try:
-                if tab == "Daily Data As Shared":
-                    _, raw_rows = load_daily_raw()
-                    padded = [_pad(r, DAILY_TOTAL_COLS) for r in raw_rows if r and r[0].strip()]
-                    real = [r for r in padded if _row_has_data(r)]
-                    st.write(f"{len(padded)} row(s) with date, {len(real)} with data.")
-                elif tab == "Stock Received":
-                    _, raw_rows = load_stock_raw()
-                    non_empty = [r for r in raw_rows if r and r[0].strip()]
-                    st.write(f"{len(non_empty)} data row(s) found.")
-                else:
-                    ws = get_ws("Expenses")
-                    raw_rows = ws.get_all_values()[EXPENSE_HEADER_ROWS:]
-                    non_empty = [r for r in raw_rows if r and r[0].strip()]
-                    st.write(f"{len(non_empty)} data row(s) found.")
-            except Exception as e:
-                st.error(f"Error reading `{tab}`: {e}")
-
     try:
         daily_df = load_daily_df()
         exp_df = load_expenses_df()
@@ -1200,11 +1116,9 @@ elif page == "Dashboard":
                 col_names[2]: [f"₹{day_rev[2]:,.0f}", f"{day_units[2]}"],
             }
         )
-        st.markdown('<div id="last-3-days"></div>', unsafe_allow_html=True)
         st.markdown("**Last 3 days**")
         st.dataframe(compare_df, hide_index=True, use_container_width=True)
 
-        st.markdown('<div id="revenue-trend"></div>', unsafe_allow_html=True)
         st.markdown("**Revenue, last 14 days**")
         trend_df = (
             daily_df.assign(Day=daily_df["Date"].dt.normalize())
@@ -1226,173 +1140,3 @@ elif page == "Dashboard":
         st.altair_chart(trend_chart, use_container_width=True)
     else:
         st.info("No sales logged yet.")
-
-    # ------------------ Reports ------------------
-    if not daily_df.empty or not exp_df.empty:
-        st.markdown("---")
-        st.markdown('<div id="reports"></div>', unsafe_allow_html=True)
-        st.markdown("## Reports")
-
-        all_dates = []
-        if not daily_df.empty:
-            all_dates += [daily_df["Date"].min().date(), daily_df["Date"].max().date()]
-        if not exp_df.empty and exp_df["Date"].notna().any():
-            all_dates += [exp_df["Date"].min().date(), exp_df["Date"].max().date()]
-        min_d, max_d = min(all_dates), max(all_dates)
-        default_start = max(min_d, max_d - timedelta(days=29))
-
-        if "applied_start" not in st.session_state:
-            st.session_state["applied_start"] = default_start
-        if "applied_end" not in st.session_state:
-            st.session_state["applied_end"] = max_d
-        st.session_state["applied_start"] = min(max(st.session_state["applied_start"], min_d), max_d)
-        st.session_state["applied_end"] = min(max(st.session_state["applied_end"], min_d), max_d)
-
-        with st.form("date_range_form"):
-            rc1, rc2, rc3 = st.columns([2, 2, 1])
-            with rc1:
-                pending_start = st.date_input("From", value=st.session_state["applied_start"], min_value=min_d, max_value=max_d)
-            with rc2:
-                pending_end = st.date_input("To", value=st.session_state["applied_end"], min_value=min_d, max_value=max_d)
-            with rc3:
-                st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
-                apply_clicked = st.form_submit_button("Apply", type="primary", use_container_width=True)
-
-        if apply_clicked:
-            st.session_state["applied_start"] = pending_start
-            st.session_state["applied_end"] = pending_end
-
-        range_start = st.session_state["applied_start"]
-        range_end = st.session_state["applied_end"]
-
-        if range_start > range_end:
-            st.error("'From' date is after 'To' date.")
-            range_start, range_end = range_end, range_start
-
-        st.caption(f"Showing: {range_start.strftime('%d %b %Y')} – {range_end.strftime('%d %b %Y')}")
-
-        range_df = daily_df[(daily_df["Date"].dt.date >= range_start) & (daily_df["Date"].dt.date <= range_end)] if not daily_df.empty else daily_df
-        range_exp = exp_df[(exp_df["Date"].dt.date >= range_start) & (exp_df["Date"].dt.date <= range_end)] if not exp_df.empty else exp_df
-
-        total_rev = range_df["Total_Collection"].sum() if not range_df.empty else 0.0
-        total_units = int(range_df["Sold_Total"].sum()) if not range_df.empty else 0
-        total_exp_all = range_exp["Amount"].sum() if not range_exp.empty else 0.0
-
-        mc1, mc2, mc3 = st.columns(3)
-        mc1.metric("Revenue in range", f"₹{total_rev:,.0f}")
-        mc2.metric("Units sold in range", f"{total_units}")
-        mc3.metric("Expenses in range", f"₹{total_exp_all:,.0f}")
-
-        # Cart-wise comparison
-        st.markdown('<div id="cart-wise-comparison"></div>', unsafe_allow_html=True)
-        st.markdown("### Cart-wise comparison")
-        if not range_df.empty:
-            cart_grp = (
-                range_df.groupby("Cart")
-                .agg(**{"Revenue (₹)": ("Total_Collection", "sum"), "Units sold": ("Sold_Total", "sum")})
-                .reset_index()
-                .sort_values("Revenue (₹)", ascending=False)
-            )
-            st.dataframe(cart_grp, hide_index=True, use_container_width=True)
-            st.bar_chart(cart_grp.set_index("Cart")["Revenue (₹)"])
-
-        # Cart-wise Day of Week
-        st.markdown('<div id="cart-wise-day-of-week"></div>', unsafe_allow_html=True)
-        st.markdown("### Cart-wise average sales by day of the week")
-        if not range_df.empty:
-            day_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-            dow_df = range_df[range_df["Sold_Total"] > 0].copy()
-            dow_df["Day"] = dow_df["Date"].dt.day_name()
-
-            if not dow_df.empty:
-                units_pivot = dow_df.pivot_table(
-                    index="Cart", columns="Day", values="Sold_Total", aggfunc="mean", fill_value=0, margins=True, margins_name="All carts"
-                )
-                day_cols = [d for d in day_order if d in units_pivot.columns] + ["All carts"]
-                units_pivot = units_pivot.reindex(columns=day_cols)
-
-                rev_pivot = dow_df.pivot_table(
-                    index="Cart", columns="Day", values="Total_Collection", aggfunc="mean", fill_value=0, margins=True, margins_name="All carts"
-                )
-                rev_pivot = rev_pivot.reindex(columns=day_cols)
-
-                st.write("**Avg. units sold**")
-                st.dataframe(units_pivot.round(1), use_container_width=True)
-
-                st.write("**Avg. revenue (₹)**")
-                st.dataframe(rev_pivot.round(0).astype(int), use_container_width=True)
-
-        # Flavour-wise performance
-        st.markdown('<div id="flavour-wise-performance"></div>', unsafe_allow_html=True)
-        st.markdown("### Flavour-wise performance")
-        if not range_df.empty:
-            flavor_sold = [0] * N_FLAVORS
-            for arr in range_df["Sold_By_Flavor"]:
-                for i in range(N_FLAVORS):
-                    flavor_sold[i] += arr[i]
-            flavor_df = pd.DataFrame(
-                {
-                    "Flavour": [f[1] for f in FLAVORS],
-                    "Units sold": flavor_sold,
-                    "Est. revenue (₹)": [flavor_sold[i] * FLAVORS[i][2] for i in range(N_FLAVORS)],
-                }
-            ).sort_values("Units sold", ascending=False)
-            st.dataframe(flavor_df, hide_index=True, use_container_width=True)
-            st.bar_chart(flavor_df.set_index("Flavour")["Units sold"])
-
-        # P&L
-        st.markdown('<div id="profit-loss-summary"></div>', unsafe_allow_html=True)
-        st.markdown("### Profit & loss summary")
-        cogs = range_exp[range_exp["Category"] == "Cost of Goods"]["Amount"].sum() if not range_exp.empty else 0.0
-        opex_cats = ["Labour Charges", "Leakage Expense", "Miscellaneous Expense"]
-        opex = range_exp[range_exp["Category"].isin(opex_cats)]["Amount"].sum() if not range_exp.empty else 0.0
-        gross_profit = total_rev - cogs
-        net_profit = gross_profit - opex
-
-        pnl_df = pd.DataFrame(
-            {
-                "Line item": ["Revenue", "Cost of Goods", "Gross profit", "Operating expenses", "Net profit"],
-                "Amount (₹)": [total_rev, -cogs, gross_profit, -opex, net_profit],
-            }
-        )
-        st.dataframe(pnl_df, hide_index=True, use_container_width=True)
-
-        # Cash vs PhonePe
-        st.markdown('<div id="cash-vs-phonepe"></div>', unsafe_allow_html=True)
-        st.markdown("### Cash vs PhonePe / UPI")
-        if not range_df.empty:
-            total_cash = range_df["Cash"].sum()
-            total_phonepe = range_df["PhonePe"].sum()
-            split_df = pd.DataFrame({"Mode": ["Cash", "PhonePe / UPI"], "Amount (₹)": [total_cash, total_phonepe]})
-            st.bar_chart(split_df.set_index("Mode")["Amount (₹)"])
-
-        # Sales table
-        st.markdown('<div id="sales-in-range"></div>', unsafe_allow_html=True)
-        st.markdown("### Sales in this range")
-        if not range_df.empty:
-            sales_table = range_df.sort_values(["Date", "Cart"])[["Date", "Cart", "Sold_Total", "Total_Collection"]].rename(
-                columns={"Sold_Total": "Units sold", "Total_Collection": "Revenue (₹)"}
-            )
-            sales_table["Date"] = sales_table["Date"].dt.strftime("%d %b %Y")
-            st.dataframe(sales_table, hide_index=True, use_container_width=True)
-
-    # ------------------ Current Inventory ------------------
-    if not daily_df.empty:
-        st.markdown("---")
-        st.markdown('<div id="inventory-status"></div>', unsafe_allow_html=True)
-        st.markdown("## Current Inventory Status")
-        st.metric("Stock across carts", f"{int(daily_df.sort_values('Date').groupby('Cart').tail(1)['Closing_Total'].sum())}")
-
-        try:
-            freezer_stock = get_freezer_stock()
-            st.markdown('<div id="freezer-stock-current"></div>', unsafe_allow_html=True)
-            st.markdown("**Freezer stock (current)**")
-            freezer_df = pd.DataFrame({"Flavour": [f[1] for f in FLAVORS], "Units in freezer": freezer_stock})
-            st.dataframe(freezer_df, hide_index=True, use_container_width=True)
-        except Exception as e:
-            st.caption(f"Could not compute freezer stock ({e}).")
-
-        st.markdown('<div id="latest-stock-per-cart"></div>', unsafe_allow_html=True)
-        st.markdown("**Latest stock per cart**")
-        latest_per_cart = daily_df.sort_values("Date").groupby("Cart").tail(1)[["Cart", "Date", "Closing_Total"]]
-        st.dataframe(latest_per_cart, hide_index=True, use_container_width=True)
