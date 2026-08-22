@@ -131,7 +131,7 @@ EXPENSE_CATEGORIES = [
 PAYMENT_MODES = ["Cash", "UPI / Bank Transfer"]
 
 DAILY_HEADER_ROWS = 2
-DAILY_TOTAL_COLS = 44  # 4 prefix + 9*4 flav cols + 4 suffix (Total, PhonePe, Cash, Remarks)
+DAILY_TOTAL_COLS = 44
 
 EXPENSE_HEADER_ROWS = 3
 
@@ -581,6 +581,30 @@ with st.sidebar:
         ["Dashboard", "Daily Entry", "Freezer Stock", "Freezer Analysis", "Expenses"],
         label_visibility="collapsed",
     )
+    if page == "Dashboard":
+        st.markdown(
+            textwrap.dedent(
+                """
+            <div class="dash-jump">
+            <b style="font-size:15px;">Jump to</b><br>
+            <a href="#last-3-days">Last 3 days</a>
+            <a href="#revenue-trend">Revenue trend (14 days)</a>
+            <a href="#reports">Reports (date range)</a>
+            <a href="#cart-wise-comparison">&nbsp;&nbsp;Cart-wise comparison</a>
+            <a href="#cart-wise-day-of-week">&nbsp;&nbsp;Sales by day of week</a>
+            <a href="#flavour-wise-performance">&nbsp;&nbsp;Flavour-wise performance</a>
+            <a href="#profit-loss-summary">&nbsp;&nbsp;Profit &amp; loss summary</a>
+            <a href="#expense-breakdown">&nbsp;&nbsp;Expense breakdown</a>
+            <a href="#cash-vs-phonepe">&nbsp;&nbsp;Cash vs PhonePe</a>
+            <a href="#sales-in-range">&nbsp;&nbsp;Sales table</a>
+            <a href="#inventory-status">Current Inventory Status</a>
+            <a href="#freezer-stock-current">&nbsp;&nbsp;Freezer stock (current)</a>
+            <a href="#latest-stock-per-cart">&nbsp;&nbsp;Latest stock per cart</a>
+            </div>
+            """
+            ),
+            unsafe_allow_html=True,
+        )
     st.markdown("---")
     if st.button("Log out", use_container_width=True):
         st.session_state["authenticated"] = False
@@ -1116,9 +1140,11 @@ elif page == "Dashboard":
                 col_names[2]: [f"₹{day_rev[2]:,.0f}", f"{day_units[2]}"],
             }
         )
+        st.markdown('<div id="last-3-days"></div>', unsafe_allow_html=True)
         st.markdown("**Last 3 days**")
         st.dataframe(compare_df, hide_index=True, use_container_width=True)
 
+        st.markdown('<div id="revenue-trend"></div>', unsafe_allow_html=True)
         st.markdown("**Revenue, last 14 days**")
         trend_df = (
             daily_df.assign(Day=daily_df["Date"].dt.normalize())
@@ -1140,3 +1166,214 @@ elif page == "Dashboard":
         st.altair_chart(trend_chart, use_container_width=True)
     else:
         st.info("No sales logged yet.")
+
+    # ------------------ Date-range reports ------------------
+    if not daily_df.empty or not exp_df.empty:
+        st.markdown("---")
+        st.markdown('<div id="reports"></div>', unsafe_allow_html=True)
+        st.markdown("## Reports")
+
+        all_dates = []
+        if not daily_df.empty:
+            all_dates += [daily_df["Date"].min().date(), daily_df["Date"].max().date()]
+        if not exp_df.empty and exp_df["Date"].notna().any():
+            all_dates += [exp_df["Date"].min().date(), exp_df["Date"].max().date()]
+        min_d, max_d = min(all_dates), max(all_dates)
+        default_start = max(min_d, max_d - timedelta(days=29))
+
+        if "applied_start" not in st.session_state:
+            st.session_state["applied_start"] = default_start
+        if "applied_end" not in st.session_state:
+            st.session_state["applied_end"] = max_d
+        st.session_state["applied_start"] = min(max(st.session_state["applied_start"], min_d), max_d)
+        st.session_state["applied_end"] = min(max(st.session_state["applied_end"], min_d), max_d)
+
+        with st.form("date_range_form"):
+            rc1, rc2, rc3 = st.columns([2, 2, 1])
+            with rc1:
+                pending_start = st.date_input("From", value=st.session_state["applied_start"], min_value=min_d, max_value=max_d)
+            with rc2:
+                pending_end = st.date_input("To", value=st.session_state["applied_end"], min_value=min_d, max_value=max_d)
+            with rc3:
+                st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
+                apply_clicked = st.form_submit_button("Apply", type="primary", use_container_width=True)
+
+        if apply_clicked:
+            st.session_state["applied_start"] = pending_start
+            st.session_state["applied_end"] = pending_end
+
+        range_start = st.session_state["applied_start"]
+        range_end = st.session_state["applied_end"]
+
+        if range_start > range_end:
+            st.error("'From' date is after 'To' date - swap them and click Apply again.")
+            range_start, range_end = range_end, range_start
+
+        st.caption(f"Showing: {range_start.strftime('%d %b %Y')} – {range_end.strftime('%d %b %Y')}")
+
+        range_df = daily_df[(daily_df["Date"].dt.date >= range_start) & (daily_df["Date"].dt.date <= range_end)] if not daily_df.empty else daily_df
+        range_exp = exp_df[(exp_df["Date"].dt.date >= range_start) & (exp_df["Date"].dt.date <= range_end)] if not exp_df.empty else exp_df
+
+        total_rev = range_df["Total_Collection"].sum() if not range_df.empty else 0.0
+        total_units = int(range_df["Sold_Total"].sum()) if not range_df.empty else 0
+        total_exp_all = range_exp["Amount"].sum() if not range_exp.empty else 0.0
+
+        mc1, mc2, mc3 = st.columns(3)
+        mc1.metric("Revenue in range", f"₹{total_rev:,.0f}")
+        mc2.metric("Units sold in range", f"{total_units}")
+        mc3.metric("Expenses in range", f"₹{total_exp_all:,.0f}")
+
+        # ---- Cart-wise comparison ----
+        st.markdown('<div id="cart-wise-comparison"></div>', unsafe_allow_html=True)
+        st.markdown("### Cart-wise comparison")
+        if not range_df.empty:
+            cart_grp = (
+                range_df.groupby("Cart")
+                .agg(**{"Revenue (₹)": ("Total_Collection", "sum"), "Units sold": ("Sold_Total", "sum")})
+                .reset_index()
+                .sort_values("Revenue (₹)", ascending=False)
+            )
+            st.dataframe(cart_grp, hide_index=True, use_container_width=True)
+            st.bar_chart(cart_grp.set_index("Cart")["Revenue (₹)"])
+        else:
+            st.caption("No sales in this date range.")
+
+        # ---- Cart-wise x day-of-week sales ----
+        st.markdown('<div id="cart-wise-day-of-week"></div>', unsafe_allow_html=True)
+        st.markdown("### Cart-wise average sales by day of the week")
+        if not range_df.empty:
+            day_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+            dow_df = range_df[range_df["Sold_Total"] > 0].copy()
+            dow_df["Day"] = dow_df["Date"].dt.day_name()
+
+            if dow_df.empty:
+                st.caption("No days with actual sales in this date range.")
+            else:
+                units_pivot = dow_df.pivot_table(
+                    index="Cart", columns="Day", values="Sold_Total", aggfunc="mean", fill_value=0, margins=True, margins_name="All carts"
+                )
+                day_cols = [d for d in day_order if d in units_pivot.columns] + ["All carts"]
+                units_pivot = units_pivot.reindex(columns=day_cols)
+
+                rev_pivot = dow_df.pivot_table(
+                    index="Cart", columns="Day", values="Total_Collection", aggfunc="mean", fill_value=0, margins=True, margins_name="All carts"
+                )
+                rev_pivot = rev_pivot.reindex(columns=day_cols)
+
+                st.write("**Avg. units sold** (rows = cart, columns = day of week)")
+                st.dataframe(units_pivot.round(1), use_container_width=True)
+
+                st.write("**Avg. revenue (₹)** (rows = cart, columns = day of week)")
+                st.dataframe(rev_pivot.round(0).astype(int), use_container_width=True)
+
+                st.caption("Zero-sales days are excluded, so each cell is the average over the days that weekday actually had sales. 'All carts' shows the overall average across carts / days.")
+        else:
+            st.caption("No sales in this date range.")
+
+        # ---- Flavour-wise performance ----
+        st.markdown('<div id="flavour-wise-performance"></div>', unsafe_allow_html=True)
+        st.markdown("### Flavour-wise performance")
+        if not range_df.empty:
+            flavor_sold = [0] * N_FLAVORS
+            for arr in range_df["Sold_By_Flavor"]:
+                for i in range(N_FLAVORS):
+                    flavor_sold[i] += arr[i]
+            flavor_df = pd.DataFrame(
+                {
+                    "Flavour": [f[1] for f in FLAVORS],
+                    "Units sold": flavor_sold,
+                    "Est. revenue (₹)": [flavor_sold[i] * FLAVORS[i][2] for i in range(N_FLAVORS)],
+                }
+            ).sort_values("Units sold", ascending=False)
+            st.dataframe(flavor_df, hide_index=True, use_container_width=True)
+            st.bar_chart(flavor_df.set_index("Flavour")["Units sold"])
+            st.caption("Estimated revenue = units sold × MRP per flavour; actual collections may vary slightly (discounts, complementary pieces etc).")
+        else:
+            st.caption("No sales in this date range.")
+
+        # ---- Profit & Loss summary ----
+        st.markdown('<div id="profit-loss-summary"></div>', unsafe_allow_html=True)
+        st.markdown("### Profit & loss summary")
+        cogs = range_exp[range_exp["Category"] == "Cost of Goods"]["Amount"].sum() if not range_exp.empty else 0.0
+        opex_cats = ["Labour Charges", "Leakage Expense", "Miscellaneous Expense"]
+        opex = range_exp[range_exp["Category"].isin(opex_cats)]["Amount"].sum() if not range_exp.empty else 0.0
+        capital_cats = ["Initial Investment", "Initial Set-up Expense"]
+        capital = range_exp[range_exp["Category"].isin(capital_cats)]["Amount"].sum() if not range_exp.empty else 0.0
+        gross_profit = total_rev - cogs
+        net_profit = gross_profit - opex
+
+        pnl_df = pd.DataFrame(
+            {
+                "Line item": ["Revenue", "Cost of Goods", "Gross profit", "Operating expenses (labour, leakage, misc.)", "Net profit"],
+                "Amount (₹)": [total_rev, -cogs, gross_profit, -opex, net_profit],
+            }
+        )
+        st.dataframe(pnl_df, hide_index=True, use_container_width=True)
+        pc1, pc2 = st.columns(2)
+        pc1.metric("Net profit", f"₹{net_profit:,.0f}")
+        pc2.metric("Margin", f"{(net_profit / total_rev * 100) if total_rev else 0:.1f}%")
+        if capital > 0:
+            st.caption(f"₹{capital:,.0f} of one-time capital/setup costs fell in this range and is shown separately below, not deducted above.")
+
+        # ---- Expense breakdown ----
+        st.markdown('<div id="expense-breakdown"></div>', unsafe_allow_html=True)
+        st.markdown("### Expense breakdown by category")
+        if not range_exp.empty:
+            by_cat = range_exp.groupby("Category")["Amount"].sum().sort_values(ascending=False)
+            st.dataframe(
+                by_cat.reset_index().rename(columns={"Amount": "₹"}),
+                hide_index=True,
+                use_container_width=True,
+                column_config={"₹": st.column_config.ProgressColumn("Share", format="₹%.0f", min_value=0, max_value=float(by_cat.max()))},
+            )
+            st.bar_chart(by_cat)
+        else:
+            st.caption("No expenses logged in this date range.")
+
+        # ---- Cash vs PhonePe ----
+        st.markdown('<div id="cash-vs-phonepe"></div>', unsafe_allow_html=True)
+        st.markdown("### Cash vs PhonePe / UPI")
+        if not range_df.empty:
+            total_cash = range_df["Cash"].sum()
+            total_phonepe = range_df["PhonePe"].sum()
+            cc1, cc2 = st.columns(2)
+            cc1.metric("Cash", f"₹{total_cash:,.0f}")
+            cc2.metric("PhonePe / UPI", f"₹{total_phonepe:,.0f}")
+            split_df = pd.DataFrame({"Mode": ["Cash", "PhonePe / UPI"], "Amount (₹)": [total_cash, total_phonepe]})
+            st.bar_chart(split_df.set_index("Mode")["Amount (₹)"])
+        else:
+            st.caption("No collections in this date range.")
+
+        # ---- Date-range sales table ----
+        st.markdown('<div id="sales-in-range"></div>', unsafe_allow_html=True)
+        st.markdown("### Sales in this range")
+        if not range_df.empty:
+            sales_table = range_df.sort_values(["Date", "Cart"])[["Date", "Cart", "Sold_Total", "Total_Collection"]].rename(
+                columns={"Sold_Total": "Units sold", "Total_Collection": "Revenue (₹)"}
+            )
+            sales_table["Date"] = sales_table["Date"].dt.strftime("%d %b %Y")
+            st.dataframe(sales_table, hide_index=True, use_container_width=True)
+        else:
+            st.caption("No sales in this date range.")
+
+    # ------------------ Current Inventory Status ------------------
+    if not daily_df.empty:
+        st.markdown("---")
+        st.markdown('<div id="inventory-status"></div>', unsafe_allow_html=True)
+        st.markdown("## Current Inventory Status")
+
+        st.metric("Stock across carts", f"{int(daily_df.sort_values('Date').groupby('Cart').tail(1)['Closing_Total'].sum())}")
+
+        try:
+            freezer_stock = get_freezer_stock()
+            st.markdown('<div id="freezer-stock-current"></div>', unsafe_allow_html=True)
+            st.markdown("**Freezer stock (current)**")
+            freezer_df = pd.DataFrame({"Flavour": [f[1] for f in FLAVORS], "Units in freezer": freezer_stock})
+            st.dataframe(freezer_df, hide_index=True, use_container_width=True)
+        except Exception as e:
+            st.caption(f"Could not compute freezer stock ({e}).")
+
+        st.markdown('<div id="latest-stock-per-cart"></div>', unsafe_allow_html=True)
+        st.markdown("**Latest stock per cart**")
+        latest_per_cart = daily_df.sort_values("Date").groupby("Cart").tail(1)[["Cart", "Date", "Closing_Total"]]
+        st.dataframe(latest_per_cart, hide_index=True, use_container_width=True)
