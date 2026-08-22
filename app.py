@@ -860,10 +860,10 @@ if page == "Daily Entry":
         with c3:
             total_collection_str = st.text_input("Total collection (₹)", key=k_tot)
             staff_advance_str = st.text_input("Advance to staff (₹)", key=k_adv)
-            food_tea_str = st.text_input("Cash paid for Food / Tea (₹)", key=k_food)
+            cash_str = st.text_input("Cash Collected (₹)", key=k_cs)
         with c4:
             phonepe_str = st.text_input("PhonePe / UPI (₹)", key=k_ph)
-            cash_str = st.text_input("Cash Collected (₹)", key=k_cs)
+            food_tea_str = st.text_input("Cash paid for Food / Tea (₹)", key=k_food)
 
         total_collection_val = _num(total_collection_str)
         phonepe_val = _num(phonepe_str)
