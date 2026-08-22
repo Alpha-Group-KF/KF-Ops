@@ -191,42 +191,14 @@ def get_ws(tab_name):
 
 
 # ----------------------------------------------------------------------
-# Assumptions Helpers (Staff List)
+# Assumptions Helpers (Staff List from A51:A56)
 # ----------------------------------------------------------------------
 def load_active_staff_list():
     try:
         ws = get_ws("Assumptions")
-        values = ws.get_all_values()
-        header_row_idx = None
-        for i, r in enumerate(values):
-            clean_r = [c.strip().lower() for c in r]
-            if "full name" in clean_r:
-                header_row_idx = i
-                break
-        if header_row_idx is None:
-            return ["Select Staff"]
-        headers = [c.strip() for c in values[header_row_idx]]
-        name_idx = None
-        status_idx = None
-        for idx, h in enumerate(headers):
-            if h.lower() == "full name":
-                name_idx = idx
-            elif h.lower() == "status":
-                status_idx = idx
-        if name_idx is None:
-            return ["Select Staff"]
-        active_staff = []
-        for r in values[header_row_idx + 1:]:
-            if name_idx >= len(r) or not r[name_idx].strip():
-                continue
-            name = r[name_idx].strip()
-            if status_idx is not None and status_idx < len(r):
-                status = r[status_idx].strip().lower()
-                if status == "active":
-                    active_staff.append(name)
-            else:
-                active_staff.append(name)
-        return ["Select Staff"] + active_staff
+        values = ws.get_values("A51:A56")
+        staff_names = [row[0].strip() for row in values if row and row[0].strip()]
+        return ["Select Staff"] + staff_names
     except Exception:
         return ["Select Staff"]
 
