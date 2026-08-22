@@ -95,6 +95,7 @@ st.html(
     div[data-testid="stForm"] { border: 1px solid #E3CBA0; border-radius: 12px; padding: 16px; background: #FFFBF2; }
     </style>
     """
+    )
 )
 
 # ----------------------------------------------------------------------
