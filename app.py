@@ -131,7 +131,8 @@ EXPENSE_CATEGORIES = [
 PAYMENT_MODES = ["Cash", "UPI / Bank Transfer"]
 
 DAILY_HEADER_ROWS = 2
-DAILY_TOTAL_COLS = 44
+# 4 prefix + 36 flavor cols + 4 suffix + 2 staff fields (Total, PhonePe, Cash, Remarks, Staff Name, Staff Advance)
+DAILY_TOTAL_COLS = 46
 
 EXPENSE_HEADER_ROWS = 3
 
@@ -240,7 +241,7 @@ def get_opening_balance(cart_name, before_date=None):
     return [int(_num(latest[closing_start + i])) for i in range(N_FLAVORS)]
 
 
-def append_daily_entry(entry_date, cart_name, added, closing, opening, total, phonepe, cash, remarks):
+def append_daily_entry(entry_date, cart_name, added, closing, opening, total, phonepe, cash, remarks, staff_name="", staff_advance=0.0):
     sold = [opening[i] + added[i] - closing[i] for i in range(N_FLAVORS)]
     date_str = entry_date.strftime("%Y-%m-%d")
     date_cart_id = f"{date_str}||{cart_name}"
@@ -250,14 +251,14 @@ def append_daily_entry(entry_date, cart_name, added, closing, opening, total, ph
         + [int(x) for x in added]
         + [int(x) for x in sold]
         + [int(x) for x in closing]
-        + [float(total), float(phonepe), float(cash), str(remarks)]
+        + [float(total), float(phonepe), float(cash), str(remarks), str(staff_name), float(staff_advance)]
     )
     ws = get_ws("Daily Data As Shared")
     ws.append_row(row, value_input_option="USER_ENTERED")
     return sold
 
 
-def update_daily_entry(row_number, entry_date, cart_name, added, closing, opening, total, phonepe, cash, remarks):
+def update_daily_entry(row_number, entry_date, cart_name, added, closing, opening, total, phonepe, cash, remarks, staff_name="", staff_advance=0.0):
     sold = [opening[i] + added[i] - closing[i] for i in range(N_FLAVORS)]
     date_str = entry_date.strftime("%Y-%m-%d")
     date_cart_id = f"{date_str}||{cart_name}"
@@ -267,7 +268,7 @@ def update_daily_entry(row_number, entry_date, cart_name, added, closing, openin
         + [int(x) for x in added]
         + [int(x) for x in sold]
         + [int(x) for x in closing]
-        + [float(total), float(phonepe), float(cash), str(remarks)]
+        + [float(total), float(phonepe), float(cash), str(remarks), str(staff_name), float(staff_advance)]
     )
     _update_row("Daily Data As Shared", row_number, row)
     return sold
@@ -300,6 +301,8 @@ def list_daily_entries():
                 "phonepe": _num(r[41]),
                 "cash": _num(r[42]),
                 "remarks": r[43].strip() if len(r) > 43 else "",
+                "staff_name": r[44].strip() if len(r) > 44 else "",
+                "staff_advance": _num(r[45]) if len(r) > 45 else 0.0,
             }
         )
     out.sort(key=lambda x: (x["date"], x["cart"]), reverse=True)
@@ -410,6 +413,9 @@ def load_daily_df():
                 "Total_Collection": _num(r[40]),
                 "PhonePe": _num(r[41]),
                 "Cash": _num(r[42]),
+                "Remarks": r[43].strip() if len(r) > 43 else "",
+                "Staff_Name": r[44].strip() if len(r) > 44 else "",
+                "Staff_Advance": _num(r[45]) if len(r) > 45 else 0.0,
             }
         )
     return pd.DataFrame(records)
@@ -686,7 +692,7 @@ if page == "Daily Entry":
     closing = edited["Closing cart balance"].fillna(0).astype(int).tolist()
     sold = [opening[i] + added[i] - closing[i] for i in range(N_FLAVORS)]
 
-    # Dynamic metrics instead of a second redundant table
+    # Dynamic metrics
     tot_open, tot_add, tot_close, tot_sold = sum(opening), sum(added), sum(closing), sum(sold)
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("Opening Balance", f"{tot_open} units")
@@ -703,9 +709,17 @@ if page == "Daily Entry":
     k_tot = f"daily_total{data_key_suffix}"
     k_ph = f"daily_phonepe{data_key_suffix}"
     k_cs = f"daily_cash{data_key_suffix}"
+    k_adv = f"daily_adv{data_key_suffix}"
+    k_staff = f"daily_staff{data_key_suffix}"
     k_prev_calc = f"daily_prev_calc{data_key_suffix}"
 
-    # Re-sync total when sales table changes
+    # Auto calculate cash based on: Cash = Total - PhonePe - Staff Advance
+    def recalculate_cash():
+        tot = float(st.session_state.get(k_tot, 0.0))
+        ph = float(st.session_state.get(k_ph, 0.0))
+        adv = float(st.session_state.get(k_adv, 0.0))
+        st.session_state[k_cs] = max(0.0, tot - ph - adv)
+
     if k_tot not in st.session_state or st.session_state.get(k_prev_calc) != calculated_mrp_total:
         st.session_state[k_tot] = float(loaded["total"]) if (loaded and k_tot not in st.session_state) else max(0.0, calculated_mrp_total)
         st.session_state[k_prev_calc] = calculated_mrp_total
@@ -713,18 +727,36 @@ if page == "Daily Entry":
     if k_ph not in st.session_state:
         st.session_state[k_ph] = float(loaded["phonepe"]) if loaded else 0.0
 
+    if k_adv not in st.session_state:
+        st.session_state[k_adv] = float(loaded["staff_advance"]) if loaded else 0.0
+
+    if k_staff not in st.session_state:
+        st.session_state[k_staff] = loaded["staff_name"] if loaded else ""
+
     if k_cs not in st.session_state:
-        st.session_state[k_cs] = float(loaded["cash"]) if loaded else max(0.0, st.session_state[k_tot] - st.session_state[k_ph])
-
-    # 2. Cash auto-calculates as Total - PhonePe upon edit
-    def update_cash_on_phonepe():
-        st.session_state[k_cs] = max(0.0, float(st.session_state[k_tot]) - float(st.session_state[k_ph]))
-
-    def update_cash_on_total():
-        st.session_state[k_cs] = max(0.0, float(st.session_state[k_tot]) - float(st.session_state[k_ph]))
+        if loaded:
+            st.session_state[k_cs] = float(loaded["cash"])
+        else:
+            recalculate_cash()
 
     st.markdown("---")
-    st.write("**Today's collection**")
+    st.write("**Staff & Collections**")
+    
+    st_c1, st_c2 = st.columns(2)
+    with st_c1:
+        staff_name = st.text_input(
+            "Cart staff name",
+            key=k_staff
+        )
+    with st_c2:
+        staff_advance = st.number_input(
+            "Advance paid to cart staff (₹)",
+            min_value=0.0,
+            step=10.0,
+            key=k_adv,
+            on_change=recalculate_cash
+        )
+
     c3, c4, c5 = st.columns(3)
     with c3:
         total_collection = st.number_input(
@@ -732,7 +764,7 @@ if page == "Daily Entry":
             min_value=0.0,
             step=10.0,
             key=k_tot,
-            on_change=update_cash_on_total
+            on_change=recalculate_cash
         )
     with c4:
         phonepe = st.number_input(
@@ -740,7 +772,7 @@ if page == "Daily Entry":
             min_value=0.0,
             step=10.0,
             key=k_ph,
-            on_change=update_cash_on_phonepe
+            on_change=recalculate_cash
         )
     with c5:
         cash = st.number_input(
@@ -750,8 +782,8 @@ if page == "Daily Entry":
             key=k_cs
         )
 
-    if abs((phonepe + cash) - total_collection) > 0.5:
-        st.warning(f"PhonePe + Cash (₹{phonepe + cash:,.0f}) doesn't match Total collection (₹{total_collection:,.0f}) - adjust if unintentional.")
+    if abs((phonepe + cash + staff_advance) - total_collection) > 0.5:
+        st.warning(f"PhonePe + Cash + Advance (₹{phonepe + cash + staff_advance:,.0f}) doesn't match Total collection (₹{total_collection:,.0f}) - adjust if unintentional.")
 
     remarks = st.text_input("Remarks (optional)", value=(loaded["remarks"] if loaded else ""), key=f"daily_remarks{data_key_suffix}")
 
@@ -764,10 +796,16 @@ if page == "Daily Entry":
         else:
             try:
                 if editing_row:
-                    saved_sold = update_daily_entry(editing_row, entry_date, cart_name, added, closing, opening, total_collection, phonepe, cash, remarks)
+                    saved_sold = update_daily_entry(
+                        editing_row, entry_date, cart_name, added, closing, opening, 
+                        total_collection, phonepe, cash, remarks, staff_name, staff_advance
+                    )
                     st.success(f"Updated entry for {cart_name} on {entry_date.strftime('%d %b %Y')}. Sales: {sum(saved_sold)} units.")
                 else:
-                    saved_sold = append_daily_entry(entry_date, cart_name, added, closing, opening, total_collection, phonepe, cash, remarks)
+                    saved_sold = append_daily_entry(
+                        entry_date, cart_name, added, closing, opening, 
+                        total_collection, phonepe, cash, remarks, staff_name, staff_advance
+                    )
                     st.success(f"Saved for {cart_name} on {entry_date.strftime('%d %b %Y')}. Sales: {sum(saved_sold)} units.")
                 st.cache_resource.clear()
             except Exception as e:
@@ -1330,16 +1368,21 @@ elif page == "Dashboard":
         else:
             st.caption("No expenses logged in this date range.")
 
-        # ---- Cash vs PhonePe ----
+        # ---- Cash vs PhonePe vs Advance ----
         st.markdown('<div id="cash-vs-phonepe"></div>', unsafe_allow_html=True)
-        st.markdown("### Cash vs PhonePe / UPI")
+        st.markdown("### Cash vs PhonePe / UPI vs Staff Advance")
         if not range_df.empty:
             total_cash = range_df["Cash"].sum()
             total_phonepe = range_df["PhonePe"].sum()
-            cc1, cc2 = st.columns(2)
+            total_advance = range_df["Staff_Advance"].sum() if "Staff_Advance" in range_df.columns else 0.0
+            cc1, cc2, cc3 = st.columns(3)
             cc1.metric("Cash", f"₹{total_cash:,.0f}")
             cc2.metric("PhonePe / UPI", f"₹{total_phonepe:,.0f}")
-            split_df = pd.DataFrame({"Mode": ["Cash", "PhonePe / UPI"], "Amount (₹)": [total_cash, total_phonepe]})
+            cc3.metric("Staff Advance", f"₹{total_advance:,.0f}")
+            split_df = pd.DataFrame({
+                "Mode": ["Cash", "PhonePe / UPI", "Staff Advance"], 
+                "Amount (₹)": [total_cash, total_phonepe, total_advance]
+            })
             st.bar_chart(split_df.set_index("Mode")["Amount (₹)"])
         else:
             st.caption("No collections in this date range.")
@@ -1348,8 +1391,16 @@ elif page == "Dashboard":
         st.markdown('<div id="sales-in-range"></div>', unsafe_allow_html=True)
         st.markdown("### Sales in this range")
         if not range_df.empty:
-            sales_table = range_df.sort_values(["Date", "Cart"])[["Date", "Cart", "Sold_Total", "Total_Collection"]].rename(
-                columns={"Sold_Total": "Units sold", "Total_Collection": "Revenue (₹)"}
+            display_cols = ["Date", "Cart", "Sold_Total", "Total_Collection", "PhonePe", "Cash", "Staff_Name", "Staff_Advance"]
+            sales_table = range_df.sort_values(["Date", "Cart"])[display_cols].rename(
+                columns={
+                    "Sold_Total": "Units sold", 
+                    "Total_Collection": "Revenue (₹)",
+                    "PhonePe": "PhonePe (₹)",
+                    "Cash": "Cash (₹)",
+                    "Staff_Name": "Staff Name",
+                    "Staff_Advance": "Staff Advance (₹)"
+                }
             )
             sales_table["Date"] = sales_table["Date"].dt.strftime("%d %b %Y")
             st.dataframe(sales_table, hide_index=True, use_container_width=True)
