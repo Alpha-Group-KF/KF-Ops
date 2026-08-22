@@ -92,10 +92,15 @@ st.html(
     div[data-testid="stMetricValue"] { font-family: 'Fraunces', serif; color: #4A2418; }
 
     /* ---------- Tables & data editors ---------- */
-    div[data-testid="stDataFrame"], div[data-testid="stDataEditor"] {
+    div[data-testid="stDataFrame"] {
         border-radius: 12px;
         overflow: hidden;
         border: 1px solid #E3CBA0;
+    }
+    div[data-testid="stDataEditor"] {
+        border-radius: 12px;
+        border: 1px solid #E3CBA0;
+        /* no overflow:hidden here - it clips the cell-edit popup and makes cells look uneditable */
     }
 
     /* ---------- Tabs / radio pills used inside forms ---------- */
