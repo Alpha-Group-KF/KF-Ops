@@ -77,9 +77,26 @@ st.html(
     div[data-testid="stMetricLabel"] { font-weight: 700; color: #7A5A34; }
     div[data-testid="stMetricValue"] { font-family: 'Fraunces', serif; color: #4A2418; }
 
+    /* Centered table cells & visible bold table headers */
     div[data-testid="stDataFrame"], div[data-testid="stDataEditor"] {
         border-radius: 12px;
         border: 1px solid #E3CBA0;
+    }
+    div[data-testid="stDataFrame"] th, div[data-testid="stDataEditor"] th {
+        font-weight: 800 !important;
+        color: #4A2418 !important;
+        background-color: #F8EEDB !important;
+        text-align: center !important;
+        font-size: 14px !important;
+    }
+    div[data-testid="stDataFrame"] td, div[data-testid="stDataEditor"] td {
+        text-align: center !important;
+    }
+    div[data-testid="stDataFrame"] [role="columnheader"], div[data-testid="stDataEditor"] [role="columnheader"] {
+        font-weight: 800 !important;
+        color: #4A2418 !important;
+        background-color: #F8EEDB !important;
+        text-align: center !important;
     }
 
     .stRadio > div[role="radiogroup"] { gap: 8px; }
@@ -191,13 +208,30 @@ def get_ws(tab_name):
 
 
 # ----------------------------------------------------------------------
-# Assumptions Helpers (Staff List from A51:A56)
+# Modal Alert Helper
+# ----------------------------------------------------------------------
+@st.dialog("Notification")
+def show_success_modal(message):
+    st.success(message)
+    if st.button("OK", type="primary", use_container_width=True):
+        st.rerun()
+
+
+# ----------------------------------------------------------------------
+# Assumptions Helpers (Staff List from A51:C56, Active status in C)
 # ----------------------------------------------------------------------
 def load_active_staff_list():
     try:
         ws = get_ws("Assumptions")
-        values = ws.get_values("A51:A56")
-        staff_names = [row[0].strip() for row in values if row and row[0].strip()]
+        values = ws.get_values("A51:C56")
+        staff_names = []
+        for row in values:
+            if not row or not row[0].strip():
+                continue
+            name = row[0].strip()
+            status = row[2].strip().lower() if len(row) >= 3 else "active"
+            if status == "active":
+                staff_names.append(name)
         return ["Select Staff"] + staff_names
     except Exception:
         return ["Select Staff"]
@@ -630,16 +664,8 @@ if page == "Daily Entry":
         sel = st.selectbox("Select entry to update sales", labels, key="daily_update_select")
         loaded = daily_entries[labels.index(sel)]
         editing_row = loaded["row"]
-
-        key_suffix = f"_{editing_row}"
-        st.caption("Review and update restock and sales counts for this entry.")
-
-        c1, c2 = st.columns(2)
-        with c1:
-            entry_date = st.date_input("Date", value=loaded["date"].date(), key=f"daily_date{key_suffix}")
-        with c2:
-            default_cart_idx = CARTS.index(loaded["cart"]) if loaded["cart"] in CARTS else 0
-            cart_name = st.selectbox("Cart", CARTS, index=default_cart_idx, key=f"daily_cart{key_suffix}")
+        entry_date = loaded["date"].date()
+        cart_name = loaded["cart"]
 
         data_key_suffix = f"_{editing_row}"
 
@@ -651,27 +677,49 @@ if page == "Daily Entry":
         k_prev_calc = f"daily_prev_calc{data_key_suffix}"
 
         staff_options = load_active_staff_list()
-        if loaded.get("staff_name") and loaded["staff_name"] not in staff_options:
-            staff_options.append(loaded["staff_name"])
 
-        default_staff_idx = staff_options.index(loaded["staff_name"]) if loaded.get("staff_name") in staff_options else 0
+        # Retain cart staff from previous entry for this specific cart if blank
+        default_staff_name = loaded.get("staff_name", "")
+        if not default_staff_name:
+            for past_e in daily_entries:
+                if past_e["cart"] == cart_name and past_e["staff_name"]:
+                    default_staff_name = past_e["staff_name"]
+                    break
+
+        if default_staff_name and default_staff_name not in staff_options:
+            staff_options.append(default_staff_name)
+
+        default_staff_idx = staff_options.index(default_staff_name) if default_staff_name in staff_options else 0
         staff_name = st.selectbox("Cart staff name", staff_options, index=default_staff_idx, key=k_staff)
 
         opening = loaded["opening"]
+
+        # Session state for live editing calculation of Sales
+        k_added_list = f"added_list_{editing_row}"
+        k_closing_list = f"closing_list_{editing_row}"
+
+        if k_added_list not in st.session_state:
+            st.session_state[k_added_list] = loaded["added"]
+        if k_closing_list not in st.session_state:
+            st.session_state[k_closing_list] = loaded["closing"]
+
+        curr_added = st.session_state[k_added_list]
+        curr_closing = st.session_state[k_closing_list]
+        curr_sold = [opening[i] + curr_added[i] - curr_closing[i] for i in range(N_FLAVORS)]
 
         flavor_names = [f[1] for f in FLAVORS]
         df_init = pd.DataFrame(
             {
                 "Flavour": flavor_names,
                 "Cart balance from yesterday": opening,
-                "Stock addition to cart today": loaded["added"],
-                "Closing cart balance": loaded["closing"],
+                "Stock addition to cart today": curr_added,
+                "Closing cart balance": curr_closing,
+                "Sales": curr_sold,
             }
         )
 
         st.write("Enter units **added to the cart** and the **actual closing count** observed:")
-        
-        # SINGLE EDITABLE TABLE ONLY
+
         edited = st.data_editor(
             df_init,
             column_config={
@@ -679,6 +727,7 @@ if page == "Daily Entry":
                 "Cart balance from yesterday": st.column_config.NumberColumn(disabled=True),
                 "Stock addition to cart today": st.column_config.NumberColumn(min_value=0, step=1),
                 "Closing cart balance": st.column_config.NumberColumn(min_value=0, step=1),
+                "Sales": st.column_config.NumberColumn(disabled=True),
             },
             hide_index=True,
             use_container_width=True,
@@ -689,7 +738,10 @@ if page == "Daily Entry":
         closing = edited["Closing cart balance"].fillna(0).astype(int).tolist()
         sold = [opening[i] + added[i] - closing[i] for i in range(N_FLAVORS)]
 
-        # Dynamic metrics
+        # Keep state updated for dynamic live calculations
+        st.session_state[k_added_list] = added
+        st.session_state[k_closing_list] = closing
+
         tot_open, tot_add, tot_close, tot_sold = sum(opening), sum(added), sum(closing), sum(sold)
         m1, m2, m3, m4 = st.columns(4)
         m1.metric("Opening Balance", f"{tot_open} units")
@@ -700,84 +752,82 @@ if page == "Daily Entry":
         if any(s < 0 for s in sold):
             st.error("Today's sales works out negative for at least one flavour - closing count is higher than opening + added.")
 
-        # 1. Total Collection Auto-calc using MRP from assumptions
         calculated_mrp_total = float(sum(sold[i] * FLAVORS[i][2] for i in range(N_FLAVORS)))
 
-        # Auto calculate cash based on: Cash = Total - PhonePe - Staff Advance
-        def recalculate_cash():
-            tot = float(st.session_state.get(k_tot, 0.0))
-            ph = float(st.session_state.get(k_ph, 0.0))
-            adv = float(st.session_state.get(k_adv, 0.0))
-            st.session_state[k_cs] = max(0.0, tot - ph - adv)
-
         if k_tot not in st.session_state or st.session_state.get(k_prev_calc) != calculated_mrp_total:
-            st.session_state[k_tot] = float(loaded["total"]) if k_tot not in st.session_state else max(0.0, calculated_mrp_total)
+            st.session_state[k_tot] = f"{calculated_mrp_total:.2f}"
             st.session_state[k_prev_calc] = calculated_mrp_total
 
         if k_ph not in st.session_state:
-            st.session_state[k_ph] = float(loaded["phonepe"])
+            st.session_state[k_ph] = f"{loaded['phonepe']:.2f}"
 
         if k_adv not in st.session_state:
-            st.session_state[k_adv] = float(loaded["staff_advance"])
+            st.session_state[k_adv] = f"{loaded['staff_advance']:.2f}"
 
         if k_cs not in st.session_state:
-            st.session_state[k_cs] = float(loaded["cash"])
+            st.session_state[k_cs] = f"{loaded['cash']:.2f}"
 
         st.markdown("---")
         st.write("**Today's collection & Staff Advance**")
 
         c3, c4, c5, c6 = st.columns(4)
         with c3:
-            total_collection = st.number_input(
+            total_collection_str = st.text_input(
                 "Total collection (₹)",
-                min_value=0.0,
-                step=10.0,
                 key=k_tot,
-                on_change=recalculate_cash
             )
         with c4:
-            phonepe = st.number_input(
+            phonepe_str = st.text_input(
                 "PhonePe / UPI (₹)",
-                min_value=0.0,
-                step=10.0,
                 key=k_ph,
-                on_change=recalculate_cash
             )
         with c5:
-            staff_advance = st.number_input(
+            staff_advance_str = st.text_input(
                 "Advance to staff (₹)",
-                min_value=0.0,
-                step=10.0,
                 key=k_adv,
-                on_change=recalculate_cash
             )
         with c6:
-            cash = st.number_input(
-                "Cash (₹)",
-                min_value=0.0,
-                step=10.0,
-                key=k_cs
+            cash_str = st.text_input(
+                "Cash to be Collected (₹)",
+                key=k_cs,
             )
 
-        if abs((phonepe + cash + staff_advance) - total_collection) > 0.5:
-            st.warning(f"PhonePe + Cash + Advance (₹{phonepe + cash + staff_advance:,.0f}) doesn't match Total collection (₹{total_collection:,.0f}) - adjust if unintentional.")
+        total_collection_val = _num(total_collection_str)
+        phonepe_val = _num(phonepe_str)
+        staff_advance_val = _num(staff_advance_str)
+        cash_val = _num(cash_str)
 
-        remarks = st.text_input("Remarks (optional)", value=loaded["remarks"], key=f"daily_remarks{data_key_suffix}")
+        cash_leakage = total_collection_val - phonepe_val - staff_advance_val - cash_val
+
+        st.write(f"**Cash Leakage:** ₹{cash_leakage:,.2f}")
+
+        has_leakage = cash_leakage > 0.001
+        if has_leakage:
+            st.markdown(
+                '<p style="color:red; font-weight:bold; font-size:16px;">'
+                'There is a cash leakage - please correct or enter reason in remarks field'
+                '</p>',
+                unsafe_allow_html=True,
+            )
+
+        remarks = st.text_input("Remarks", value=loaded["remarks"], key=f"daily_remarks{data_key_suffix}")
 
         if st.button("Update sales", type="primary", use_container_width=True):
             if sum(added) == 0 and closing == opening:
                 st.error("Enter a stock addition or a closing count that differs from yesterday's balance before saving.")
             elif any(s < 0 for s in sold):
                 st.error("Today's sales works out negative for at least one flavour - fix closing count before saving.")
+            elif has_leakage and not remarks.strip():
+                st.error("Remarks is mandatory when there is a cash leakage. Please enter a reason.")
             else:
                 try:
                     selected_staff = "" if staff_name == "Select Staff" else staff_name
                     saved_sold = update_daily_entry(
                         editing_row, entry_date, cart_name, added, closing, opening, 
-                        total_collection, phonepe, cash, remarks, selected_staff, staff_advance
+                        total_collection_val, phonepe_val, cash_val, remarks, selected_staff, staff_advance_val
                     )
-                    st.success(f"Updated sales for {cart_name} on {entry_date.strftime('%d %b %Y')}. Sales: {sum(saved_sold)} units.")
                     st.cache_resource.clear()
+                    show_success_modal(f"Saved successfully! Sales updated for {cart_name} on {entry_date.strftime('%d %b %Y')}. Sales: {sum(saved_sold)} units.")
                 except Exception as e:
                     st.error(f"Could not save - {e}")
 
@@ -927,7 +977,8 @@ elif page == "Freezer Stock":
                         payment_amount, payment_status, payment_date, payment_details,
                         damaged_returned_on, notes,
                     )
-                    st.success(f"Updated entry for {received_date.strftime('%d %b %Y')} at {location}.")
+                    st.cache_resource.clear()
+                    show_success_modal(f"Saved successfully! Updated entry for {received_date.strftime('%d %b %Y')} at {location}.")
                 else:
                     append_stock_entry(
                         order_date, received_date, location,
@@ -935,8 +986,8 @@ elif page == "Freezer Stock":
                         payment_amount, payment_status, payment_date, payment_details,
                         damaged_returned_on, notes,
                     )
-                    st.success(f"Saved {sum(received)} units received on {received_date.strftime('%d %b %Y')}.")
-                st.cache_resource.clear()
+                    st.cache_resource.clear()
+                    show_success_modal(f"Saved successfully! Logged {sum(received)} units received on {received_date.strftime('%d %b %Y')}.")
             except Exception as e:
                 st.error(f"Could not save - {e}")
 
@@ -1110,11 +1161,12 @@ elif page == "Expenses":
             try:
                 if exp_editing_row:
                     update_expense(exp_editing_row, exp_date, description, amount, category, mode, ref_no, paid_to, exp_remarks)
-                    st.success(f"Updated ₹{amount:,.0f} expense under {category}.")
+                    st.cache_resource.clear()
+                    show_success_modal(f"Saved successfully! Updated ₹{amount:,.0f} expense under {category}.")
                 else:
                     append_expense(exp_date, description, amount, category, mode, ref_no, paid_to, exp_remarks)
-                    st.success(f"Saved ₹{amount:,.0f} expense under {category}.")
-                st.cache_resource.clear()
+                    st.cache_resource.clear()
+                    show_success_modal(f"Saved successfully! Logged ₹{amount:,.0f} expense under {category}.")
             except Exception as e:
                 st.error(f"Could not save - {e}")
 
