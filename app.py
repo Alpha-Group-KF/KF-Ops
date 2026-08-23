@@ -257,6 +257,10 @@ def _num(x):
     return -v if neg else v
 
 
+def _int_num(x):
+    return int(round(_num(x)))
+
+
 def _pad(row, n):
     if len(row) < n:
         return row + [""] * (n - len(row))
@@ -364,11 +368,11 @@ def get_opening_balance(cart_name, before_date=None):
     if latest is None:
         return [0] * N_FLAVORS
     closing_start = 4 + 9 * 3
-    return [int(_num(latest[closing_start + i])) for i in range(N_FLAVORS)]
+    return [_int_num(latest[closing_start + i]) for i in range(N_FLAVORS)]
 
 
 def update_daily_entry(row_number, entry_date, cart_name, added, closing, opening, total, phonepe, cash, remarks, staff_name="", staff_advance=0.0, food_tea_cash=0.0):
-    sold = [opening[i] + added[i] - closing[i] for i in range(N_FLAVORS)]
+    sold = [int(opening[i]) + int(added[i]) - int(closing[i]) for i in range(N_FLAVORS)]
     date_str = entry_date.strftime("%Y-%m-%d")
     date_cart_id = f"{date_str}||{cart_name}"
     row = (
@@ -402,10 +406,10 @@ def list_daily_entries():
                 "row": DAILY_HEADER_ROWS + idx + 1,
                 "date": d,
                 "cart": r[1].strip(),
-                "opening": [int(_num(r[4 + i])) for i in range(N_FLAVORS)],
-                "added": [int(_num(r[added_start + i])) for i in range(N_FLAVORS)],
-                "sold": [int(_num(r[sold_start + i])) for i in range(N_FLAVORS)],
-                "closing": [int(_num(r[closing_start + i])) for i in range(N_FLAVORS)],
+                "opening": [_int_num(r[4 + i]) for i in range(N_FLAVORS)],
+                "added": [_int_num(r[added_start + i]) for i in range(N_FLAVORS)],
+                "sold": [_int_num(r[sold_start + i]) for i in range(N_FLAVORS)],
+                "closing": [_int_num(r[closing_start + i]) for i in range(N_FLAVORS)],
                 "total": _num(r[40]),
                 "phonepe": _num(r[41]),
                 "cash": _num(r[42]),
@@ -507,11 +511,11 @@ def load_daily_df():
         except Exception:
             continue
         closing_start = 4 + 9 * 3
-        closing = [int(_num(r[closing_start + i])) for i in range(N_FLAVORS)]
+        closing = [_int_num(r[closing_start + i]) for i in range(N_FLAVORS)]
         sold_start = 4 + 9 * 2
-        sold = [int(_num(r[sold_start + i])) for i in range(N_FLAVORS)]
+        sold = [_int_num(r[sold_start + i]) for i in range(N_FLAVORS)]
         added_start = 4 + 9 * 1
-        added = [int(_num(r[added_start + i])) for i in range(N_FLAVORS)]
+        added = [_int_num(r[added_start + i]) for i in range(N_FLAVORS)]
         records.append(
             {
                 "Date": d,
@@ -548,17 +552,17 @@ def _build_stock_row(
     payment_amount, payment_status, payment_date, payment_details,
     damaged_returned_on, notes,
 ):
-    diff = [received[i] - ordered[i] for i in range(N_FLAVORS)]
+    diff = [int(received[i]) - int(ordered[i]) for i in range(N_FLAVORS)]
     date_loc_id = f"{received_date.strftime('%Y-%m-%d')}||{location}"
     return (
         [order_date.strftime("%Y-%m-%d"), received_date.strftime("%Y-%m-%d"), location, date_loc_id]
-        + ordered + [sum(ordered)]
-        + received + [sum(received)]
+        + [int(x) for x in ordered] + [sum(int(x) for x in ordered)]
+        + [int(x) for x in received] + [sum(int(x) for x in received)]
         + diff + [sum(diff)]
-        + cost + [sum(cost)]
-        + [payment_amount, payment_status, payment_date.strftime("%Y-%m-%d") if payment_date else "", payment_details]
-        + damaged + [sum(damaged)]
-        + [damaged_returned_on.strftime("%Y-%m-%d") if damaged_returned_on else "", notes]
+        + [float(x) for x in cost] + [sum(float(x) for x in cost)]
+        + [float(payment_amount), str(payment_status), payment_date.strftime("%Y-%m-%d") if payment_date else "", str(payment_details)]
+        + [int(x) for x in damaged] + [sum(int(x) for x in damaged)]
+        + [damaged_returned_on.strftime("%Y-%m-%d") if damaged_returned_on else "", str(notes)]
     )
 
 
@@ -606,10 +610,10 @@ def list_stock_entries():
                 "order_date": r[0].strip(),
                 "received_date": d,
                 "location": r[2].strip(),
-                "ordered": [int(_num(r[4 + i])) for i in range(N_FLAVORS)],
-                "received": [int(_num(r[14 + i])) for i in range(N_FLAVORS)],
+                "ordered": [_int_num(r[4 + i]) for i in range(N_FLAVORS)],
+                "received": [_int_num(r[14 + i]) for i in range(N_FLAVORS)],
                 "cost": [_num(r[34 + i]) for i in range(N_FLAVORS)],
-                "damaged": [int(_num(r[48 + i])) for i in range(N_FLAVORS)],
+                "damaged": [_int_num(r[48 + i]) for i in range(N_FLAVORS)],
                 "payment_amount": _num(r[44]),
                 "payment_status": r[45].strip(),
                 "payment_date": r[46].strip(),
@@ -640,7 +644,7 @@ def get_freezer_stock():
             for i in range(N_FLAVORS):
                 added_totals[i] += added[i]
 
-    return [int(received_totals[i] - added_totals[i]) for i in range(N_FLAVORS)]
+    return [int(round(received_totals[i] - added_totals[i])) for i in range(N_FLAVORS)]
 
 
 # ----------------------------------------------------------------------
@@ -779,24 +783,24 @@ if page == "Daily Entry":
         with top_c2:
             staff_name = st.selectbox("Cart staff name", staff_options, index=default_staff_idx, key=k_staff)
 
-        opening = loaded["opening"]
+        opening = [_int_num(x) for x in loaded["opening"]]
 
         st.write("Enter units **added to the cart** and the **actual closing count** observed:")
 
         added = [0] * N_FLAVORS
         closing = [0] * N_FLAVORS
 
-        # Render 100% responsive flavor cards
+        # Render integer-only number inputs (no text or decimals)
         for i, f in enumerate(FLAVORS):
             k_add = f"add_{editing_row}_{i}"
             k_cls = f"cls_{editing_row}_{i}"
             if k_add not in st.session_state:
-                st.session_state[k_add] = loaded["added"][i]
+                st.session_state[k_add] = _int_num(loaded["added"][i])
             if k_cls not in st.session_state:
-                st.session_state[k_cls] = loaded["closing"][i]
+                st.session_state[k_cls] = _int_num(loaded["closing"][i])
 
-            cur_add = st.session_state[k_add]
-            cur_cls = st.session_state[k_cls]
+            cur_add = _int_num(st.session_state[k_add])
+            cur_cls = _int_num(st.session_state[k_cls])
             cur_sold = opening[i] + cur_add - cur_cls
 
             st.markdown(
@@ -816,12 +820,12 @@ if page == "Daily Entry":
 
             col_a, col_b = st.columns(2)
             with col_a:
-                added_val = st.number_input("+ Added Stock", min_value=0, step=1, key=k_add)
+                added_val = st.number_input("+ Added Stock", min_value=0, step=1, format="%d", key=k_add)
             with col_b:
-                closing_val = st.number_input("Closing Count", min_value=0, step=1, key=k_cls)
+                closing_val = st.number_input("Closing Count", min_value=0, step=1, format="%d", key=k_cls)
 
-            added[i] = int(added_val)
-            closing[i] = int(closing_val)
+            added[i] = _int_num(added_val)
+            closing[i] = _int_num(closing_val)
 
         sold = [opening[i] + added[i] - closing[i] for i in range(N_FLAVORS)]
 
@@ -979,10 +983,10 @@ elif page == "Freezer Stock":
     df_init = pd.DataFrame(
         {
             "Flavour": flavor_names,
-            "Ordered": stock_loaded["ordered"] if stock_loaded else [0] * N_FLAVORS,
-            "Received": stock_loaded["received"] if stock_loaded else [0] * N_FLAVORS,
-            "Cost (₹, total)": stock_loaded["cost"] if stock_loaded else [0.0] * N_FLAVORS,
-            "Damaged": stock_loaded["damaged"] if stock_loaded else [0] * N_FLAVORS,
+            "Ordered": [_int_num(x) for x in (stock_loaded["ordered"] if stock_loaded else [0] * N_FLAVORS)],
+            "Received": [_int_num(x) for x in (stock_loaded["received"] if stock_loaded else [0] * N_FLAVORS)],
+            "Cost (₹, total)": [_num(x) for x in (stock_loaded["cost"] if stock_loaded else [0.0] * N_FLAVORS)],
+            "Damaged": [_int_num(x) for x in (stock_loaded["damaged"] if stock_loaded else [0] * N_FLAVORS)],
         }
     )
     st.write("Enter units per flavour:")
@@ -1000,10 +1004,10 @@ elif page == "Freezer Stock":
         key=f"stock_editor{sk}",
     )
 
-    ordered = stock_edited["Ordered"].fillna(0).astype(int).tolist()
-    received = stock_edited["Received"].fillna(0).astype(int).tolist()
-    cost = stock_edited["Cost (₹, total)"].fillna(0).astype(float).tolist()
-    damaged = stock_edited["Damaged"].fillna(0).astype(int).tolist()
+    ordered = [_int_num(x) for x in stock_edited["Ordered"].fillna(0).tolist()]
+    received = [_int_num(x) for x in stock_edited["Received"].fillna(0).tolist()]
+    cost = [_num(x) for x in stock_edited["Cost (₹, total)"].fillna(0.0).tolist()]
+    damaged = [_int_num(x) for x in stock_edited["Damaged"].fillna(0).tolist()]
 
     st.caption(
         "Standard cost price per unit — Malai ₹22, Mini Malai ₹18, Pista ₹22, Mango ₹22, "
@@ -1131,11 +1135,11 @@ elif page == "Freezer Analysis":
             rows.append(
                 {
                     "Flavour": f[1],
-                    "Freezer stock": stock,
-                    "Avg. daily sales": round(rate),
-                    "Days of stock left": round(days_left) if days_left is not None else "—",
+                    "Freezer stock": int(round(stock)),
+                    "Avg. daily sales": int(round(rate)),
+                    "Days of stock left": int(round(days_left)) if days_left is not None else "—",
                     "Status": status,
-                    f"Suggested next order ({cover_days}d)": suggested_qty,
+                    f"Suggested next order ({cover_days}d)": int(suggested_qty),
                 }
             )
 
@@ -1147,9 +1151,9 @@ elif page == "Freezer Analysis":
 
         st.markdown("### Overall picture")
         oc1, oc2, oc3 = st.columns(3)
-        oc1.metric("Total freezer stock", f"{total_stock} units")
-        oc2.metric("Avg. daily sales (all flavours)", f"{total_rate:.0f} units/day")
-        oc3.metric("Overall days of stock left", f"{overall_days_left:.0f}" if overall_days_left is not None else "—")
+        oc1.metric("Total freezer stock", f"{int(round(total_stock))} units")
+        oc2.metric("Avg. daily sales (all flavours)", f"{int(round(total_rate))} units/day")
+        oc3.metric("Overall days of stock left", f"{int(round(overall_days_left))}" if overall_days_left is not None else "—")
 
         if overall_order_date is not None:
             if overall_order_date <= today_fa:
@@ -1268,7 +1272,7 @@ elif page == "Dashboard":
     if not daily_df.empty:
         day_rows = [daily_df[daily_df["Date"].dt.date == d.date()] for d in day_labels]
         day_rev = [r["Total_Collection"].sum() for r in day_rows]
-        day_units = [int(r["Sold_Total"].sum()) for r in day_rows]
+        day_units = [int(round(r["Sold_Total"].sum())) for r in day_rows]
 
         col_names = [d.strftime("%d %b") for d in day_labels]
         col_names[-1] = col_names[-1] + " (Yesterday)"
@@ -1356,7 +1360,7 @@ elif page == "Dashboard":
         range_exp = exp_df[(exp_df["Date"].dt.date >= range_start) & (exp_df["Date"].dt.date <= range_end)] if not exp_df.empty else exp_df
 
         total_rev = range_df["Total_Collection"].sum() if not range_df.empty else 0.0
-        total_units = int(range_df["Sold_Total"].sum()) if not range_df.empty else 0
+        total_units = int(round(range_df["Sold_Total"].sum())) if not range_df.empty else 0
         total_exp_all = range_exp["Amount"].sum() if not range_exp.empty else 0.0
 
         mc1, mc2, mc3 = st.columns(3)
@@ -1374,6 +1378,7 @@ elif page == "Dashboard":
                 .reset_index()
                 .sort_values("Revenue (₹)", ascending=False)
             )
+            cart_grp["Units sold"] = cart_grp["Units sold"].apply(lambda x: int(round(x)))
             st.dataframe(cart_grp, hide_index=True, use_container_width=True)
             st.bar_chart(cart_grp.set_index("Cart")["Revenue (₹)"])
         else:
@@ -1402,7 +1407,7 @@ elif page == "Dashboard":
                 rev_pivot = rev_pivot.reindex(columns=day_cols)
 
                 st.write("**Avg. units sold** (rows = cart, columns = day of week)")
-                st.dataframe(units_pivot.round(1), use_container_width=True)
+                st.dataframe(units_pivot.round(0).astype(int), use_container_width=True)
 
                 st.write("**Avg. revenue (₹)** (rows = cart, columns = day of week)")
                 st.dataframe(rev_pivot.round(0).astype(int), use_container_width=True)
@@ -1422,7 +1427,7 @@ elif page == "Dashboard":
             flavor_df = pd.DataFrame(
                 {
                     "Flavour": [f[1] for f in FLAVORS],
-                    "Units sold": flavor_sold,
+                    "Units sold": [int(round(x)) for x in flavor_sold],
                     "Est. revenue (₹)": [flavor_sold[i] * FLAVORS[i][2] for i in range(N_FLAVORS)],
                 }
             ).sort_values("Units sold", ascending=False)
@@ -1510,6 +1515,7 @@ elif page == "Dashboard":
                     "Food_Tea_Cash": "Food / Tea (₹)"
                 }
             )
+            sales_table["Units sold"] = sales_table["Units sold"].apply(lambda x: int(round(x)))
             sales_table["Date"] = sales_table["Date"].dt.strftime("%d %b %Y")
             st.dataframe(sales_table, hide_index=True, use_container_width=True)
         else:
@@ -1521,18 +1527,19 @@ elif page == "Dashboard":
         st.markdown('<div id="inventory-status"></div>', unsafe_allow_html=True)
         st.markdown("## Current Inventory Status")
 
-        st.metric("Stock across carts", f"{int(daily_df.sort_values('Date').groupby('Cart').tail(1)['Closing_Total'].sum())}")
+        st.metric("Stock across carts", f"{int(round(daily_df.sort_values('Date').groupby('Cart').tail(1)['Closing_Total'].sum()))}")
 
         try:
             freezer_stock = get_freezer_stock()
             st.markdown('<div id="freezer-stock-current"></div>', unsafe_allow_html=True)
             st.markdown("**Freezer stock (current)**")
-            freezer_df = pd.DataFrame({"Flavour": [f[1] for f in FLAVORS], "Units in freezer": freezer_stock})
+            freezer_df = pd.DataFrame({"Flavour": [f[1] for f in FLAVORS], "Units in freezer": [int(round(x)) for x in freezer_stock]})
             st.dataframe(freezer_df, hide_index=True, use_container_width=True)
         except Exception as e:
             st.caption(f"Could not compute freezer stock ({e}).")
 
         st.markdown('<div id="latest-stock-per-cart"></div>', unsafe_allow_html=True)
         st.markdown("**Latest stock per cart**")
-        latest_per_cart = daily_df.sort_values("Date").groupby("Cart").tail(1)[["Cart", "Date", "Closing_Total"]]
+        latest_per_cart = daily_df.sort_values("Date").groupby("Cart").tail(1)[["Cart", "Date", "Closing_Total"]].copy()
+        latest_per_cart["Closing_Total"] = latest_per_cart["Closing_Total"].apply(lambda x: int(round(x)))
         st.dataframe(latest_per_cart, hide_index=True, use_container_width=True)
