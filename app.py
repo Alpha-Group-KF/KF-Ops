@@ -234,15 +234,15 @@ CARTS = ["HOSUR CART 01", "HOSUR CART 02", "HOSUR CART 03"]
 CITY = "HOSUR"
 
 FLAVORS = [
-    ("ML", "Malai", 40, 22),
-    ("MM", "Mini Malai", 30, 18),
-    ("PS", "Pista", 40, 22),
-    ("MN", "Mango", 40, 22),
+    ("ML", "Malai", 40, 22.0),
+    ("MM", "Mini Malai", 30, 18.0),
+    ("PS", "Pista", 40, 22.0),
+    ("MN", "Mango", 40, 22.0),
     ("KB", "Kesar Badam", 50, 27.5),
-    ("BM", "Badam Matka", 80, 44),
+    ("BM", "Badam Matka", 80, 44.0),
     ("SG", "Shahi Gulab", 50, 27.5),
     ("CH", "Chocolate", 50, 27.5),
-    ("RA", "Roasted Almond", 60, 33),
+    ("RA", "Roasted Almond", 60, 33.0),
 ]
 FLAVOR_CODES = [f[0] for f in FLAVORS]
 N_FLAVORS = len(FLAVORS)
@@ -332,7 +332,7 @@ def show_success_modal(message):
 
 
 # ----------------------------------------------------------------------
-# Assumptions Helpers (Staff List from A51:C56, Active status in C)
+# Assumptions Helpers (Staff List & Flavor Cost Prices)
 # ----------------------------------------------------------------------
 def load_active_staff_list():
     try:
@@ -349,6 +349,31 @@ def load_active_staff_list():
         return ["Select Staff"] + staff_names
     except Exception:
         return ["Select Staff"]
+
+
+def load_flavor_cost_prices():
+    """
+    Attempts to read the unit cost prices from Assumptions sheet.
+    Falls back to FLAVORS config if unavailable.
+    """
+    try:
+        ws = get_ws("Assumptions")
+        values = ws.get_all_values()
+        cost_map = {}
+        for r in values:
+            if len(r) >= 3 and r[0].strip() and any(c.isdigit() for c in r[2]):
+                name = r[0].strip().lower()
+                cost_map[name] = _num(r[2])
+        costs = []
+        for f in FLAVORS:
+            name_lower = f[1].lower()
+            if name_lower in cost_map and cost_map[name_lower] > 0:
+                costs.append(cost_map[name_lower])
+            else:
+                costs.append(f[3])
+        return costs
+    except Exception:
+        return [f[3] for f in FLAVORS]
 
 
 # ----------------------------------------------------------------------
@@ -702,7 +727,6 @@ def check_login():
             user_clean = str(username).strip()
             pass_clean = str(password).strip()
 
-            # Retrieve and cast secrets safely to strings
             admin_user = str(st.secrets.get("app_username", "admin")).strip()
             admin_pass = str(st.secrets.get("app_password", "")).strip()
 
@@ -781,7 +805,6 @@ with st.sidebar:
 st.title(f"🍦 Kulfi Ops — {page}")
 
 # ---------------- DAILY ENTRY ----------------
-# ---------------- DAILY ENTRY ----------------
 if page == "Daily Entry":
     st.subheader("Cart restock & daily sales")
 
@@ -843,7 +866,6 @@ if page == "Daily Entry":
         added = [0] * N_FLAVORS
         closing = [0] * N_FLAVORS
 
-        # Render flavor cards with Opening/Sold in header and 2 input fields alone in the row
         for i, f in enumerate(FLAVORS):
             k_add = f"add_{editing_row}_{i}"
             k_cls = f"cls_{editing_row}_{i}"
@@ -1032,13 +1054,16 @@ elif page == "Freezer Stock" and user_role == "admin":
     with c3:
         location = st.text_input("Location", value=(stock_loaded["location"] if stock_loaded else CITY), key=f"stock_location{sk}")
 
+    # Load unit cost prices (from Assumptions sheet or default configuration)
+    cost_prices = load_flavor_cost_prices()
     flavor_names = [f[1] for f in FLAVORS]
+
     df_init = pd.DataFrame(
         {
             "Flavour": flavor_names,
+            "Unit Cost Price (₹)": [float(c) for c in cost_prices],
             "Ordered": [_int_num(x) for x in (stock_loaded["ordered"] if stock_loaded else [0] * N_FLAVORS)],
             "Received": [_int_num(x) for x in (stock_loaded["received"] if stock_loaded else [0] * N_FLAVORS)],
-            "Cost (₹, total)": [_num(x) for x in (stock_loaded["cost"] if stock_loaded else [0.0] * N_FLAVORS)],
             "Damaged": [_int_num(x) for x in (stock_loaded["damaged"] if stock_loaded else [0] * N_FLAVORS)],
         }
     )
@@ -1047,9 +1072,9 @@ elif page == "Freezer Stock" and user_role == "admin":
         df_init,
         column_config={
             "Flavour": st.column_config.TextColumn(disabled=True),
+            "Unit Cost Price (₹)": st.column_config.NumberColumn(format="₹%.2f", disabled=True),
             "Ordered": st.column_config.NumberColumn(min_value=0, step=1, format="%d"),
             "Received": st.column_config.NumberColumn(min_value=0, step=1, format="%d"),
-            "Cost (₹, total)": st.column_config.NumberColumn(min_value=0.0, step=10.0, format="₹%.2f"),
             "Damaged": st.column_config.NumberColumn(min_value=0, step=1, format="%d"),
         },
         hide_index=True,
@@ -1059,19 +1084,29 @@ elif page == "Freezer Stock" and user_role == "admin":
 
     ordered = [_int_num(x) for x in stock_edited["Ordered"].fillna(0).tolist()]
     received = [_int_num(x) for x in stock_edited["Received"].fillna(0).tolist()]
-    cost = [_num(x) for x in stock_edited["Cost (₹, total)"].fillna(0.0).tolist()]
     damaged = [_int_num(x) for x in stock_edited["Damaged"].fillna(0).tolist()]
 
-    st.caption(
-        "Standard cost price per unit — Malai ₹22, Mini Malai ₹18, Pista ₹22, Mango ₹22, "
-        "Kesar Badam ₹27.5, Badam Matka ₹44, Shahi Gulab ₹27.5, Chocolate ₹27.5, Roasted Almond ₹33."
-    )
+    # Automatic Cost Calculation: Received Units * Unit Cost Price
+    cost = [float(received[i] * cost_prices[i]) for i in range(N_FLAVORS)]
+
+    # Real-time metrics breakdown
+    tot_ordered_units = sum(ordered)
+    tot_received_units = sum(received)
+    tot_damaged_units = sum(damaged)
+    tot_cost_val = sum(cost)
+
+    st.markdown("#### Entry Summary")
+    s_col1, s_col2, s_col3, s_col4 = st.columns(4)
+    s_col1.metric("Total Ordered", f"{tot_ordered_units} units")
+    s_col2.metric("Total Received", f"{tot_received_units} units")
+    s_col3.metric("Total Damaged", f"{tot_damaged_units} units")
+    s_col4.metric("Total Cost of Goods", f"₹{tot_cost_val:,.2f}")
 
     st.markdown("---")
     st.write("**Payment**")
     c4, c5 = st.columns(2)
     with c4:
-        default_payment_amount = stock_loaded["payment_amount"] if stock_loaded else float(sum(cost))
+        default_payment_amount = float(stock_loaded["payment_amount"]) if stock_loaded else float(tot_cost_val)
         payment_amount = st.number_input("Payment amount (₹)", min_value=0.0, value=float(default_payment_amount), step=10.0, key=f"stock_pay_amt{sk}")
     with c5:
         default_status_idx = PAYMENT_STATUSES.index(stock_loaded["payment_status"]) if stock_loaded and stock_loaded["payment_status"] in PAYMENT_STATUSES else 0
@@ -1116,7 +1151,7 @@ elif page == "Freezer Stock" and user_role == "admin":
                         damaged_returned_on, notes,
                     )
                     st.cache_resource.clear()
-                    show_success_modal(f"Saved successfully! Updated entry for {received_date.strftime('%d %b %Y')} at {location}.")
+                    show_success_modal(f"Saved successfully! Updated entry for {received_date.strftime('%d %b %Y')} at {location}. Total Received: {sum(received)} units (₹{tot_cost_val:,.2f}).")
                 else:
                     append_stock_entry(
                         order_date, received_date, location,
@@ -1125,7 +1160,7 @@ elif page == "Freezer Stock" and user_role == "admin":
                         damaged_returned_on, notes,
                     )
                     st.cache_resource.clear()
-                    show_success_modal(f"Saved successfully! Logged {sum(received)} units received on {received_date.strftime('%d %b %Y')}.")
+                    show_success_modal(f"Saved successfully! Logged {sum(received)} units received (₹{tot_cost_val:,.2f}) on {received_date.strftime('%d %b %Y')}.")
             except Exception as e:
                 st.error(f"Could not save - {e}")
 
