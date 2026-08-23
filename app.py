@@ -678,7 +678,7 @@ def get_freezer_stock():
 
 
 # ----------------------------------------------------------------------
-# Login
+# Login (Admin & Data Entry User)
 # ----------------------------------------------------------------------
 def check_login():
     if st.session_state.get("authenticated", False):
@@ -699,16 +699,23 @@ def check_login():
             submitted = st.form_submit_button("Sign in", type="primary", use_container_width=True)
 
         if submitted:
-            valid_user = st.secrets.get("app_username", "admin")
-            valid_pass = st.secrets.get("app_password", None)
+            user_clean = str(username).strip()
+            pass_clean = str(password).strip()
 
-            if valid_pass is None:
-                st.error("No `app_password` set in Secrets. Please add credentials to Secrets.")
-            elif (
-                hmac.compare_digest(username.strip(), valid_user.strip())
-                and hmac.compare_digest(password, valid_pass)
-            ):
+            # Retrieve and cast secrets safely to strings
+            admin_user = str(st.secrets.get("app_username", "admin")).strip()
+            admin_pass = str(st.secrets.get("app_password", "")).strip()
+
+            entry_user = str(st.secrets.get("entry_username", "entry")).strip()
+            entry_pass = str(st.secrets.get("entry_password", "")).strip()
+
+            if admin_pass and hmac.compare_digest(user_clean, admin_user) and hmac.compare_digest(pass_clean, admin_pass):
                 st.session_state["authenticated"] = True
+                st.session_state["user_role"] = "admin"
+                st.rerun()
+            elif entry_pass and hmac.compare_digest(user_clean, entry_user) and hmac.compare_digest(pass_clean, entry_pass):
+                st.session_state["authenticated"] = True
+                st.session_state["user_role"] = "entry"
                 st.rerun()
             else:
                 st.error("Incorrect username or password — try again.")
@@ -722,43 +729,53 @@ if not check_login():
 # ----------------------------------------------------------------------
 # Navigation
 # ----------------------------------------------------------------------
+user_role = st.session_state.get("user_role", "admin")
+
 with st.sidebar:
     try:
         st.image("assets/logo.png", use_container_width=True)
     except Exception:
         st.markdown("## 🍦 Kulfi Ops")
-    page = st.radio(
-        "Go to",
-        ["Dashboard", "Daily Entry", "Freezer Stock", "Freezer Analysis", "Expenses"],
-        label_visibility="collapsed",
-    )
-    if page == "Dashboard":
-        st.markdown(
-            textwrap.dedent(
-                """
-            <div class="dash-jump">
-            <b>Jump to</b><br>
-            <a href="#last-3-days">Last 3 days</a>
-            <a href="#revenue-trend">Revenue trend (14 days)</a>
-            <a href="#reports">Reports (date range)</a>
-            <a href="#cart-wise-comparison">&nbsp;&nbsp;Cart-wise comparison</a>
-            <a href="#cart-wise-day-of-week">&nbsp;&nbsp;Sales by day of week</a>
-            <a href="#flavour-wise-performance">&nbsp;&nbsp;Flavour-wise performance</a>
-            <a href="#profit-loss-summary">&nbsp;&nbsp;Profit &amp; loss summary</a>
-            <a href="#expense-breakdown">&nbsp;&nbsp;Expense breakdown</a>
-            <a href="#cash-vs-phonepe">&nbsp;&nbsp;Cash vs PhonePe</a>
-            <a href="#sales-in-range">&nbsp;&nbsp;Sales table</a>
-            <a href="#inventory-status">Current Inventory Status</a>
-            <a href="#freezer-stock-current">&nbsp;&nbsp;Freezer stock (current)</a>
-            <a href="#latest-stock-per-cart">&nbsp;&nbsp;Latest stock per cart</a>
-            </div>
-            """
-            ),
-            unsafe_allow_html=True,
+
+    if user_role == "admin":
+        nav_options = ["Dashboard", "Daily Entry", "Freezer Stock", "Freezer Analysis", "Expenses"]
+        page = st.radio(
+            "Go to",
+            nav_options,
+            label_visibility="collapsed",
         )
+        if page == "Dashboard":
+            st.markdown(
+                textwrap.dedent(
+                    """
+                <div class="dash-jump">
+                <b>Jump to</b><br>
+                <a href="#last-3-days">Last 3 days</a>
+                <a href="#revenue-trend">Revenue trend (14 days)</a>
+                <a href="#reports">Reports (date range)</a>
+                <a href="#cart-wise-comparison">&nbsp;&nbsp;Cart-wise comparison</a>
+                <a href="#cart-wise-day-of-week">&nbsp;&nbsp;Sales by day of week</a>
+                <a href="#flavour-wise-performance">&nbsp;&nbsp;Flavour-wise performance</a>
+                <a href="#profit-loss-summary">&nbsp;&nbsp;Profit &amp; loss summary</a>
+                <a href="#expense-breakdown">&nbsp;&nbsp;Expense breakdown</a>
+                <a href="#cash-vs-phonepe">&nbsp;&nbsp;Cash vs PhonePe</a>
+                <a href="#sales-in-range">&nbsp;&nbsp;Sales table</a>
+                <a href="#inventory-status">Current Inventory Status</a>
+                <a href="#freezer-stock-current">&nbsp;&nbsp;Freezer stock (current)</a>
+                <a href="#latest-stock-per-cart">&nbsp;&nbsp;Latest stock per cart</a>
+                </div>
+                """
+                ),
+                unsafe_allow_html=True,
+            )
+    else:
+        page = "Daily Entry"
+        st.info("Logged in as Data Entry Staff")
+
     st.markdown("---")
     if st.button("Log out", use_container_width=True):
         st.session_state["authenticated"] = False
+        st.session_state["user_role"] = None
         st.rerun()
 
 st.title(f"🍦 Kulfi Ops — {page}")
@@ -773,8 +790,13 @@ if page == "Daily Entry":
         daily_entries = []
         st.warning(f"Could not load entries ({e}).")
 
+    # Restrict dropdown to the last 3 days for the data entry role
+    if user_role == "entry" and daily_entries:
+        cutoff_date = date.today() - timedelta(days=3)
+        daily_entries = [e for e in daily_entries if e["date"].date() >= cutoff_date]
+
     if not daily_entries:
-        st.info("No past entries found in the sheet.")
+        st.info("No entries found in the sheet (or within the last 3 days).")
     else:
         top_c1, top_c2 = st.columns([1.3, 1])
 
@@ -947,7 +969,7 @@ if page == "Daily Entry":
                     st.error(f"Could not save - {e}")
 
 # ---------------- FREEZER STOCK ----------------
-elif page == "Freezer Stock":
+elif page == "Freezer Stock" and user_role == "admin":
     st.subheader("Stock received into freezer")
 
     stock_mode = st.radio("Mode", ["New entry", "Edit past entry"], horizontal=True, key="stock_mode")
@@ -1107,7 +1129,7 @@ elif page == "Freezer Stock":
                 st.error(f"Could not save - {e}")
 
 # ---------------- FREEZER ANALYSIS ----------------
-elif page == "Freezer Analysis":
+elif page == "Freezer Analysis" and user_role == "admin":
     st.subheader("Freezer stock analysis & reorder planner")
     st.caption("Uses recent sales pace to estimate when freezer stock runs low.")
 
@@ -1224,7 +1246,7 @@ elif page == "Freezer Analysis":
             st.altair_chart(days_chart + rule, use_container_width=True)
 
 # ---------------- EXPENSES ----------------
-elif page == "Expenses":
+elif page == "Expenses" and user_role == "admin":
     st.subheader("Log an expense")
 
     exp_mode = st.radio("Mode", ["New entry", "Edit past entry"], horizontal=True, key="exp_mode")
@@ -1286,7 +1308,7 @@ elif page == "Expenses":
                 st.error(f"Could not save - {e}")
 
 # ---------------- DASHBOARD ----------------
-elif page == "Dashboard":
+elif page == "Dashboard" and user_role == "admin":
     st.subheader("Quick view")
 
     try:
