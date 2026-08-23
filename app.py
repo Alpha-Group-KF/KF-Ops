@@ -86,22 +86,23 @@ st.html(
         border-radius: 12px;
     }
 
-    /* Compact inputs */
+    /* Compact Left-Justified Inputs */
     .stTextInput div[data-baseweb="input"], .stNumberInput div[data-baseweb="input"] {
         min-height: 32px !important;
         height: 32px !important;
         border-radius: 8px !important;
     }
     .stTextInput input, .stNumberInput input {
-        padding: 3px 6px !important;
+        padding: 3px 8px !important;
         font-size: 13px !important;
-        text-align: center !important;
-        font-weight: 700 !important;
+        text-align: left !important;
+        font-weight: 600 !important;
     }
-    .stNumberInput label {
+    .stNumberInput label, .stTextInput label {
         font-size: 11px !important;
         font-weight: 700 !important;
         margin-bottom: 2px !important;
+        text-align: left !important;
     }
 
     section[data-testid="stSidebar"] { 
@@ -893,10 +894,10 @@ if page == "Daily Entry":
         with c3:
             total_collection_str = st.text_input("Total collection (₹)", key=k_tot)
             staff_advance_str = st.text_input("Advance to staff (₹)", key=k_adv)
-            cash_str = st.text_input("Cash Collected (₹)", key=k_cs)
+            food_tea_str = st.text_input("Cash paid for Food / Tea (₹)", key=k_food)
         with c4:
             phonepe_str = st.text_input("PhonePe / UPI (₹)", key=k_ph)
-            food_tea_str = st.text_input("Cash paid for Food / Tea (₹)", key=k_food)
+            cash_str = st.text_input("Cash Collected (₹)", key=k_cs)
 
         total_collection_val = _num(total_collection_str)
         phonepe_val = _num(phonepe_str)
