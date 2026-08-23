@@ -49,61 +49,51 @@ st.html(
         display: none !important;
     }
 
-    /* ---------- Single Line In-Card Row ---------- */
-    .flavor-card-container {
+    /* ---------- Mobile Flavor Card Grid ---------- */
+    .flavor-entry-row {
         background: #FFFDF8;
         border: 1.5px solid #E3CBA0;
         border-radius: 10px;
-        padding: 6px 10px;
-        margin-bottom: 6px;
+        padding: 8px 10px;
+        margin-bottom: 8px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.03);
     }
-    .flavor-card-title {
+    .flavor-title-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 4px;
+    }
+    .flavor-name {
         font-weight: 800;
-        font-size: 13.5px;
+        font-size: 14px;
         color: #4A2418;
-        margin-bottom: 2px;
     }
-    .val-box-label {
-        font-size: 11px;
-        font-weight: 700;
-        color: #7A5A34;
-        text-align: center;
-        margin-bottom: 2px;
-    }
-    .val-box-open {
+    .badge-open {
         background: #EFE4CF;
         color: #5A3E1B;
-        font-weight: 800;
-        font-size: 13px;
-        border-radius: 6px;
-        height: 28px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: 1px solid #D6B272;
+        font-weight: 700;
+        font-size: 12px;
+        padding: 2px 8px;
+        border-radius: 12px;
     }
-    .val-box-sold {
+    .badge-sold {
         background: #FCE8E2;
         color: #C43D17;
-        font-weight: 900;
-        font-size: 13px;
-        border-radius: 6px;
-        height: 28px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: 1px solid #E8A692;
+        font-weight: 800;
+        font-size: 12px;
+        padding: 2px 8px;
+        border-radius: 12px;
     }
 
     /* Compact inputs */
     .stTextInput div[data-baseweb="input"], .stNumberInput div[data-baseweb="input"] {
-        min-height: 28px !important;
-        height: 28px !important;
-        border-radius: 6px !important;
+        min-height: 32px !important;
+        height: 32px !important;
+        border-radius: 8px !important;
     }
     .stTextInput input, .stNumberInput input {
-        padding: 2px 4px !important;
+        padding: 3px 6px !important;
         font-size: 13px !important;
         text-align: center !important;
         font-weight: 700 !important;
@@ -112,8 +102,6 @@ st.html(
         font-size: 11px !important;
         font-weight: 700 !important;
         margin-bottom: 2px !important;
-        text-align: center !important;
-        display: block !important;
     }
 
     section[data-testid="stSidebar"] { 
@@ -831,7 +819,7 @@ if page == "Daily Entry":
         added = [0] * N_FLAVORS
         closing = [0] * N_FLAVORS
 
-        # Single In-Card Row: [Opening (Calc)] -> [Added (Input)] -> [Closing (Input)] -> [Sold (Calc)]
+        # Render flavor cards with Opening/Sold in header and 2 input fields alone in the row
         for i, f in enumerate(FLAVORS):
             k_add = f"add_{editing_row}_{i}"
             k_cls = f"cls_{editing_row}_{i}"
@@ -846,50 +834,24 @@ if page == "Daily Entry":
 
             st.markdown(
                 f"""
-                <div class="flavor-card-container">
-                    <div class="flavor-card-title">{f[1]} (₹{f[2]})</div>
+                <div class="flavor-entry-row">
+                    <div class="flavor-title-bar">
+                        <span class="flavor-name">{f[1]} (₹{f[2]})</span>
+                        <div>
+                            <span class="badge-open">Opening: {opening[i]}</span>
+                            <span class="badge-sold">Sold: {cur_sold}</span>
+                        </div>
+                    </div>
                 </div>
                 """,
                 unsafe_allow_html=True
             )
 
-            c_open, c_add, c_cls, c_sold = st.columns([1, 1.2, 1.2, 1])
-
-            with c_open:
-                st.markdown(
-                    f"""
-                    <div class="val-box-label">Opening</div>
-                    <div class="val-box-open">{opening[i]}</div>
-                    """,
-                    unsafe_allow_html=True
-                )
-
-            with c_add:
-                added_val = st.number_input(
-                    "Added Stock",
-                    min_value=0,
-                    step=1,
-                    format="%d",
-                    key=k_add
-                )
-
-            with c_cls:
-                closing_val = st.number_input(
-                    "Closing Count",
-                    min_value=0,
-                    step=1,
-                    format="%d",
-                    key=k_cls
-                )
-
-            with c_sold:
-                st.markdown(
-                    f"""
-                    <div class="val-box-label">Sales</div>
-                    <div class="val-box-sold">{cur_sold}</div>
-                    """,
-                    unsafe_allow_html=True
-                )
+            col_a, col_b = st.columns(2)
+            with col_a:
+                added_val = st.number_input("+ Added Stock", min_value=0, step=1, format="%d", key=k_add)
+            with col_b:
+                closing_val = st.number_input("Closing Count", min_value=0, step=1, format="%d", key=k_cls)
 
             added[i] = _int_num(added_val)
             closing[i] = _int_num(closing_val)
