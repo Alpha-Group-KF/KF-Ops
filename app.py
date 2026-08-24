@@ -1,5 +1,6 @@
 """
 Kulfi Ops - multi-user data entry app for the kulfi cart business.
+Supports dual-write to Google Sheets and Supabase PostgreSQL.
 """
 
 import streamlit as st
@@ -10,6 +11,7 @@ import pandas as pd
 import textwrap
 import hmac
 from datetime import date, datetime, timedelta
+from sqlalchemy import text
 
 st.set_page_config(page_title="Kulfi Ops", page_icon="🍦", layout="wide")
 
@@ -302,7 +304,7 @@ def _row_has_data(r):
 
 
 # ----------------------------------------------------------------------
-# Google Sheets connection
+# Connections (Google Sheets & Supabase DB)
 # ----------------------------------------------------------------------
 @st.cache_resource
 def get_client():
@@ -319,6 +321,12 @@ def get_workbook():
 
 def get_ws(tab_name):
     return get_workbook().worksheet(tab_name)
+
+
+try:
+    db_conn = st.connection("postgresql", type="sql")
+except Exception:
+    db_conn = None
 
 
 # ----------------------------------------------------------------------
@@ -400,6 +408,47 @@ def _update_row(tab_name, row_number, values):
     ws.update(range_name=f"A{row_number}:{end_col}{row_number}", values=[values], value_input_option="USER_ENTERED")
 
 
+def sync_daily_to_db(entry_date, cart_name, added, closing, opening, sold, total, phonepe, cash, remarks, staff_name="", staff_advance=0.0, food_tea_cash=0.0):
+    """Parallel DB write to Supabase PostgreSQL."""
+    if db_conn is None:
+        return
+    try:
+        with db_conn.session as s:
+            res = s.execute(
+                text("""
+                INSERT INTO daily_cart_entries (entry_date, cart_name, city, staff_name, total_collection, phonepe, cash, staff_advance, food_tea_cash, remarks)
+                VALUES (:date, :cart, :city, :staff, :tot, :ph, :cash, :adv, :food, :rem)
+                ON CONFLICT (entry_date, cart_name) DO UPDATE 
+                SET staff_name = EXCLUDED.staff_name, total_collection = EXCLUDED.total_collection,
+                    phonepe = EXCLUDED.phonepe, cash = EXCLUDED.cash, staff_advance = EXCLUDED.staff_advance,
+                    food_tea_cash = EXCLUDED.food_tea_cash, remarks = EXCLUDED.remarks
+                RETURNING id;
+                """),
+                {
+                    "date": entry_date, "cart": cart_name, "city": CITY, "staff": staff_name,
+                    "tot": float(total), "ph": float(phonepe), "cash": float(cash),
+                    "adv": float(staff_advance), "food": float(food_tea_cash), "rem": str(remarks)
+                }
+            )
+            daily_id = res.scalar()
+            s.execute(text("DELETE FROM daily_cart_items WHERE daily_entry_id = :id;"), {"id": daily_id})
+            for i in range(N_FLAVORS):
+                s.execute(
+                    text("""
+                    INSERT INTO daily_cart_items (daily_entry_id, flavor_code, opening_units, added_units, sold_units, closing_units)
+                    VALUES (:eid, :code, :open, :add, :sold, :close);
+                    """),
+                    {
+                        "eid": daily_id, "code": FLAVOR_CODES[i],
+                        "open": int(opening[i]), "add": int(added[i]),
+                        "sold": int(sold[i]), "close": int(closing[i])
+                    }
+                )
+            s.commit()
+    except Exception as e:
+        st.warning(f"Note: Saved to Sheet, but DB sync encountered an issue: {e}")
+
+
 def get_opening_balance(cart_name, before_date=None):
     _, rows = load_daily_raw()
     latest = None
@@ -438,7 +487,12 @@ def update_daily_entry(row_number, entry_date, cart_name, added, closing, openin
         + [int(x) for x in closing]
         + [float(total), float(phonepe), float(cash), str(remarks), str(staff_name), float(staff_advance), float(food_tea_cash)]
     )
+    # Write to Google Sheets
     _update_row("Daily Data As Shared", row_number, row)
+
+    # Parallel write to Supabase PostgreSQL DB
+    sync_daily_to_db(entry_date, cart_name, added, closing, opening, sold, total, phonepe, cash, remarks, staff_name, staff_advance, food_tea_cash)
+
     return sold
 
 
@@ -805,7 +859,6 @@ with st.sidebar:
 st.title(f"🍦 Kulfi Ops — {page}")
 
 # ---------------- DAILY ENTRY ----------------
-# ---------------- DAILY ENTRY ----------------
 if page == "Daily Entry":
     st.subheader("Cart restock & daily sales")
 
@@ -993,7 +1046,7 @@ if page == "Daily Entry":
                         total_collection_val, phonepe_val, cash_val, remarks, selected_staff, staff_advance_val, food_tea_val
                     )
                     st.cache_resource.clear()
-                    show_success_modal(f"Saved successfully! Sales updated for {cart_name} on {entry_date.strftime('%d %b %Y')}. Total Sold: {sum(saved_sold)} units.")
+                    show_success_modal(f"Saved successfully to Sheet & Database! Sales updated for {cart_name} on {entry_date.strftime('%d %b %Y')}. Total Sold: {sum(saved_sold)} units.")
                 except Exception as e:
                     st.error(f"Could not save - {e}")
 
