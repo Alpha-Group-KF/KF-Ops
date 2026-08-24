@@ -1,7 +1,7 @@
 """
 Kulfi Ops - multi-user data entry app for the kulfi cart business.
-- Dual-write on Data Entry (Google Sheets + Supabase PostgreSQL)
-- Dashboard, KPI Reports, and Inventory powered entirely by Supabase PostgreSQL
+- Dual-write preserved on Cart Daily Entry (Google Sheets + Supabase PostgreSQL)
+- Freezer Stock, Freezer Analysis, Expenses, and Dashboard powered 100% by Supabase PostgreSQL
 """
 
 import streamlit as st
@@ -39,18 +39,14 @@ st.html(
     h3 { font-size: 1.1rem !important; }
     p, span, label, .stMarkdown { color: #2A1B10; }
 
-    /* Hide stepper buttons on number inputs */
+    /* Stepper buttons removal */
     input[type=number]::-webkit-inner-spin-button, 
     input[type=number]::-webkit-outer-spin-button { 
         -webkit-appearance: none !important;
         margin: 0 !important; 
     }
-    input[type=number] {
-        -moz-appearance: textfield !important;
-    }
-    div[data-testid="stNumberInput"] button {
-        display: none !important;
-    }
+    input[type=number] { -moz-appearance: textfield !important; }
+    div[data-testid="stNumberInput"] button { display: none !important; }
 
     /* Mobile Flavor Card Grid */
     .flavor-entry-row {
@@ -67,11 +63,7 @@ st.html(
         align-items: center;
         margin-bottom: 4px;
     }
-    .flavor-name {
-        font-weight: 800;
-        font-size: 14px;
-        color: #4A2418;
-    }
+    .flavor-name { font-weight: 800; font-size: 14px; color: #4A2418; }
     .badge-open {
         background: #EFE4CF;
         color: #5A3E1B;
@@ -108,17 +100,9 @@ st.html(
         text-align: left !important;
     }
 
-    section[data-testid="stSidebar"] { 
-        font-size: 15px !important; 
-        border-right: 1px solid #E3CBA0; 
-    }
-    section[data-testid="stSidebar"] h2 { 
-        font-size: 20px !important; 
-        color: #8A5E17 !important; 
-    }
-    section[data-testid="stSidebar"] .stRadio > div { 
-        gap: 4px; 
-    }
+    section[data-testid="stSidebar"] { font-size: 15px !important; border-right: 1px solid #E3CBA0; }
+    section[data-testid="stSidebar"] h2 { font-size: 20px !important; color: #8A5E17 !important; }
+    section[data-testid="stSidebar"] .stRadio > div { gap: 4px; }
     section[data-testid="stSidebar"] .stRadio label {
         background: #FFFBF2;
         border: 1px solid #E3CBA0;
@@ -127,44 +111,7 @@ st.html(
         margin-bottom: 2px;
         transition: background .15s ease, border-color .15s ease;
     }
-    section[data-testid="stSidebar"] .stRadio label:hover { 
-        background: #F0D9A6; 
-        border-color: #E8542A; 
-    }
-    section[data-testid="stSidebar"] .stRadio label p { 
-        font-size: 15px !important; 
-        font-weight: 600; 
-    }
-    section[data-testid="stSidebar"] .stButton button { 
-        font-size: 14px !important; 
-        border-radius: 8px !important; 
-    }
-
-    .dash-jump { 
-        background: #FFFBF2; 
-        border: 1px solid #E3CBA0; 
-        border-radius: 8px; 
-        padding: 8px 10px; 
-        margin-top: 6px; 
-    }
-    .dash-jump b { 
-        font-size: 13px !important; 
-        font-weight: 800; 
-        color: #7A5A34; 
-    }
-    .dash-jump a { 
-        display: block; 
-        padding: 3px 0 3px 6px; 
-        font-size: 12.5px !important; 
-        color: #8A5E17 !important; 
-        text-decoration: none; 
-        border-radius: 4px; 
-        line-height: 1.35;
-    }
-    .dash-jump a:hover { 
-        background: #F0D9A6; 
-        text-decoration: none; 
-    }
+    section[data-testid="stSidebar"] .stRadio label:hover { background: #F0D9A6; border-color: #E8542A; }
 
     /* Buttons */
     .stButton button, [data-testid="stFormSubmitButton"] button, [data-testid="baseButton-primary"] {
@@ -177,9 +124,7 @@ st.html(
         background: #E8542A !important;
         box-shadow: 0 2px 6px rgba(232,84,42,0.3);
     }
-    .stButton button[kind="primary"]:hover { 
-        background: #C43D17 !important; 
-    }
+    .stButton button[kind="primary"]:hover { background: #C43D17 !important; }
 
     /* Metric Cards */
     div[data-testid="stMetric"] {
@@ -189,16 +134,8 @@ st.html(
         padding: 6px 12px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     }
-    div[data-testid="stMetricLabel"] { 
-        font-weight: 700; 
-        font-size: 12px !important; 
-        color: #7A5A34; 
-    }
-    div[data-testid="stMetricValue"] { 
-        font-family: 'Fraunces', serif; 
-        font-size: 1.25rem !important; 
-        color: #4A2418; 
-    }
+    div[data-testid="stMetricLabel"] { font-weight: 700; font-size: 12px !important; color: #7A5A34; }
+    div[data-testid="stMetricValue"] { font-family: 'Fraunces', serif; font-size: 1.25rem !important; color: #4A2418; }
 
     /* Tables */
     div[data-testid="stDataFrame"], div[data-testid="stDataEditor"] {
@@ -217,13 +154,6 @@ st.html(
         text-align: center !important;
         font-size: 13px !important;
     }
-    div[data-testid="stDataFrame"] [role="columnheader"], div[data-testid="stDataEditor"] [role="columnheader"] {
-        font-weight: 900 !important;
-        color: #FFFFFF !important;
-        background-color: #70440E !important;
-        text-align: center !important;
-    }
-
     hr { border-color: #E3CBA0 !important; margin: 0.4rem 0 !important; }
     </style>
     """
@@ -236,22 +166,7 @@ st.html(
 CARTS = ["HOSUR CART 01", "HOSUR CART 02", "HOSUR CART 03"]
 CITY = "HOSUR"
 
-FLAVORS = [
-    ("ML", "Malai", 40, 22.0),
-    ("MM", "Mini Malai", 30, 18.0),
-    ("PS", "Pista", 40, 22.0),
-    ("MN", "Mango", 40, 22.0),
-    ("KB", "Kesar Badam", 50, 27.5),
-    ("BM", "Badam Matka", 80, 44.0),
-    ("SG", "Shahi Gulab", 50, 27.5),
-    ("CH", "Chocolate", 50, 27.5),
-    ("RA", "Roasted Almond", 60, 33.0),
-]
-FLAVOR_CODES = [f[0] for f in FLAVORS]
-N_FLAVORS = len(FLAVORS)
-
 PAYMENT_STATUSES = ["Pending", "Partial", "Complete"]
-
 EXPENSE_CATEGORIES = [
     "Cost of Goods",
     "Labour Charges",
@@ -264,30 +179,17 @@ PAYMENT_MODES = ["Cash", "UPI / Bank Transfer"]
 
 DAILY_HEADER_ROWS = 2
 DAILY_TOTAL_COLS = 47
-EXPENSE_HEADER_ROWS = 3
-STOCK_HEADER_ROWS = 4
-STOCK_TOTAL_COLS = 60
-
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
 
 def _num(x):
-    if x is None:
-        return 0.0
-    if isinstance(x, (int, float)):
-        return float(x)
-    s = str(x).strip()
-    if s == "":
-        return 0.0
-    s = s.replace(",", "").replace("₹", "").replace("Rs.", "").replace("Rs", "").strip()
+    if x is None: return 0.0
+    if isinstance(x, (int, float)): return float(x)
+    s = str(x).strip().replace(",", "").replace("₹", "").replace("Rs.", "").replace("Rs", "")
     neg = s.startswith("(") and s.endswith(")")
-    if neg:
-        s = s[1:-1]
-    try:
-        v = float(s)
-    except ValueError:
-        return 0.0
-    return -v if neg else v
+    if neg: s = s[1:-1]
+    try: return -float(s) if neg else float(s)
+    except ValueError: return 0.0
 
 
 def _int_num(x):
@@ -295,9 +197,7 @@ def _int_num(x):
 
 
 def _pad(row, n):
-    if len(row) < n:
-        return row + [""] * (n - len(row))
-    return row
+    return row + [""] * (n - len(row)) if len(row) < n else row
 
 
 def _row_has_data(r):
@@ -305,7 +205,7 @@ def _row_has_data(r):
 
 
 # ----------------------------------------------------------------------
-# CONNECTIONS (Google Sheets & Supabase DB)
+# CONNECTIONS (Google Sheets & Supabase PostgreSQL DB)
 # ----------------------------------------------------------------------
 @st.cache_resource
 def get_client():
@@ -330,9 +230,6 @@ except Exception:
     db_conn = None
 
 
-# ----------------------------------------------------------------------
-# Modal Alert Helper
-# ----------------------------------------------------------------------
 @st.dialog("Notification")
 def show_success_modal(message):
     st.success(message)
@@ -341,8 +238,34 @@ def show_success_modal(message):
 
 
 # ----------------------------------------------------------------------
-# Assumptions Helpers
+# FLAVORS & STAFF FROM DATABASE
 # ----------------------------------------------------------------------
+def load_db_flavors():
+    if db_conn is not None:
+        try:
+            df = db_conn.query("SELECT code, name, mrp, cost_price FROM flavors ORDER BY mrp ASC, name ASC;", ttl="1m")
+            if not df.empty:
+                return df.to_dict("records")
+        except Exception:
+            pass
+    return [
+        {"code": "ML", "name": "Malai", "mrp": 40.0, "cost_price": 22.0},
+        {"code": "MM", "name": "Mini Malai", "mrp": 30.0, "cost_price": 18.0},
+        {"code": "PS", "name": "Pista", "mrp": 40.0, "cost_price": 22.0},
+        {"code": "MN", "name": "Mango", "mrp": 40.0, "cost_price": 22.0},
+        {"code": "KB", "name": "Kesar Badam", "mrp": 50.0, "cost_price": 27.5},
+        {"code": "BM", "name": "Badam Matka", "mrp": 80.0, "cost_price": 44.0},
+        {"code": "SG", "name": "Shahi Gulab", "mrp": 50.0, "cost_price": 27.5},
+        {"code": "CH", "name": "Chocolate", "mrp": 50.0, "cost_price": 27.5},
+        {"code": "RA", "name": "Roasted Almond", "mrp": 60.0, "cost_price": 33.0},
+    ]
+
+
+FLAVORS_LIST = load_db_flavors()
+FLAVOR_CODES = [f["code"] for f in FLAVORS_LIST]
+N_FLAVORS = len(FLAVORS_LIST)
+
+
 def load_active_staff_list():
     if db_conn is not None:
         try:
@@ -354,50 +277,14 @@ def load_active_staff_list():
     try:
         ws = get_ws("Assumptions")
         values = ws.get_values("A51:C56")
-        staff_names = []
-        for row in values:
-            if not row or not row[0].strip():
-                continue
-            name = row[0].strip()
-            status = row[2].strip().lower() if len(row) >= 3 else "active"
-            if status == "active":
-                staff_names.append(name)
+        staff_names = [row[0].strip() for row in values if row and row[0].strip() and (len(row) < 3 or row[2].strip().lower() == "active")]
         return ["Select Staff"] + staff_names
     except Exception:
         return ["Select Staff"]
 
 
-def load_flavor_cost_prices():
-    if db_conn is not None:
-        try:
-            df = db_conn.query("SELECT code, cost_price FROM flavors;", ttl="1m")
-            if not df.empty:
-                cost_map = dict(zip(df["code"], df["cost_price"]))
-                return [float(cost_map.get(f[0], f[3])) for f in FLAVORS]
-        except Exception:
-            pass
-    try:
-        ws = get_ws("Assumptions")
-        values = ws.get_all_values()
-        cost_map = {}
-        for r in values:
-            if len(r) >= 5 and r[0].strip() and any(c.isdigit() for c in r[4]):
-                name = r[0].strip().lower()
-                cost_map[name] = _num(r[4])
-        costs = []
-        for f in FLAVORS:
-            name_lower = f[1].lower()
-            if name_lower in cost_map and cost_map[name_lower] > 0:
-                costs.append(cost_map[name_lower])
-            else:
-                costs.append(f[3])
-        return costs
-    except Exception:
-        return [f[3] for f in FLAVORS]
-
-
 # ----------------------------------------------------------------------
-# Dual-write / Sheet helpers
+# DUAL-WRITE CART HELPERS (Sheets + DB)
 # ----------------------------------------------------------------------
 def load_daily_raw():
     ws = get_ws("Daily Data As Shared")
@@ -514,10 +401,9 @@ def list_daily_entries():
 
 
 # ----------------------------------------------------------------------
-# DATABASE DATA LOADER FUNCTIONS (For Dashboard, Analytics & Inventory)
+# DATABASE REPORT LOADERS
 # ----------------------------------------------------------------------
 def load_db_daily_df():
-    """Loads daily cart entries joined with items aggregated from PostgreSQL."""
     if db_conn is None:
         return pd.DataFrame()
     query = """
@@ -545,7 +431,6 @@ def load_db_daily_df():
 
 
 def load_db_flavor_sales(start_date=None, end_date=None):
-    """Loads flavor-level sold units from PostgreSQL within an optional date range."""
     if db_conn is None:
         return pd.DataFrame()
     
@@ -576,11 +461,11 @@ def load_db_flavor_sales(start_date=None, end_date=None):
 
 
 def load_db_expenses_df():
-    """Loads expenses records directly from PostgreSQL."""
     if db_conn is None:
         return pd.DataFrame()
     query = """
     SELECT 
+        id,
         expense_date AS "Date",
         description AS "Description",
         amount AS "Amount",
@@ -600,7 +485,6 @@ def load_db_expenses_df():
 
 
 def get_db_freezer_stock():
-    """Computes exact current freezer balance: Total Inward Received - Total Cart Additions."""
     if db_conn is None:
         return pd.DataFrame()
     query = """
@@ -626,159 +510,7 @@ def get_db_freezer_stock():
 
 
 # ----------------------------------------------------------------------
-# Stock Received Sheet Helpers
-# ----------------------------------------------------------------------
-def load_stock_raw():
-    ws = get_ws("Stock Received")
-    values = ws.get_all_values()
-    rows = values[STOCK_HEADER_ROWS:]
-    return ws, rows
-
-
-def _build_stock_row(
-    order_date, received_date, location,
-    ordered, received, cost, damaged,
-    payment_amount, payment_status, payment_date, payment_details,
-    damaged_returned_on, notes,
-):
-    diff = [int(received[i]) - int(ordered[i]) for i in range(N_FLAVORS)]
-    date_loc_id = f"{received_date.strftime('%Y-%m-%d')}||{location}"
-    return (
-        [order_date.strftime("%Y-%m-%d"), received_date.strftime("%Y-%m-%d"), location, date_loc_id]
-        + [int(x) for x in ordered] + [sum(int(x) for x in ordered)]
-        + [int(x) for x in received] + [sum(int(x) for x in received)]
-        + diff + [sum(diff)]
-        + [float(x) for x in cost] + [sum(float(x) for x in cost)]
-        + [float(payment_amount), str(payment_status), payment_date.strftime("%Y-%m-%d") if payment_date else "", str(payment_details)]
-        + [int(x) for x in damaged] + [sum(int(x) for x in damaged)]
-        + [damaged_returned_on.strftime("%Y-%m-%d") if damaged_returned_on else "", str(notes)]
-    )
-
-
-def append_stock_entry(
-    order_date, received_date, location,
-    ordered, received, cost, damaged,
-    payment_amount, payment_status, payment_date, payment_details,
-    damaged_returned_on, notes,
-):
-    row = _build_stock_row(
-        order_date, received_date, location, ordered, received, cost, damaged,
-        payment_amount, payment_status, payment_date, payment_details, damaged_returned_on, notes,
-    )
-    ws = get_ws("Stock Received")
-    ws.append_row(row, value_input_option="USER_ENTERED")
-
-
-def update_stock_entry(
-    row_number, order_date, received_date, location,
-    ordered, received, cost, damaged,
-    payment_amount, payment_status, payment_date, payment_details,
-    damaged_returned_on, notes,
-):
-    row = _build_stock_row(
-        order_date, received_date, location, ordered, received, cost, damaged,
-        payment_amount, payment_status, payment_date, payment_details, damaged_returned_on, notes,
-    )
-    _update_row("Stock Received", row_number, row)
-
-
-def list_stock_entries():
-    _, rows = load_stock_raw()
-    out = []
-    for idx, raw_r in enumerate(rows):
-        r = _pad(raw_r, STOCK_TOTAL_COLS)
-        if not r[0].strip() and not r[1].strip():
-            continue
-        try:
-            d = pd.to_datetime(r[1]) if r[1].strip() else pd.to_datetime(r[0])
-        except Exception:
-            continue
-        out.append(
-            {
-                "row": STOCK_HEADER_ROWS + idx + 1,
-                "order_date": r[0].strip(),
-                "received_date": d,
-                "location": r[2].strip(),
-                "ordered": [_int_num(r[4 + i]) for i in range(N_FLAVORS)],
-                "received": [_int_num(r[14 + i]) for i in range(N_FLAVORS)],
-                "cost": [_num(r[34 + i]) for i in range(N_FLAVORS)],
-                "damaged": [_int_num(r[48 + i]) for i in range(N_FLAVORS)],
-                "payment_amount": _num(r[44]),
-                "payment_status": r[45].strip(),
-                "payment_date": r[46].strip(),
-                "payment_details": r[47].strip(),
-                "damaged_returned_on": r[58].strip(),
-                "notes": r[59].strip() if len(r) > 59 else "",
-            }
-        )
-    out.sort(key=lambda x: (x["received_date"], x["row"]), reverse=True)
-    return out
-
-
-# ----------------------------------------------------------------------
-# Expenses Sheet Helpers
-# ----------------------------------------------------------------------
-def append_expense(exp_date, description, amount, category, mode, ref_no, paid_to, remarks):
-    row = [
-        exp_date.strftime("%Y-%m-%d"),
-        description,
-        float(amount),
-        category,
-        mode,
-        ref_no,
-        paid_to,
-        remarks,
-    ]
-    ws = get_ws("Expenses")
-    ws.append_row(row, value_input_option="USER_ENTERED")
-
-
-def update_expense(row_number, exp_date, description, amount, category, mode, ref_no, paid_to, remarks):
-    row = [
-        exp_date.strftime("%Y-%m-%d"),
-        description,
-        float(amount),
-        category,
-        mode,
-        ref_no,
-        paid_to,
-        remarks,
-    ]
-    _update_row("Expenses", row_number, row)
-
-
-def list_expense_entries():
-    ws = get_ws("Expenses")
-    values = ws.get_all_values()
-    cols_n = 8
-    out = []
-    for idx, raw_r in enumerate(values[EXPENSE_HEADER_ROWS:]):
-        r = _pad(raw_r, cols_n)
-        if not any(c.strip() for c in r):
-            continue
-        try:
-            d = pd.to_datetime(r[0])
-        except Exception:
-            continue
-        out.append(
-            {
-                "row": EXPENSE_HEADER_ROWS + idx + 1,
-                "date": d,
-                "description": r[1].strip(),
-                "amount": _num(r[2]),
-                "category": r[3].strip(),
-                "mode": r[4].strip(),
-                "ref_no": r[5].strip(),
-                "paid_to": r[6].strip(),
-                "remarks": r[7].strip(),
-            }
-        )
-    out.sort(key=lambda x: (x["date"], x["row"]), reverse=True)
-    return out
-
-
-# ----------------------------------------------------------------------
-# Login (Admin & Data Entry User)
+# AUTHENTICATION
 # ----------------------------------------------------------------------
 def check_login():
     if st.session_state.get("authenticated", False):
@@ -787,10 +519,8 @@ def check_login():
     _, col_form, _ = st.columns([1, 1.2, 1])
 
     with col_form:
-        try:
-            st.image("assets/logo.png", width=220)
-        except Exception:
-            st.title("🍦 Kulfi Ops")
+        try: st.image("assets/logo.png", width=220)
+        except Exception: st.title("🍦 Kulfi Ops")
 
         st.subheader("Sign in")
         with st.form("login_form"):
@@ -831,42 +561,12 @@ if not check_login():
 user_role = st.session_state.get("user_role", "admin")
 
 with st.sidebar:
-    try:
-        st.image("assets/logo.png", use_container_width=True)
-    except Exception:
-        st.markdown("## 🍦 Kulfi Ops")
+    try: st.image("assets/logo.png", use_container_width=True)
+    except Exception: st.markdown("## 🍦 Kulfi Ops")
 
     if user_role == "admin":
         nav_options = ["Dashboard", "Daily Entry", "Freezer Stock", "Freezer Analysis", "Expenses"]
-        page = st.radio(
-            "Go to",
-            nav_options,
-            label_visibility="collapsed",
-        )
-        if page == "Dashboard":
-            st.markdown(
-                textwrap.dedent(
-                    """
-                <div class="dash-jump">
-                <b>Jump to</b><br>
-                <a href="#last-3-days">Last 3 days</a>
-                <a href="#revenue-trend">Revenue trend (14 days)</a>
-                <a href="#reports">Reports (date range)</a>
-                <a href="#cart-wise-comparison">&nbsp;&nbsp;Cart-wise comparison</a>
-                <a href="#cart-wise-day-of-week">&nbsp;&nbsp;Sales by day of week</a>
-                <a href="#flavour-wise-performance">&nbsp;&nbsp;Flavour-wise performance</a>
-                <a href="#profit-loss-summary">&nbsp;&nbsp;Profit &amp; loss summary</a>
-                <a href="#expense-breakdown">&nbsp;&nbsp;Expense breakdown</a>
-                <a href="#cash-vs-phonepe">&nbsp;&nbsp;Cash vs PhonePe</a>
-                <a href="#sales-in-range">&nbsp;&nbsp;Sales table</a>
-                <a href="#inventory-status">Current Inventory Status</a>
-                <a href="#freezer-stock-current">&nbsp;&nbsp;Freezer stock (current)</a>
-                <a href="#latest-stock-per-cart">&nbsp;&nbsp;Latest stock per cart</a>
-                </div>
-                """
-                ),
-                unsafe_allow_html=True,
-            )
+        page = st.radio("Go to", nav_options, label_visibility="collapsed")
     else:
         page = "Daily Entry"
         st.info("Logged in as Data Entry Staff")
@@ -879,9 +579,9 @@ with st.sidebar:
 
 st.title(f"🍦 Kulfi Ops — {page}")
 
-# ----------------------------------------------------------------------
-# DAILY ENTRY (Dual-Write Enabled)
-# ----------------------------------------------------------------------
+# ======================================================================
+# PAGE 1: DAILY ENTRY (Dual-Write Preserved)
+# ======================================================================
 if page == "Daily Entry":
     st.subheader("Cart restock & daily sales")
 
@@ -946,7 +646,7 @@ if page == "Daily Entry":
         added = [0] * N_FLAVORS
         closing = [0] * N_FLAVORS
 
-        for i, f in enumerate(FLAVORS):
+        for i, f in enumerate(FLAVORS_LIST):
             k_add = f"add_{editing_row}_{i}"
             k_cls = f"cls_{editing_row}_{i}"
             if k_add not in st.session_state:
@@ -962,7 +662,7 @@ if page == "Daily Entry":
                 f"""
                 <div class="flavor-entry-row">
                     <div class="flavor-title-bar">
-                        <span class="flavor-name">{f[1]} (₹{f[2]})</span>
+                        <span class="flavor-name">{f['name']} (₹{f['mrp']:.0f})</span>
                         <div>
                             <span class="badge-open">Opening: {opening[i]}</span>
                             <span class="badge-sold">Sold: {cur_sold}</span>
@@ -994,7 +694,7 @@ if page == "Daily Entry":
         if any(s < 0 for s in sold):
             st.error("Today's sales works out negative for at least one flavour - closing count is higher than opening + added.")
 
-        calculated_mrp_total = float(sum(sold[i] * FLAVORS[i][2] for i in range(N_FLAVORS)))
+        calculated_mrp_total = float(sum(sold[i] * FLAVORS_LIST[i]["mrp"] for i in range(N_FLAVORS)))
 
         if k_tot not in st.session_state or st.session_state.get(k_prev_calc) != calculated_mrp_total:
             st.session_state[k_tot] = f"{calculated_mrp_total:.2f}"
@@ -1070,184 +770,179 @@ if page == "Daily Entry":
                 except Exception as e:
                     st.error(f"Could not save - {e}")
 
-# ----------------------------------------------------------------------
-# FREEZER STOCK
-# ----------------------------------------------------------------------
+# ======================================================================
+# PAGE 2: FREEZER STOCK (100% Supabase PostgreSQL Powered)
+# ======================================================================
 elif page == "Freezer Stock" and user_role == "admin":
-    st.subheader("Stock received into freezer")
+    st.subheader("Stock Received into Freezer")
 
-    stock_mode = st.radio("Mode", ["New entry", "Edit past entry"], horizontal=True, key="stock_mode")
+    stock_mode = st.radio("Mode", ["New entry", "Edit past entry"], horizontal=True, key="db_stock_mode")
+
+    # Load existing delivery receipts from DB
+    past_receipts_df = db_conn.query("""
+        SELECT r.id, r.received_date, r.location, r.purchase_order_id, r.payment_amount,
+               r.payment_status, r.payment_date, r.payment_details, r.damaged_returned_on, r.notes,
+               json_agg(json_build_object('code', i.flavor_code, 'rec', i.received_units, 'dam', i.damaged_units, 'cost', i.unit_cost_price)) AS items
+        FROM stock_received r
+        LEFT JOIN stock_received_items i ON r.id = i.received_id
+        GROUP BY r.id ORDER BY r.received_date DESC, r.id DESC;
+    """, ttl="0s")
 
     stock_loaded = None
-    stock_editing_row = None
+    loaded_id = None
     if stock_mode == "Edit past entry":
-        try:
-            stock_entries = list_stock_entries()
-        except Exception as e:
-            stock_entries = []
-            st.warning(f"Could not load past entries ({e}).")
-        if not stock_entries:
-            st.info("No past entries found yet.")
+        if past_receipts_df.empty:
+            st.info("No past delivery receipts found in database.")
         else:
-            def _fmt_order_date(s):
-                if not s or not str(s).strip():
-                    return "no order date"
-                try:
-                    d = pd.to_datetime(s)
-                    return f"ordered {d.strftime('%d %b %Y')}" if not pd.isna(d) else "no order date"
-                except Exception:
-                    return "no order date"
+            labels = [f"Receipt #{r['id']} — {pd.to_datetime(r['received_date']).strftime('%d %b %Y')} ({r['location']})" for _, r in past_receipts_df.iterrows()]
+            selected_rec = st.selectbox("Select delivery receipt to edit", labels, key="db_stock_select")
+            stock_loaded = past_receipts_df.iloc[labels.index(selected_rec)]
+            loaded_id = stock_loaded["id"]
 
-            stock_labels = [
-                f"Received {e['received_date'].strftime('%d %b %Y')} ({_fmt_order_date(e['order_date'])}) — {e['location']}"
-                for e in stock_entries
-            ]
-            stock_sel = st.selectbox("Select entry to edit", stock_labels, key="stock_edit_select")
-            stock_loaded = stock_entries[stock_labels.index(stock_sel)]
-            stock_editing_row = stock_loaded["row"]
-            st.caption("Loaded - edit fields below, then click Update entry.")
+    sk = f"_{loaded_id}" if loaded_id else "_new"
 
-    sk = f"_{stock_editing_row}" if stock_editing_row else "_new"
-    st.caption("Log a supplier delivery. Ordered and Damaged are optional.")
-
-    def _parse_date_or(s, fallback):
-        if not s or not str(s).strip():
-            return fallback
-        try:
-            d = pd.to_datetime(s)
-            return fallback if pd.isna(d) else d.date()
-        except Exception:
-            return fallback
+    # Advance Purchase Orders linking
+    pos_df = db_conn.query("SELECT id, order_date, location FROM purchase_orders WHERE order_status != 'Completed';", ttl="0s")
+    po_options = ["None (Ad-hoc delivery)"] + [f"PO #{r['id']} ({pd.to_datetime(r['order_date']).strftime('%d %b')})" for _, r in pos_df.iterrows()]
+    
+    default_po_idx = 0
+    if stock_loaded and stock_loaded["purchase_order_id"]:
+        for idx, opt in enumerate(po_options):
+            if opt.startswith(f"PO #{stock_loaded['purchase_order_id']} "):
+                default_po_idx = idx
+                break
 
     c1, c2, c3 = st.columns(3)
     with c1:
-        order_date = st.date_input(
-            "Order date",
-            value=_parse_date_or(stock_loaded["order_date"], date.today()) if stock_loaded else date.today(),
-            key=f"stock_order_date{sk}",
-        )
+        received_date = st.date_input("Received date", value=(pd.to_datetime(stock_loaded["received_date"]).date() if stock_loaded else date.today()), key=f"rec_date{sk}")
     with c2:
-        received_date = st.date_input(
-            "Received date",
-            value=stock_loaded["received_date"].date() if stock_loaded else date.today(),
-            key=f"stock_received_date{sk}",
-        )
+        location = st.text_input("Location", value=(stock_loaded["location"] if stock_loaded else CITY), key=f"rec_loc{sk}")
     with c3:
-        location = st.text_input("Location", value=(stock_loaded["location"] if stock_loaded else CITY), key=f"stock_location{sk}")
+        selected_po = st.selectbox("Link to Purchase Order (Optional)", po_options, index=default_po_idx, key=f"rec_po{sk}")
 
-    cost_prices = load_flavor_cost_prices()
-    flavor_names = [f[1] for f in FLAVORS]
+    # Build Flavor input grid
+    items_map = {}
+    if stock_loaded and stock_loaded["items"]:
+        for itm in stock_loaded["items"]:
+            items_map[itm["code"]] = itm
 
-    df_init = pd.DataFrame(
-        {
-            "Flavour": flavor_names,
-            "Unit Cost Price (₹)": [float(c) for c in cost_prices],
-            "Ordered": [_int_num(x) for x in (stock_loaded["ordered"] if stock_loaded else [0] * N_FLAVORS)],
-            "Received": [_int_num(x) for x in (stock_loaded["received"] if stock_loaded else [0] * N_FLAVORS)],
-            "Damaged": [_int_num(x) for x in (stock_loaded["damaged"] if stock_loaded else [0] * N_FLAVORS)],
-        }
-    )
+    grid_rows = []
+    for f in FLAVORS_LIST:
+        code = f["code"]
+        rec_units = items_map[code]["rec"] if code in items_map else 0
+        dam_units = items_map[code]["dam"] if code in items_map else 0
+        grid_rows.append({
+            "Flavour": f["name"],
+            "Code": code,
+            "Unit Cost Price (₹)": float(f["cost_price"]),
+            "Received": rec_units,
+            "Damaged": dam_units
+        })
+
     st.write("Enter units per flavour:")
     stock_edited = st.data_editor(
-        df_init,
+        pd.DataFrame(grid_rows),
         column_config={
             "Flavour": st.column_config.TextColumn(disabled=True),
+            "Code": st.column_config.TextColumn(disabled=True),
             "Unit Cost Price (₹)": st.column_config.NumberColumn(format="₹%.2f", disabled=True),
-            "Ordered": st.column_config.NumberColumn(min_value=0, step=1, format="%d"),
             "Received": st.column_config.NumberColumn(min_value=0, step=1, format="%d"),
             "Damaged": st.column_config.NumberColumn(min_value=0, step=1, format="%d"),
         },
         hide_index=True,
         use_container_width=True,
-        key=f"stock_editor{sk}",
+        key=f"db_stock_editor{sk}",
     )
 
-    ordered = [_int_num(x) for x in stock_edited["Ordered"].fillna(0).tolist()]
-    received = [_int_num(x) for x in stock_edited["Received"].fillna(0).tolist()]
-    damaged = [_int_num(x) for x in stock_edited["Damaged"].fillna(0).tolist()]
-
-    cost = [float(received[i] * cost_prices[i]) for i in range(N_FLAVORS)]
-
-    tot_ordered_units = sum(ordered)
-    tot_received_units = sum(received)
-    tot_damaged_units = sum(damaged)
-    tot_cost_val = sum(cost)
+    tot_received = stock_edited["Received"].sum()
+    tot_damaged = stock_edited["Damaged"].sum()
+    tot_cost_val = sum(stock_edited["Received"] * stock_edited["Unit Cost Price (₹)"])
 
     st.markdown("#### Entry Summary")
-    s_col1, s_col2, s_col3, s_col4 = st.columns(4)
-    s_col1.metric("Total Ordered", f"{tot_ordered_units} units")
-    s_col2.metric("Total Received", f"{tot_received_units} units")
-    s_col3.metric("Total Damaged", f"{tot_damaged_units} units")
-    s_col4.metric("Total Cost of Goods", f"₹{tot_cost_val:,.2f}")
+    s_col1, s_col2, s_col3 = st.columns(3)
+    s_col1.metric("Total Received", f"{tot_received} units")
+    s_col2.metric("Total Damaged", f"{tot_damaged} units")
+    s_col3.metric("Total Cost of Goods", f"₹{tot_cost_val:,.2f}")
 
     st.markdown("---")
-    st.write("**Payment**")
+    st.write("**Payment & Logistics**")
     c4, c5 = st.columns(2)
     with c4:
-        default_payment_amount = float(stock_loaded["payment_amount"]) if stock_loaded else float(tot_cost_val)
-        payment_amount = st.number_input("Payment amount (₹)", min_value=0.0, value=float(default_payment_amount), step=10.0, key=f"stock_pay_amt{sk}")
+        default_payment = float(stock_loaded["payment_amount"]) if stock_loaded else float(tot_cost_val)
+        payment_amount = st.number_input("Payment amount (₹)", min_value=0.0, value=default_payment, step=10.0, key=f"db_rec_pay{sk}")
     with c5:
-        default_status_idx = PAYMENT_STATUSES.index(stock_loaded["payment_status"]) if stock_loaded and stock_loaded["payment_status"] in PAYMENT_STATUSES else 0
-        payment_status = st.selectbox("Payment status", PAYMENT_STATUSES, index=default_status_idx, key=f"stock_pay_status{sk}")
+        def_stat = stock_loaded["payment_status"] if (stock_loaded and stock_loaded["payment_status"] in PAYMENT_STATUSES) else "Pending"
+        payment_status = st.selectbox("Payment status", PAYMENT_STATUSES, index=PAYMENT_STATUSES.index(def_stat), key=f"db_rec_status{sk}")
 
-    has_payment_date = st.checkbox("Add payment date", value=bool(stock_loaded and stock_loaded["payment_date"]), key=f"stock_has_paydate{sk}")
-    payment_date = (
-        st.date_input(
-            "Payment date",
-            value=_parse_date_or(stock_loaded["payment_date"], date.today()) if (stock_loaded and stock_loaded["payment_date"]) else date.today(),
-            key=f"stock_payment_date{sk}",
-        )
-        if has_payment_date
-        else None
-    )
-    payment_details = st.text_input("Payment details (optional)", value=(stock_loaded["payment_details"] if stock_loaded else ""), key=f"stock_pay_details{sk}")
+    has_payment_date = st.checkbox("Add payment date", value=bool(stock_loaded and stock_loaded["payment_date"]), key=f"db_rec_has_pdate{sk}")
+    payment_date = st.date_input("Payment date", value=(pd.to_datetime(stock_loaded["payment_date"]).date() if (stock_loaded and stock_loaded["payment_date"]) else date.today()), key=f"db_rec_pdate{sk}") if has_payment_date else None
+    payment_details = st.text_input("Payment details (optional)", value=(stock_loaded["payment_details"] if stock_loaded else ""), key=f"db_rec_pdet{sk}")
 
-    has_damaged_return = st.checkbox("Damaged items were returned", value=bool(stock_loaded and stock_loaded["damaged_returned_on"]), key=f"stock_has_damret{sk}")
-    damaged_returned_on = (
-        st.date_input(
-            "Damaged items returned on",
-            value=_parse_date_or(stock_loaded["damaged_returned_on"], date.today()) if (stock_loaded and stock_loaded["damaged_returned_on"]) else date.today(),
-            key=f"stock_damaged_date{sk}",
-        )
-        if has_damaged_return
-        else None
-    )
+    has_dam_ret = st.checkbox("Damaged items were returned", value=bool(stock_loaded and stock_loaded["damaged_returned_on"]), key=f"db_rec_has_dam{sk}")
+    damaged_returned_on = st.date_input("Damaged returned date", value=(pd.to_datetime(stock_loaded["damaged_returned_on"]).date() if (stock_loaded and stock_loaded["damaged_returned_on"]) else date.today()), key=f"db_rec_damdate{sk}") if has_dam_ret else None
 
-    notes = st.text_input("Notes (optional)", value=(stock_loaded["notes"] if stock_loaded else ""), key=f"stock_notes{sk}")
+    notes = st.text_input("Notes (optional)", value=(stock_loaded["notes"] if stock_loaded else ""), key=f"db_rec_notes{sk}")
 
-    stock_button_label = "Update entry" if stock_editing_row else "Save stock received"
-    if st.button(stock_button_label, type="primary", use_container_width=True):
-        if sum(received) == 0:
+    btn_label = "Update delivery entry" if loaded_id else "Save stock received"
+    if st.button(btn_label, type="primary", use_container_width=True):
+        if tot_received == 0:
             st.error("Enter at least one quantity received before saving.")
         else:
+            po_id = int(selected_po.split("#")[1].split(" ")[0]) if "PO #" in selected_po else None
             try:
-                if stock_editing_row:
-                    update_stock_entry(
-                        stock_editing_row, order_date, received_date, location,
-                        ordered, received, cost, damaged,
-                        payment_amount, payment_status, payment_date, payment_details,
-                        damaged_returned_on, notes,
-                    )
-                    st.cache_resource.clear()
-                    show_success_modal(f"Saved successfully! Updated entry for {received_date.strftime('%d %b %Y')} at {location}. Total Received: {sum(received)} units (₹{tot_cost_val:,.2f}).")
-                else:
-                    append_stock_entry(
-                        order_date, received_date, location,
-                        ordered, received, cost, damaged,
-                        payment_amount, payment_status, payment_date, payment_details,
-                        damaged_returned_on, notes,
-                    )
-                    st.cache_resource.clear()
-                    show_success_modal(f"Saved successfully! Logged {sum(received)} units received (₹{tot_cost_val:,.2f}) on {received_date.strftime('%d %b %Y')}.")
-            except Exception as e:
-                st.error(f"Could not save - {e}")
+                with db_conn.session as s:
+                    if loaded_id:
+                        s.execute(
+                            text("""
+                            UPDATE stock_received
+                            SET received_date = :rd, location = :loc, purchase_order_id = :poid,
+                                payment_amount = :amt, payment_status = :stat, payment_date = :pdate,
+                                payment_details = :pdet, damaged_returned_on = :dret, notes = :notes
+                            WHERE id = :id;
+                            """),
+                            {
+                                "rd": received_date, "loc": location, "poid": po_id, "amt": payment_amount,
+                                "stat": payment_status, "pdate": payment_date, "pdet": payment_details,
+                                "dret": damaged_returned_on, "notes": notes, "id": loaded_id
+                            }
+                        )
+                        s.execute(text("DELETE FROM stock_received_items WHERE received_id = :id;"), {"id": loaded_id})
+                        rec_id = loaded_id
+                    else:
+                        res = s.execute(
+                            text("""
+                            INSERT INTO stock_received (received_date, location, purchase_order_id, payment_amount, payment_status, payment_date, payment_details, damaged_returned_on, notes)
+                            VALUES (:rd, :loc, :poid, :amt, :stat, :pdate, :pdet, :dret, :notes)
+                            RETURNING id;
+                            """),
+                            {
+                                "rd": received_date, "loc": location, "poid": po_id, "amt": payment_amount,
+                                "stat": payment_status, "pdate": payment_date, "pdet": payment_details,
+                                "dret": damaged_returned_on, "notes": notes
+                            }
+                        )
+                        rec_id = res.scalar()
 
-# ----------------------------------------------------------------------
-# FREEZER ANALYSIS (Powered by Supabase Database)
-# ----------------------------------------------------------------------
+                    for _, row in stock_edited.iterrows():
+                        if int(row["Received"]) > 0 or int(row["Damaged"]) > 0:
+                            s.execute(
+                                text("""
+                                INSERT INTO stock_received_items (received_id, flavor_code, received_units, damaged_units, unit_cost_price)
+                                VALUES (:rid, :code, :rec, :dam, :cost);
+                                """),
+                                {"rid": rec_id, "code": row["Code"], "rec": int(row["Received"]), "dam": int(row["Damaged"]), "cost": float(row["Unit Cost Price (₹)"])}
+                            )
+                    s.commit()
+                show_success_modal(f"Stock delivery #{rec_id} saved successfully! Logged {tot_received} units into freezer.")
+            except Exception as e:
+                st.error(f"Could not save to database: {e}")
+
+# ======================================================================
+# PAGE 3: FREEZER ANALYSIS (100% Supabase PostgreSQL Powered)
+# ======================================================================
 elif page == "Freezer Analysis" and user_role == "admin":
     st.subheader("Freezer stock analysis & reorder planner")
-    st.caption("Uses recent sales pace from PostgreSQL database to estimate when freezer stock runs low.")
+    st.caption("Calculates reorder velocity using real-time transactions from Supabase PostgreSQL.")
 
     ac1, ac2, ac3 = st.columns(3)
     with ac1:
@@ -1278,8 +973,8 @@ elif page == "Freezer Analysis" and user_role == "admin":
         total_stock = 0
         total_rate = 0.0
 
-        for f in FLAVORS:
-            code = f[0]
+        for f in FLAVORS_LIST:
+            code = f["code"]
             stock = float(stock_map.get(code, 0))
             recent_sold = float(sales_map.get(code, 0))
             rate = recent_sold / lookback_days
@@ -1304,7 +999,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
 
             rows.append(
                 {
-                    "Flavour": f[1],
+                    "Flavour": f["name"],
                     "Freezer stock": int(round(stock)),
                     "Avg. daily sales": int(round(rate)),
                     "Days of stock left": int(round(days_left)) if days_left is not None else "—",
@@ -1361,73 +1056,88 @@ elif page == "Freezer Analysis" and user_role == "admin":
             rule = alt.Chart(pd.DataFrame({"y": [buffer_days]})).mark_rule(color="#4A2418", strokeDash=[4, 4]).encode(y="y:Q")
             st.altair_chart(days_chart + rule, use_container_width=True)
 
-# ----------------------------------------------------------------------
-# EXPENSES
-# ----------------------------------------------------------------------
+# ======================================================================
+# PAGE 4: EXPENSES (100% Supabase PostgreSQL Powered)
+# ======================================================================
 elif page == "Expenses" and user_role == "admin":
     st.subheader("Log an expense")
 
-    exp_mode = st.radio("Mode", ["New entry", "Edit past entry"], horizontal=True, key="exp_mode")
+    exp_mode = st.radio("Mode", ["New entry", "Edit past entry"], horizontal=True, key="db_exp_mode")
+
+    db_exp_df = load_db_expenses_df()
 
     exp_loaded = None
-    exp_editing_row = None
+    exp_editing_id = None
     if exp_mode == "Edit past entry":
-        try:
-            expense_entries = list_expense_entries()
-        except Exception as e:
-            expense_entries = []
-            st.warning(f"Could not load past entries ({e}).")
-        if not expense_entries:
-            st.info("No past entries found yet.")
+        if db_exp_df.empty:
+            st.info("No expenses found in database yet.")
         else:
-            exp_labels = [f"{e['date'].strftime('%d %b %Y')} — {e['description'] or e['category']} (₹{e['amount']:,.0f})" for e in expense_entries]
-            exp_sel = st.selectbox("Select entry to edit", exp_labels, key="exp_edit_select")
-            exp_loaded = expense_entries[exp_labels.index(exp_sel)]
-            exp_editing_row = exp_loaded["row"]
-            st.caption("Loaded - edit fields below, then click Update entry.")
+            exp_labels = [f"#{r['id']} — {r['Date'].strftime('%d %b %Y')} — {r['Description'] or r['Category']} (₹{r['Amount']:,.0f})" for _, r in db_exp_df.iterrows()]
+            exp_sel = st.selectbox("Select expense to edit", exp_labels, key="db_exp_select")
+            exp_loaded = db_exp_df.iloc[exp_labels.index(exp_sel)]
+            exp_editing_id = exp_loaded["id"]
 
-    ek = f"_{exp_editing_row}" if exp_editing_row else "_new"
+    ek = f"_{exp_editing_id}" if exp_editing_id else "_new"
 
     c1, c2 = st.columns(2)
     with c1:
-        exp_date = st.date_input("Date", value=(exp_loaded["date"].date() if exp_loaded else date.today()), key=f"exp_date{ek}")
+        exp_date = st.date_input("Date", value=(exp_loaded["Date"].date() if exp_loaded else date.today()), key=f"db_exp_date{ek}")
     with c2:
-        default_cat_idx = EXPENSE_CATEGORIES.index(exp_loaded["category"]) if exp_loaded and exp_loaded["category"] in EXPENSE_CATEGORIES else 0
-        category = st.selectbox("Category", EXPENSE_CATEGORIES, index=default_cat_idx, key=f"exp_category{ek}")
+        default_cat_idx = EXPENSE_CATEGORIES.index(exp_loaded["Category"]) if (exp_loaded and exp_loaded["Category"] in EXPENSE_CATEGORIES) else 0
+        category = st.selectbox("Category", EXPENSE_CATEGORIES, index=default_cat_idx, key=f"db_exp_category{ek}")
 
-    description = st.text_input("Description", value=(exp_loaded["description"] if exp_loaded else ""), key=f"exp_desc{ek}")
-    amount = st.number_input("Amount (₹)", min_value=0.0, value=(float(exp_loaded["amount"]) if exp_loaded else 0.0), step=10.0, key=f"exp_amount{ek}")
+    description = st.text_input("Description", value=(exp_loaded["Description"] if exp_loaded else ""), key=f"db_exp_desc{ek}")
+    amount = st.number_input("Amount (₹)", min_value=0.0, value=(float(exp_loaded["Amount"]) if exp_loaded else 0.0), step=10.0, key=f"db_exp_amt{ek}")
 
     c3, c4 = st.columns(2)
     with c3:
-        default_mode_idx = PAYMENT_MODES.index(exp_loaded["mode"]) if exp_loaded and exp_loaded["mode"] in PAYMENT_MODES else 0
-        mode = st.selectbox("Payment mode", PAYMENT_MODES, index=default_mode_idx, key=f"exp_mode_select{ek}")
+        default_mode_idx = PAYMENT_MODES.index(exp_loaded["Mode"]) if (exp_loaded and exp_loaded["Mode"] in PAYMENT_MODES) else 0
+        mode = st.selectbox("Payment mode", PAYMENT_MODES, index=default_mode_idx, key=f"db_exp_mode_sel{ek}")
     with c4:
-        ref_no = st.text_input("Transaction ref. no. (optional)", value=(exp_loaded["ref_no"] if exp_loaded else ""), key=f"exp_ref{ek}")
+        ref_no = st.text_input("Transaction ref. no. (optional)", value=(exp_loaded["Ref No"] if exp_loaded else ""), key=f"db_exp_ref{ek}")
 
-    paid_to = st.text_input("Paid to (optional)", value=(exp_loaded["paid_to"] if exp_loaded else ""), key=f"exp_paidto{ek}")
-    exp_remarks = st.text_input("Remarks (optional)", value=(exp_loaded["remarks"] if exp_loaded else ""), key=f"exp_remarks{ek}")
+    paid_to = st.text_input("Paid to (optional)", value=(exp_loaded["Paid To"] if exp_loaded else ""), key=f"db_exp_paidto{ek}")
+    exp_remarks = st.text_input("Remarks (optional)", value=(exp_loaded["Remarks"] if exp_loaded else ""), key=f"db_exp_remarks{ek}")
 
-    exp_button_label = "Update entry" if exp_editing_row else "Save expense"
-    if st.button(exp_button_label, type="primary", use_container_width=True):
+    exp_btn_label = "Update expense" if exp_editing_id else "Save expense"
+    if st.button(exp_btn_label, type="primary", use_container_width=True):
         if amount <= 0:
             st.error("Enter an amount greater than 0.")
         else:
             try:
-                if exp_editing_row:
-                    update_expense(exp_editing_row, exp_date, description, amount, category, mode, ref_no, paid_to, exp_remarks)
-                    st.cache_resource.clear()
-                    show_success_modal(f"Saved successfully! Updated ₹{amount:,.0f} expense under {category}.")
-                else:
-                    append_expense(exp_date, description, amount, category, mode, ref_no, paid_to, exp_remarks)
-                    st.cache_resource.clear()
-                    show_success_modal(f"Saved successfully! Logged ₹{amount:,.0f} expense under {category}.")
+                with db_conn.session as s:
+                    if exp_editing_id:
+                        s.execute(
+                            text("""
+                            UPDATE expenses
+                            SET expense_date = :d, description = :desc, amount = :amt, category = :cat,
+                                payment_mode = :m, ref_no = :ref, paid_to = :paid, remarks = :rem
+                            WHERE id = :id;
+                            """),
+                            {
+                                "d": exp_date, "desc": description, "amt": amount, "cat": category,
+                                "m": mode, "ref": ref_no, "paid": paid_to, "rem": exp_remarks, "id": exp_editing_id
+                            }
+                        )
+                    else:
+                        s.execute(
+                            text("""
+                            INSERT INTO expenses (expense_date, description, amount, category, payment_mode, ref_no, paid_to, remarks)
+                            VALUES (:d, :desc, :amt, :cat, :m, :ref, :paid, :rem);
+                            """),
+                            {
+                                "d": exp_date, "desc": description, "amt": amount, "cat": category,
+                                "m": mode, "ref": ref_no, "paid": paid_to, "rem": exp_remarks
+                            }
+                        )
+                    s.commit()
+                show_success_modal(f"Expense of ₹{amount:,.0f} saved under {category}!")
             except Exception as e:
-                st.error(f"Could not save - {e}")
+                st.error(f"Could not save expense to database: {e}")
 
-# ----------------------------------------------------------------------
-# DASHBOARD (100% PostgreSQL DB Powered)
-# ----------------------------------------------------------------------
+# ======================================================================
+# PAGE 5: DASHBOARD (100% Supabase PostgreSQL Powered)
+# ======================================================================
 elif page == "Dashboard" and user_role == "admin":
     st.subheader("Quick view")
 
@@ -1588,7 +1298,7 @@ elif page == "Dashboard" and user_role == "admin":
         else:
             st.caption("No sales in this date range.")
 
-        # ---- Flavour-wise performance (Direct SQL query from items) ----
+        # ---- Flavour-wise performance ----
         st.markdown('<div id="flavour-wise-performance"></div>', unsafe_allow_html=True)
         st.markdown("### Flavour-wise performance")
         flavor_range_df = load_db_flavor_sales(start_date=range_start, end_date=range_end)
