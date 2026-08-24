@@ -1,6 +1,7 @@
 """
 Kulfi Ops - multi-user data entry app for the kulfi cart business.
-Supports dual-write to Google Sheets and Supabase PostgreSQL.
+- Dual-write on Data Entry (Google Sheets + Supabase PostgreSQL)
+- Dashboard, KPI Reports, and Inventory powered entirely by Supabase PostgreSQL
 """
 
 import streamlit as st
@@ -38,7 +39,7 @@ st.html(
     h3 { font-size: 1.1rem !important; }
     p, span, label, .stMarkdown { color: #2A1B10; }
 
-    /* Hide the +/- stepper buttons on number inputs */
+    /* Hide stepper buttons on number inputs */
     input[type=number]::-webkit-inner-spin-button, 
     input[type=number]::-webkit-outer-spin-button { 
         -webkit-appearance: none !important;
@@ -51,7 +52,7 @@ st.html(
         display: none !important;
     }
 
-    /* ---------- Mobile Flavor Card Grid ---------- */
+    /* Mobile Flavor Card Grid */
     .flavor-entry-row {
         background: #FFFDF8;
         border: 1.5px solid #E3CBA0;
@@ -88,7 +89,7 @@ st.html(
         border-radius: 12px;
     }
 
-    /* Compact Left-Justified Inputs */
+    /* Inputs */
     .stTextInput div[data-baseweb="input"], .stNumberInput div[data-baseweb="input"] {
         min-height: 32px !important;
         height: 32px !important;
@@ -199,7 +200,7 @@ st.html(
         color: #4A2418; 
     }
 
-    /* Table Styling */
+    /* Tables */
     div[data-testid="stDataFrame"], div[data-testid="stDataEditor"] {
         border-radius: 10px;
         border: 2px solid #8A5E17 !important;
@@ -304,7 +305,7 @@ def _row_has_data(r):
 
 
 # ----------------------------------------------------------------------
-# Connections (Google Sheets & Supabase DB)
+# CONNECTIONS (Google Sheets & Supabase DB)
 # ----------------------------------------------------------------------
 @st.cache_resource
 def get_client():
@@ -340,9 +341,16 @@ def show_success_modal(message):
 
 
 # ----------------------------------------------------------------------
-# Assumptions Helpers (Staff List & Flavor Cost Prices)
+# Assumptions Helpers
 # ----------------------------------------------------------------------
 def load_active_staff_list():
+    if db_conn is not None:
+        try:
+            df = db_conn.query("SELECT name FROM staff WHERE status = 'active' ORDER BY name ASC;", ttl="1m")
+            if not df.empty:
+                return ["Select Staff"] + df["name"].tolist()
+        except Exception:
+            pass
     try:
         ws = get_ws("Assumptions")
         values = ws.get_values("A51:C56")
@@ -360,10 +368,14 @@ def load_active_staff_list():
 
 
 def load_flavor_cost_prices():
-    """
-    Attempts to read the unit cost prices from Assumptions sheet Column E (index 4).
-    Falls back to FLAVORS config if unavailable.
-    """
+    if db_conn is not None:
+        try:
+            df = db_conn.query("SELECT code, cost_price FROM flavors;", ttl="1m")
+            if not df.empty:
+                cost_map = dict(zip(df["code"], df["cost_price"]))
+                return [float(cost_map.get(f[0], f[3])) for f in FLAVORS]
+        except Exception:
+            pass
     try:
         ws = get_ws("Assumptions")
         values = ws.get_all_values()
@@ -385,7 +397,7 @@ def load_flavor_cost_prices():
 
 
 # ----------------------------------------------------------------------
-# Daily Data As Shared helpers
+# Dual-write / Sheet helpers
 # ----------------------------------------------------------------------
 def load_daily_raw():
     ws = get_ws("Daily Data As Shared")
@@ -409,7 +421,6 @@ def _update_row(tab_name, row_number, values):
 
 
 def sync_daily_to_db(entry_date, cart_name, added, closing, opening, sold, total, phonepe, cash, remarks, staff_name="", staff_advance=0.0, food_tea_cash=0.0):
-    """Parallel DB write to Supabase PostgreSQL."""
     if db_conn is None:
         return
     try:
@@ -449,32 +460,6 @@ def sync_daily_to_db(entry_date, cart_name, added, closing, opening, sold, total
         st.warning(f"Note: Saved to Sheet, but DB sync encountered an issue: {e}")
 
 
-def get_opening_balance(cart_name, before_date=None):
-    _, rows = load_daily_raw()
-    latest = None
-    latest_date = None
-    for raw_r in rows:
-        r = _pad(raw_r, DAILY_TOTAL_COLS)
-        if not r[0].strip() or r[1].strip() != cart_name or not _row_has_data(r):
-            continue
-        try:
-            d = pd.to_datetime(r[0])
-            if pd.isna(d):
-                continue
-            d = d.date()
-        except Exception:
-            continue
-        if before_date is not None and d >= before_date:
-            continue
-        if latest_date is None or d > latest_date:
-            latest_date = d
-            latest = r
-    if latest is None:
-        return [0] * N_FLAVORS
-    closing_start = 4 + 9 * 3
-    return [_int_num(latest[closing_start + i]) for i in range(N_FLAVORS)]
-
-
 def update_daily_entry(row_number, entry_date, cart_name, added, closing, opening, total, phonepe, cash, remarks, staff_name="", staff_advance=0.0, food_tea_cash=0.0):
     sold = [int(opening[i]) + int(added[i]) - int(closing[i]) for i in range(N_FLAVORS)]
     date_str = entry_date.strftime("%Y-%m-%d")
@@ -487,12 +472,8 @@ def update_daily_entry(row_number, entry_date, cart_name, added, closing, openin
         + [int(x) for x in closing]
         + [float(total), float(phonepe), float(cash), str(remarks), str(staff_name), float(staff_advance), float(food_tea_cash)]
     )
-    # Write to Google Sheets
     _update_row("Daily Data As Shared", row_number, row)
-
-    # Parallel write to Supabase PostgreSQL DB
     sync_daily_to_db(entry_date, cart_name, added, closing, opening, sold, total, phonepe, cash, remarks, staff_name, staff_advance, food_tea_cash)
-
     return sold
 
 
@@ -533,120 +514,119 @@ def list_daily_entries():
 
 
 # ----------------------------------------------------------------------
-# Expenses helpers
+# DATABASE DATA LOADER FUNCTIONS (For Dashboard, Analytics & Inventory)
 # ----------------------------------------------------------------------
-def append_expense(exp_date, description, amount, category, mode, ref_no, paid_to, remarks):
-    row = [
-        exp_date.strftime("%Y-%m-%d"),
-        description,
-        float(amount),
-        category,
-        mode,
-        ref_no,
-        paid_to,
-        remarks,
-    ]
-    ws = get_ws("Expenses")
-    ws.append_row(row, value_input_option="USER_ENTERED")
-
-
-def update_expense(row_number, exp_date, description, amount, category, mode, ref_no, paid_to, remarks):
-    row = [
-        exp_date.strftime("%Y-%m-%d"),
-        description,
-        float(amount),
-        category,
-        mode,
-        ref_no,
-        paid_to,
-        remarks,
-    ]
-    _update_row("Expenses", row_number, row)
-
-
-def list_expense_entries():
-    ws = get_ws("Expenses")
-    values = ws.get_all_values()
-    cols_n = 8
-    out = []
-    for idx, raw_r in enumerate(values[EXPENSE_HEADER_ROWS:]):
-        r = _pad(raw_r, cols_n)
-        if not any(c.strip() for c in r):
-            continue
-        try:
-            d = pd.to_datetime(r[0])
-        except Exception:
-            continue
-        out.append(
-            {
-                "row": EXPENSE_HEADER_ROWS + idx + 1,
-                "date": d,
-                "description": r[1].strip(),
-                "amount": _num(r[2]),
-                "category": r[3].strip(),
-                "mode": r[4].strip(),
-                "ref_no": r[5].strip(),
-                "paid_to": r[6].strip(),
-                "remarks": r[7].strip(),
-            }
-        )
-    out.sort(key=lambda x: (x["date"], x["row"]), reverse=True)
-    return out
-
-
-def load_expenses_df():
-    ws = get_ws("Expenses")
-    values = ws.get_all_values()
-    cols = ["Date", "Description", "Amount", "Category", "Mode", "Ref No", "Paid To", "Remarks"]
-    rows = [_pad(r, len(cols)) for r in values[EXPENSE_HEADER_ROWS:] if any(c.strip() for c in r)]
-    df = pd.DataFrame(rows, columns=cols)
+def load_db_daily_df():
+    """Loads daily cart entries joined with items aggregated from PostgreSQL."""
+    if db_conn is None:
+        return pd.DataFrame()
+    query = """
+    SELECT 
+        e.entry_date AS "Date",
+        e.cart_name AS "Cart",
+        e.total_collection AS "Total_Collection",
+        e.phonepe AS "PhonePe",
+        e.cash AS "Cash",
+        e.staff_name AS "Staff_Name",
+        e.staff_advance AS "Staff_Advance",
+        e.food_tea_cash AS "Food_Tea_Cash",
+        e.remarks AS "Remarks",
+        COALESCE(SUM(i.sold_units), 0) AS "Sold_Total",
+        COALESCE(SUM(i.closing_units), 0) AS "Closing_Total"
+    FROM daily_cart_entries e
+    LEFT JOIN daily_cart_items i ON e.id = i.daily_entry_id
+    GROUP BY e.id, e.entry_date, e.cart_name, e.total_collection, e.phonepe, e.cash, e.staff_name, e.staff_advance, e.food_tea_cash, e.remarks
+    ORDER BY e.entry_date DESC;
+    """
+    df = db_conn.query(query, ttl="0s")
     if not df.empty:
-        df["Amount"] = df["Amount"].apply(_num)
-        df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
-        df["Category"] = df["Category"].astype(str).str.strip()
-        df["Mode"] = df["Mode"].astype(str).str.strip()
+        df["Date"] = pd.to_datetime(df["Date"])
     return df
 
 
-def load_daily_df():
-    _, rows = load_daily_raw()
-    records = []
-    for raw_r in rows:
-        r = _pad(raw_r, DAILY_TOTAL_COLS)
-        if not r[0].strip() or not _row_has_data(r):
-            continue
-        try:
-            d = pd.to_datetime(r[0])
-        except Exception:
-            continue
-        closing_start = 4 + 9 * 3
-        closing = [_int_num(r[closing_start + i]) for i in range(N_FLAVORS)]
-        sold_start = 4 + 9 * 2
-        sold = [_int_num(r[sold_start + i]) for i in range(N_FLAVORS)]
-        added_start = 4 + 9 * 1
-        added = [_int_num(r[added_start + i]) for i in range(N_FLAVORS)]
-        records.append(
-            {
-                "Date": d,
-                "Cart": r[1],
-                "Sold_Total": sum(sold),
-                "Closing_Total": sum(closing),
-                "Added_By_Flavor": added,
-                "Sold_By_Flavor": sold,
-                "Total_Collection": _num(r[40]),
-                "PhonePe": _num(r[41]),
-                "Cash": _num(r[42]),
-                "Remarks": r[43].strip() if len(r) > 43 else "",
-                "Staff_Name": r[44].strip() if len(r) > 44 else "",
-                "Staff_Advance": _num(r[45]) if len(r) > 45 else 0.0,
-                "Food_Tea_Cash": _num(r[46]) if len(r) > 46 else 0.0,
-            }
-        )
-    return pd.DataFrame(records)
+def load_db_flavor_sales(start_date=None, end_date=None):
+    """Loads flavor-level sold units from PostgreSQL within an optional date range."""
+    if db_conn is None:
+        return pd.DataFrame()
+    
+    where_clauses = []
+    params = {}
+    if start_date:
+        where_clauses.append("e.entry_date >= :sdate")
+        params["sdate"] = start_date
+    if end_date:
+        where_clauses.append("e.entry_date <= :edate")
+        params["edate"] = end_date
+        
+    where_sql = ("WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
+    query = f"""
+    SELECT 
+        f.code,
+        f.name AS "Flavour",
+        f.mrp,
+        COALESCE(SUM(i.sold_units), 0) AS "Units sold",
+        COALESCE(SUM(i.sold_units), 0) * f.mrp AS "Est. revenue (₹)"
+    FROM flavors f
+    LEFT JOIN daily_cart_items i ON f.code = i.flavor_code
+    LEFT JOIN daily_cart_entries e ON i.daily_entry_id = e.id {where_sql}
+    GROUP BY f.code, f.name, f.mrp
+    ORDER BY "Units sold" DESC;
+    """
+    return db_conn.query(query, params=params, ttl="0s")
+
+
+def load_db_expenses_df():
+    """Loads expenses records directly from PostgreSQL."""
+    if db_conn is None:
+        return pd.DataFrame()
+    query = """
+    SELECT 
+        expense_date AS "Date",
+        description AS "Description",
+        amount AS "Amount",
+        category AS "Category",
+        payment_mode AS "Mode",
+        ref_no AS "Ref No",
+        paid_to AS "Paid To",
+        remarks AS "Remarks"
+    FROM expenses
+    ORDER BY expense_date DESC, id DESC;
+    """
+    df = db_conn.query(query, ttl="0s")
+    if not df.empty:
+        df["Date"] = pd.to_datetime(df["Date"])
+        df["Amount"] = df["Amount"].astype(float)
+    return df
+
+
+def get_db_freezer_stock():
+    """Computes exact current freezer balance: Total Inward Received - Total Cart Additions."""
+    if db_conn is None:
+        return pd.DataFrame()
+    query = """
+    SELECT 
+        f.code,
+        f.name AS "Flavour",
+        f.mrp,
+        COALESCE(recv.total_recv, 0) - COALESCE(added.total_added, 0) AS "Units in freezer"
+    FROM flavors f
+    LEFT JOIN (
+        SELECT flavor_code, SUM(received_units) AS total_recv
+        FROM stock_received_items
+        GROUP BY flavor_code
+    ) recv ON f.code = recv.flavor_code
+    LEFT JOIN (
+        SELECT flavor_code, SUM(added_units) AS total_added
+        FROM daily_cart_items
+        GROUP BY flavor_code
+    ) added ON f.code = added.flavor_code
+    ORDER BY f.mrp ASC, f.name ASC;
+    """
+    return db_conn.query(query, ttl="0s")
 
 
 # ----------------------------------------------------------------------
-# Stock Received helpers
+# Stock Received Sheet Helpers
 # ----------------------------------------------------------------------
 def load_stock_raw():
     ws = get_ws("Stock Received")
@@ -735,25 +715,66 @@ def list_stock_entries():
     return out
 
 
-def get_freezer_stock():
-    _, stock_rows = load_stock_raw()
-    received_totals = [0.0] * N_FLAVORS
-    recv_start = 14
-    for raw_r in stock_rows:
-        r = _pad(raw_r, STOCK_TOTAL_COLS)
-        if not r[0].strip():
+# ----------------------------------------------------------------------
+# Expenses Sheet Helpers
+# ----------------------------------------------------------------------
+def append_expense(exp_date, description, amount, category, mode, ref_no, paid_to, remarks):
+    row = [
+        exp_date.strftime("%Y-%m-%d"),
+        description,
+        float(amount),
+        category,
+        mode,
+        ref_no,
+        paid_to,
+        remarks,
+    ]
+    ws = get_ws("Expenses")
+    ws.append_row(row, value_input_option="USER_ENTERED")
+
+
+def update_expense(row_number, exp_date, description, amount, category, mode, ref_no, paid_to, remarks):
+    row = [
+        exp_date.strftime("%Y-%m-%d"),
+        description,
+        float(amount),
+        category,
+        mode,
+        ref_no,
+        paid_to,
+        remarks,
+    ]
+    _update_row("Expenses", row_number, row)
+
+
+def list_expense_entries():
+    ws = get_ws("Expenses")
+    values = ws.get_all_values()
+    cols_n = 8
+    out = []
+    for idx, raw_r in enumerate(values[EXPENSE_HEADER_ROWS:]):
+        r = _pad(raw_r, cols_n)
+        if not any(c.strip() for c in r):
             continue
-        for i in range(N_FLAVORS):
-            received_totals[i] += _num(r[recv_start + i])
-
-    daily_df = load_daily_df()
-    added_totals = [0.0] * N_FLAVORS
-    if not daily_df.empty:
-        for added in daily_df["Added_By_Flavor"]:
-            for i in range(N_FLAVORS):
-                added_totals[i] += added[i]
-
-    return [int(round(received_totals[i] - added_totals[i])) for i in range(N_FLAVORS)]
+        try:
+            d = pd.to_datetime(r[0])
+        except Exception:
+            continue
+        out.append(
+            {
+                "row": EXPENSE_HEADER_ROWS + idx + 1,
+                "date": d,
+                "description": r[1].strip(),
+                "amount": _num(r[2]),
+                "category": r[3].strip(),
+                "mode": r[4].strip(),
+                "ref_no": r[5].strip(),
+                "paid_to": r[6].strip(),
+                "remarks": r[7].strip(),
+            }
+        )
+    out.sort(key=lambda x: (x["date"], x["row"]), reverse=True)
+    return out
 
 
 # ----------------------------------------------------------------------
@@ -805,7 +826,7 @@ if not check_login():
     st.stop()
 
 # ----------------------------------------------------------------------
-# Navigation
+# NAVIGATION
 # ----------------------------------------------------------------------
 user_role = st.session_state.get("user_role", "admin")
 
@@ -858,7 +879,9 @@ with st.sidebar:
 
 st.title(f"🍦 Kulfi Ops — {page}")
 
-# ---------------- DAILY ENTRY ----------------
+# ----------------------------------------------------------------------
+# DAILY ENTRY (Dual-Write Enabled)
+# ----------------------------------------------------------------------
 if page == "Daily Entry":
     st.subheader("Cart restock & daily sales")
 
@@ -868,13 +891,12 @@ if page == "Daily Entry":
         daily_entries = []
         st.warning(f"Could not load entries ({e}).")
 
-    # Restrict dropdown strictly to yesterday, yesterday-1, and yesterday-2 for data entry role
     if user_role == "entry" and daily_entries:
         today_val = date.today()
         allowed_dates = {
-            today_val - timedelta(days=1),  # Yesterday
-            today_val - timedelta(days=2),  # Yesterday - 1
-            today_val - timedelta(days=3),  # Yesterday - 2
+            today_val - timedelta(days=1),
+            today_val - timedelta(days=2),
+            today_val - timedelta(days=3),
         }
         daily_entries = [e for e in daily_entries if e["date"].date() in allowed_dates]
 
@@ -903,7 +925,6 @@ if page == "Daily Entry":
 
         staff_options = load_active_staff_list()
 
-        # Retain previous day's staff name for this specific cart if empty
         default_staff_name = loaded.get("staff_name", "")
         if not default_staff_name:
             for past_e in daily_entries:
@@ -1009,7 +1030,6 @@ if page == "Daily Entry":
         food_tea_val = _num(food_tea_str)
         cash_val = _num(cash_str)
 
-        # Cash Leakage = Total Collection - PhonePe - Advance to staff - cash paid for Food/Tea - Cash Collected
         cash_leakage = total_collection_val - phonepe_val - staff_advance_val - food_tea_val - cash_val
         has_leakage = cash_leakage > 0.001
 
@@ -1050,7 +1070,9 @@ if page == "Daily Entry":
                 except Exception as e:
                     st.error(f"Could not save - {e}")
 
-# ---------------- FREEZER STOCK ----------------
+# ----------------------------------------------------------------------
+# FREEZER STOCK
+# ----------------------------------------------------------------------
 elif page == "Freezer Stock" and user_role == "admin":
     st.subheader("Stock received into freezer")
 
@@ -1113,7 +1135,6 @@ elif page == "Freezer Stock" and user_role == "admin":
     with c3:
         location = st.text_input("Location", value=(stock_loaded["location"] if stock_loaded else CITY), key=f"stock_location{sk}")
 
-    # Load unit cost prices from Assumptions sheet Column E (index 4)
     cost_prices = load_flavor_cost_prices()
     flavor_names = [f[1] for f in FLAVORS]
 
@@ -1145,10 +1166,8 @@ elif page == "Freezer Stock" and user_role == "admin":
     received = [_int_num(x) for x in stock_edited["Received"].fillna(0).tolist()]
     damaged = [_int_num(x) for x in stock_edited["Damaged"].fillna(0).tolist()]
 
-    # Automatic Cost Calculation: Received Units * Unit Cost Price (Column E)
     cost = [float(received[i] * cost_prices[i]) for i in range(N_FLAVORS)]
 
-    # Real-time metrics breakdown
     tot_ordered_units = sum(ordered)
     tot_received_units = sum(received)
     tot_damaged_units = sum(damaged)
@@ -1223,10 +1242,12 @@ elif page == "Freezer Stock" and user_role == "admin":
             except Exception as e:
                 st.error(f"Could not save - {e}")
 
-# ---------------- FREEZER ANALYSIS ----------------
+# ----------------------------------------------------------------------
+# FREEZER ANALYSIS (Powered by Supabase Database)
+# ----------------------------------------------------------------------
 elif page == "Freezer Analysis" and user_role == "admin":
     st.subheader("Freezer stock analysis & reorder planner")
-    st.caption("Uses recent sales pace to estimate when freezer stock runs low.")
+    st.caption("Uses recent sales pace from PostgreSQL database to estimate when freezer stock runs low.")
 
     ac1, ac2, ac3 = st.columns(3)
     with ac1:
@@ -1237,39 +1258,41 @@ elif page == "Freezer Analysis" and user_role == "admin":
         cover_days = st.number_input("Next order should cover (days)", min_value=1, max_value=30, value=7, step=1)
 
     try:
-        daily_df_fa = load_daily_df()
-        freezer_stock_fa = get_freezer_stock()
-    except Exception as e:
-        daily_df_fa = pd.DataFrame()
-        freezer_stock_fa = [0] * N_FLAVORS
-        st.warning(f"Could not load data yet ({e}).")
-
-    if daily_df_fa.empty:
-        st.info("No sales logged yet.")
-    else:
+        freezer_stock_df = get_db_freezer_stock()
         today_fa = date.today()
-        cutoff_fa = today_fa - timedelta(days=lookback_days - 1)
-        window_df = daily_df_fa[(daily_df_fa["Date"].dt.date >= cutoff_fa) & (daily_df_fa["Date"].dt.date <= today_fa)]
+        cutoff_fa = today_fa - timedelta(days=int(lookback_days) - 1)
+        flavor_sales_df = load_db_flavor_sales(start_date=cutoff_fa, end_date=today_fa)
+    except Exception as e:
+        freezer_stock_df = pd.DataFrame()
+        flavor_sales_df = pd.DataFrame()
+        st.warning(f"Could not load database analytics ({e}).")
 
-        flavor_sold_window = [0] * N_FLAVORS
-        for arr in window_df["Sold_By_Flavor"]:
-            for i in range(N_FLAVORS):
-                flavor_sold_window[i] += arr[i]
-        avg_daily = [s / lookback_days for s in flavor_sold_window]
+    if freezer_stock_df.empty:
+        st.info("No stock data in database yet.")
+    else:
+        sales_map = dict(zip(flavor_sales_df["code"], flavor_sales_df["Units sold"])) if not flavor_sales_df.empty else {}
+        stock_map = dict(zip(freezer_stock_df["code"], freezer_stock_df["Units in freezer"]))
 
         rows = []
         trigger_dates = []
-        for i, f in enumerate(FLAVORS):
-            stock = freezer_stock_fa[i]
-            rate = avg_daily[i]
+        total_stock = 0
+        total_rate = 0.0
+
+        for f in FLAVORS:
+            code = f[0]
+            stock = float(stock_map.get(code, 0))
+            recent_sold = float(sales_map.get(code, 0))
+            rate = recent_sold / lookback_days
+            total_stock += stock
+            total_rate += rate
+
             if rate <= 0:
                 days_left = None
                 status = "No recent sales"
-                trigger_date = None
                 suggested_qty = 0
             else:
                 days_left = stock / rate
-                trigger_date = today_fa + timedelta(days=max(0, days_left - buffer_days))
+                trigger_date = today_fa + timedelta(days=max(0, int(days_left - buffer_days)))
                 trigger_dates.append(trigger_date)
                 if days_left <= buffer_days:
                     status = "Order now"
@@ -1291,8 +1314,6 @@ elif page == "Freezer Analysis" and user_role == "admin":
             )
 
         analysis_df = pd.DataFrame(rows)
-        total_stock = sum(freezer_stock_fa)
-        total_rate = sum(avg_daily)
         overall_days_left = (total_stock / total_rate) if total_rate > 0 else None
         overall_order_date = min(trigger_dates) if trigger_dates else None
 
@@ -1340,7 +1361,9 @@ elif page == "Freezer Analysis" and user_role == "admin":
             rule = alt.Chart(pd.DataFrame({"y": [buffer_days]})).mark_rule(color="#4A2418", strokeDash=[4, 4]).encode(y="y:Q")
             st.altair_chart(days_chart + rule, use_container_width=True)
 
-# ---------------- EXPENSES ----------------
+# ----------------------------------------------------------------------
+# EXPENSES
+# ----------------------------------------------------------------------
 elif page == "Expenses" and user_role == "admin":
     st.subheader("Log an expense")
 
@@ -1402,17 +1425,19 @@ elif page == "Expenses" and user_role == "admin":
             except Exception as e:
                 st.error(f"Could not save - {e}")
 
-# ---------------- DASHBOARD ----------------
+# ----------------------------------------------------------------------
+# DASHBOARD (100% PostgreSQL DB Powered)
+# ----------------------------------------------------------------------
 elif page == "Dashboard" and user_role == "admin":
     st.subheader("Quick view")
 
     try:
-        daily_df = load_daily_df()
-        exp_df = load_expenses_df()
+        daily_df = load_db_daily_df()
+        exp_df = load_db_expenses_df()
     except Exception as e:
         daily_df = pd.DataFrame()
         exp_df = pd.DataFrame()
-        st.warning(f"Could not load data yet ({e}).")
+        st.warning(f"Could not load data from database ({e}).")
 
     today = pd.Timestamp(date.today())
     day_labels = [today - pd.Timedelta(days=3), today - pd.Timedelta(days=2), today - pd.Timedelta(days=1)]
@@ -1457,7 +1482,7 @@ elif page == "Dashboard" and user_role == "admin":
         )
         st.altair_chart(trend_chart, use_container_width=True)
     else:
-        st.info("No sales logged yet.")
+        st.info("No sales logged in database yet.")
 
     # ------------------ Date-range reports ------------------
     if not daily_df.empty or not exp_df.empty:
@@ -1501,7 +1526,7 @@ elif page == "Dashboard" and user_role == "admin":
             st.error("'From' date is after 'To' date - swap them and click Apply again.")
             range_start, range_end = range_end, range_start
 
-        st.caption(f"Showing: {range_start.strftime('%d %b %Y')} – {range_end.strftime('%d %b %Y')}")
+        st.caption(f"Showing (PostgreSQL Data): {range_start.strftime('%d %b %Y')} – {range_end.strftime('%d %b %Y')}")
 
         range_df = daily_df[(daily_df["Date"].dt.date >= range_start) & (daily_df["Date"].dt.date <= range_end)] if not daily_df.empty else daily_df
         range_exp = exp_df[(exp_df["Date"].dt.date >= range_start) & (exp_df["Date"].dt.date <= range_end)] if not exp_df.empty else exp_df
@@ -1559,28 +1584,18 @@ elif page == "Dashboard" and user_role == "admin":
                 st.write("**Avg. revenue (₹)** (rows = cart, columns = day of week)")
                 st.dataframe(rev_pivot.round(0).astype(int), use_container_width=True)
 
-                st.caption("Zero-sales days are excluded, so each cell is the average over the days that weekday actually had sales. 'All carts' shows the overall average across carts / days.")
+                st.caption("Zero-sales days are excluded. 'All carts' shows the overall average across carts / days.")
         else:
             st.caption("No sales in this date range.")
 
-        # ---- Flavour-wise performance ----
+        # ---- Flavour-wise performance (Direct SQL query from items) ----
         st.markdown('<div id="flavour-wise-performance"></div>', unsafe_allow_html=True)
         st.markdown("### Flavour-wise performance")
-        if not range_df.empty:
-            flavor_sold = [0] * N_FLAVORS
-            for arr in range_df["Sold_By_Flavor"]:
-                for i in range(N_FLAVORS):
-                    flavor_sold[i] += arr[i]
-            flavor_df = pd.DataFrame(
-                {
-                    "Flavour": [f[1] for f in FLAVORS],
-                    "Units sold": [int(round(x)) for x in flavor_sold],
-                    "Est. revenue (₹)": [flavor_sold[i] * FLAVORS[i][2] for i in range(N_FLAVORS)],
-                }
-            ).sort_values("Units sold", ascending=False)
-            st.dataframe(flavor_df, hide_index=True, use_container_width=True)
-            st.bar_chart(flavor_df.set_index("Flavour")["Units sold"])
-            st.caption("Estimated revenue = units sold × MRP per flavour; actual collections may vary slightly (discounts, complementary pieces etc).")
+        flavor_range_df = load_db_flavor_sales(start_date=range_start, end_date=range_end)
+        if not flavor_range_df.empty and flavor_range_df["Units sold"].sum() > 0:
+            st.dataframe(flavor_range_df[["Flavour", "Units sold", "Est. revenue (₹)"]], hide_index=True, use_container_width=True)
+            st.bar_chart(flavor_range_df.set_index("Flavour")["Units sold"])
+            st.caption("Estimated revenue = units sold × MRP per flavour; actual collections may vary slightly.")
         else:
             st.caption("No sales in this date range.")
 
@@ -1677,16 +1692,16 @@ elif page == "Dashboard" and user_role == "admin":
         st.metric("Stock across carts", f"{int(round(daily_df.sort_values('Date').groupby('Cart').tail(1)['Closing_Total'].sum()))}")
 
         try:
-            freezer_stock = get_freezer_stock()
+            freezer_df = get_db_freezer_stock()
             st.markdown('<div id="freezer-stock-current"></div>', unsafe_allow_html=True)
             st.markdown("**Freezer stock (current)**")
-            freezer_df = pd.DataFrame({"Flavour": [f[1] for f in FLAVORS], "Units in freezer": [int(round(x)) for x in freezer_stock]})
-            st.dataframe(freezer_df, hide_index=True, use_container_width=True)
+            st.dataframe(freezer_df[["Flavour", "Units in freezer"]], hide_index=True, use_container_width=True)
         except Exception as e:
-            st.caption(f"Could not compute freezer stock ({e}).")
+            st.caption(f"Could not compute freezer stock from DB ({e}).")
 
         st.markdown('<div id="latest-stock-per-cart"></div>', unsafe_allow_html=True)
         st.markdown("**Latest stock per cart**")
         latest_per_cart = daily_df.sort_values("Date").groupby("Cart").tail(1)[["Cart", "Date", "Closing_Total"]].copy()
         latest_per_cart["Closing_Total"] = latest_per_cart["Closing_Total"].apply(lambda x: int(round(x)))
+        latest_per_cart["Date"] = latest_per_cart["Date"].dt.strftime("%d %b %Y")
         st.dataframe(latest_per_cart, hide_index=True, use_container_width=True)
