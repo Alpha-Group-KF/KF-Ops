@@ -805,6 +805,7 @@ with st.sidebar:
 st.title(f"🍦 Kulfi Ops — {page}")
 
 # ---------------- DAILY ENTRY ----------------
+# ---------------- DAILY ENTRY ----------------
 if page == "Daily Entry":
     st.subheader("Cart restock & daily sales")
 
@@ -814,13 +815,18 @@ if page == "Daily Entry":
         daily_entries = []
         st.warning(f"Could not load entries ({e}).")
 
-    # Restrict dropdown to the last 2 days for the data entry role
+    # Restrict dropdown strictly to yesterday, yesterday-1, and yesterday-2 for data entry role
     if user_role == "entry" and daily_entries:
-        cutoff_date = date.today() - timedelta(days=2)
-        daily_entries = [e for e in daily_entries if e["date"].date() >= cutoff_date]
+        today_val = date.today()
+        allowed_dates = {
+            today_val - timedelta(days=1),  # Yesterday
+            today_val - timedelta(days=2),  # Yesterday - 1
+            today_val - timedelta(days=3),  # Yesterday - 2
+        }
+        daily_entries = [e for e in daily_entries if e["date"].date() in allowed_dates]
 
     if not daily_entries:
-        st.info("No entries found in the sheet (or within the last 2 days).")
+        st.info("No entries found for last 3 days.")
     else:
         top_c1, top_c2 = st.columns([1.3, 1])
 
