@@ -1,8 +1,7 @@
 """
 Kulfi Ops - multi-user data entry app for the kulfi cart business.
-- Daily entry reads 100% from PostgreSQL by flavor code.
-- Dual-write preserved on Cart Daily Entry (Google Sheets + Supabase PostgreSQL).
-- Freezer Stock, Freezer Analysis, Expenses, and Dashboard powered 100% by Supabase PostgreSQL.
+- Dual-write on Data Entry (Google Sheets + Supabase PostgreSQL)
+- Dashboard, KPI Reports, and Inventory powered entirely by Supabase PostgreSQL
 """
 
 import streamlit as st
@@ -17,8 +16,9 @@ from sqlalchemy import text
 
 st.set_page_config(page_title="Kulfi Ops", page_icon="🍦", layout="wide")
 
-st.markdown(
-    """
+st.html(
+    textwrap.dedent(
+        """
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
@@ -39,14 +39,18 @@ st.markdown(
     h3 { font-size: 1.1rem !important; }
     p, span, label, .stMarkdown { color: #2A1B10; }
 
-    /* Stepper buttons removal */
+    /* Hide stepper buttons on number inputs */
     input[type=number]::-webkit-inner-spin-button, 
     input[type=number]::-webkit-outer-spin-button { 
         -webkit-appearance: none !important;
         margin: 0 !important; 
     }
-    input[type=number] { -moz-appearance: textfield !important; }
-    div[data-testid="stNumberInput"] button { display: none !important; }
+    input[type=number] {
+        -moz-appearance: textfield !important;
+    }
+    div[data-testid="stNumberInput"] button {
+        display: none !important;
+    }
 
     /* Mobile Flavor Card Grid */
     .flavor-entry-row {
@@ -63,7 +67,11 @@ st.markdown(
         align-items: center;
         margin-bottom: 4px;
     }
-    .flavor-name { font-weight: 800; font-size: 14px; color: #4A2418; }
+    .flavor-name {
+        font-weight: 800;
+        font-size: 14px;
+        color: #4A2418;
+    }
     .badge-open {
         background: #EFE4CF;
         color: #5A3E1B;
@@ -100,9 +108,17 @@ st.markdown(
         text-align: left !important;
     }
 
-    section[data-testid="stSidebar"] { font-size: 15px !important; border-right: 1px solid #E3CBA0; }
-    section[data-testid="stSidebar"] h2 { font-size: 20px !important; color: #8A5E17 !important; }
-    section[data-testid="stSidebar"] .stRadio > div { gap: 4px; }
+    section[data-testid="stSidebar"] { 
+        font-size: 15px !important; 
+        border-right: 1px solid #E3CBA0; 
+    }
+    section[data-testid="stSidebar"] h2 { 
+        font-size: 20px !important; 
+        color: #8A5E17 !important; 
+    }
+    section[data-testid="stSidebar"] .stRadio > div { 
+        gap: 4px; 
+    }
     section[data-testid="stSidebar"] .stRadio label {
         background: #FFFBF2;
         border: 1px solid #E3CBA0;
@@ -111,7 +127,44 @@ st.markdown(
         margin-bottom: 2px;
         transition: background .15s ease, border-color .15s ease;
     }
-    section[data-testid="stSidebar"] .stRadio label:hover { background: #F0D9A6; border-color: #E8542A; }
+    section[data-testid="stSidebar"] .stRadio label:hover { 
+        background: #F0D9A6; 
+        border-color: #E8542A; 
+    }
+    section[data-testid="stSidebar"] .stRadio label p { 
+        font-size: 15px !important; 
+        font-weight: 600; 
+    }
+    section[data-testid="stSidebar"] .stButton button { 
+        font-size: 14px !important; 
+        border-radius: 8px !important; 
+    }
+
+    .dash-jump { 
+        background: #FFFBF2; 
+        border: 1px solid #E3CBA0; 
+        border-radius: 8px; 
+        padding: 8px 10px; 
+        margin-top: 6px; 
+    }
+    .dash-jump b { 
+        font-size: 13px !important; 
+        font-weight: 800; 
+        color: #7A5A34; 
+    }
+    .dash-jump a { 
+        display: block; 
+        padding: 3px 0 3px 6px; 
+        font-size: 12.5px !important; 
+        color: #8A5E17 !important; 
+        text-decoration: none; 
+        border-radius: 4px; 
+        line-height: 1.35;
+    }
+    .dash-jump a:hover { 
+        background: #F0D9A6; 
+        text-decoration: none; 
+    }
 
     /* Buttons */
     .stButton button, [data-testid="stFormSubmitButton"] button, [data-testid="baseButton-primary"] {
@@ -124,7 +177,9 @@ st.markdown(
         background: #E8542A !important;
         box-shadow: 0 2px 6px rgba(232,84,42,0.3);
     }
-    .stButton button[kind="primary"]:hover { background: #C43D17 !important; }
+    .stButton button[kind="primary"]:hover { 
+        background: #C43D17 !important; 
+    }
 
     /* Metric Cards */
     div[data-testid="stMetric"] {
@@ -134,8 +189,16 @@ st.markdown(
         padding: 6px 12px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     }
-    div[data-testid="stMetricLabel"] { font-weight: 700; font-size: 12px !important; color: #7A5A34; }
-    div[data-testid="stMetricValue"] { font-family: 'Fraunces', serif; font-size: 1.25rem !important; color: #4A2418; }
+    div[data-testid="stMetricLabel"] { 
+        font-weight: 700; 
+        font-size: 12px !important; 
+        color: #7A5A34; 
+    }
+    div[data-testid="stMetricValue"] { 
+        font-family: 'Fraunces', serif; 
+        font-size: 1.25rem !important; 
+        color: #4A2418; 
+    }
 
     /* Tables */
     div[data-testid="stDataFrame"], div[data-testid="stDataEditor"] {
@@ -154,10 +217,17 @@ st.markdown(
         text-align: center !important;
         font-size: 13px !important;
     }
+    div[data-testid="stDataFrame"] [role="columnheader"], div[data-testid="stDataEditor"] [role="columnheader"] {
+        font-weight: 900 !important;
+        color: #FFFFFF !important;
+        background-color: #70440E !important;
+        text-align: center !important;
+    }
+
     hr { border-color: #E3CBA0 !important; margin: 0.4rem 0 !important; }
     </style>
-    """,
-    unsafe_allow_html=True,
+    """
+    )
 )
 
 # ----------------------------------------------------------------------
@@ -166,7 +236,22 @@ st.markdown(
 CARTS = ["HOSUR CART 01", "HOSUR CART 02", "HOSUR CART 03"]
 CITY = "HOSUR"
 
+FLAVORS = [
+    ("ML", "Malai", 40, 22.0),
+    ("MM", "Mini Malai", 30, 18.0),
+    ("PS", "Pista", 40, 22.0),
+    ("MN", "Mango", 40, 22.0),
+    ("KB", "Kesar Badam", 50, 27.5),
+    ("BM", "Badam Matka", 80, 44.0),
+    ("SG", "Shahi Gulab", 50, 27.5),
+    ("CH", "Chocolate", 50, 27.5),
+    ("RA", "Roasted Almond", 60, 33.0),
+]
+FLAVOR_CODES = [f[0] for f in FLAVORS]
+N_FLAVORS = len(FLAVORS)
+
 PAYMENT_STATUSES = ["Pending", "Partial", "Complete"]
+
 EXPENSE_CATEGORIES = [
     "Cost of Goods",
     "Labour Charges",
@@ -179,22 +264,30 @@ PAYMENT_MODES = ["Cash", "UPI / Bank Transfer"]
 
 DAILY_HEADER_ROWS = 2
 DAILY_TOTAL_COLS = 47
+EXPENSE_HEADER_ROWS = 3
+STOCK_HEADER_ROWS = 4
+STOCK_TOTAL_COLS = 60
+
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
 
 def _num(x):
-    if x is None or pd.isna(x):
+    if x is None:
         return 0.0
     if isinstance(x, (int, float)):
         return float(x)
-    s = str(x).strip().replace(",", "").replace("₹", "").replace("Rs.", "").replace("Rs", "")
+    s = str(x).strip()
+    if s == "":
+        return 0.0
+    s = s.replace(",", "").replace("₹", "").replace("Rs.", "").replace("Rs", "").strip()
     neg = s.startswith("(") and s.endswith(")")
     if neg:
         s = s[1:-1]
     try:
-        return -float(s) if neg else float(s)
+        v = float(s)
     except ValueError:
         return 0.0
+    return -v if neg else v
 
 
 def _int_num(x):
@@ -202,19 +295,17 @@ def _int_num(x):
 
 
 def _pad(row, n):
-    return row + [""] * (n - len(row)) if len(row) < n else row
+    if len(row) < n:
+        return row + [""] * (n - len(row))
+    return row
 
 
-def _col_letter(n):
-    letters = ""
-    while n > 0:
-        n, rem = divmod(n - 1, 26)
-        letters = chr(65 + rem) + letters
-    return letters
+def _row_has_data(r):
+    return any(str(c).strip() != "" for c in r[4:44])
 
 
 # ----------------------------------------------------------------------
-# CONNECTIONS (Google Sheets & Supabase PostgreSQL DB)
+# CONNECTIONS (Google Sheets & Supabase DB)
 # ----------------------------------------------------------------------
 @st.cache_resource
 def get_client():
@@ -233,18 +324,15 @@ def get_ws(tab_name):
     return get_workbook().worksheet(tab_name)
 
 
-def _update_sheet_row(tab_name, row_number, values):
-    ws = get_ws(tab_name)
-    end_col = _col_letter(len(values))
-    ws.update(range_name=f"A{row_number}:{end_col}{row_number}", values=[values], value_input_option="USER_ENTERED")
-
-
 try:
     db_conn = st.connection("postgresql", type="sql")
 except Exception:
     db_conn = None
 
 
+# ----------------------------------------------------------------------
+# Modal Alert Helper
+# ----------------------------------------------------------------------
 @st.dialog("Notification")
 def show_success_modal(message):
     st.success(message)
@@ -253,45 +341,8 @@ def show_success_modal(message):
 
 
 # ----------------------------------------------------------------------
-# FLAVORS & STAFF FROM DATABASE (KEYED BY FLAVOR CODE)
+# Assumptions Helpers
 # ----------------------------------------------------------------------
-DEFAULT_FLAVORS = [
-    ("ML", "Malai", 40.0, 22.0),
-    ("MM", "Mini Malai", 30.0, 18.0),
-    ("PS", "Pista", 40.0, 22.0),
-    ("MN", "Mango", 40.0, 22.0),
-    ("KB", "Kesar Badam", 50.0, 27.5),
-    ("BM", "Badam Matka", 80.0, 44.0),
-    ("SG", "Shahi Gulab", 50.0, 27.5),
-    ("CH", "Chocolate", 50.0, 27.5),
-    ("RA", "Roasted Almond", 60.0, 33.0),
-]
-FLAVOR_CODES = [f[0] for f in DEFAULT_FLAVORS]
-N_FLAVORS = len(FLAVOR_CODES)
-
-
-def get_flavor_meta_by_code():
-    meta = {
-        code: {"name": name, "mrp": float(mrp), "cost_price": float(cost)}
-        for code, name, mrp, cost in DEFAULT_FLAVORS
-    }
-    if db_conn is not None:
-        try:
-            df = db_conn.query("SELECT code, name, mrp, cost_price FROM flavors;", ttl="1m")
-            for _, r in df.iterrows():
-                code = r["code"]
-                if code in meta:
-                    meta[code]["name"] = r["name"]
-                    meta[code]["mrp"] = float(r["mrp"])
-                    meta[code]["cost_price"] = float(r["cost_price"])
-        except Exception:
-            pass
-    return meta
-
-
-FLAVOR_MAP = get_flavor_meta_by_code()
-
-
 def load_active_staff_list():
     if db_conn is not None:
         try:
@@ -300,80 +351,79 @@ def load_active_staff_list():
                 return ["Select Staff"] + df["name"].tolist()
         except Exception:
             pass
-    return ["Select Staff"]
+    try:
+        ws = get_ws("Assumptions")
+        values = ws.get_values("A51:C56")
+        staff_names = []
+        for row in values:
+            if not row or not row[0].strip():
+                continue
+            name = row[0].strip()
+            status = row[2].strip().lower() if len(row) >= 3 else "active"
+            if status == "active":
+                staff_names.append(name)
+        return ["Select Staff"] + staff_names
+    except Exception:
+        return ["Select Staff"]
 
 
-# ----------------------------------------------------------------------
-# DATABASE-ONLY LOADER FOR DAILY ENTRIES (KEYED BY CODE)
-# ----------------------------------------------------------------------
-def list_daily_entries():
-    """Loads daily cart entries strictly from Supabase PostgreSQL keyed by flavor code."""
-    if db_conn is None:
-        return []
-    query = """
-    SELECT 
-        e.id AS db_id,
-        e.entry_date,
-        e.cart_name,
-        e.staff_name,
-        e.total_collection,
-        e.phonepe,
-        e.cash,
-        e.staff_advance,
-        e.food_tea_cash,
-        e.remarks,
-        json_agg(json_build_object(
-            'code', i.flavor_code,
-            'open', i.opening_units,
-            'add', i.added_units,
-            'sold', i.sold_units,
-            'close', i.closing_units
-        )) AS items
-    FROM daily_cart_entries e
-    LEFT JOIN daily_cart_items i ON e.id = i.daily_entry_id
-    GROUP BY e.id, e.entry_date, e.cart_name, e.staff_name, e.total_collection, e.phonepe, e.cash, e.staff_advance, e.food_tea_cash, e.remarks
-    ORDER BY e.entry_date DESC, e.cart_name ASC;
-    """
-    df = db_conn.query(query, ttl="0s")
-    if df.empty:
-        return []
-
-    out = []
-    for _, r in df.iterrows():
-        items_by_code = {
-            itm["code"]: itm for itm in r["items"] if isinstance(itm, dict) and "code" in itm
-        } if (r["items"] and isinstance(r["items"], list)) else {}
-
-        out.append({
-            "db_id": r["db_id"],
-            "date": pd.to_datetime(r["entry_date"]),
-            "cart": str(r["cart_name"]).strip(),
-            "by_code": {
-                code: {
-                    "opening": int(items_by_code.get(code, {}).get("open") or 0),
-                    "added": int(items_by_code.get(code, {}).get("add") or 0),
-                    "sold": int(items_by_code.get(code, {}).get("sold") or 0),
-                    "closing": int(items_by_code.get(code, {}).get("close") or 0),
-                }
-                for code in FLAVOR_CODES
-            },
-            "total": float(r["total_collection"]) if pd.notna(r["total_collection"]) else 0.0,
-            "phonepe": float(r["phonepe"]) if pd.notna(r["phonepe"]) else 0.0,
-            "cash": float(r["cash"]) if pd.notna(r["cash"]) else 0.0,
-            "remarks": str(r["remarks"]) if pd.notna(r["remarks"]) else "",
-            "staff_name": str(r["staff_name"]) if pd.notna(r["staff_name"]) else "",
-            "staff_advance": float(r["staff_advance"]) if pd.notna(r["staff_advance"]) else 0.0,
-            "food_tea_cash": float(r["food_tea_cash"]) if pd.notna(r["food_tea_cash"]) else 0.0,
-        })
-    return out
-
-
-# ----------------------------------------------------------------------
-# DUAL-WRITE CART HELPER (PostgreSQL + Google Sheets)
-# ----------------------------------------------------------------------
-def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map, sold_map, total, phonepe, cash, remarks, staff_name="", staff_advance=0.0, food_tea_cash=0.0):
-    # 1. Primary write to Supabase PostgreSQL
+def load_flavor_cost_prices():
     if db_conn is not None:
+        try:
+            df = db_conn.query("SELECT code, cost_price FROM flavors;", ttl="1m")
+            if not df.empty:
+                cost_map = dict(zip(df["code"], df["cost_price"]))
+                return [float(cost_map.get(f[0], f[3])) for f in FLAVORS]
+        except Exception:
+            pass
+    try:
+        ws = get_ws("Assumptions")
+        values = ws.get_all_values()
+        cost_map = {}
+        for r in values:
+            if len(r) >= 5 and r[0].strip() and any(c.isdigit() for c in r[4]):
+                name = r[0].strip().lower()
+                cost_map[name] = _num(r[4])
+        costs = []
+        for f in FLAVORS:
+            name_lower = f[1].lower()
+            if name_lower in cost_map and cost_map[name_lower] > 0:
+                costs.append(cost_map[name_lower])
+            else:
+                costs.append(f[3])
+        return costs
+    except Exception:
+        return [f[3] for f in FLAVORS]
+
+
+# ----------------------------------------------------------------------
+# Dual-write / Sheet helpers
+# ----------------------------------------------------------------------
+def load_daily_raw():
+    ws = get_ws("Daily Data As Shared")
+    values = ws.get_all_values()
+    rows = values[DAILY_HEADER_ROWS:]
+    return ws, rows
+
+
+def _col_letter(n):
+    letters = ""
+    while n > 0:
+        n, rem = divmod(n - 1, 26)
+        letters = chr(65 + rem) + letters
+    return letters
+
+
+def _update_row(tab_name, row_number, values):
+    ws = get_ws(tab_name)
+    end_col = _col_letter(len(values))
+    ws.update(range_name=f"A{row_number}:{end_col}{row_number}", values=[values], value_input_option="USER_ENTERED")
+
+
+def sync_daily_to_db(entry_date, cart_name, added, closing, opening, sold, total, phonepe, cash, remarks, staff_name="", staff_advance=0.0, food_tea_cash=0.0):
+    if db_conn is None:
+        return
+    try:
         with db_conn.session as s:
             res = s.execute(
                 text("""
@@ -393,52 +443,81 @@ def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map,
             )
             daily_id = res.scalar()
             s.execute(text("DELETE FROM daily_cart_items WHERE daily_entry_id = :id;"), {"id": daily_id})
-            for code in FLAVOR_CODES:
+            for i in range(N_FLAVORS):
                 s.execute(
                     text("""
                     INSERT INTO daily_cart_items (daily_entry_id, flavor_code, opening_units, added_units, sold_units, closing_units)
                     VALUES (:eid, :code, :open, :add, :sold, :close);
                     """),
                     {
-                        "eid": daily_id, "code": code,
-                        "open": int(opening_map[code]), "add": int(added_map[code]),
-                        "sold": int(sold_map[code]), "close": int(closing_map[code])
+                        "eid": daily_id, "code": FLAVOR_CODES[i],
+                        "open": int(opening[i]), "add": int(added[i]),
+                        "sold": int(sold[i]), "close": int(closing[i])
                     }
                 )
             s.commit()
-
-    # 2. Parallel write to Google Sheets for dual-write persistence
-    try:
-        ws = get_ws("Daily Data As Shared")
-        all_vals = ws.get_all_values()
-        target_row = None
-        date_str = entry_date.strftime("%Y-%m-%d")
-        for idx, r in enumerate(all_vals[DAILY_HEADER_ROWS:]):
-            if len(r) >= 2 and r[0].strip() == date_str and r[1].strip() == cart_name:
-                target_row = DAILY_HEADER_ROWS + idx + 1
-                break
-
-        date_cart_id = f"{date_str}||{cart_name}"
-        sheet_row = (
-            [date_str, cart_name, CITY, date_cart_id]
-            + [int(opening_map[code]) for code in FLAVOR_CODES]
-            + [int(added_map[code]) for code in FLAVOR_CODES]
-            + [int(sold_map[code]) for code in FLAVOR_CODES]
-            + [int(closing_map[code]) for code in FLAVOR_CODES]
-            + [float(total), float(phonepe), float(cash), str(remarks), str(staff_name), float(staff_advance), float(food_tea_cash)]
-        )
-        if target_row:
-            _update_sheet_row("Daily Data As Shared", target_row, sheet_row)
-        else:
-            ws.append_row(sheet_row, value_input_option="USER_ENTERED")
     except Exception as e:
-        st.warning(f"Saved to database, but Google Sheets dual-write sync encountered a minor issue: {e}")
+        st.warning(f"Note: Saved to Sheet, but DB sync encountered an issue: {e}")
+
+
+def update_daily_entry(row_number, entry_date, cart_name, added, closing, opening, total, phonepe, cash, remarks, staff_name="", staff_advance=0.0, food_tea_cash=0.0):
+    sold = [int(opening[i]) + int(added[i]) - int(closing[i]) for i in range(N_FLAVORS)]
+    date_str = entry_date.strftime("%Y-%m-%d")
+    date_cart_id = f"{date_str}||{cart_name}"
+    row = (
+        [date_str, cart_name, CITY, date_cart_id]
+        + [int(x) for x in opening]
+        + [int(x) for x in added]
+        + [int(x) for x in sold]
+        + [int(x) for x in closing]
+        + [float(total), float(phonepe), float(cash), str(remarks), str(staff_name), float(staff_advance), float(food_tea_cash)]
+    )
+    _update_row("Daily Data As Shared", row_number, row)
+    sync_daily_to_db(entry_date, cart_name, added, closing, opening, sold, total, phonepe, cash, remarks, staff_name, staff_advance, food_tea_cash)
+    return sold
+
+
+def list_daily_entries():
+    _, rows = load_daily_raw()
+    out = []
+    added_start = 4 + 9 * 1
+    sold_start = 4 + 9 * 2
+    closing_start = 4 + 9 * 3
+    for idx, raw_r in enumerate(rows):
+        r = _pad(raw_r, DAILY_TOTAL_COLS)
+        if not r[0].strip() or not _row_has_data(r):
+            continue
+        try:
+            d = pd.to_datetime(r[0])
+        except Exception:
+            continue
+        out.append(
+            {
+                "row": DAILY_HEADER_ROWS + idx + 1,
+                "date": d,
+                "cart": r[1].strip(),
+                "opening": [_int_num(r[4 + i]) for i in range(N_FLAVORS)],
+                "added": [_int_num(r[added_start + i]) for i in range(N_FLAVORS)],
+                "sold": [_int_num(r[sold_start + i]) for i in range(N_FLAVORS)],
+                "closing": [_int_num(r[closing_start + i]) for i in range(N_FLAVORS)],
+                "total": _num(r[40]),
+                "phonepe": _num(r[41]),
+                "cash": _num(r[42]),
+                "remarks": r[43].strip() if len(r) > 43 else "",
+                "staff_name": r[44].strip() if len(r) > 44 else "",
+                "staff_advance": _num(r[45]) if len(r) > 45 else 0.0,
+                "food_tea_cash": _num(r[46]) if len(r) > 46 else 0.0,
+            }
+        )
+    out.sort(key=lambda x: (x["date"], x["cart"]), reverse=True)
+    return out
 
 
 # ----------------------------------------------------------------------
-# DATABASE REPORT LOADERS
+# DATABASE DATA LOADER FUNCTIONS (For Dashboard, Analytics & Inventory)
 # ----------------------------------------------------------------------
 def load_db_daily_df():
+    """Loads daily cart entries joined with items aggregated from PostgreSQL."""
     if db_conn is None:
         return pd.DataFrame()
     query = """
@@ -466,8 +545,10 @@ def load_db_daily_df():
 
 
 def load_db_flavor_sales(start_date=None, end_date=None):
+    """Loads flavor-level sold units from PostgreSQL within an optional date range."""
     if db_conn is None:
         return pd.DataFrame()
+    
     where_clauses = []
     params = {}
     if start_date:
@@ -494,12 +575,12 @@ def load_db_flavor_sales(start_date=None, end_date=None):
     return db_conn.query(query, params=params, ttl="0s")
 
 
-def load_db_expenses_list():
+def load_db_expenses_df():
+    """Loads expenses records directly from PostgreSQL."""
     if db_conn is None:
-        return []
+        return pd.DataFrame()
     query = """
     SELECT 
-        id,
         expense_date AS "Date",
         description AS "Description",
         amount AS "Amount",
@@ -512,14 +593,14 @@ def load_db_expenses_list():
     ORDER BY expense_date DESC, id DESC;
     """
     df = db_conn.query(query, ttl="0s")
-    if df.empty:
-        return []
-    df["Date"] = pd.to_datetime(df["Date"])
-    df["Amount"] = df["Amount"].astype(float)
-    return df.to_dict("records")
+    if not df.empty:
+        df["Date"] = pd.to_datetime(df["Date"])
+        df["Amount"] = df["Amount"].astype(float)
+    return df
 
 
 def get_db_freezer_stock():
+    """Computes exact current freezer balance: Total Inward Received - Total Cart Additions."""
     if db_conn is None:
         return pd.DataFrame()
     query = """
@@ -545,7 +626,159 @@ def get_db_freezer_stock():
 
 
 # ----------------------------------------------------------------------
-# AUTHENTICATION
+# Stock Received Sheet Helpers
+# ----------------------------------------------------------------------
+def load_stock_raw():
+    ws = get_ws("Stock Received")
+    values = ws.get_all_values()
+    rows = values[STOCK_HEADER_ROWS:]
+    return ws, rows
+
+
+def _build_stock_row(
+    order_date, received_date, location,
+    ordered, received, cost, damaged,
+    payment_amount, payment_status, payment_date, payment_details,
+    damaged_returned_on, notes,
+):
+    diff = [int(received[i]) - int(ordered[i]) for i in range(N_FLAVORS)]
+    date_loc_id = f"{received_date.strftime('%Y-%m-%d')}||{location}"
+    return (
+        [order_date.strftime("%Y-%m-%d"), received_date.strftime("%Y-%m-%d"), location, date_loc_id]
+        + [int(x) for x in ordered] + [sum(int(x) for x in ordered)]
+        + [int(x) for x in received] + [sum(int(x) for x in received)]
+        + diff + [sum(diff)]
+        + [float(x) for x in cost] + [sum(float(x) for x in cost)]
+        + [float(payment_amount), str(payment_status), payment_date.strftime("%Y-%m-%d") if payment_date else "", str(payment_details)]
+        + [int(x) for x in damaged] + [sum(int(x) for x in damaged)]
+        + [damaged_returned_on.strftime("%Y-%m-%d") if damaged_returned_on else "", str(notes)]
+    )
+
+
+def append_stock_entry(
+    order_date, received_date, location,
+    ordered, received, cost, damaged,
+    payment_amount, payment_status, payment_date, payment_details,
+    damaged_returned_on, notes,
+):
+    row = _build_stock_row(
+        order_date, received_date, location, ordered, received, cost, damaged,
+        payment_amount, payment_status, payment_date, payment_details, damaged_returned_on, notes,
+    )
+    ws = get_ws("Stock Received")
+    ws.append_row(row, value_input_option="USER_ENTERED")
+
+
+def update_stock_entry(
+    row_number, order_date, received_date, location,
+    ordered, received, cost, damaged,
+    payment_amount, payment_status, payment_date, payment_details,
+    damaged_returned_on, notes,
+):
+    row = _build_stock_row(
+        order_date, received_date, location, ordered, received, cost, damaged,
+        payment_amount, payment_status, payment_date, payment_details, damaged_returned_on, notes,
+    )
+    _update_row("Stock Received", row_number, row)
+
+
+def list_stock_entries():
+    _, rows = load_stock_raw()
+    out = []
+    for idx, raw_r in enumerate(rows):
+        r = _pad(raw_r, STOCK_TOTAL_COLS)
+        if not r[0].strip() and not r[1].strip():
+            continue
+        try:
+            d = pd.to_datetime(r[1]) if r[1].strip() else pd.to_datetime(r[0])
+        except Exception:
+            continue
+        out.append(
+            {
+                "row": STOCK_HEADER_ROWS + idx + 1,
+                "order_date": r[0].strip(),
+                "received_date": d,
+                "location": r[2].strip(),
+                "ordered": [_int_num(r[4 + i]) for i in range(N_FLAVORS)],
+                "received": [_int_num(r[14 + i]) for i in range(N_FLAVORS)],
+                "cost": [_num(r[34 + i]) for i in range(N_FLAVORS)],
+                "damaged": [_int_num(r[48 + i]) for i in range(N_FLAVORS)],
+                "payment_amount": _num(r[44]),
+                "payment_status": r[45].strip(),
+                "payment_date": r[46].strip(),
+                "payment_details": r[47].strip(),
+                "damaged_returned_on": r[58].strip(),
+                "notes": r[59].strip() if len(r) > 59 else "",
+            }
+        )
+    out.sort(key=lambda x: (x["received_date"], x["row"]), reverse=True)
+    return out
+
+
+# ----------------------------------------------------------------------
+# Expenses Sheet Helpers
+# ----------------------------------------------------------------------
+def append_expense(exp_date, description, amount, category, mode, ref_no, paid_to, remarks):
+    row = [
+        exp_date.strftime("%Y-%m-%d"),
+        description,
+        float(amount),
+        category,
+        mode,
+        ref_no,
+        paid_to,
+        remarks,
+    ]
+    ws = get_ws("Expenses")
+    ws.append_row(row, value_input_option="USER_ENTERED")
+
+
+def update_expense(row_number, exp_date, description, amount, category, mode, ref_no, paid_to, remarks):
+    row = [
+        exp_date.strftime("%Y-%m-%d"),
+        description,
+        float(amount),
+        category,
+        mode,
+        ref_no,
+        paid_to,
+        remarks,
+    ]
+    _update_row("Expenses", row_number, row)
+
+
+def list_expense_entries():
+    ws = get_ws("Expenses")
+    values = ws.get_all_values()
+    cols_n = 8
+    out = []
+    for idx, raw_r in enumerate(values[EXPENSE_HEADER_ROWS:]):
+        r = _pad(raw_r, cols_n)
+        if not any(c.strip() for c in r):
+            continue
+        try:
+            d = pd.to_datetime(r[0])
+        except Exception:
+            continue
+        out.append(
+            {
+                "row": EXPENSE_HEADER_ROWS + idx + 1,
+                "date": d,
+                "description": r[1].strip(),
+                "amount": _num(r[2]),
+                "category": r[3].strip(),
+                "mode": r[4].strip(),
+                "ref_no": r[5].strip(),
+                "paid_to": r[6].strip(),
+                "remarks": r[7].strip(),
+            }
+        )
+    out.sort(key=lambda x: (x["date"], x["row"]), reverse=True)
+    return out
+
+
+# ----------------------------------------------------------------------
+# Login (Admin & Data Entry User)
 # ----------------------------------------------------------------------
 def check_login():
     if st.session_state.get("authenticated", False):
@@ -605,7 +838,35 @@ with st.sidebar:
 
     if user_role == "admin":
         nav_options = ["Dashboard", "Daily Entry", "Freezer Stock", "Freezer Analysis", "Expenses"]
-        page = st.radio("Go to", nav_options, label_visibility="collapsed")
+        page = st.radio(
+            "Go to",
+            nav_options,
+            label_visibility="collapsed",
+        )
+        if page == "Dashboard":
+            st.markdown(
+                textwrap.dedent(
+                    """
+                <div class="dash-jump">
+                <b>Jump to</b><br>
+                <a href="#last-3-days">Last 3 days</a>
+                <a href="#revenue-trend">Revenue trend (14 days)</a>
+                <a href="#reports">Reports (date range)</a>
+                <a href="#cart-wise-comparison">&nbsp;&nbsp;Cart-wise comparison</a>
+                <a href="#cart-wise-day-of-week">&nbsp;&nbsp;Sales by day of week</a>
+                <a href="#flavour-wise-performance">&nbsp;&nbsp;Flavour-wise performance</a>
+                <a href="#profit-loss-summary">&nbsp;&nbsp;Profit &amp; loss summary</a>
+                <a href="#expense-breakdown">&nbsp;&nbsp;Expense breakdown</a>
+                <a href="#cash-vs-phonepe">&nbsp;&nbsp;Cash vs PhonePe</a>
+                <a href="#sales-in-range">&nbsp;&nbsp;Sales table</a>
+                <a href="#inventory-status">Current Inventory Status</a>
+                <a href="#freezer-stock-current">&nbsp;&nbsp;Freezer stock (current)</a>
+                <a href="#latest-stock-per-cart">&nbsp;&nbsp;Latest stock per cart</a>
+                </div>
+                """
+                ),
+                unsafe_allow_html=True,
+            )
     else:
         page = "Daily Entry"
         st.info("Logged in as Data Entry Staff")
@@ -618,9 +879,9 @@ with st.sidebar:
 
 st.title(f"🍦 Kulfi Ops — {page}")
 
-# ======================================================================
-# PAGE 1: DAILY ENTRY (Pure DB Lookup + Dual-Write on Save)
-# ======================================================================
+# ----------------------------------------------------------------------
+# DAILY ENTRY (Dual-Write Enabled)
+# ----------------------------------------------------------------------
 if page == "Daily Entry":
     st.subheader("Cart restock & daily sales")
 
@@ -628,7 +889,7 @@ if page == "Daily Entry":
         daily_entries = list_daily_entries()
     except Exception as e:
         daily_entries = []
-        st.warning(f"Could not load entries from database ({e}).")
+        st.warning(f"Could not load entries ({e}).")
 
     if user_role == "entry" and daily_entries:
         today_val = date.today()
@@ -640,7 +901,7 @@ if page == "Daily Entry":
         daily_entries = [e for e in daily_entries if e["date"].date() in allowed_dates]
 
     if not daily_entries:
-        st.info("No entries found in database for the active period.")
+        st.info("No entries found for last 3 days.")
     else:
         top_c1, top_c2 = st.columns([1.3, 1])
 
@@ -648,11 +909,11 @@ if page == "Daily Entry":
         with top_c1:
             sel = st.selectbox("Select entry to update sales", labels, key="daily_update_select")
         loaded = daily_entries[labels.index(sel)]
-        entry_id = loaded["db_id"]
+        editing_row = loaded["row"]
         entry_date = loaded["date"].date()
         cart_name = loaded["cart"]
 
-        data_key_suffix = f"_{entry_id}"
+        data_key_suffix = f"_{editing_row}"
 
         k_tot = f"daily_total{data_key_suffix}"
         k_ph = f"daily_phonepe{data_key_suffix}"
@@ -678,74 +939,65 @@ if page == "Daily Entry":
         with top_c2:
             staff_name = st.selectbox("Cart staff name", staff_options, index=default_staff_idx, key=k_staff)
 
+        opening = [_int_num(x) for x in loaded["opening"]]
+
         st.write("Enter units **added to the cart** and the **actual closing count** observed:")
 
-        added_map = {}
-        closing_map = {}
-        sold_map = {}
-        opening_map = {code: loaded["by_code"][code]["opening"] for code in FLAVOR_CODES}
+        added = [0] * N_FLAVORS
+        closing = [0] * N_FLAVORS
 
-        for code in FLAVOR_CODES:
-            f_info = FLAVOR_MAP[code]
-            k_add = f"add_{entry_id}_{code}"
-            k_cls = f"cls_{entry_id}_{code}"
-
+        for i, f in enumerate(FLAVORS):
+            k_add = f"add_{editing_row}_{i}"
+            k_cls = f"cls_{editing_row}_{i}"
             if k_add not in st.session_state:
-                st.session_state[k_add] = loaded["by_code"][code]["added"]
+                st.session_state[k_add] = _int_num(loaded["added"][i])
             if k_cls not in st.session_state:
-                st.session_state[k_cls] = loaded["by_code"][code]["closing"]
+                st.session_state[k_cls] = _int_num(loaded["closing"][i])
 
-            cur_open = opening_map[code]
             cur_add = _int_num(st.session_state[k_add])
             cur_cls = _int_num(st.session_state[k_cls])
-            cur_sold = cur_open + cur_add - cur_cls
-
-            added_map[code] = cur_add
-            closing_map[code] = cur_cls
-            sold_map[code] = cur_sold
+            cur_sold = opening[i] + cur_add - cur_cls
 
             st.markdown(
                 f"""
                 <div class="flavor-entry-row">
                     <div class="flavor-title-bar">
-                        <span class="flavor-name">{f_info['name']} (₹{f_info['mrp']:.0f})</span>
+                        <span class="flavor-name">{f[1]} (₹{f[2]})</span>
                         <div>
-                            <span class="badge-open">Opening: {cur_open}</span>
+                            <span class="badge-open">Opening: {opening[i]}</span>
                             <span class="badge-sold">Sold: {cur_sold}</span>
                         </div>
                     </div>
                 </div>
                 """,
-                unsafe_allow_html=True,
+                unsafe_allow_html=True
             )
 
             col_a, col_b = st.columns(2)
             with col_a:
-                st.number_input("+ Added Stock", min_value=0, step=1, format="%d", key=k_add)
+                added_val = st.number_input("+ Added Stock", min_value=0, step=1, format="%d", key=k_add)
             with col_b:
-                st.number_input("Closing Count", min_value=0, step=1, format="%d", key=k_cls)
+                closing_val = st.number_input("Closing Count", min_value=0, step=1, format="%d", key=k_cls)
 
-        tot_open = sum(opening_map.values())
-        tot_add = sum(added_map.values())
-        tot_close = sum(closing_map.values())
-        tot_sold = sum(sold_map.values())
+            added[i] = _int_num(added_val)
+            closing[i] = _int_num(closing_val)
 
+        sold = [opening[i] + added[i] - closing[i] for i in range(N_FLAVORS)]
+
+        tot_open, tot_add, tot_close, tot_sold = sum(opening), sum(added), sum(closing), sum(sold)
         m1, m2, m3, m4 = st.columns(4)
         m1.metric("Opening Balance", f"{tot_open} units")
         m2.metric("Stock Added", f"{tot_add} units")
         m3.metric("Closing Balance", f"{tot_close} units")
         m4.metric("Total Sold", f"{tot_sold} units")
 
-        if any(s < 0 for s in sold_map.values()):
+        if any(s < 0 for s in sold):
             st.error("Today's sales works out negative for at least one flavour - closing count is higher than opening + added.")
 
-        # Explicit code-based MRP total calculation:
-        calculated_mrp_total = float(sum(sold_map[code] * FLAVOR_MAP[code]["mrp"] for code in FLAVOR_CODES))
+        calculated_mrp_total = float(sum(sold[i] * FLAVORS[i][2] for i in range(N_FLAVORS)))
 
         if k_tot not in st.session_state or st.session_state.get(k_prev_calc) != calculated_mrp_total:
-            # Fall back to saved record total first, or calculated MRP if saved record was 0
-            default_tot = loaded["total"] if loaded["total"] > 0 else calculated_mrp_total
-            st.session_state[k_tot] = f"{default_tot:.2f}"
+            st.session_state[k_tot] = f"{calculated_mrp_total:.2f}"
             st.session_state[k_prev_calc] = calculated_mrp_total
 
         if k_ph not in st.session_state:
@@ -788,240 +1040,214 @@ if page == "Daily Entry":
                 '<p style="color:#C41C1C; font-weight:bold; font-size:13px; margin: 4px 0 !important;">'
                 '⚠️ There is a cash leakage - please correct or enter reason in remarks field'
                 '</p>',
-                unsafe_allow_html=True,
+                unsafe_allow_html=True
             )
         else:
             st.markdown(
                 f"<div style='margin-top:2px;'><label style='font-size:12px; font-weight:700;'>Cash Leakage:</label> "
                 f"<b style='color:#2A1B10; font-size:14px;'>₹{cash_leakage:,.2f}</b></div>",
-                unsafe_allow_html=True,
+                unsafe_allow_html=True
             )
 
         remarks = st.text_input("Remarks", value=loaded["remarks"], key=f"daily_remarks{data_key_suffix}", placeholder="Enter remarks (mandatory if cash leakage)...")
 
         if st.button("Update sales", type="primary", use_container_width=True):
-            if sum(added_map.values()) == 0 and closing_map == opening_map:
+            if sum(added) == 0 and closing == opening:
                 st.error("Enter a stock addition or a closing count that differs from yesterday's balance before saving.")
-            elif any(s < 0 for s in sold_map.values()):
+            elif any(s < 0 for s in sold):
                 st.error("Today's sales works out negative for at least one flavour - fix closing count before saving.")
             elif has_leakage and not remarks.strip():
                 st.error("Remarks is mandatory when there is a cash leakage. Please enter a reason.")
             else:
                 try:
                     selected_staff = "" if staff_name == "Select Staff" else staff_name
-                    sync_daily_entry(
-                        entry_date, cart_name, added_map, closing_map, opening_map, sold_map, 
+                    saved_sold = update_daily_entry(
+                        editing_row, entry_date, cart_name, added, closing, opening, 
                         total_collection_val, phonepe_val, cash_val, remarks, selected_staff, staff_advance_val, food_tea_val
                     )
                     st.cache_resource.clear()
-                    show_success_modal(f"Saved successfully to Database & Sheets! Sales updated for {cart_name} on {entry_date.strftime('%d %b %Y')}. Total Sold: {tot_sold} units.")
+                    show_success_modal(f"Saved successfully to Sheet & Database! Sales updated for {cart_name} on {entry_date.strftime('%d %b %Y')}. Total Sold: {sum(saved_sold)} units.")
                 except Exception as e:
                     st.error(f"Could not save - {e}")
-# ======================================================================
-# PAGE 2: FREEZER STOCK (100% Supabase PostgreSQL Powered)
-# ======================================================================
+
+# ----------------------------------------------------------------------
+# FREEZER STOCK
+# ----------------------------------------------------------------------
 elif page == "Freezer Stock" and user_role == "admin":
-    st.subheader("Stock Received into Freezer")
+    st.subheader("Stock received into freezer")
 
-    stock_mode = st.radio("Mode", ["New entry", "Edit past entry"], horizontal=True, key="db_stock_mode")
-
-    past_receipts_df = db_conn.query("""
-        SELECT r.id, r.received_date, r.location, r.purchase_order_id, r.payment_amount,
-               r.payment_status, r.payment_date, r.payment_details, r.damaged_returned_on, r.notes,
-               json_agg(json_build_object('code', i.flavor_code, 'rec', i.received_units, 'dam', i.damaged_units, 'cost', i.unit_cost_price)) AS items
-        FROM stock_received r
-        LEFT JOIN stock_received_items i ON r.id = i.received_id
-        GROUP BY r.id ORDER BY r.received_date DESC, r.id DESC;
-    """, ttl="0s")
-
-    past_receipts = past_receipts_df.to_dict("records") if not past_receipts_df.empty else []
+    stock_mode = st.radio("Mode", ["New entry", "Edit past entry"], horizontal=True, key="stock_mode")
 
     stock_loaded = None
-    loaded_id = None
+    stock_editing_row = None
     if stock_mode == "Edit past entry":
-        if not past_receipts:
-            st.info("No past delivery receipts found in database.")
+        try:
+            stock_entries = list_stock_entries()
+        except Exception as e:
+            stock_entries = []
+            st.warning(f"Could not load past entries ({e}).")
+        if not stock_entries:
+            st.info("No past entries found yet.")
         else:
-            labels = [f"Receipt #{r['id']} — {pd.to_datetime(r['received_date']).strftime('%d %b %Y')} ({r['location']})" for r in past_receipts]
-            selected_rec = st.selectbox("Select delivery receipt to edit", labels, key="db_stock_select")
-            stock_loaded = past_receipts[labels.index(selected_rec)]
-            loaded_id = stock_loaded["id"]
+            def _fmt_order_date(s):
+                if not s or not str(s).strip():
+                    return "no order date"
+                try:
+                    d = pd.to_datetime(s)
+                    return f"ordered {d.strftime('%d %b %Y')}" if not pd.isna(d) else "no order date"
+                except Exception:
+                    return "no order date"
 
-    sk = f"_{loaded_id}" if loaded_id else "_new"
+            stock_labels = [
+                f"Received {e['received_date'].strftime('%d %b %Y')} ({_fmt_order_date(e['order_date'])}) — {e['location']}"
+                for e in stock_entries
+            ]
+            stock_sel = st.selectbox("Select entry to edit", stock_labels, key="stock_edit_select")
+            stock_loaded = stock_entries[stock_labels.index(stock_sel)]
+            stock_editing_row = stock_loaded["row"]
+            st.caption("Loaded - edit fields below, then click Update entry.")
 
-    pos_df = db_conn.query("SELECT id, order_date, location FROM purchase_orders WHERE order_status != 'Completed';", ttl="0s")
-    po_options = ["None (Ad-hoc delivery)"] + [f"PO #{r['id']} ({pd.to_datetime(r['order_date']).strftime('%d %b')})" for _, r in pos_df.iterrows()]
-    
-    default_po_idx = 0
-    if stock_loaded and stock_loaded.get("purchase_order_id"):
-        for idx, opt in enumerate(po_options):
-            if opt.startswith(f"PO #{int(stock_loaded['purchase_order_id'])} "):
-                default_po_idx = idx
-                break
+    sk = f"_{stock_editing_row}" if stock_editing_row else "_new"
+    st.caption("Log a supplier delivery. Ordered and Damaged are optional.")
+
+    def _parse_date_or(s, fallback):
+        if not s or not str(s).strip():
+            return fallback
+        try:
+            d = pd.to_datetime(s)
+            return fallback if pd.isna(d) else d.date()
+        except Exception:
+            return fallback
 
     c1, c2, c3 = st.columns(3)
     with c1:
-        rec_default_date = pd.to_datetime(stock_loaded["received_date"]).date() if (stock_loaded and stock_loaded.get("received_date")) else date.today()
-        received_date = st.date_input("Received date", value=rec_default_date, key=f"rec_date{sk}")
+        order_date = st.date_input(
+            "Order date",
+            value=_parse_date_or(stock_loaded["order_date"], date.today()) if stock_loaded else date.today(),
+            key=f"stock_order_date{sk}",
+        )
     with c2:
-        loc_default = str(stock_loaded["location"]) if (stock_loaded and stock_loaded.get("location")) else CITY
-        location = st.text_input("Location", value=loc_default, key=f"rec_loc{sk}")
+        received_date = st.date_input(
+            "Received date",
+            value=stock_loaded["received_date"].date() if stock_loaded else date.today(),
+            key=f"stock_received_date{sk}",
+        )
     with c3:
-        selected_po = st.selectbox("Link to Purchase Order (Optional)", po_options, index=default_po_idx, key=f"rec_po{sk}")
+        location = st.text_input("Location", value=(stock_loaded["location"] if stock_loaded else CITY), key=f"stock_location{sk}")
 
-    items_map = {}
-    if stock_loaded and stock_loaded.get("items") and isinstance(stock_loaded["items"], list):
-        for itm in stock_loaded["items"]:
-            if isinstance(itm, dict) and "code" in itm:
-                items_map[itm["code"]] = itm
+    cost_prices = load_flavor_cost_prices()
+    flavor_names = [f[1] for f in FLAVORS]
 
-    grid_rows = []
-    for code in FLAVOR_CODES:
-        f_info = FLAVOR_MAP[code]
-        rec_units = items_map[code]["rec"] if (code in items_map and items_map[code].get("rec") is not None) else 0
-        dam_units = items_map[code]["dam"] if (code in items_map and items_map[code].get("dam") is not None) else 0
-        grid_rows.append({
-            "Flavour": f_info["name"],
-            "Code": code,
-            "Unit Cost Price (₹)": float(f_info["cost_price"]),
-            "Received": int(rec_units),
-            "Damaged": int(dam_units),
-        })
-
+    df_init = pd.DataFrame(
+        {
+            "Flavour": flavor_names,
+            "Unit Cost Price (₹)": [float(c) for c in cost_prices],
+            "Ordered": [_int_num(x) for x in (stock_loaded["ordered"] if stock_loaded else [0] * N_FLAVORS)],
+            "Received": [_int_num(x) for x in (stock_loaded["received"] if stock_loaded else [0] * N_FLAVORS)],
+            "Damaged": [_int_num(x) for x in (stock_loaded["damaged"] if stock_loaded else [0] * N_FLAVORS)],
+        }
+    )
     st.write("Enter units per flavour:")
     stock_edited = st.data_editor(
-        pd.DataFrame(grid_rows),
+        df_init,
         column_config={
             "Flavour": st.column_config.TextColumn(disabled=True),
-            "Code": st.column_config.TextColumn(disabled=True),
             "Unit Cost Price (₹)": st.column_config.NumberColumn(format="₹%.2f", disabled=True),
+            "Ordered": st.column_config.NumberColumn(min_value=0, step=1, format="%d"),
             "Received": st.column_config.NumberColumn(min_value=0, step=1, format="%d"),
             "Damaged": st.column_config.NumberColumn(min_value=0, step=1, format="%d"),
         },
         hide_index=True,
         use_container_width=True,
-        key=f"db_stock_editor{sk}",
+        key=f"stock_editor{sk}",
     )
 
-    tot_received = int(stock_edited["Received"].sum())
-    tot_damaged = int(stock_edited["Damaged"].sum())
-    tot_cost_val = float(sum(stock_edited["Received"] * stock_edited["Unit Cost Price (₹)"]))
+    ordered = [_int_num(x) for x in stock_edited["Ordered"].fillna(0).tolist()]
+    received = [_int_num(x) for x in stock_edited["Received"].fillna(0).tolist()]
+    damaged = [_int_num(x) for x in stock_edited["Damaged"].fillna(0).tolist()]
+
+    cost = [float(received[i] * cost_prices[i]) for i in range(N_FLAVORS)]
+
+    tot_ordered_units = sum(ordered)
+    tot_received_units = sum(received)
+    tot_damaged_units = sum(damaged)
+    tot_cost_val = sum(cost)
 
     st.markdown("#### Entry Summary")
-    s_col1, s_col2, s_col3 = st.columns(3)
-    s_col1.metric("Total Received", f"{tot_received} units")
-    s_col2.metric("Total Damaged", f"{tot_damaged} units")
-    s_col3.metric("Total Cost of Goods", f"₹{tot_cost_val:,.2f}")
+    s_col1, s_col2, s_col3, s_col4 = st.columns(4)
+    s_col1.metric("Total Ordered", f"{tot_ordered_units} units")
+    s_col2.metric("Total Received", f"{tot_received_units} units")
+    s_col3.metric("Total Damaged", f"{tot_damaged_units} units")
+    s_col4.metric("Total Cost of Goods", f"₹{tot_cost_val:,.2f}")
 
     st.markdown("---")
-    st.write("**Payment & Logistics**")
+    st.write("**Payment**")
     c4, c5 = st.columns(2)
     with c4:
-        default_payment = float(stock_loaded["payment_amount"]) if (stock_loaded and stock_loaded.get("payment_amount") is not None) else float(tot_cost_val)
-        payment_amount = st.number_input("Payment amount (₹)", min_value=0.0, value=default_payment, step=10.0, key=f"db_rec_pay{sk}")
+        default_payment_amount = float(stock_loaded["payment_amount"]) if stock_loaded else float(tot_cost_val)
+        payment_amount = st.number_input("Payment amount (₹)", min_value=0.0, value=float(default_payment_amount), step=10.0, key=f"stock_pay_amt{sk}")
     with c5:
-        def_stat = stock_loaded["payment_status"] if (stock_loaded and stock_loaded.get("payment_status") in PAYMENT_STATUSES) else "Pending"
-        payment_status = st.selectbox("Payment status", PAYMENT_STATUSES, index=PAYMENT_STATUSES.index(def_stat), key=f"db_rec_status{sk}")
+        default_status_idx = PAYMENT_STATUSES.index(stock_loaded["payment_status"]) if stock_loaded and stock_loaded["payment_status"] in PAYMENT_STATUSES else 0
+        payment_status = st.selectbox("Payment status", PAYMENT_STATUSES, index=default_status_idx, key=f"stock_pay_status{sk}")
 
-    has_payment_date = st.checkbox(
-        "Add payment date", 
-        value=bool(stock_loaded and stock_loaded.get("payment_date")), 
-        key=f"db_rec_has_pdate{sk}",
-    )
+    has_payment_date = st.checkbox("Add payment date", value=bool(stock_loaded and stock_loaded["payment_date"]), key=f"stock_has_paydate{sk}")
     payment_date = (
         st.date_input(
-            "Payment date", 
-            value=(pd.to_datetime(stock_loaded["payment_date"]).date() if (stock_loaded and stock_loaded.get("payment_date")) else date.today()), 
-            key=f"db_rec_pdate{sk}",
-        ) 
-        if has_payment_date else None
+            "Payment date",
+            value=_parse_date_or(stock_loaded["payment_date"], date.today()) if (stock_loaded and stock_loaded["payment_date"]) else date.today(),
+            key=f"stock_payment_date{sk}",
+        )
+        if has_payment_date
+        else None
     )
-    payment_details = st.text_input(
-        "Payment details (optional)", 
-        value=(str(stock_loaded["payment_details"]) if (stock_loaded and stock_loaded.get("payment_details")) else ""), 
-        key=f"db_rec_pdet{sk}",
-    )
+    payment_details = st.text_input("Payment details (optional)", value=(stock_loaded["payment_details"] if stock_loaded else ""), key=f"stock_pay_details{sk}")
 
-    has_dam_ret = st.checkbox(
-        "Damaged items were returned", 
-        value=bool(stock_loaded and stock_loaded.get("damaged_returned_on")), 
-        key=f"db_rec_has_dam{sk}",
-    )
+    has_damaged_return = st.checkbox("Damaged items were returned", value=bool(stock_loaded and stock_loaded["damaged_returned_on"]), key=f"stock_has_damret{sk}")
     damaged_returned_on = (
         st.date_input(
-            "Damaged returned date", 
-            value=(pd.to_datetime(stock_loaded["damaged_returned_on"]).date() if (stock_loaded and stock_loaded.get("damaged_returned_on")) else date.today()), 
-            key=f"db_rec_damdate{sk}",
-        ) 
-        if has_dam_ret else None
+            "Damaged items returned on",
+            value=_parse_date_or(stock_loaded["damaged_returned_on"], date.today()) if (stock_loaded and stock_loaded["damaged_returned_on"]) else date.today(),
+            key=f"stock_damaged_date{sk}",
+        )
+        if has_damaged_return
+        else None
     )
 
-    notes = st.text_input(
-        "Notes (optional)", 
-        value=(str(stock_loaded["notes"]) if (stock_loaded and stock_loaded.get("notes")) else ""), 
-        key=f"db_rec_notes{sk}",
-    )
+    notes = st.text_input("Notes (optional)", value=(stock_loaded["notes"] if stock_loaded else ""), key=f"stock_notes{sk}")
 
-    btn_label = "Update delivery entry" if loaded_id else "Save stock received"
-    if st.button(btn_label, type="primary", use_container_width=True):
-        if tot_received == 0:
+    stock_button_label = "Update entry" if stock_editing_row else "Save stock received"
+    if st.button(stock_button_label, type="primary", use_container_width=True):
+        if sum(received) == 0:
             st.error("Enter at least one quantity received before saving.")
         else:
-            po_id = int(selected_po.split("#")[1].split(" ")[0]) if "PO #" in selected_po else None
             try:
-                with db_conn.session as s:
-                    if loaded_id:
-                        s.execute(
-                            text("""
-                            UPDATE stock_received
-                            SET received_date = :rd, location = :loc, purchase_order_id = :poid,
-                                payment_amount = :amt, payment_status = :stat, payment_date = :pdate,
-                                payment_details = :pdet, damaged_returned_on = :dret, notes = :notes
-                            WHERE id = :id;
-                            """),
-                            {
-                                "rd": received_date, "loc": location, "poid": po_id, "amt": payment_amount,
-                                "stat": payment_status, "pdate": payment_date, "pdet": payment_details,
-                                "dret": damaged_returned_on, "notes": notes, "id": loaded_id
-                            }
-                        )
-                        s.execute(text("DELETE FROM stock_received_items WHERE received_id = :id;"), {"id": loaded_id})
-                        rec_id = loaded_id
-                    else:
-                        res = s.execute(
-                            text("""
-                            INSERT INTO stock_received (received_date, location, purchase_order_id, payment_amount, payment_status, payment_date, payment_details, damaged_returned_on, notes)
-                            VALUES (:rd, :loc, :poid, :amt, :stat, :pdate, :pdet, :dret, :notes)
-                            RETURNING id;
-                            """),
-                            {
-                                "rd": received_date, "loc": location, "poid": po_id, "amt": payment_amount,
-                                "stat": payment_status, "pdate": payment_date, "pdet": payment_details,
-                                "dret": damaged_returned_on, "notes": notes
-                            }
-                        )
-                        rec_id = res.scalar()
-
-                    for _, row in stock_edited.iterrows():
-                        if int(row["Received"]) > 0 or int(row["Damaged"]) > 0:
-                            s.execute(
-                                text("""
-                                INSERT INTO stock_received_items (received_id, flavor_code, received_units, damaged_units, unit_cost_price)
-                                VALUES (:rid, :code, :rec, :dam, :cost);
-                                """),
-                                {"rid": rec_id, "code": row["Code"], "rec": int(row["Received"]), "dam": int(row["Damaged"]), "cost": float(row["Unit Cost Price (₹)"])}
-                            )
-                    s.commit()
-                show_success_modal(f"Stock delivery #{rec_id} saved successfully! Logged {tot_received} units into freezer.")
+                if stock_editing_row:
+                    update_stock_entry(
+                        stock_editing_row, order_date, received_date, location,
+                        ordered, received, cost, damaged,
+                        payment_amount, payment_status, payment_date, payment_details,
+                        damaged_returned_on, notes,
+                    )
+                    st.cache_resource.clear()
+                    show_success_modal(f"Saved successfully! Updated entry for {received_date.strftime('%d %b %Y')} at {location}. Total Received: {sum(received)} units (₹{tot_cost_val:,.2f}).")
+                else:
+                    append_stock_entry(
+                        order_date, received_date, location,
+                        ordered, received, cost, damaged,
+                        payment_amount, payment_status, payment_date, payment_details,
+                        damaged_returned_on, notes,
+                    )
+                    st.cache_resource.clear()
+                    show_success_modal(f"Saved successfully! Logged {sum(received)} units received (₹{tot_cost_val:,.2f}) on {received_date.strftime('%d %b %Y')}.")
             except Exception as e:
-                st.error(f"Could not save to database: {e}")
+                st.error(f"Could not save - {e}")
 
-# ======================================================================
-# PAGE 3: FREEZER ANALYSIS (100% Supabase PostgreSQL Powered)
-# ======================================================================
+# ----------------------------------------------------------------------
+# FREEZER ANALYSIS (Powered by Supabase Database)
+# ----------------------------------------------------------------------
 elif page == "Freezer Analysis" and user_role == "admin":
     st.subheader("Freezer stock analysis & reorder planner")
-    st.caption("Calculates reorder velocity using real-time transactions from Supabase PostgreSQL.")
+    st.caption("Uses recent sales pace from PostgreSQL database to estimate when freezer stock runs low.")
 
     ac1, ac2, ac3 = st.columns(3)
     with ac1:
@@ -1052,8 +1278,8 @@ elif page == "Freezer Analysis" and user_role == "admin":
         total_stock = 0
         total_rate = 0.0
 
-        for code in FLAVOR_CODES:
-            f_info = FLAVOR_MAP[code]
+        for f in FLAVORS:
+            code = f[0]
             stock = float(stock_map.get(code, 0))
             recent_sold = float(sales_map.get(code, 0))
             rate = recent_sold / lookback_days
@@ -1078,7 +1304,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
 
             rows.append(
                 {
-                    "Flavour": f_info["name"],
+                    "Flavour": f[1],
                     "Freezer stock": int(round(stock)),
                     "Avg. daily sales": int(round(rate)),
                     "Days of stock left": int(round(days_left)) if days_left is not None else "—",
@@ -1135,96 +1361,79 @@ elif page == "Freezer Analysis" and user_role == "admin":
             rule = alt.Chart(pd.DataFrame({"y": [buffer_days]})).mark_rule(color="#4A2418", strokeDash=[4, 4]).encode(y="y:Q")
             st.altair_chart(days_chart + rule, use_container_width=True)
 
-# ======================================================================
-# PAGE 4: EXPENSES (100% Supabase PostgreSQL Powered)
-# ======================================================================
+# ----------------------------------------------------------------------
+# EXPENSES
+# ----------------------------------------------------------------------
 elif page == "Expenses" and user_role == "admin":
     st.subheader("Log an expense")
 
-    exp_mode = st.radio("Mode", ["New entry", "Edit past entry"], horizontal=True, key="db_exp_mode")
-
-    expenses_list = load_db_expenses_list()
+    exp_mode = st.radio("Mode", ["New entry", "Edit past entry"], horizontal=True, key="exp_mode")
 
     exp_loaded = None
-    exp_editing_id = None
+    exp_editing_row = None
     if exp_mode == "Edit past entry":
-        if not expenses_list:
-            st.info("No expenses found in database yet.")
+        try:
+            expense_entries = list_expense_entries()
+        except Exception as e:
+            expense_entries = []
+            st.warning(f"Could not load past entries ({e}).")
+        if not expense_entries:
+            st.info("No past entries found yet.")
         else:
-            exp_labels = [f"#{r['id']} — {r['Date'].strftime('%d %b %Y')} — {r['Description'] or r['Category']} (₹{r['Amount']:,.0f})" for r in expenses_list]
-            exp_sel = st.selectbox("Select expense to edit", exp_labels, key="db_exp_select")
-            exp_loaded = expenses_list[exp_labels.index(exp_sel)]
-            exp_editing_id = exp_loaded["id"]
+            exp_labels = [f"{e['date'].strftime('%d %b %Y')} — {e['description'] or e['category']} (₹{e['amount']:,.0f})" for e in expense_entries]
+            exp_sel = st.selectbox("Select entry to edit", exp_labels, key="exp_edit_select")
+            exp_loaded = expense_entries[exp_labels.index(exp_sel)]
+            exp_editing_row = exp_loaded["row"]
+            st.caption("Loaded - edit fields below, then click Update entry.")
 
-    ek = f"_{exp_editing_id}" if exp_editing_id else "_new"
+    ek = f"_{exp_editing_row}" if exp_editing_row else "_new"
 
     c1, c2 = st.columns(2)
     with c1:
-        exp_date_val = exp_loaded["Date"].date() if (exp_loaded and exp_loaded.get("Date")) else date.today()
-        exp_date = st.date_input("Date", value=exp_date_val, key=f"db_exp_date{ek}")
+        exp_date = st.date_input("Date", value=(exp_loaded["date"].date() if exp_loaded else date.today()), key=f"exp_date{ek}")
     with c2:
-        default_cat_idx = EXPENSE_CATEGORIES.index(exp_loaded["Category"]) if (exp_loaded and exp_loaded.get("Category") in EXPENSE_CATEGORIES) else 0
-        category = st.selectbox("Category", EXPENSE_CATEGORIES, index=default_cat_idx, key=f"db_exp_category{ek}")
+        default_cat_idx = EXPENSE_CATEGORIES.index(exp_loaded["category"]) if exp_loaded and exp_loaded["category"] in EXPENSE_CATEGORIES else 0
+        category = st.selectbox("Category", EXPENSE_CATEGORIES, index=default_cat_idx, key=f"exp_category{ek}")
 
-    description = st.text_input("Description", value=(str(exp_loaded["Description"]) if (exp_loaded and exp_loaded.get("Description")) else ""), key=f"db_exp_desc{ek}")
-    amount = st.number_input("Amount (₹)", min_value=0.0, value=(float(exp_loaded["Amount"]) if (exp_loaded and exp_loaded.get("Amount") is not None) else 0.0), step=10.0, key=f"db_exp_amt{ek}")
+    description = st.text_input("Description", value=(exp_loaded["description"] if exp_loaded else ""), key=f"exp_desc{ek}")
+    amount = st.number_input("Amount (₹)", min_value=0.0, value=(float(exp_loaded["amount"]) if exp_loaded else 0.0), step=10.0, key=f"exp_amount{ek}")
 
     c3, c4 = st.columns(2)
     with c3:
-        default_mode_idx = PAYMENT_MODES.index(exp_loaded["Mode"]) if (exp_loaded and exp_loaded.get("Mode") in PAYMENT_MODES) else 0
-        mode = st.selectbox("Payment mode", PAYMENT_MODES, index=default_mode_idx, key=f"db_exp_mode_sel{ek}")
+        default_mode_idx = PAYMENT_MODES.index(exp_loaded["mode"]) if exp_loaded and exp_loaded["mode"] in PAYMENT_MODES else 0
+        mode = st.selectbox("Payment mode", PAYMENT_MODES, index=default_mode_idx, key=f"exp_mode_select{ek}")
     with c4:
-        ref_no = st.text_input("Transaction ref. no. (optional)", value=(str(exp_loaded["Ref No"]) if (exp_loaded and exp_loaded.get("Ref No")) else ""), key=f"db_exp_ref{ek}")
+        ref_no = st.text_input("Transaction ref. no. (optional)", value=(exp_loaded["ref_no"] if exp_loaded else ""), key=f"exp_ref{ek}")
 
-    paid_to = st.text_input("Paid to (optional)", value=(str(exp_loaded["Paid To"]) if (exp_loaded and exp_loaded.get("Paid To")) else ""), key=f"db_exp_paidto{ek}")
-    exp_remarks = st.text_input("Remarks (optional)", value=(str(exp_loaded["Remarks"]) if (exp_loaded and exp_loaded.get("Remarks")) else ""), key=f"db_exp_remarks{ek}")
+    paid_to = st.text_input("Paid to (optional)", value=(exp_loaded["paid_to"] if exp_loaded else ""), key=f"exp_paidto{ek}")
+    exp_remarks = st.text_input("Remarks (optional)", value=(exp_loaded["remarks"] if exp_loaded else ""), key=f"exp_remarks{ek}")
 
-    exp_btn_label = "Update expense" if exp_editing_id else "Save expense"
-    if st.button(exp_btn_label, type="primary", use_container_width=True):
+    exp_button_label = "Update entry" if exp_editing_row else "Save expense"
+    if st.button(exp_button_label, type="primary", use_container_width=True):
         if amount <= 0:
             st.error("Enter an amount greater than 0.")
         else:
             try:
-                with db_conn.session as s:
-                    if exp_editing_id:
-                        s.execute(
-                            text("""
-                            UPDATE expenses
-                            SET expense_date = :d, description = :desc, amount = :amt, category = :cat,
-                                payment_mode = :m, ref_no = :ref, paid_to = :paid, remarks = :rem
-                            WHERE id = :id;
-                            """),
-                            {
-                                "d": exp_date, "desc": description, "amt": amount, "cat": category,
-                                "m": mode, "ref": ref_no, "paid": paid_to, "rem": exp_remarks, "id": exp_editing_id
-                            },
-                        )
-                    else:
-                        s.execute(
-                            text("""
-                            INSERT INTO expenses (expense_date, description, amount, category, payment_mode, ref_no, paid_to, remarks)
-                            VALUES (:d, :desc, :amt, :cat, :m, :ref, :paid, :rem);
-                            """),
-                            {
-                                "d": exp_date, "desc": description, "amt": amount, "cat": category,
-                                "m": mode, "ref": ref_no, "paid": paid_to, "rem": exp_remarks
-                            },
-                        )
-                    s.commit()
-                show_success_modal(f"Expense of ₹{amount:,.0f} saved under {category}!")
+                if exp_editing_row:
+                    update_expense(exp_editing_row, exp_date, description, amount, category, mode, ref_no, paid_to, exp_remarks)
+                    st.cache_resource.clear()
+                    show_success_modal(f"Saved successfully! Updated ₹{amount:,.0f} expense under {category}.")
+                else:
+                    append_expense(exp_date, description, amount, category, mode, ref_no, paid_to, exp_remarks)
+                    st.cache_resource.clear()
+                    show_success_modal(f"Saved successfully! Logged ₹{amount:,.0f} expense under {category}.")
             except Exception as e:
-                st.error(f"Could not save expense to database: {e}")
+                st.error(f"Could not save - {e}")
 
-# ======================================================================
-# PAGE 5: DASHBOARD (100% Supabase PostgreSQL Powered)
-# ======================================================================
+# ----------------------------------------------------------------------
+# DASHBOARD (100% PostgreSQL DB Powered)
+# ----------------------------------------------------------------------
 elif page == "Dashboard" and user_role == "admin":
     st.subheader("Quick view")
 
     try:
         daily_df = load_db_daily_df()
-        exp_list = load_db_expenses_list()
-        exp_df = pd.DataFrame(exp_list)
+        exp_df = load_db_expenses_df()
     except Exception as e:
         daily_df = pd.DataFrame()
         exp_df = pd.DataFrame()
@@ -1379,7 +1588,7 @@ elif page == "Dashboard" and user_role == "admin":
         else:
             st.caption("No sales in this date range.")
 
-        # ---- Flavour-wise performance ----
+        # ---- Flavour-wise performance (Direct SQL query from items) ----
         st.markdown('<div id="flavour-wise-performance"></div>', unsafe_allow_html=True)
         st.markdown("### Flavour-wise performance")
         flavor_range_df = load_db_flavor_sales(start_date=range_start, end_date=range_end)
@@ -1446,7 +1655,7 @@ elif page == "Dashboard" and user_role == "admin":
 
             split_df = pd.DataFrame({
                 "Mode": ["Cash", "PhonePe / UPI", "Staff Advance", "Food / Tea"], 
-                "Amount (₹)": [total_cash, total_phonepe, total_advance, total_food],
+                "Amount (₹)": [total_cash, total_phonepe, total_advance, total_food]
             })
             st.bar_chart(split_df.set_index("Mode")["Amount (₹)"])
         else:
@@ -1465,7 +1674,7 @@ elif page == "Dashboard" and user_role == "admin":
                     "Cash": "Cash (₹)",
                     "Staff_Name": "Staff Name",
                     "Staff_Advance": "Staff Advance (₹)",
-                    "Food_Tea_Cash": "Food / Tea (₹)",
+                    "Food_Tea_Cash": "Food / Tea (₹)"
                 }
             )
             sales_table["Units sold"] = sales_table["Units sold"].apply(lambda x: int(round(x)))
