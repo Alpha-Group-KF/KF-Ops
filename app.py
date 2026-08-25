@@ -16,7 +16,7 @@ from sqlalchemy import text
 st.set_page_config(page_title="Kulfi Ops", page_icon="🍦", layout="wide")
 
 # ----------------------------------------------------------------------
-# GLOBAL UI STYLES (Cleanly injected without Markdown text leakage)
+# GLOBAL UI STYLES
 # ----------------------------------------------------------------------
 st.html("""
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -110,10 +110,10 @@ hr { border-color: #E3CBA0 !important; margin: 0.4rem 0 !important; }
 # ----------------------------------------------------------------------
 # CONFIG & CANONICAL MAPPINGS
 # ----------------------------------------------------------------------
-CARTS = ["HOSUR CART 01", "HOSUR CART 02", "HOSUR CART 03"]
-CITY = "HOSUR"
+CARTS = ["HOSUR CART 01", "HOSUR CART 02", "HOSUR CART 03"][cite: 1]
+CITY = "HOSUR"[cite: 1]
 
-PAYMENT_STATUSES = ["Pending", "Partial", "Complete"]
+PAYMENT_STATUSES = ["Pending", "Partial", "Complete"][cite: 1]
 EXPENSE_CATEGORIES = [
     "Cost of Goods",
     "Labour Charges",
@@ -121,12 +121,12 @@ EXPENSE_CATEGORIES = [
     "Initial Set-up Expense",
     "Miscellaneous Expense",
     "Initial Investment",
-]
-PAYMENT_MODES = ["Cash", "UPI / Bank Transfer"]
+][cite: 1]
+PAYMENT_MODES = ["Cash", "UPI / Bank Transfer"][cite: 1]
 
-DAILY_HEADER_ROWS = 2
-DAILY_TOTAL_COLS = 47
-SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+DAILY_HEADER_ROWS = 2[cite: 1]
+DAILY_TOTAL_COLS = 47[cite: 1]
+SCOPES = ["https://www.googleapis.com/auth/spreadsheets"][cite: 1]
 
 DEFAULT_FLAVORS = [
     ("ML", "Malai", 40.0, 22.0, "ml_units"),
@@ -147,31 +147,31 @@ def _num(x):
     if x is None or pd.isna(x):
         return 0.0
     if isinstance(x, (int, float)):
-        return float(x)
-    s = str(x).strip().replace(",", "").replace("₹", "").replace("Rs.", "").replace("Rs", "")
-    neg = s.startswith("(") and s.endswith(")")
+        return float(x)[cite: 1]
+    s = str(x).strip().replace(",", "").replace("₹", "").replace("Rs.", "").replace("Rs", "")[cite: 1]
+    neg = s.startswith("(") and s.endswith(")")[cite: 1]
     if neg:
-        s = s[1:-1]
+        s = s[1:-1][cite: 1]
     try:
-        return -float(s) if neg else float(s)
+        return -float(s) if neg else float(s)[cite: 1]
     except ValueError:
-        return 0.0
+        return 0.0[cite: 1]
 
 
 def _int_num(x):
-    return int(round(_num(x)))
+    return int(round(_num(x)))[cite: 1]
 
 
 def _pad(row, n):
-    return row + [""] * (n - len(row)) if len(row) < n else row
+    return row + [""] * (n - len(row)) if len(row) < n else row[cite: 1]
 
 
 def _col_letter(n):
-    letters = ""
-    while n > 0:
-        n, rem = divmod(n - 1, 26)
-        letters = chr(65 + rem) + letters
-    return letters
+    letters = ""[cite: 1]
+    while n > 0:[cite: 1]
+        n, rem = divmod(n - 1, 26)[cite: 1]
+        letters = chr(65 + rem) + letters[cite: 1]
+    return letters[cite: 1]
 
 
 # ----------------------------------------------------------------------
@@ -181,23 +181,23 @@ def _col_letter(n):
 def get_client():
     creds = Credentials.from_service_account_info(
         st.secrets["gcp_service_account"], scopes=SCOPES
-    )
-    return gspread.authorize(creds)
+    )[cite: 1]
+    return gspread.authorize(creds)[cite: 1]
 
 
 @st.cache_resource
 def get_workbook():
-    return get_client().open_by_key(st.secrets["sheet_id"])
+    return get_client().open_by_key(st.secrets["sheet_id"])[cite: 1]
 
 
 def get_ws(tab_name):
-    return get_workbook().worksheet(tab_name)
+    return get_workbook().worksheet(tab_name)[cite: 1]
 
 
 def _update_sheet_row(tab_name, row_number, values):
-    ws = get_ws(tab_name)
-    end_col = _col_letter(len(values))
-    ws.update(range_name=f"A{row_number}:{end_col}{row_number}", values=[values], value_input_option="USER_ENTERED")
+    ws = get_ws(tab_name)[cite: 1]
+    end_col = _col_letter(len(values))[cite: 1]
+    ws.update(range_name=f"A{row_number}:{end_col}{row_number}", values=[values], value_input_option="USER_ENTERED")[cite: 1]
 
 
 try:
@@ -206,11 +206,11 @@ except Exception:
     db_conn = None
 
 
-@st.dialog("Notification")
+@st.dialog("Notification")[cite: 1]
 def show_success_modal(message):
-    st.success(message)
-    if st.button("OK", type="primary", use_container_width=True):
-        st.rerun()
+    st.success(message)[cite: 1]
+    if st.button("OK", type="primary", use_container_width=True):[cite: 1]
+        st.rerun()[cite: 1]
 
 
 # ----------------------------------------------------------------------
@@ -246,7 +246,7 @@ def load_active_staff_list():
                 return ["Select Staff"] + df["name"].tolist()
         except Exception:
             pass
-    return ["Select Staff"]
+    return ["Select Staff"][cite: 1]
 
 
 # ----------------------------------------------------------------------
@@ -352,20 +352,20 @@ def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map,
         ws = get_ws("Daily Data As Shared")[cite: 1]
         all_vals = ws.get_all_values()[cite: 1]
         target_row = None
-        date_str = entry_date.strftime("%Y-%m-%d")
+        date_str = entry_date.strftime("%Y-%m-%d")[cite: 1]
         for idx, r in enumerate(all_vals[DAILY_HEADER_ROWS:]):[cite: 1]
             if len(r) >= 2 and r[0].strip() == date_str and r[1].strip() == cart_name:
-                target_row = DAILY_HEADER_ROWS + idx + 1
+                target_row = DAILY_HEADER_ROWS + idx + 1[cite: 1]
                 break
 
-        date_cart_id = f"{date_str}||{cart_name}"
+        date_cart_id = f"{date_str}||{cart_name}"[cite: 1]
         sheet_row = (
-            [date_str, cart_name, CITY, date_cart_id]
+            [date_str, cart_name, CITY, date_cart_id][cite: 1]
             + [int(opening_map[code]) for code in FLAVOR_CODES]
             + [int(added_map[code]) for code in FLAVOR_CODES]
             + [int(sold_map[code]) for code in FLAVOR_CODES]
             + [int(closing_map[code]) for code in FLAVOR_CODES]
-            + [float(total), float(phonepe), float(cash), str(remarks), str(staff_name), float(staff_advance), float(food_tea_cash)]
+            + [float(total), float(phonepe), float(cash), str(remarks), str(staff_name), float(staff_advance), float(food_tea_cash)][cite: 1]
         )
         if target_row:
             _update_sheet_row("Daily Data As Shared", target_row, sheet_row)
@@ -485,10 +485,10 @@ def get_db_freezer_stock():
 # AUTHENTICATION
 # ----------------------------------------------------------------------
 def check_login():
-    if st.session_state.get("authenticated", False):
-        return True
+    if st.session_state.get("authenticated", False):[cite: 1]
+        return True[cite: 1]
 
-    _, col_form, _ = st.columns([1, 1.2, 1])
+    _, col_form, _ = st.columns([1, 1.2, 1])[cite: 1]
 
     with col_form:
         try:
@@ -506,28 +506,28 @@ def check_login():
             user_clean = str(username).strip()
             pass_clean = str(password).strip()
 
-            admin_user = str(st.secrets.get("app_username", "admin")).strip()
-            admin_pass = str(st.secrets.get("app_password", "")).strip()
+            admin_user = str(st.secrets.get("app_username", "admin")).strip()[cite: 1]
+            admin_pass = str(st.secrets.get("app_password", "")).strip()[cite: 1]
 
-            entry_user = str(st.secrets.get("entry_username", "entry")).strip()
-            entry_pass = str(st.secrets.get("entry_password", "")).strip()
+            entry_user = str(st.secrets.get("entry_username", "entry")).strip()[cite: 1]
+            entry_pass = str(st.secrets.get("entry_password", "")).strip()[cite: 1]
 
-            if admin_pass and hmac.compare_digest(user_clean, admin_user) and hmac.compare_digest(pass_clean, admin_pass):
-                st.session_state["authenticated"] = True
-                st.session_state["user_role"] = "admin"
-                st.rerun()
-            elif entry_pass and hmac.compare_digest(user_clean, entry_user) and hmac.compare_digest(pass_clean, entry_pass):
-                st.session_state["authenticated"] = True
-                st.session_state["user_role"] = "entry"
-                st.rerun()
+            if admin_pass and hmac.compare_digest(user_clean, admin_user) and hmac.compare_digest(pass_clean, admin_pass):[cite: 1]
+                st.session_state["authenticated"] = True[cite: 1]
+                st.session_state["user_role"] = "admin"[cite: 1]
+                st.rerun()[cite: 1]
+            elif entry_pass and hmac.compare_digest(user_clean, entry_user) and hmac.compare_digest(pass_clean, entry_pass):[cite: 1]
+                st.session_state["authenticated"] = True[cite: 1]
+                st.session_state["user_role"] = "entry"[cite: 1]
+                st.rerun()[cite: 1]
             else:
                 st.error("Incorrect username or password — try again.")[cite: 1]
 
-    return False
+    return False[cite: 1]
 
 
-if not check_login():
-    st.stop()
+if not check_login():[cite: 1]
+    st.stop()[cite: 1]
 
 # ----------------------------------------------------------------------
 # NAVIGATION
@@ -615,7 +615,6 @@ if page == "Daily Entry":[cite: 1]
         with top_c2:
             staff_name = st.selectbox("Cart staff name", staff_options, index=default_staff_idx, key=k_staff)[cite: 1]
 
-        # Original clean tabular layout for stock entry
         st.write("Enter units **added to the cart** and the **actual closing count** observed:")[cite: 1]
 
         df_grid = []
