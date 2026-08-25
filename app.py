@@ -16,150 +16,96 @@ from sqlalchemy import text
 st.set_page_config(page_title="Kulfi Ops", page_icon="🍦", layout="wide")
 
 # ----------------------------------------------------------------------
-# GLOBAL UI STYLES
+# GLOBAL UI STYLES (Cleanly injected without Markdown text leakage)
 # ----------------------------------------------------------------------
-st.markdown(
-    """
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <style>
-    .block-container {
-        padding-top: 1rem !important;
-        padding-bottom: 1rem !important;
-        margin-top: 0 !important;
-        max-width: 100% !important;
-    }
-    header[data-testid="stHeader"] {
-        background-color: transparent !important;
-        height: 1rem !important;
-    }
-    html, body, [class*="css"] { font-family: 'Manrope', sans-serif; }
-    h1, h2, h3 { font-family: 'Fraunces', serif !important; color: #8A5E17 !important; letter-spacing: -0.01em; }
-    h1 { font-size: 1.6rem !important; margin-top: 0 !important; }
-    h2 { font-size: 1.3rem !important; }
-    h3 { font-size: 1.1rem !important; }
-    p, span, label, .stMarkdown { color: #2A1B10; }
+st.html("""
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+.block-container {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+    margin-top: 0 !important;
+    max-width: 100% !important;
+}
+header[data-testid="stHeader"] {
+    background-color: transparent !important;
+    height: 1rem !important;
+}
+html, body, [class*="css"] { font-family: 'Manrope', sans-serif; }
+h1, h2, h3 { font-family: 'Fraunces', serif !important; color: #8A5E17 !important; letter-spacing: -0.01em; }
+h1 { font-size: 1.6rem !important; margin-top: 0 !important; }
+h2 { font-size: 1.3rem !important; }
+h3 { font-size: 1.1rem !important; }
+p, span, label, .stMarkdown { color: #2A1B10; }
 
-    /* Stepper buttons removal */
-    input[type=number]::-webkit-inner-spin-button, 
-    input[type=number]::-webkit-outer-spin-button { 
-        -webkit-appearance: none !important;
-        margin: 0 !important; 
-    }
-    input[type=number] { -moz-appearance: textfield !important; }
-    div[data-testid="stNumberInput"] button { display: none !important; }
+/* Stepper buttons removal */
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+    -webkit-appearance: none !important;
+    margin: 0 !important; 
+}
+input[type=number] { -moz-appearance: textfield !important; }
+div[data-testid="stNumberInput"] button { display: none !important; }
 
-    /* Mobile Flavor Card Grid */
-    .flavor-entry-row {
-        background: #FFFDF8;
-        border: 1.5px solid #E3CBA0;
-        border-radius: 10px;
-        padding: 8px 10px;
-        margin-bottom: 8px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
-    }
-    .flavor-title-bar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 4px;
-    }
-    .flavor-name { font-weight: 800; font-size: 14px; color: #4A2418; }
-    .badge-open {
-        background: #EFE4CF;
-        color: #5A3E1B;
-        font-weight: 700;
-        font-size: 12px;
-        padding: 2px 8px;
-        border-radius: 12px;
-    }
-    .badge-sold {
-        background: #FCE8E2;
-        color: #C43D17;
-        font-weight: 800;
-        font-size: 12px;
-        padding: 2px 8px;
-        border-radius: 12px;
-    }
+/* Sidebar */
+section[data-testid="stSidebar"] { font-size: 15px !important; border-right: 1px solid #E3CBA0; }
+section[data-testid="stSidebar"] h2 { font-size: 20px !important; color: #8A5E17 !important; }
+section[data-testid="stSidebar"] .stRadio > div { gap: 4px; }
+section[data-testid="stSidebar"] .stRadio label {
+    background: #FFFBF2;
+    border: 1px solid #E3CBA0;
+    border-radius: 8px;
+    padding: 6px 10px !important;
+    margin-bottom: 2px;
+    transition: background .15s ease, border-color .15s ease;
+}
+section[data-testid="stSidebar"] .stRadio label:hover { background: #F0D9A6; border-color: #E8542A; }
 
-    /* Inputs */
-    .stTextInput div[data-baseweb="input"], .stNumberInput div[data-baseweb="input"] {
-        min-height: 32px !important;
-        height: 32px !important;
-        border-radius: 8px !important;
-    }
-    .stTextInput input, .stNumberInput input {
-        padding: 3px 8px !important;
-        font-size: 13px !important;
-        text-align: left !important;
-        font-weight: 600 !important;
-    }
-    .stNumberInput label, .stTextInput label {
-        font-size: 11px !important;
-        font-weight: 700 !important;
-        margin-bottom: 2px !important;
-        text-align: left !important;
-    }
+/* Buttons */
+.stButton button, [data-testid="stFormSubmitButton"] button, [data-testid="baseButton-primary"] {
+    border-radius: 8px !important;
+    font-weight: 700 !important;
+    border: none !important;
+    padding: 0.4rem 0.8rem !important;
+}
+.stButton button[kind="primary"], [data-testid="stFormSubmitButton"] button[kind="primary"] {
+    background: #E8542A !important;
+    box-shadow: 0 2px 6px rgba(232,84,42,0.3);
+}
+.stButton button[kind="primary"]:hover { background: #C43D17 !important; }
 
-    section[data-testid="stSidebar"] { font-size: 15px !important; border-right: 1px solid #E3CBA0; }
-    section[data-testid="stSidebar"] h2 { font-size: 20px !important; color: #8A5E17 !important; }
-    section[data-testid="stSidebar"] .stRadio > div { gap: 4px; }
-    section[data-testid="stSidebar"] .stRadio label {
-        background: #FFFBF2;
-        border: 1px solid #E3CBA0;
-        border-radius: 8px;
-        padding: 6px 10px !important;
-        margin-bottom: 2px;
-        transition: background .15s ease, border-color .15s ease;
-    }
-    section[data-testid="stSidebar"] .stRadio label:hover { background: #F0D9A6; border-color: #E8542A; }
+/* Metric Cards */
+div[data-testid="stMetric"] {
+    background: #FFFBF2;
+    border: 1px solid #E3CBA0;
+    border-radius: 10px;
+    padding: 6px 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+div[data-testid="stMetricLabel"] { font-weight: 700; font-size: 12px !important; color: #7A5A34; }
+div[data-testid="stMetricValue"] { font-family: 'Fraunces', serif; font-size: 1.25rem !important; color: #4A2418; }
 
-    /* Buttons */
-    .stButton button, [data-testid="stFormSubmitButton"] button, [data-testid="baseButton-primary"] {
-        border-radius: 8px !important;
-        font-weight: 700 !important;
-        border: none !important;
-        padding: 0.4rem 0.8rem !important;
-    }
-    .stButton button[kind="primary"], [data-testid="stFormSubmitButton"] button[kind="primary"] {
-        background: #E8542A !important;
-        box-shadow: 0 2px 6px rgba(232,84,42,0.3);
-    }
-    .stButton button[kind="primary"]:hover { background: #C43D17 !important; }
-
-    /* Metric Cards */
-    div[data-testid="stMetric"] {
-        background: #FFFBF2;
-        border: 1px solid #E3CBA0;
-        border-radius: 10px;
-        padding: 6px 12px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-    }
-    div[data-testid="stMetricLabel"] { font-weight: 700; font-size: 12px !important; color: #7A5A34; }
-    div[data-testid="stMetricValue"] { font-family: 'Fraunces', serif; font-size: 1.25rem !important; color: #4A2418; }
-
-    /* Tables */
-    div[data-testid="stDataFrame"], div[data-testid="stDataEditor"] {
-        border-radius: 10px;
-        border: 2px solid #8A5E17 !important;
-        overflow: hidden;
-    }
-    div[data-testid="stDataFrame"] th, div[data-testid="stDataEditor"] th {
-        font-weight: 900 !important;
-        color: #FFFFFF !important;
-        background-color: #70440E !important;
-        text-align: center !important;
-        font-size: 14px !important;
-    }
-    div[data-testid="stDataFrame"] td, div[data-testid="stDataEditor"] td {
-        text-align: center !important;
-        font-size: 13px !important;
-    }
-    hr { border-color: #E3CBA0 !important; margin: 0.4rem 0 !important; }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+/* Tables */
+div[data-testid="stDataFrame"], div[data-testid="stDataEditor"] {
+    border-radius: 10px;
+    border: 2px solid #8A5E17 !important;
+    overflow: hidden;
+}
+div[data-testid="stDataFrame"] th, div[data-testid="stDataEditor"] th {
+    font-weight: 900 !important;
+    color: #FFFFFF !important;
+    background-color: #70440E !important;
+    text-align: center !important;
+    font-size: 14px !important;
+}
+div[data-testid="stDataFrame"] td, div[data-testid="stDataEditor"] td {
+    text-align: center !important;
+    font-size: 13px !important;
+}
+hr { border-color: #E3CBA0 !important; margin: 0.4rem 0 !important; }
+</style>
+""")
 
 # ----------------------------------------------------------------------
 # CONFIG & CANONICAL MAPPINGS
@@ -403,11 +349,11 @@ def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map,
             s.commit()
 
     try:
-        ws = get_ws("Daily Data As Shared")
-        all_vals = ws.get_all_values()
+        ws = get_ws("Daily Data As Shared")[cite: 1]
+        all_vals = ws.get_all_values()[cite: 1]
         target_row = None
         date_str = entry_date.strftime("%Y-%m-%d")
-        for idx, r in enumerate(all_vals[DAILY_HEADER_ROWS:]):
+        for idx, r in enumerate(all_vals[DAILY_HEADER_ROWS:]):[cite: 1]
             if len(r) >= 2 and r[0].strip() == date_str and r[1].strip() == cart_name:
                 target_row = DAILY_HEADER_ROWS + idx + 1
                 break
@@ -424,7 +370,7 @@ def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map,
         if target_row:
             _update_sheet_row("Daily Data As Shared", target_row, sheet_row)
         else:
-            ws.append_row(sheet_row, value_input_option="USER_ENTERED")
+            ws.append_row(sheet_row, value_input_option="USER_ENTERED")[cite: 1]
     except Exception as e:
         st.warning(f"Saved to database, but Google Sheets sync encountered an issue: {e}")
 
@@ -546,17 +492,17 @@ def check_login():
 
     with col_form:
         try:
-            st.image("assets/logo.png", width=220)
+            st.image("assets/logo.png", width=220)[cite: 1]
         except Exception:
-            st.title("🍦 Kulfi Ops")
+            st.title("🍦 Kulfi Ops")[cite: 1]
 
-        st.subheader("Sign in")
-        with st.form("login_form"):
-            username = st.text_input("Username")
-            password = st.text_input("Password", type="password")
-            submitted = st.form_submit_button("Sign in", type="primary", use_container_width=True)
+        st.subheader("Sign in")[cite: 1]
+        with st.form("login_form"):[cite: 1]
+            username = st.text_input("Username")[cite: 1]
+            password = st.text_input("Password", type="password")[cite: 1]
+            submitted = st.form_submit_button("Sign in", type="primary", use_container_width=True)[cite: 1]
 
-        if submitted:
+        if submitted:[cite: 1]
             user_clean = str(username).strip()
             pass_clean = str(password).strip()
 
@@ -575,7 +521,7 @@ def check_login():
                 st.session_state["user_role"] = "entry"
                 st.rerun()
             else:
-                st.error("Incorrect username or password — try again.")
+                st.error("Incorrect username or password — try again.")[cite: 1]
 
     return False
 
@@ -586,34 +532,34 @@ if not check_login():
 # ----------------------------------------------------------------------
 # NAVIGATION
 # ----------------------------------------------------------------------
-user_role = st.session_state.get("user_role", "admin")
+user_role = st.session_state.get("user_role", "admin")[cite: 1]
 
 with st.sidebar:
     try:
-        st.image("assets/logo.png", use_container_width=True)
+        st.image("assets/logo.png", use_container_width=True)[cite: 1]
     except Exception:
-        st.markdown("## 🍦 Kulfi Ops")
+        st.markdown("## 🍦 Kulfi Ops")[cite: 1]
 
-    if user_role == "admin":
-        nav_options = ["Dashboard", "Daily Entry", "Freezer Stock", "Freezer Analysis", "Expenses"]
-        page = st.radio("Go to", nav_options, label_visibility="collapsed")
+    if user_role == "admin":[cite: 1]
+        nav_options = ["Dashboard", "Daily Entry", "Freezer Stock", "Freezer Analysis", "Expenses"][cite: 1]
+        page = st.radio("Go to", nav_options, label_visibility="collapsed")[cite: 1]
     else:
-        page = "Daily Entry"
-        st.info("Logged in as Data Entry Staff")
+        page = "Daily Entry"[cite: 1]
+        st.info("Logged in as Data Entry Staff")[cite: 1]
 
-    st.markdown("---")
-    if st.button("Log out", use_container_width=True):
-        st.session_state["authenticated"] = False
-        st.session_state["user_role"] = None
-        st.rerun()
+    st.markdown("---")[cite: 1]
+    if st.button("Log out", use_container_width=True):[cite: 1]
+        st.session_state["authenticated"] = False[cite: 1]
+        st.session_state["user_role"] = None[cite: 1]
+        st.rerun()[cite: 1]
 
-st.title(f"🍦 Kulfi Ops — {page}")
+st.title(f"🍦 Kulfi Ops — {page}")[cite: 1]
 
 # ======================================================================
-# PAGE 1: DAILY ENTRY (Pure DB Lookup + Dual-Write on Save)
+# PAGE 1: DAILY ENTRY (Original Editor Grid + Pure DB Lookup + Dual Write)
 # ======================================================================
-if page == "Daily Entry":
-    st.subheader("Cart restock & daily sales")
+if page == "Daily Entry":[cite: 1]
+    st.subheader("Cart restock & daily sales")[cite: 1]
 
     try:
         daily_entries = list_daily_entries()
@@ -621,27 +567,27 @@ if page == "Daily Entry":
         daily_entries = []
         st.warning(f"Could not load entries from database ({e}).")
 
-    if user_role == "entry" and daily_entries:
-        today_val = date.today()
+    if user_role == "entry" and daily_entries:[cite: 1]
+        today_val = date.today()[cite: 1]
         allowed_dates = {
-            today_val - timedelta(days=1),
-            today_val - timedelta(days=2),
-            today_val - timedelta(days=3),
+            today_val - timedelta(days=1),[cite: 1]
+            today_val - timedelta(days=2),[cite: 1]
+            today_val - timedelta(days=3),[cite: 1]
         }
-        daily_entries = [e for e in daily_entries if e["date"].date() in allowed_dates]
+        daily_entries = [e for e in daily_entries if e["date"].date() in allowed_dates][cite: 1]
 
-    if not daily_entries:
+    if not daily_entries:[cite: 1]
         st.info("No entries found in database for the active period.")
     else:
-        top_c1, top_c2 = st.columns([1.3, 1])
+        top_c1, top_c2 = st.columns([1.3, 1])[cite: 1]
 
-        labels = [f"{e['date'].strftime('%d %b %Y')} — {e['cart']}" for e in daily_entries]
+        labels = [f"{e['date'].strftime('%d %b %Y')} — {e['cart']}" for e in daily_entries][cite: 1]
         with top_c1:
-            sel = st.selectbox("Select entry to update sales", labels, key="daily_update_select")
+            sel = st.selectbox("Select entry to update sales", labels, key="daily_update_select")[cite: 1]
         loaded = daily_entries[labels.index(sel)]
         entry_id = loaded["db_id"]
-        entry_date = loaded["date"].date()
-        cart_name = loaded["cart"]
+        entry_date = loaded["date"].date()[cite: 1]
+        cart_name = loaded["cart"][cite: 1]
 
         data_key_suffix = f"_{entry_id}"
 
@@ -655,80 +601,77 @@ if page == "Daily Entry":
 
         staff_options = load_active_staff_list()
 
-        default_staff_name = loaded.get("staff_name", "")
-        if not default_staff_name:
-            for past_e in daily_entries:
-                if past_e["cart"] == cart_name and past_e.get("staff_name"):
-                    default_staff_name = past_e["staff_name"]
-                    break
+        default_staff_name = loaded.get("staff_name", "")[cite: 1]
+        if not default_staff_name:[cite: 1]
+            for past_e in daily_entries:[cite: 1]
+                if past_e["cart"] == cart_name and past_e.get("staff_name"):[cite: 1]
+                    default_staff_name = past_e["staff_name"][cite: 1]
+                    break[cite: 1]
 
-        if default_staff_name and default_staff_name not in staff_options:
-            staff_options.append(default_staff_name)
+        if default_staff_name and default_staff_name not in staff_options:[cite: 1]
+            staff_options.append(default_staff_name)[cite: 1]
 
-        default_staff_idx = staff_options.index(default_staff_name) if default_staff_name in staff_options else 0
+        default_staff_idx = staff_options.index(default_staff_name) if default_staff_name in staff_options else 0[cite: 1]
         with top_c2:
-            staff_name = st.selectbox("Cart staff name", staff_options, index=default_staff_idx, key=k_staff)
+            staff_name = st.selectbox("Cart staff name", staff_options, index=default_staff_idx, key=k_staff)[cite: 1]
 
-        st.write("Enter units **added to the cart** and the **actual closing count** observed:")
+        # Original clean tabular layout for stock entry
+        st.write("Enter units **added to the cart** and the **actual closing count** observed:")[cite: 1]
 
+        df_grid = []
+        for code in FLAVOR_CODES:
+            f_info = FLAVOR_MAP[code]
+            df_grid.append({
+                "Flavour": f"{f_info['name']} (₹{f_info['mrp']:.0f})",
+                "Code": code,
+                "Opening": loaded["by_code"][code]["opening"],
+                "Added": loaded["by_code"][code]["added"],
+                "Closing": loaded["by_code"][code]["closing"],
+            })
+
+        edited_df = st.data_editor(
+            pd.DataFrame(df_grid),
+            column_config={
+                "Flavour": st.column_config.TextColumn(disabled=True),
+                "Code": st.column_config.TextColumn(disabled=True),
+                "Opening": st.column_config.NumberColumn(disabled=True, format="%d"),
+                "Added": st.column_config.NumberColumn(min_value=0, step=1, format="%d"),
+                "Closing": st.column_config.NumberColumn(min_value=0, step=1, format="%d"),
+            },
+            hide_index=True,
+            use_container_width=True,
+            key=f"editor_{entry_id}",
+        )
+
+        opening_map = {}
         added_map = {}
         closing_map = {}
         sold_map = {}
-        opening_map = {code: loaded["by_code"][code]["opening"] for code in FLAVOR_CODES}
 
-        for code in FLAVOR_CODES:
-            f_info = FLAVOR_MAP[code]
-            k_add = f"add_{entry_id}_{code}"
-            k_cls = f"cls_{entry_id}_{code}"
+        for _, r in edited_df.iterrows():
+            code = r["Code"]
+            op = _int_num(r["Opening"])
+            ad = _int_num(r["Added"])
+            cl = _int_num(r["Closing"])
+            sd = op + ad - cl
+            opening_map[code] = op
+            added_map[code] = ad
+            closing_map[code] = cl
+            sold_map[code] = sd
 
-            if k_add not in st.session_state:
-                st.session_state[k_add] = loaded["by_code"][code]["added"]
-            if k_cls not in st.session_state:
-                st.session_state[k_cls] = loaded["by_code"][code]["closing"]
+        tot_open = sum(opening_map.values())[cite: 1]
+        tot_add = sum(added_map.values())[cite: 1]
+        tot_close = sum(closing_map.values())[cite: 1]
+        tot_sold = sum(sold_map.values())[cite: 1]
 
-            cur_open = opening_map[code]
-            cur_add = _int_num(st.session_state[k_add])
-            cur_cls = _int_num(st.session_state[k_cls])
-            cur_sold = cur_open + cur_add - cur_cls
-
-            added_map[code] = cur_add
-            closing_map[code] = cur_cls
-            sold_map[code] = cur_sold
-
-            st.markdown(
-                f"""
-                <div class="flavor-entry-row">
-                    <div class="flavor-title-bar">
-                        <span class="flavor-name">{f_info['name']} (₹{f_info['mrp']:.0f})</span>
-                        <div>
-                            <span class="badge-open">Opening: {cur_open}</span>
-                            <span class="badge-sold">Sold: {cur_sold}</span>
-                        </div>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-            col_a, col_b = st.columns(2)
-            with col_a:
-                st.number_input("+ Added Stock", min_value=0, step=1, format="%d", key=k_add)
-            with col_b:
-                st.number_input("Closing Count", min_value=0, step=1, format="%d", key=k_cls)
-
-        tot_open = sum(opening_map.values())
-        tot_add = sum(added_map.values())
-        tot_close = sum(closing_map.values())
-        tot_sold = sum(sold_map.values())
-
-        m1, m2, m3, m4 = st.columns(4)
-        m1.metric("Opening Balance", f"{tot_open} units")
-        m2.metric("Stock Added", f"{tot_add} units")
-        m3.metric("Closing Balance", f"{tot_close} units")
-        m4.metric("Total Sold", f"{tot_sold} units")
+        m1, m2, m3, m4 = st.columns(4)[cite: 1]
+        m1.metric("Opening Balance", f"{tot_open} units")[cite: 1]
+        m2.metric("Stock Added", f"{tot_add} units")[cite: 1]
+        m3.metric("Closing Balance", f"{tot_close} units")[cite: 1]
+        m4.metric("Total Sold", f"{tot_sold} units")[cite: 1]
 
         if any(s < 0 for s in sold_map.values()):
-            st.error("Today's sales works out negative for at least one flavour - closing count is higher than opening + added.")
+            st.error("Today's sales works out negative for at least one flavour - closing count is higher than opening + added.")[cite: 1]
 
         calculated_mrp_total = float(sum(sold_map[code] * FLAVOR_MAP[code]["mrp"] for code in FLAVOR_CODES))
 
@@ -737,40 +680,40 @@ if page == "Daily Entry":
             st.session_state[k_tot] = f"{default_tot:.2f}"
             st.session_state[k_prev_calc] = calculated_mrp_total
 
-        if k_ph not in st.session_state:
-            st.session_state[k_ph] = f"{loaded['phonepe']:.2f}"
+        if k_ph not in st.session_state:[cite: 1]
+            st.session_state[k_ph] = f"{loaded['phonepe']:.2f}"[cite: 1]
 
-        if k_adv not in st.session_state:
-            st.session_state[k_adv] = f"{loaded['staff_advance']:.2f}" if "staff_advance" in loaded else "0.00"
+        if k_adv not in st.session_state:[cite: 1]
+            st.session_state[k_adv] = f"{loaded['staff_advance']:.2f}" if "staff_advance" in loaded else "0.00"[cite: 1]
 
-        if k_food not in st.session_state:
-            st.session_state[k_food] = f"{loaded['food_tea_cash']:.2f}" if "food_tea_cash" in loaded else "0.00"
+        if k_food not in st.session_state:[cite: 1]
+            st.session_state[k_food] = f"{loaded['food_tea_cash']:.2f}" if "food_tea_cash" in loaded else "0.00"[cite: 1]
 
-        if k_cs not in st.session_state:
-            st.session_state[k_cs] = f"{loaded['cash']:.2f}"
+        if k_cs not in st.session_state:[cite: 1]
+            st.session_state[k_cs] = f"{loaded['cash']:.2f}"[cite: 1]
 
-        st.markdown("---")
-        st.write("**Today's collection & Cash Breakdown**")
+        st.markdown("---")[cite: 1]
+        st.write("**Today's collection & Cash Breakdown**")[cite: 1]
 
-        c3, c4 = st.columns(2)
+        c3, c4 = st.columns(2)[cite: 1]
         with c3:
-            total_collection_str = st.text_input("Total collection (₹)", key=k_tot)
-            staff_advance_str = st.text_input("Advance to staff (₹)", key=k_adv)
-            food_tea_str = st.text_input("Cash paid for Food / Tea (₹)", key=k_food)
+            total_collection_str = st.text_input("Total collection (₹)", key=k_tot)[cite: 1]
+            staff_advance_str = st.text_input("Advance to staff (₹)", key=k_adv)[cite: 1]
+            food_tea_str = st.text_input("Cash paid for Food / Tea (₹)", key=k_food)[cite: 1]
         with c4:
-            phonepe_str = st.text_input("PhonePe / UPI (₹)", key=k_ph)
-            cash_str = st.text_input("Cash Collected (₹)", key=k_cs)
+            phonepe_str = st.text_input("PhonePe / UPI (₹)", key=k_ph)[cite: 1]
+            cash_str = st.text_input("Cash Collected (₹)", key=k_cs)[cite: 1]
 
-        total_collection_val = _num(total_collection_str)
-        phonepe_val = _num(phonepe_str)
-        staff_advance_val = _num(staff_advance_str)
-        food_tea_val = _num(food_tea_str)
-        cash_val = _num(cash_str)
+        total_collection_val = _num(total_collection_str)[cite: 1]
+        phonepe_val = _num(phonepe_str)[cite: 1]
+        staff_advance_val = _num(staff_advance_str)[cite: 1]
+        food_tea_val = _num(food_tea_str)[cite: 1]
+        cash_val = _num(cash_str)[cite: 1]
 
-        cash_leakage = total_collection_val - phonepe_val - staff_advance_val - food_tea_val - cash_val
-        has_leakage = cash_leakage > 0.001
+        cash_leakage = total_collection_val - phonepe_val - staff_advance_val - food_tea_val - cash_val[cite: 1]
+        has_leakage = cash_leakage > 0.001[cite: 1]
 
-        if has_leakage:
+        if has_leakage:[cite: 1]
             st.markdown(
                 f"<div style='margin-top:2px;'><label style='font-size:12px; font-weight:700;'>Cash Leakage:</label> "
                 f"<b style='color:#C41C1C; font-size:16px;'>₹{cash_leakage:,.2f}</b></div>"
@@ -778,34 +721,34 @@ if page == "Daily Entry":
                 '⚠️ There is a cash leakage - please correct or enter reason in remarks field'
                 '</p>',
                 unsafe_allow_html=True,
-            )
+            )[cite: 1]
         else:
             st.markdown(
                 f"<div style='margin-top:2px;'><label style='font-size:12px; font-weight:700;'>Cash Leakage:</label> "
                 f"<b style='color:#2A1B10; font-size:14px;'>₹{cash_leakage:,.2f}</b></div>",
                 unsafe_allow_html=True,
-            )
+            )[cite: 1]
 
-        remarks = st.text_input("Remarks", value=loaded["remarks"], key=f"daily_remarks{data_key_suffix}", placeholder="Enter remarks (mandatory if cash leakage)...")
+        remarks = st.text_input("Remarks", value=loaded["remarks"], key=f"daily_remarks{data_key_suffix}", placeholder="Enter remarks (mandatory if cash leakage)...")[cite: 1]
 
-        if st.button("Update sales", type="primary", use_container_width=True):
+        if st.button("Update sales", type="primary", use_container_width=True):[cite: 1]
             if sum(added_map.values()) == 0 and closing_map == opening_map:
-                st.error("Enter a stock addition or a closing count that differs from yesterday's balance before saving.")
+                st.error("Enter a stock addition or a closing count that differs from yesterday's balance before saving.")[cite: 1]
             elif any(s < 0 for s in sold_map.values()):
-                st.error("Today's sales works out negative for at least one flavour - fix closing count before saving.")
-            elif has_leakage and not remarks.strip():
-                st.error("Remarks is mandatory when there is a cash leakage. Please enter a reason.")
+                st.error("Today's sales works out negative for at least one flavour - fix closing count before saving.")[cite: 1]
+            elif has_leakage and not remarks.strip():[cite: 1]
+                st.error("Remarks is mandatory when there is a cash leakage. Please enter a reason.")[cite: 1]
             else:
                 try:
-                    selected_staff = "" if staff_name == "Select Staff" else staff_name
+                    selected_staff = "" if staff_name == "Select Staff" else staff_name[cite: 1]
                     sync_daily_entry(
                         entry_date, cart_name, added_map, closing_map, opening_map, sold_map, 
                         total_collection_val, phonepe_val, cash_val, remarks, selected_staff, staff_advance_val, food_tea_val
                     )
-                    st.cache_resource.clear()
+                    st.cache_resource.clear()[cite: 1]
                     show_success_modal(f"Saved successfully to Database & Sheets! Sales updated for {cart_name} on {entry_date.strftime('%d %b %Y')}. Total Sold: {tot_sold} units.")
                 except Exception as e:
-                    st.error(f"Could not save - {e}")
+                    st.error(f"Could not save - {e}")[cite: 1]
 
 # ======================================================================
 # PAGE 2: FREEZER STOCK (100% Database Powered - Inward & Audit Logging)
@@ -1430,11 +1373,11 @@ elif page == "Dashboard" and user_role == "admin":
                 col_names[2]: [f"₹{day_rev[2]:,.0f}", f"{day_units[2]}"],
             }
         )
-        st.markdown('<div id="last-3-days"></div>', unsafe_allow_html=True)
+        st.markdown('<div id="last-3-days"></div>', unsafe_allow_html=True)[cite: 1]
         st.markdown("**Last 3 days**")
         st.dataframe(compare_df, hide_index=True, use_container_width=True)
 
-        st.markdown('<div id="revenue-trend"></div>', unsafe_allow_html=True)
+        st.markdown('<div id="revenue-trend"></div>', unsafe_allow_html=True)[cite: 1]
         st.markdown("**Revenue, last 14 days**")
         trend_df = (
             daily_df.assign(Day=daily_df["Date"].dt.normalize())
@@ -1459,8 +1402,8 @@ elif page == "Dashboard" and user_role == "admin":
 
     # Date-range reports
     if not daily_df.empty or not exp_df.empty:
-        st.markdown("---")
-        st.markdown('<div id="reports"></div>', unsafe_allow_html=True)
+        st.markdown("---")[cite: 1]
+        st.markdown('<div id="reports"></div>', unsafe_allow_html=True)[cite: 1]
         st.markdown("## Reports")
 
         all_dates = []
@@ -1514,7 +1457,7 @@ elif page == "Dashboard" and user_role == "admin":
         mc3.metric("Expenses in range", f"₹{total_exp_all:,.0f}")
 
         # Cart-wise comparison
-        st.markdown('<div id="cart-wise-comparison"></div>', unsafe_allow_html=True)
+        st.markdown('<div id="cart-wise-comparison"></div>', unsafe_allow_html=True)[cite: 1]
         st.markdown("### Cart-wise comparison")
         if not range_df.empty:
             cart_grp = (
@@ -1530,7 +1473,7 @@ elif page == "Dashboard" and user_role == "admin":
             st.caption("No sales in this date range.")
 
         # Cart-wise average sales by day of week
-        st.markdown('<div id="cart-wise-day-of-week"></div>', unsafe_allow_html=True)
+        st.markdown('<div id="cart-wise-day-of-week"></div>', unsafe_allow_html=True)[cite: 1]
         st.markdown("### Cart-wise average sales by day of the week")
         if not range_df.empty:
             day_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
@@ -1560,17 +1503,18 @@ elif page == "Dashboard" and user_role == "admin":
             st.caption("No sales in this date range.")
 
         # Flavour-wise performance
-        st.markdown('<div id="flavour-wise-performance"></div>', unsafe_allow_html=True)
+        st.markdown('<div id="flavour-wise-performance"></div>', unsafe_allow_html=True)[cite: 1]
         st.markdown("### Flavour-wise performance")
         flavor_range_df = load_db_flavor_sales(start_date=range_start, end_date=range_end)
         if not flavor_range_df.empty and flavor_range_df["Units sold"].sum() > 0:
             st.dataframe(flavor_range_df[["Flavour", "Units sold", "Est. revenue (₹)"]], hide_index=True, use_container_width=True)
             st.bar_chart(flavor_range_df.set_index("Flavour")["Units sold"])
+            st.caption("Estimated revenue = units sold × MRP per flavour; actual collections may vary slightly.")
         else:
             st.caption("No sales in this date range.")
 
         # Profit & Loss summary
-        st.markdown('<div id="profit-loss-summary"></div>', unsafe_allow_html=True)
+        st.markdown('<div id="profit-loss-summary"></div>', unsafe_allow_html=True)[cite: 1]
         st.markdown("### Profit & loss summary")
         cogs = range_exp[range_exp["Category"] == "Cost of Goods"]["Amount"].sum() if not range_exp.empty else 0.0
         opex_cats = ["Labour Charges", "Leakage Expense", "Miscellaneous Expense"]
@@ -1592,7 +1536,7 @@ elif page == "Dashboard" and user_role == "admin":
         pc2.metric("Margin", f"{(net_profit / total_rev * 100) if total_rev else 0:.1f}%")
 
         # Expense breakdown
-        st.markdown('<div id="expense-breakdown"></div>', unsafe_allow_html=True)
+        st.markdown('<div id="expense-breakdown"></div>', unsafe_allow_html=True)[cite: 1]
         st.markdown("### Expense breakdown by category")
         if not range_exp.empty:
             by_cat = range_exp.groupby("Category")["Amount"].sum().sort_values(ascending=False)
@@ -1607,7 +1551,7 @@ elif page == "Dashboard" and user_role == "admin":
             st.caption("No expenses logged in this date range.")
 
         # Cash vs PhonePe vs Advance vs Food/Tea
-        st.markdown('<div id="cash-vs-phonepe"></div>', unsafe_allow_html=True)
+        st.markdown('<div id="cash-vs-phonepe"></div>', unsafe_allow_html=True)[cite: 1]
         st.markdown("### Cash vs PhonePe / UPI vs Advance vs Food/Tea")
         if not range_df.empty:
             total_cash = range_df["Cash"].sum()
@@ -1630,7 +1574,7 @@ elif page == "Dashboard" and user_role == "admin":
             st.caption("No collections in this date range.")
 
         # Sales table
-        st.markdown('<div id="sales-in-range"></div>', unsafe_allow_html=True)
+        st.markdown('<div id="sales-in-range"></div>', unsafe_allow_html=True)[cite: 1]
         st.markdown("### Sales in this range")
         if not range_df.empty:
             display_cols = ["Date", "Cart", "Sold_Total", "Total_Collection", "PhonePe", "Cash", "Staff_Name", "Staff_Advance", "Food_Tea_Cash"]
@@ -1653,23 +1597,23 @@ elif page == "Dashboard" and user_role == "admin":
 
     # Current Inventory Status
     if not daily_df.empty:
-        st.markdown("---")
-        st.markdown('<div id="inventory-status"></div>', unsafe_allow_html=True)
+        st.markdown("---")[cite: 1]
+        st.markdown('<div id="inventory-status"></div>', unsafe_allow_html=True)[cite: 1]
         st.markdown("## Current Inventory Status")
 
-        st.metric("Stock across carts", f"{int(round(daily_df.sort_values('Date').groupby('Cart').tail(1)['Closing_Total'].sum()))}")
+        st.metric("Stock across carts", f"{int(round(daily_df.sort_values('Date').groupby('Cart').tail(1)['Closing_Total'].sum()))}")[cite: 1]
 
         try:
             freezer_df = get_db_freezer_stock()
-            st.markdown('<div id="freezer-stock-current"></div>', unsafe_allow_html=True)
+            st.markdown('<div id="freezer-stock-current"></div>', unsafe_allow_html=True)[cite: 1]
             st.markdown("**Freezer stock (current)**")
-            st.dataframe(freezer_df[["Flavour", "Units in freezer"]], hide_index=True, use_container_width=True)
+            st.dataframe(freezer_df[["Flavour", "Units in freezer"]], hide_index=True, use_container_width=True)[cite: 1]
         except Exception as e:
-            st.caption(f"Could not compute freezer stock from DB ({e}).")
+            st.caption(f"Could not compute freezer stock from DB ({e}).")[cite: 1]
 
-        st.markdown('<div id="latest-stock-per-cart"></div>', unsafe_allow_html=True)
+        st.markdown('<div id="latest-stock-per-cart"></div>', unsafe_allow_html=True)[cite: 1]
         st.markdown("**Latest stock per cart**")
-        latest_per_cart = daily_df.sort_values("Date").groupby("Cart").tail(1)[["Cart", "Date", "Closing_Total"]].copy()
-        latest_per_cart["Closing_Total"] = latest_per_cart["Closing_Total"].apply(lambda x: int(round(x)))
-        latest_per_cart["Date"] = latest_per_cart["Date"].dt.strftime("%d %b %Y")
-        st.dataframe(latest_per_cart, hide_index=True, use_container_width=True)
+        latest_per_cart = daily_df.sort_values("Date").groupby("Cart").tail(1)[["Cart", "Date", "Closing_Total"]].copy()[cite: 1]
+        latest_per_cart["Closing_Total"] = latest_per_cart["Closing_Total"].apply(lambda x: int(round(x)))[cite: 1]
+        latest_per_cart["Date"] = latest_per_cart["Date"].dt.strftime("%d %b %Y")[cite: 1]
+        st.dataframe(latest_per_cart, hide_index=True, use_container_width=True)[cite: 1]
