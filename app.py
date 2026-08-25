@@ -1,6 +1,6 @@
 """
 Kulfi Ops - multi-user data entry app for the kulfi cart business.
-- Dual-write on Cart Daily Entry (Google Sheets + Supabase PostgreSQL).
+- Dual-write preserved on Cart Daily Entry (Google Sheets + Supabase PostgreSQL).
 - Freezer Stock, Freezer Analysis, Dashboard & Expenses powered 100% by Supabase PostgreSQL.
 """
 
@@ -9,13 +9,15 @@ import altair as alt
 import gspread
 from google.oauth2.service_account import Credentials
 import pandas as pd
-import textwrap
 import hmac
 from datetime import date, datetime, timedelta
 from sqlalchemy import text
 
 st.set_page_config(page_title="Kulfi Ops", page_icon="🍦", layout="wide")
 
+# ----------------------------------------------------------------------
+# GLOBAL UI STYLES
+# ----------------------------------------------------------------------
 st.markdown(
     """
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -160,12 +162,12 @@ st.markdown(
 )
 
 # ----------------------------------------------------------------------
-# CONFIG
+# CONFIG & CANONICAL MAPPINGS
 # ----------------------------------------------------------------------
-CARTS = ["HOSUR CART 01", "HOSUR CART 02", "HOSUR CART 03"]
-CITY = "HOSUR"
+CARTS = ["HOSUR CART 01", "HOSUR CART 02", "HOSUR CART 03"][cite: 1]
+CITY = "HOSUR"[cite: 1]
 
-PAYMENT_STATUSES = ["Pending", "Partial", "Complete"]
+PAYMENT_STATUSES = ["Pending", "Partial", "Complete"][cite: 1]
 EXPENSE_CATEGORIES = [
     "Cost of Goods",
     "Labour Charges",
@@ -173,65 +175,79 @@ EXPENSE_CATEGORIES = [
     "Initial Set-up Expense",
     "Miscellaneous Expense",
     "Initial Investment",
-]
-PAYMENT_MODES = ["Cash", "UPI / Bank Transfer"]
+][cite: 1]
+PAYMENT_MODES = ["Cash", "UPI / Bank Transfer"][cite: 1]
 
-DAILY_HEADER_ROWS = 2
-DAILY_TOTAL_COLS = 47
-SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+DAILY_HEADER_ROWS = 2[cite: 1]
+DAILY_TOTAL_COLS = 47[cite: 1]
+SCOPES = ["https://www.googleapis.com/auth/spreadsheets"][cite: 1]
+
+DEFAULT_FLAVORS = [
+    ("ML", "Malai", 40.0, 22.0, "ml_units"),
+    ("MM", "Mini Malai", 30.0, 18.0, "mm_units"),
+    ("PS", "Pista", 40.0, 22.0, "ps_units"),
+    ("MN", "Mango", 40.0, 22.0, "mn_units"),
+    ("KB", "Kesar Badam", 50.0, 27.5, "kb_units"),
+    ("BM", "Badam Matka", 80.0, 44.0, "bm_units"),
+    ("SG", "Shahi Gulab", 50.0, 27.5, "sg_units"),
+    ("CH", "Chocolate", 50.0, 27.5, "ch_units"),
+    ("RA", "Roasted Almond", 60.0, 33.0, "ra_units"),
+]
+FLAVOR_CODES = [f[0] for f in DEFAULT_FLAVORS]
+N_FLAVORS = len(FLAVOR_CODES)
 
 
 def _num(x):
     if x is None or pd.isna(x):
         return 0.0
     if isinstance(x, (int, float)):
-        return float(x)
-    s = str(x).strip().replace(",", "").replace("₹", "").replace("Rs.", "").replace("Rs", "")
-    neg = s.startswith("(") and s.endswith(")")
+        return float(x)[cite: 1]
+    s = str(x).strip().replace(",", "").replace("₹", "").replace("Rs.", "").replace("Rs", "")[cite: 1]
+    neg = s.startswith("(") and s.endswith(")")[cite: 1]
     if neg:
-        s = s[1:-1]
+        s = s[1:-1][cite: 1]
     try:
-        return -float(s) if neg else float(s)
+        return -float(s) if neg else float(s)[cite: 1]
     except ValueError:
-        return 0.0
+        return 0.0[cite: 1]
 
 
 def _int_num(x):
-    return int(round(_num(x)))
+    return int(round(_num(x)))[cite: 1]
 
 
 def _col_letter(n):
-    letters = ""
-    while n > 0:
-        n, rem = divmod(n - 1, 26)
-        letters = chr(65 + rem) + letters
-    return letters
+    letters = ""[cite: 1]
+    while n > 0:[cite: 1]
+        n, rem = divmod(n - 1, 26)[cite: 1]
+        letters = chr(65 + rem) + letters[cite: 1]
+    return letters[cite: 1]
 
 
 # ----------------------------------------------------------------------
-# CONNECTIONS (Google Sheets & Supabase PostgreSQL DB)
+# CONNECTIONS (Google Sheets & Supabase PostgreSQL)
 # ----------------------------------------------------------------------
 @st.cache_resource
 def get_client():
     creds = Credentials.from_service_account_info(
         st.secrets["gcp_service_account"], scopes=SCOPES
-    )
-    return gspread.authorize(creds)
+    )[cite: 1]
+    return gspread.authorize(creds)[cite: 1]
 
 
 @st.cache_resource
 def get_workbook():
-    return get_client().open_by_key(st.secrets["sheet_id"])
+    return get_client().open_by_key(st.secrets["sheet_id"])[cite: 1]
 
 
 def get_ws(tab_name):
-    return get_workbook().worksheet(tab_name)
+    return get_workbook().worksheet(tab_name)[cite: 1]
 
 
 def _update_sheet_row(tab_name, row_number, values):
-    ws = get_ws(tab_name)
-    end_col = _col_letter(len(values))
-    ws.update(range_name=f"A{row_number}:{end_col}{row_number}", values=[values], value_input_option="USER_ENTERED")
+    ws = get_ws(tab_name)[cite: 1]
+    end_col = _col_letter(len(values))[cite: 1]
+    ws.update(range_name=f"A{row_number}:{end_col}{row_number}", values=[values], value_input_option="USER_ENTERED")[cite: 1]
 
 
 try:
@@ -240,43 +256,28 @@ except Exception:
     db_conn = None
 
 
-@st.dialog("Notification")
+@st.dialog("Notification")[cite: 1]
 def show_success_modal(message):
-    st.success(message)
-    if st.button("OK", type="primary", use_container_width=True):
-        st.rerun()
+    st.success(message)[cite: 1]
+    if st.button("OK", type="primary", use_container_width=True):[cite: 1]
+        st.rerun()[cite: 1]
 
 
 # ----------------------------------------------------------------------
-# FLAVORS & STAFF FROM DATABASE (KEYED BY FLAVOR CODE)
+# FLAVORS & STAFF LOADERS
 # ----------------------------------------------------------------------
-DEFAULT_FLAVORS = [
-    ("ML", "Malai", 40.0, 22.0),
-    ("MM", "Mini Malai", 30.0, 18.0),
-    ("PS", "Pista", 40.0, 22.0),
-    ("MN", "Mango", 40.0, 22.0),
-    ("KB", "Kesar Badam", 50.0, 27.5),
-    ("BM", "Badam Matka", 80.0, 44.0),
-    ("SG", "Shahi Gulab", 50.0, 27.5),
-    ("CH", "Chocolate", 50.0, 27.5),
-    ("RA", "Roasted Almond", 60.0, 33.0),
-]
-FLAVOR_CODES = [f[0] for f in DEFAULT_FLAVORS]
-N_FLAVORS = len(FLAVOR_CODES)
-
-
 def get_flavor_meta_by_code():
     meta = {
-        code: {"name": name, "mrp": float(mrp), "cost_price": float(cost)}
-        for code, name, mrp, cost in DEFAULT_FLAVORS
+        code: {"name": name, "mrp": float(mrp), "cost_price": float(cost), "audit_col": acol}
+        for code, name, mrp, cost, acol in DEFAULT_FLAVORS
     }
     if db_conn is not None:
         try:
             df = db_conn.query("SELECT code, name, mrp, cost_price FROM flavors;", ttl="1m")
             for _, r in df.iterrows():
-                code = r["code"]
+                code = str(r["code"]).strip()
                 if code in meta:
-                    meta[code]["name"] = r["name"]
+                    meta[code]["name"] = str(r["name"])
                     meta[code]["mrp"] = float(r["mrp"])
                     meta[code]["cost_price"] = float(r["cost_price"])
         except Exception:
@@ -295,11 +296,11 @@ def load_active_staff_list():
                 return ["Select Staff"] + df["name"].tolist()
         except Exception:
             pass
-    return ["Select Staff"]
+    return ["Select Staff"][cite: 1]
 
 
 # ----------------------------------------------------------------------
-# DATABASE-ONLY LOADER FOR DAILY ENTRIES (KEYED BY CODE)
+# DATABASE LOADERS (DAILY ENTRIES, FREEZER STOCK, EXPENSES)
 # ----------------------------------------------------------------------
 def list_daily_entries():
     if db_conn is None:
@@ -362,9 +363,6 @@ def list_daily_entries():
     return out
 
 
-# ----------------------------------------------------------------------
-# DUAL-WRITE CART HELPER (PostgreSQL + Google Sheets)
-# ----------------------------------------------------------------------
 def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map, sold_map, total, phonepe, cash, remarks, staff_name="", staff_advance=0.0, food_tea_cash=0.0):
     if db_conn is not None:
         with db_conn.session as s:
@@ -400,36 +398,34 @@ def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map,
                 )
             s.commit()
 
+    # Google Sheets dual write fallback
     try:
-        ws = get_ws("Daily Data As Shared")
-        all_vals = ws.get_all_values()
+        ws = get_ws("Daily Data As Shared")[cite: 1]
+        all_vals = ws.get_all_values()[cite: 1]
         target_row = None
-        date_str = entry_date.strftime("%Y-%m-%d")
-        for idx, r in enumerate(all_vals[DAILY_HEADER_ROWS:]):
+        date_str = entry_date.strftime("%Y-%m-%d")[cite: 1]
+        for idx, r in enumerate(all_vals[DAILY_HEADER_ROWS:]):[cite: 1]
             if len(r) >= 2 and r[0].strip() == date_str and r[1].strip() == cart_name:
-                target_row = DAILY_HEADER_ROWS + idx + 1
+                target_row = DAILY_HEADER_ROWS + idx + 1[cite: 1]
                 break
 
-        date_cart_id = f"{date_str}||{cart_name}"
+        date_cart_id = f"{date_str}||{cart_name}"[cite: 1]
         sheet_row = (
-            [date_str, cart_name, CITY, date_cart_id]
+            [date_str, cart_name, CITY, date_cart_id][cite: 1]
             + [int(opening_map[code]) for code in FLAVOR_CODES]
             + [int(added_map[code]) for code in FLAVOR_CODES]
             + [int(sold_map[code]) for code in FLAVOR_CODES]
             + [int(closing_map[code]) for code in FLAVOR_CODES]
-            + [float(total), float(phonepe), float(cash), str(remarks), str(staff_name), float(staff_advance), float(food_tea_cash)]
+            + [float(total), float(phonepe), float(cash), str(remarks), str(staff_name), float(staff_advance), float(food_tea_cash)][cite: 1]
         )
         if target_row:
             _update_sheet_row("Daily Data As Shared", target_row, sheet_row)
         else:
-            ws.append_row(sheet_row, value_input_option="USER_ENTERED")
+            ws.append_row(sheet_row, value_input_option="USER_ENTERED")[cite: 1]
     except Exception as e:
-        st.warning(f"Saved to database, but Google Sheets dual-write sync encountered an issue: {e}")
+        st.warning(f"Saved to database, but Google Sheets sync encountered an issue: {e}")
 
 
-# ----------------------------------------------------------------------
-# DATABASE DATA LOADERS (DASHBOARD & REPORTS)
-# ----------------------------------------------------------------------
 def load_db_daily_df():
     if db_conn is None:
         return pd.DataFrame()
@@ -540,81 +536,81 @@ def get_db_freezer_stock():
 # AUTHENTICATION
 # ----------------------------------------------------------------------
 def check_login():
-    if st.session_state.get("authenticated", False):
-        return True
+    if st.session_state.get("authenticated", False):[cite: 1]
+        return True[cite: 1]
 
-    _, col_form, _ = st.columns([1, 1.2, 1])
+    _, col_form, _ = st.columns([1, 1.2, 1])[cite: 1]
 
     with col_form:
         try:
-            st.image("assets/logo.png", width=220)
+            st.image("assets/logo.png", width=220)[cite: 1]
         except Exception:
-            st.title("🍦 Kulfi Ops")
+            st.title("🍦 Kulfi Ops")[cite: 1]
 
-        st.subheader("Sign in")
-        with st.form("login_form"):
-            username = st.text_input("Username")
-            password = st.text_input("Password", type="password")
-            submitted = st.form_submit_button("Sign in", type="primary", use_container_width=True)
+        st.subheader("Sign in")[cite: 1]
+        with st.form("login_form"):[cite: 1]
+            username = st.text_input("Username")[cite: 1]
+            password = st.text_input("Password", type="password")[cite: 1]
+            submitted = st.form_submit_button("Sign in", type="primary", use_container_width=True)[cite: 1]
 
-        if submitted:
-            user_clean = str(username).strip()
-            pass_clean = str(password).strip()
+        if submitted:[cite: 1]
+            user_clean = str(username).strip()[cite: 1]
+            pass_clean = str(password).strip()[cite: 1]
 
-            admin_user = str(st.secrets.get("app_username", "admin")).strip()
-            admin_pass = str(st.secrets.get("app_password", "")).strip()
+            admin_user = str(st.secrets.get("app_username", "admin")).strip()[cite: 1]
+            admin_pass = str(st.secrets.get("app_password", "")).strip()[cite: 1]
 
-            entry_user = str(st.secrets.get("entry_username", "entry")).strip()
-            entry_pass = str(st.secrets.get("entry_password", "")).strip()
+            entry_user = str(st.secrets.get("entry_username", "entry")).strip()[cite: 1]
+            entry_pass = str(st.secrets.get("entry_password", "")).strip()[cite: 1]
 
-            if admin_pass and hmac.compare_digest(user_clean, admin_user) and hmac.compare_digest(pass_clean, admin_pass):
-                st.session_state["authenticated"] = True
-                st.session_state["user_role"] = "admin"
-                st.rerun()
-            elif entry_pass and hmac.compare_digest(user_clean, entry_user) and hmac.compare_digest(pass_clean, entry_pass):
-                st.session_state["authenticated"] = True
-                st.session_state["user_role"] = "entry"
-                st.rerun()
+            if admin_pass and hmac.compare_digest(user_clean, admin_user) and hmac.compare_digest(pass_clean, admin_pass):[cite: 1]
+                st.session_state["authenticated"] = True[cite: 1]
+                st.session_state["user_role"] = "admin"[cite: 1]
+                st.rerun()[cite: 1]
+            elif entry_pass and hmac.compare_digest(user_clean, entry_user) and hmac.compare_digest(pass_clean, entry_pass):[cite: 1]
+                st.session_state["authenticated"] = True[cite: 1]
+                st.session_state["user_role"] = "entry"[cite: 1]
+                st.rerun()[cite: 1]
             else:
-                st.error("Incorrect username or password — try again.")
+                st.error("Incorrect username or password — try again.")[cite: 1]
 
-    return False
+    return False[cite: 1]
 
 
-if not check_login():
-    st.stop()
+if not check_login():[cite: 1]
+    st.stop()[cite: 1]
 
 # ----------------------------------------------------------------------
 # NAVIGATION
 # ----------------------------------------------------------------------
-user_role = st.session_state.get("user_role", "admin")
+user_role = st.session_state.get("user_role", "admin")[cite: 1]
 
 with st.sidebar:
     try:
-        st.image("assets/logo.png", use_container_width=True)
+        st.image("assets/logo.png", use_container_width=True)[cite: 1]
     except Exception:
-        st.markdown("## 🍦 Kulfi Ops")
+        st.markdown("## 🍦 Kulfi Ops")[cite: 1]
 
-    if user_role == "admin":
-        nav_options = ["Dashboard", "Daily Entry", "Freezer Stock", "Freezer Analysis", "Expenses"]
-        page = st.radio("Go to", nav_options, label_visibility="collapsed")
+    if user_role == "admin":[cite: 1]
+        nav_options = ["Dashboard", "Daily Entry", "Freezer Stock", "Freezer Analysis", "Expenses"][cite: 1]
+        page = st.radio("Go to", nav_options, label_visibility="collapsed")[cite: 1]
     else:
-        page = "Daily Entry"
-        st.info("Logged in as Data Entry Staff")
+        page = "Daily Entry"[cite: 1]
+        st.info("Logged in as Data Entry Staff")[cite: 1]
 
-    st.markdown("---")
-    if st.button("Log out", use_container_width=True):
-        st.session_state["authenticated"] = False
-        st.session_state["user_role"] = None
-        st.rerun()
+    st.markdown("---")[cite: 1]
+    if st.button("Log out", use_container_width=True):[cite: 1]
+        st.session_state["authenticated"] = False[cite: 1]
+        st.session_state["user_role"] = None[cite: 1]
+        st.rerun()[cite: 1]
 
-st.title(f"🍦 Kulfi Ops — {page}")
+st.title(f"🍦 Kulfi Ops — {page}")[cite: 1]
 
 # ======================================================================
 # PAGE 1: DAILY ENTRY (Pure DB Lookup + Dual-Write on Save)
 # ======================================================================
-if page == "Daily Entry":
-    st.subheader("Cart restock & daily sales")
+if page == "Daily Entry":[cite: 1]
+    st.subheader("Cart restock & daily sales")[cite: 1]
 
     try:
         daily_entries = list_daily_entries()
@@ -622,55 +618,55 @@ if page == "Daily Entry":
         daily_entries = []
         st.warning(f"Could not load entries from database ({e}).")
 
-    if user_role == "entry" and daily_entries:
-        today_val = date.today()
+    if user_role == "entry" and daily_entries:[cite: 1]
+        today_val = date.today()[cite: 1]
         allowed_dates = {
-            today_val - timedelta(days=1),
-            today_val - timedelta(days=2),
-            today_val - timedelta(days=3),
+            today_val - timedelta(days=1),[cite: 1]
+            today_val - timedelta(days=2),[cite: 1]
+            today_val - timedelta(days=3),[cite: 1]
         }
-        daily_entries = [e for e in daily_entries if e["date"].date() in allowed_dates]
+        daily_entries = [e for e in daily_entries if e["date"].date() in allowed_dates][cite: 1]
 
-    if not daily_entries:
+    if not daily_entries:[cite: 1]
         st.info("No entries found in database for the active period.")
     else:
-        top_c1, top_c2 = st.columns([1.3, 1])
+        top_c1, top_c2 = st.columns([1.3, 1])[cite: 1]
 
-        labels = [f"{e['date'].strftime('%d %b %Y')} — {e['cart']}" for e in daily_entries]
+        labels = [f"{e['date'].strftime('%d %b %Y')} — {e['cart']}" for e in daily_entries][cite: 1]
         with top_c1:
-            sel = st.selectbox("Select entry to update sales", labels, key="daily_update_select")
+            sel = st.selectbox("Select entry to update sales", labels, key="daily_update_select")[cite: 1]
         loaded = daily_entries[labels.index(sel)]
         entry_id = loaded["db_id"]
-        entry_date = loaded["date"].date()
-        cart_name = loaded["cart"]
+        entry_date = loaded["date"].date()[cite: 1]
+        cart_name = loaded["cart"][cite: 1]
 
         data_key_suffix = f"_{entry_id}"
 
-        k_tot = f"daily_total{data_key_suffix}"
-        k_ph = f"daily_phonepe{data_key_suffix}"
-        k_cs = f"daily_cash{data_key_suffix}"
-        k_adv = f"daily_adv{data_key_suffix}"
-        k_food = f"daily_food{data_key_suffix}"
-        k_staff = f"daily_staff{data_key_suffix}"
-        k_prev_calc = f"daily_prev_calc{data_key_suffix}"
+        k_tot = f"daily_total{data_key_suffix}"[cite: 1]
+        k_ph = f"daily_phonepe{data_key_suffix}"[cite: 1]
+        k_cs = f"daily_cash{data_key_suffix}"[cite: 1]
+        k_adv = f"daily_adv{data_key_suffix}"[cite: 1]
+        k_food = f"daily_food{data_key_suffix}"[cite: 1]
+        k_staff = f"daily_staff{data_key_suffix}"[cite: 1]
+        k_prev_calc = f"daily_prev_calc{data_key_suffix}"[cite: 1]
 
         staff_options = load_active_staff_list()
 
-        default_staff_name = loaded.get("staff_name", "")
-        if not default_staff_name:
-            for past_e in daily_entries:
-                if past_e["cart"] == cart_name and past_e.get("staff_name"):
-                    default_staff_name = past_e["staff_name"]
-                    break
+        default_staff_name = loaded.get("staff_name", "")[cite: 1]
+        if not default_staff_name:[cite: 1]
+            for past_e in daily_entries:[cite: 1]
+                if past_e["cart"] == cart_name and past_e.get("staff_name"):[cite: 1]
+                    default_staff_name = past_e["staff_name"][cite: 1]
+                    break[cite: 1]
 
-        if default_staff_name and default_staff_name not in staff_options:
-            staff_options.append(default_staff_name)
+        if default_staff_name and default_staff_name not in staff_options:[cite: 1]
+            staff_options.append(default_staff_name)[cite: 1]
 
-        default_staff_idx = staff_options.index(default_staff_name) if default_staff_name in staff_options else 0
+        default_staff_idx = staff_options.index(default_staff_name) if default_staff_name in staff_options else 0[cite: 1]
         with top_c2:
-            staff_name = st.selectbox("Cart staff name", staff_options, index=default_staff_idx, key=k_staff)
+            staff_name = st.selectbox("Cart staff name", staff_options, index=default_staff_idx, key=k_staff)[cite: 1]
 
-        st.write("Enter units **added to the cart** and the **actual closing count** observed:")
+        st.write("Enter units **added to the cart** and the **actual closing count** observed:")[cite: 1]
 
         added_map = {}
         closing_map = {}
@@ -711,25 +707,25 @@ if page == "Daily Entry":
                 unsafe_allow_html=True,
             )
 
-            col_a, col_b = st.columns(2)
+            col_a, col_b = st.columns(2)[cite: 1]
             with col_a:
-                st.number_input("+ Added Stock", min_value=0, step=1, format="%d", key=k_add)
+                st.number_input("+ Added Stock", min_value=0, step=1, format="%d", key=k_add)[cite: 1]
             with col_b:
-                st.number_input("Closing Count", min_value=0, step=1, format="%d", key=k_cls)
+                st.number_input("Closing Count", min_value=0, step=1, format="%d", key=k_cls)[cite: 1]
 
         tot_open = sum(opening_map.values())
         tot_add = sum(added_map.values())
         tot_close = sum(closing_map.values())
         tot_sold = sum(sold_map.values())
 
-        m1, m2, m3, m4 = st.columns(4)
-        m1.metric("Opening Balance", f"{tot_open} units")
-        m2.metric("Stock Added", f"{tot_add} units")
-        m3.metric("Closing Balance", f"{tot_close} units")
-        m4.metric("Total Sold", f"{tot_sold} units")
+        m1, m2, m3, m4 = st.columns(4)[cite: 1]
+        m1.metric("Opening Balance", f"{tot_open} units")[cite: 1]
+        m2.metric("Stock Added", f"{tot_add} units")[cite: 1]
+        m3.metric("Closing Balance", f"{tot_close} units")[cite: 1]
+        m4.metric("Total Sold", f"{tot_sold} units")[cite: 1]
 
         if any(s < 0 for s in sold_map.values()):
-            st.error("Today's sales works out negative for at least one flavour - closing count is higher than opening + added.")
+            st.error("Today's sales works out negative for at least one flavour - closing count is higher than opening + added.")[cite: 1]
 
         calculated_mrp_total = float(sum(sold_map[code] * FLAVOR_MAP[code]["mrp"] for code in FLAVOR_CODES))
 
@@ -738,40 +734,40 @@ if page == "Daily Entry":
             st.session_state[k_tot] = f"{default_tot:.2f}"
             st.session_state[k_prev_calc] = calculated_mrp_total
 
-        if k_ph not in st.session_state:
-            st.session_state[k_ph] = f"{loaded['phonepe']:.2f}"
+        if k_ph not in st.session_state:[cite: 1]
+            st.session_state[k_ph] = f"{loaded['phonepe']:.2f}"[cite: 1]
 
-        if k_adv not in st.session_state:
-            st.session_state[k_adv] = f"{loaded['staff_advance']:.2f}" if "staff_advance" in loaded else "0.00"
+        if k_adv not in st.session_state:[cite: 1]
+            st.session_state[k_adv] = f"{loaded['staff_advance']:.2f}" if "staff_advance" in loaded else "0.00"[cite: 1]
 
-        if k_food not in st.session_state:
-            st.session_state[k_food] = f"{loaded['food_tea_cash']:.2f}" if "food_tea_cash" in loaded else "0.00"
+        if k_food not in st.session_state:[cite: 1]
+            st.session_state[k_food] = f"{loaded['food_tea_cash']:.2f}" if "food_tea_cash" in loaded else "0.00"[cite: 1]
 
-        if k_cs not in st.session_state:
-            st.session_state[k_cs] = f"{loaded['cash']:.2f}"
+        if k_cs not in st.session_state:[cite: 1]
+            st.session_state[k_cs] = f"{loaded['cash']:.2f}"[cite: 1]
 
-        st.markdown("---")
-        st.write("**Today's collection & Cash Breakdown**")
+        st.markdown("---")[cite: 1]
+        st.write("**Today's collection & Cash Breakdown**")[cite: 1]
 
-        c3, c4 = st.columns(2)
+        c3, c4 = st.columns(2)[cite: 1]
         with c3:
-            total_collection_str = st.text_input("Total collection (₹)", key=k_tot)
-            staff_advance_str = st.text_input("Advance to staff (₹)", key=k_adv)
-            food_tea_str = st.text_input("Cash paid for Food / Tea (₹)", key=k_food)
+            total_collection_str = st.text_input("Total collection (₹)", key=k_tot)[cite: 1]
+            staff_advance_str = st.text_input("Advance to staff (₹)", key=k_adv)[cite: 1]
+            food_tea_str = st.text_input("Cash paid for Food / Tea (₹)", key=k_food)[cite: 1]
         with c4:
-            phonepe_str = st.text_input("PhonePe / UPI (₹)", key=k_ph)
-            cash_str = st.text_input("Cash Collected (₹)", key=k_cs)
+            phonepe_str = st.text_input("PhonePe / UPI (₹)", key=k_ph)[cite: 1]
+            cash_str = st.text_input("Cash Collected (₹)", key=k_cs)[cite: 1]
 
-        total_collection_val = _num(total_collection_str)
-        phonepe_val = _num(phonepe_str)
-        staff_advance_val = _num(staff_advance_str)
-        food_tea_val = _num(food_tea_str)
-        cash_val = _num(cash_str)
+        total_collection_val = _num(total_collection_str)[cite: 1]
+        phonepe_val = _num(phonepe_str)[cite: 1]
+        staff_advance_val = _num(staff_advance_str)[cite: 1]
+        food_tea_val = _num(food_tea_str)[cite: 1]
+        cash_val = _num(cash_str)[cite: 1]
 
-        cash_leakage = total_collection_val - phonepe_val - staff_advance_val - food_tea_val - cash_val
-        has_leakage = cash_leakage > 0.001
+        cash_leakage = total_collection_val - phonepe_val - staff_advance_val - food_tea_val - cash_val[cite: 1]
+        has_leakage = cash_leakage > 0.001[cite: 1]
 
-        if has_leakage:
+        if has_leakage:[cite: 1]
             st.markdown(
                 f"<div style='margin-top:2px;'><label style='font-size:12px; font-weight:700;'>Cash Leakage:</label> "
                 f"<b style='color:#C41C1C; font-size:16px;'>₹{cash_leakage:,.2f}</b></div>"
@@ -779,34 +775,35 @@ if page == "Daily Entry":
                 '⚠️ There is a cash leakage - please correct or enter reason in remarks field'
                 '</p>',
                 unsafe_allow_html=True,
-            )
+            )[cite: 1]
         else:
             st.markdown(
                 f"<div style='margin-top:2px;'><label style='font-size:12px; font-weight:700;'>Cash Leakage:</label> "
                 f"<b style='color:#2A1B10; font-size:14px;'>₹{cash_leakage:,.2f}</b></div>",
                 unsafe_allow_html=True,
-            )
+            )[cite: 1]
 
-        remarks = st.text_input("Remarks", value=loaded["remarks"], key=f"daily_remarks{data_key_suffix}", placeholder="Enter remarks (mandatory if cash leakage)...")
+        remarks = st.text_input("Remarks", value=loaded["remarks"], key=f"daily_remarks{data_key_suffix}", placeholder="Enter remarks (mandatory if cash leakage)...")[cite: 1]
 
-        if st.button("Update sales", type="primary", use_container_width=True):
+        if st.button("Update sales", type="primary", use_container_width=True):[cite: 1]
             if sum(added_map.values()) == 0 and closing_map == opening_map:
-                st.error("Enter a stock addition or a closing count that differs from yesterday's balance before saving.")
+                st.error("Enter a stock addition or a closing count that differs from yesterday's balance before saving.")[cite: 1]
             elif any(s < 0 for s in sold_map.values()):
-                st.error("Today's sales works out negative for at least one flavour - fix closing count before saving.")
-            elif has_leakage and not remarks.strip():
-                st.error("Remarks is mandatory when there is a cash leakage. Please enter a reason.")
+                st.error("Today's sales works out negative for at least one flavour - fix closing count before saving.")[cite: 1]
+            elif has_leakage and not remarks.strip():[cite: 1]
+                st.error("Remarks is mandatory when there is a cash leakage. Please enter a reason.")[cite: 1]
             else:
                 try:
-                    selected_staff = "" if staff_name == "Select Staff" else staff_name
+                    selected_staff = "" if staff_name == "Select Staff" else staff_name[cite: 1]
                     sync_daily_entry(
                         entry_date, cart_name, added_map, closing_map, opening_map, sold_map, 
                         total_collection_val, phonepe_val, cash_val, remarks, selected_staff, staff_advance_val, food_tea_val
                     )
-                    st.cache_resource.clear()
+                    st.cache_resource.clear()[cite: 1]
                     show_success_modal(f"Saved successfully to Database & Sheets! Sales updated for {cart_name} on {entry_date.strftime('%d %b %Y')}. Total Sold: {tot_sold} units.")
                 except Exception as e:
-                    st.error(f"Could not save - {e}")
+                    st.error(f"Could not save - {e}")[cite: 1]
+
 # ======================================================================
 # PAGE 2: FREEZER STOCK (100% Database Powered - Inward & Audit Logging)
 # ======================================================================
@@ -1021,7 +1018,6 @@ elif page == "Freezer Stock" and user_role == "admin":
         with aud_c3:
             audited_by = st.text_input("Audited by", value="Admin", key="audit_by_entry")
 
-        # Current calculated units from database ledger for comparison
         freezer_curr_df = get_db_freezer_stock()
         sys_stock_map = dict(zip(freezer_curr_df["code"], freezer_curr_df["Units in freezer"])) if not freezer_curr_df.empty else {}
 
@@ -1052,28 +1048,24 @@ elif page == "Freezer Stock" and user_role == "admin":
 
         if st.button("Save stock audit", type="primary", use_container_width=True):
             try:
+                phys_by_code = {row["Code"]: int(row["Physical Counted Units"]) for _, row in audit_edited.iterrows()}
                 with db_conn.session as s:
                     res = s.execute(
                         text("""
-                        INSERT INTO stock_audits (audit_date, location, audited_by, remarks)
-                        VALUES (:adt, :loc, :by, :rem)
+                        INSERT INTO stock_audits_wide (audit_date, location, audited_by, remarks,
+                                                      ml_units, mm_units, ps_units, mn_units, kb_units, bm_units, sg_units, ch_units, ra_units)
+                        VALUES (:adt, :loc, :by, :rem,
+                                :ml, :mm, :ps, :mn, :kb, :bm, :sg, :ch, :ra)
                         RETURNING audit_id;
                         """),
-                        {"adt": audit_date, "loc": audit_location, "by": audited_by, "rem": audit_remarks}
+                        {
+                            "adt": audit_date, "loc": audit_location, "by": audited_by, "rem": audit_remarks,
+                            "ml": phys_by_code.get("ML", 0), "mm": phys_by_code.get("MM", 0), "ps": phys_by_code.get("PS", 0),
+                            "mn": phys_by_code.get("MN", 0), "kb": phys_by_code.get("KB", 0), "bm": phys_by_code.get("BM", 0),
+                            "sg": phys_by_code.get("SG", 0), "ch": phys_by_code.get("CH", 0), "ra": phys_by_code.get("RA", 0),
+                        }
                     )
                     aid = res.scalar()
-                    for _, row in audit_edited.iterrows():
-                        s.execute(
-                            text("""
-                            INSERT INTO stock_audit_items (audit_id, flavor_code, system_units, physical_units)
-                            VALUES (:aid, :code, :sys, :phys);
-                            """),
-                            {
-                                "aid": aid, "code": row["Code"],
-                                "sys": int(row["Current System Stock"]),
-                                "phys": int(row["Physical Counted Units"])
-                            }
-                        )
                     s.commit()
                 show_success_modal(f"Stock Audit #{aid} logged successfully into PostgreSQL!")
             except Exception as e:
@@ -1086,7 +1078,6 @@ elif page == "Freezer Analysis" and user_role == "admin":
     st.subheader("Freezer Stock Analysis & Reorder Planner")
     st.caption("Integrated stock ledger, movement tracking, physical audit variance, and velocity-based order planner.")
 
-    # 1. Configurable velocity / forecasting parameters
     ac1, ac2, ac3 = st.columns(3)
     with ac1:
         lookback_days = st.number_input("Lookback window for daily sales pace (days)", min_value=3, max_value=90, value=14, step=1)
@@ -1095,37 +1086,39 @@ elif page == "Freezer Analysis" and user_role == "admin":
     with ac3:
         cover_days = st.number_input("Next order coverage period (days)", min_value=1, max_value=30, value=7, step=1)
 
-    # 2. Extract database transactions
     try:
         today_fa = date.today()
         cutoff_fa = today_fa - timedelta(days=int(lookback_days) - 1)
         flavor_sales_df = load_db_flavor_sales(start_date=cutoff_fa, end_date=today_fa)
         sales_pace_map = dict(zip(flavor_sales_df["code"], flavor_sales_df["Units sold"])) if not flavor_sales_df.empty else {}
 
-        # Inward Received by Code
+        # Inward Received
         rec_df = db_conn.query("SELECT flavor_code, SUM(received_units) AS total_recv FROM stock_received_items GROUP BY flavor_code;", ttl="0s")
         rec_map = dict(zip(rec_df["flavor_code"], rec_df["total_recv"])) if not rec_df.empty else {}
 
-        # Outward Sold / Cart Additions by Code
+        # Outward Cart Additions
         added_df = db_conn.query("SELECT flavor_code, SUM(added_units) AS total_added FROM daily_cart_items GROUP BY flavor_code;", ttl="0s")
         added_map = dict(zip(added_df["flavor_code"], added_df["total_added"])) if not added_df.empty else {}
 
-        # Latest Physical Audit by Code
+        # Latest Physical Audit from stock_audits_wide
         latest_audit_df = db_conn.query("""
-            SELECT i.flavor_code, i.physical_units, a.audit_date, a.audit_id, a.location
-            FROM stock_audit_items i
-            JOIN stock_audits a ON i.audit_id = a.audit_id
-            WHERE a.audit_date = (SELECT MAX(audit_date) FROM stock_audits)
-            ORDER BY a.audit_id DESC;
+            SELECT * FROM stock_audits_wide
+            ORDER BY audit_date DESC, audit_id DESC
+            LIMIT 1;
         """, ttl="0s")
-        audit_map = dict(zip(latest_audit_df["flavor_code"], latest_audit_df["physical_units"])) if not latest_audit_df.empty else {}
-        audit_date_str = latest_audit_df["audit_date"].iloc[0].strftime("%d %b %Y") if not latest_audit_df.empty else "No audits logged"
+        
+        if not latest_audit_df.empty:
+            audit_row = latest_audit_df.iloc[0]
+            audit_map = {code: int(audit_row.get(FLAVOR_MAP[code]["audit_col"], 0)) for code in FLAVOR_CODES}
+            audit_date_str = pd.to_datetime(audit_row["audit_date"]).strftime("%d %b %Y")
+        else:
+            audit_map = {}
+            audit_date_str = "No audits logged"
     except Exception as e:
         st.error(f"Could not load analysis transactions from database: {e}")
         sales_pace_map, rec_map, added_map, audit_map = {}, {}, {}, {}
         audit_date_str = "N/A"
 
-    # 3. Calculated Stock vs Physical Audited Stock Analysis Table
     st.markdown("### 1. Physical Audited Stock vs Calculated Freezer Stock")
     st.caption(f"Calculated stock = Stock Received − Cart Additions (Issued). Latest audit date: **{audit_date_str}**")
 
@@ -1156,7 +1149,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
             else:
                 var_status = f"🔴 Shortage ({var_qty})"
             phys_display = phys_stock
-            avail_stock = phys_stock  # Prefer physical stock if verified
+            avail_stock = phys_stock
         else:
             var_qty = "Not Available"
             var_pct = "N/A"
@@ -1175,7 +1168,6 @@ elif page == "Freezer Analysis" and user_role == "admin":
             "Audit Status": var_status
         })
 
-        # Reorder Recommendation Logic based on Available Stock & Velocity Pace
         recent_sold = float(sales_pace_map.get(code, 0))
         rate = recent_sold / lookback_days
         tot_rate += rate
@@ -1217,7 +1209,6 @@ elif page == "Freezer Analysis" and user_role == "admin":
 
     st.dataframe(pd.DataFrame(comparison_rows), hide_index=True, use_container_width=True)
 
-    # 4. Upcoming Order Recommendations
     st.markdown("---")
     st.markdown("### 2. Upcoming Order Recommendations")
     
@@ -1235,7 +1226,6 @@ elif page == "Freezer Analysis" and user_role == "admin":
     reorder_df = pd.DataFrame(reorder_rows)
     st.dataframe(reorder_df, hide_index=True, use_container_width=True)
 
-    # 5. Granular Stock Movement Logs (Orders, Receipts, Audits)
     st.markdown("---")
     st.markdown("### 3. Detailed Stock Movement Ledgers")
 
@@ -1243,11 +1233,11 @@ elif page == "Freezer Analysis" and user_role == "admin":
 
     with m_tab1:
         po_query_df = db_conn.query("""
-            SELECT p.id AS "PO #", p.order_date AS "Order Date", p.supplier_name AS "Supplier",
-                   p.total_amount AS "Total Cost (₹)", p.order_status AS "Status",
+            SELECT p.id AS "PO #", p.order_date AS "Order Date", p.expected_date AS "Expected Date",
+                   p.location AS "Location", p.order_status AS "Status", p.notes AS "Notes",
                    json_agg(json_build_object('code', pi.flavor_code, 'qty', pi.ordered_units)) AS items
             FROM purchase_orders p
-            LEFT JOIN purchase_order_items pi ON p.id = pi.purchase_order_id
+            LEFT JOIN purchase_order_items pi ON p.id = pi.order_id
             GROUP BY p.id ORDER BY p.order_date DESC;
         """, ttl="0s")
         if not po_query_df.empty:
@@ -1257,8 +1247,8 @@ elif page == "Freezer Analysis" and user_role == "admin":
                 row_data = {
                     "PO #": f"PO #{r['PO #']}",
                     "Order Date": pd.to_datetime(r['Order Date']).strftime("%d %b %Y"),
-                    "Supplier": r['Supplier'],
-                    "Total Cost (₹)": f"₹{float(r['Total Cost (₹)']):,.2f}",
+                    "Expected": pd.to_datetime(r['Expected Date']).strftime("%d %b %Y") if pd.notna(r['Expected Date']) else "—",
+                    "Location": r['Location'],
                     "Status": r['Status'],
                     "Total Qty": sum(int(q or 0) for q in items_dict.values())
                 }
@@ -1299,27 +1289,26 @@ elif page == "Freezer Analysis" and user_role == "admin":
 
     with m_tab3:
         audit_query_df = db_conn.query("""
-            SELECT a.audit_id AS "Audit #", a.audit_date AS "Audit Date", a.location AS "Location",
-                   a.audited_by AS "Auditor", a.remarks AS "Remarks",
-                   json_agg(json_build_object('code', ai.flavor_code, 'phys', ai.physical_units)) AS items
-            FROM stock_audits a
-            LEFT JOIN stock_audit_items ai ON a.audit_id = ai.audit_id
-            GROUP BY a.audit_id ORDER BY a.audit_date DESC;
+            SELECT audit_id AS "Audit #", audit_date AS "Audit Date", location AS "Location",
+                   audited_by AS "Auditor", total_physical_units AS "Total Units", remarks AS "Remarks",
+                   ml_units, mm_units, ps_units, mn_units, kb_units, bm_units, sg_units, ch_units, ra_units
+            FROM stock_audits_wide
+            ORDER BY audit_date DESC, audit_id DESC;
         """, ttl="0s")
         if not audit_query_df.empty:
             aud_display = []
             for _, r in audit_query_df.iterrows():
-                items_dict = {itm['code']: itm['phys'] for itm in r['items']} if r['items'] else {}
                 row_data = {
                     "Audit #": f"#{r['Audit #']}",
                     "Audit Date": pd.to_datetime(r['Audit Date']).strftime("%d %b %Y"),
                     "Location": r['Location'],
                     "Audited By": r['Auditor'],
-                    "Total Physical Count": sum(int(q or 0) for q in items_dict.values()),
+                    "Total Physical Count": r['Total Units'],
                     "Remarks": r['Remarks']
                 }
                 for code in FLAVOR_CODES:
-                    row_data[FLAVOR_MAP[code]["name"]] = items_dict.get(code, 0)
+                    col_name = FLAVOR_MAP[code]["audit_col"]
+                    row_data[FLAVOR_MAP[code]["name"]] = r.get(col_name, 0)
                 aud_display.append(row_data)
             st.dataframe(pd.DataFrame(aud_display), hide_index=True, use_container_width=True)
         else:
@@ -1465,6 +1454,7 @@ elif page == "Dashboard" and user_role == "admin":
     else:
         st.info("No sales logged in database yet.")
 
+    # Date-range reports
     if not daily_df.empty or not exp_df.empty:
         st.markdown("---")
         st.markdown('<div id="reports"></div>', unsafe_allow_html=True)
@@ -1536,7 +1526,7 @@ elif page == "Dashboard" and user_role == "admin":
         else:
             st.caption("No sales in this date range.")
 
-        # Cart-wise x day-of-week sales
+        # Cart-wise average sales by day of week
         st.markdown('<div id="cart-wise-day-of-week"></div>', unsafe_allow_html=True)
         st.markdown("### Cart-wise average sales by day of the week")
         if not range_df.empty:
