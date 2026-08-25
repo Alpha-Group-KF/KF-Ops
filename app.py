@@ -1,7 +1,7 @@
 """
 Kulfi Ops - multi-user data entry app for the kulfi cart business.
-- Dual-write preserved on Cart Daily Entry (Google Sheets + Supabase PostgreSQL).
-- Freezer Stock, Freezer Analysis, Dashboard & Expenses powered 100% by Supabase PostgreSQL.
+- Mobile-friendly data entry with dual-write (Google Sheets + Supabase PostgreSQL).
+- Freezer Stock, Freezer Analysis, Dashboard, and Expenses powered 100% by Supabase PostgreSQL.
 """
 
 import streamlit as st
@@ -24,7 +24,7 @@ st.html("""
 <style>
 .block-container {
     padding-top: 1rem !important;
-    padding-bottom: 1rem !important;
+    padding-bottom: 1.5rem !important;
     margin-top: 0 !important;
     max-width: 100% !important;
 }
@@ -39,19 +39,86 @@ h2 { font-size: 1.3rem !important; }
 h3 { font-size: 1.1rem !important; }
 p, span, label, .stMarkdown { color: #2A1B10; }
 
-/* Stepper buttons removal */
+/* Hide stepper buttons on number inputs */
 input[type=number]::-webkit-inner-spin-button, 
 input[type=number]::-webkit-outer-spin-button { 
     -webkit-appearance: none !important;
     margin: 0 !important; 
 }
-input[type=number] { -moz-appearance: textfield !important; }
-div[data-testid="stNumberInput"] button { display: none !important; }
+input[type=number] {
+    -moz-appearance: textfield !important;
+}
+div[data-testid="stNumberInput"] button {
+    display: none !important;
+}
 
-/* Sidebar */
-section[data-testid="stSidebar"] { font-size: 15px !important; border-right: 1px solid #E3CBA0; }
-section[data-testid="stSidebar"] h2 { font-size: 20px !important; color: #8A5E17 !important; }
-section[data-testid="stSidebar"] .stRadio > div { gap: 4px; }
+/* Mobile Flavor Card Grid */
+.flavor-entry-row {
+    background: #FFFDF8;
+    border: 1.5px solid #E3CBA0;
+    border-radius: 10px;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+.flavor-title-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+.flavor-name {
+    font-weight: 800;
+    font-size: 14px;
+    color: #4A2418;
+}
+.badge-open {
+    background: #EFE4CF;
+    color: #5A3E1B;
+    font-weight: 700;
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+.badge-sold {
+    background: #FCE8E2;
+    color: #C43D17;
+    font-weight: 800;
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+/* Inputs */
+.stTextInput div[data-baseweb="input"], .stNumberInput div[data-baseweb="input"] {
+    min-height: 34px !important;
+    height: 34px !important;
+    border-radius: 8px !important;
+}
+.stTextInput input, .stNumberInput input {
+    padding: 4px 8px !important;
+    font-size: 13px !important;
+    text-align: left !important;
+    font-weight: 600 !important;
+}
+.stNumberInput label, .stTextInput label {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    margin-bottom: 2px !important;
+    text-align: left !important;
+}
+
+section[data-testid="stSidebar"] { 
+    font-size: 15px !important; 
+    border-right: 1px solid #E3CBA0; 
+}
+section[data-testid="stSidebar"] h2 { 
+    font-size: 20px !important; 
+    color: #8A5E17 !important; 
+}
+section[data-testid="stSidebar"] .stRadio > div { 
+    gap: 4px; 
+}
 section[data-testid="stSidebar"] .stRadio label {
     background: #FFFBF2;
     border: 1px solid #E3CBA0;
@@ -60,7 +127,10 @@ section[data-testid="stSidebar"] .stRadio label {
     margin-bottom: 2px;
     transition: background .15s ease, border-color .15s ease;
 }
-section[data-testid="stSidebar"] .stRadio label:hover { background: #F0D9A6; border-color: #E8542A; }
+section[data-testid="stSidebar"] .stRadio label:hover { 
+    background: #F0D9A6; 
+    border-color: #E8542A; 
+}
 
 /* Buttons */
 .stButton button, [data-testid="stFormSubmitButton"] button, [data-testid="baseButton-primary"] {
@@ -73,7 +143,9 @@ section[data-testid="stSidebar"] .stRadio label:hover { background: #F0D9A6; bor
     background: #E8542A !important;
     box-shadow: 0 2px 6px rgba(232,84,42,0.3);
 }
-.stButton button[kind="primary"]:hover { background: #C43D17 !important; }
+.stButton button[kind="primary"]:hover { 
+    background: #C43D17 !important; 
+}
 
 /* Metric Cards */
 div[data-testid="stMetric"] {
@@ -83,8 +155,16 @@ div[data-testid="stMetric"] {
     padding: 6px 12px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
-div[data-testid="stMetricLabel"] { font-weight: 700; font-size: 12px !important; color: #7A5A34; }
-div[data-testid="stMetricValue"] { font-family: 'Fraunces', serif; font-size: 1.25rem !important; color: #4A2418; }
+div[data-testid="stMetricLabel"] { 
+    font-weight: 700; 
+    font-size: 12px !important; 
+    color: #7A5A34; 
+}
+div[data-testid="stMetricValue"] { 
+    font-family: 'Fraunces', serif; 
+    font-size: 1.25rem !important; 
+    color: #4A2418; 
+}
 
 /* Tables */
 div[data-testid="stDataFrame"], div[data-testid="stDataEditor"] {
@@ -556,7 +636,7 @@ with st.sidebar:
 st.title(f"🍦 Kulfi Ops — {page}")
 
 # ======================================================================
-# PAGE 1: DAILY ENTRY
+# PAGE 1: DAILY ENTRY (Mobile Flavor Cards + DB Lookup + Dual Write)
 # ======================================================================
 if page == "Daily Entry":
     st.subheader("Cart restock & daily sales")
@@ -617,46 +697,51 @@ if page == "Daily Entry":
 
         st.write("Enter units **added to the cart** and the **actual closing count** observed:")
 
-        df_grid = []
-        for code in FLAVOR_CODES:
-            f_info = FLAVOR_MAP[code]
-            df_grid.append({
-                "Flavour": f"{f_info['name']} (₹{f_info['mrp']:.0f})",
-                "Code": code,
-                "Opening": loaded["by_code"][code]["opening"],
-                "Added": loaded["by_code"][code]["added"],
-                "Closing": loaded["by_code"][code]["closing"],
-            })
-
-        edited_df = st.data_editor(
-            pd.DataFrame(df_grid),
-            column_config={
-                "Flavour": st.column_config.TextColumn(disabled=True),
-                "Code": st.column_config.TextColumn(disabled=True),
-                "Opening": st.column_config.NumberColumn(disabled=True, format="%d"),
-                "Added": st.column_config.NumberColumn(min_value=0, step=1, format="%d"),
-                "Closing": st.column_config.NumberColumn(min_value=0, step=1, format="%d"),
-            },
-            hide_index=True,
-            use_container_width=True,
-            key=f"editor_{entry_id}",
-        )
-
-        opening_map = {}
         added_map = {}
         closing_map = {}
         sold_map = {}
+        opening_map = {code: loaded["by_code"][code]["opening"] for code in FLAVOR_CODES}
 
-        for _, r in edited_df.iterrows():
-            code = r["Code"]
-            op = _int_num(r["Opening"])
-            ad = _int_num(r["Added"])
-            cl = _int_num(r["Closing"])
-            sd = op + ad - cl
-            opening_map[code] = op
-            added_map[code] = ad
-            closing_map[code] = cl
-            sold_map[code] = sd
+        # Mobile Card View Loop matching the original UI layout
+        for code in FLAVOR_CODES:
+            f_info = FLAVOR_MAP[code]
+            k_add = f"add_{entry_id}_{code}"
+            k_cls = f"cls_{entry_id}_{code}"
+
+            if k_add not in st.session_state:
+                st.session_state[k_add] = loaded["by_code"][code]["added"]
+            if k_cls not in st.session_state:
+                st.session_state[k_cls] = loaded["by_code"][code]["closing"]
+
+            cur_open = opening_map[code]
+            cur_add = _int_num(st.session_state[k_add])
+            cur_cls = _int_num(st.session_state[k_cls])
+            cur_sold = cur_open + cur_add - cur_cls
+
+            added_map[code] = cur_add
+            closing_map[code] = cur_cls
+            sold_map[code] = cur_sold
+
+            st.markdown(
+                f"""
+                <div class="flavor-entry-row">
+                    <div class="flavor-title-bar">
+                        <span class="flavor-name">{f_info['name']} (₹{f_info['mrp']:.0f})</span>
+                        <div>
+                            <span class="badge-open">Opening: {cur_open}</span>
+                            <span class="badge-sold">Sold: {cur_sold}</span>
+                        </div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+            col_a, col_b = st.columns(2)
+            with col_a:
+                st.number_input("+ Added Stock", min_value=0, step=1, format="%d", key=k_add)
+            with col_b:
+                st.number_input("Closing Count", min_value=0, step=1, format="%d", key=k_cls)
 
         tot_open = sum(opening_map.values())
         tot_add = sum(added_map.values())
@@ -719,13 +804,13 @@ if page == "Daily Entry":
                 '<p style="color:#C41C1C; font-weight:bold; font-size:13px; margin: 4px 0 !important;">'
                 '⚠️ There is a cash leakage - please correct or enter reason in remarks field'
                 '</p>',
-                unsafe_allow_html=True,
+                unsafe_allow_html=True
             )
         else:
             st.markdown(
                 f"<div style='margin-top:2px;'><label style='font-size:12px; font-weight:700;'>Cash Leakage:</label> "
                 f"<b style='color:#2A1B10; font-size:14px;'>₹{cash_leakage:,.2f}</b></div>",
-                unsafe_allow_html=True,
+                unsafe_allow_html=True
             )
 
         remarks = st.text_input("Remarks", value=loaded["remarks"], key=f"daily_remarks{data_key_suffix}", placeholder="Enter remarks (mandatory if cash leakage)...")
