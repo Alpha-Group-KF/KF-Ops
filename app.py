@@ -34,9 +34,9 @@ header[data-testid="stHeader"] {
 }
 html, body, [class*="css"] { font-family: 'Manrope', sans-serif; }
 h1, h2, h3 { font-family: 'Fraunces', serif !important; color: #8A5E17 !important; letter-spacing: -0.01em; }
-h1 { font-size: 1.6rem !important; margin-top: 0 !important; }
-h2 { font-size: 1.3rem !important; }
-h3 { font-size: 1.1rem !important; }
+h1 { font-size: 1.5rem !important; margin-top: 0 !important; }
+h2 { font-size: 1.25rem !important; }
+h3 { font-size: 1.05rem !important; }
 p, span, label, .stMarkdown { color: #2A1B10; }
 
 /* Hide stepper buttons on number inputs */
@@ -45,12 +45,8 @@ input[type=number]::-webkit-outer-spin-button {
     -webkit-appearance: none !important;
     margin: 0 !important; 
 }
-input[type=number] {
-    -moz-appearance: textfield !important;
-}
-div[data-testid="stNumberInput"] button {
-    display: none !important;
-}
+input[type=number] { -moz-appearance: textfield !important; }
+div[data-testid="stNumberInput"] button { display: none !important; }
 
 /* Mobile Flavor Card Grid */
 .flavor-entry-row {
@@ -91,12 +87,12 @@ div[data-testid="stNumberInput"] button {
 
 /* Inputs */
 .stTextInput div[data-baseweb="input"], .stNumberInput div[data-baseweb="input"] {
-    min-height: 34px !important;
-    height: 34px !important;
+    min-height: 32px !important;
+    height: 32px !important;
     border-radius: 8px !important;
 }
 .stTextInput input, .stNumberInput input {
-    padding: 4px 8px !important;
+    padding: 3px 8px !important;
     font-size: 13px !important;
     text-align: left !important;
     font-weight: 600 !important;
@@ -162,7 +158,7 @@ div[data-testid="stMetricLabel"] {
 }
 div[data-testid="stMetricValue"] { 
     font-family: 'Fraunces', serif; 
-    font-size: 1.25rem !important; 
+    font-size: 1.2rem !important; 
     color: #4A2418; 
 }
 
@@ -177,11 +173,11 @@ div[data-testid="stDataFrame"] th, div[data-testid="stDataEditor"] th {
     color: #FFFFFF !important;
     background-color: #70440E !important;
     text-align: center !important;
-    font-size: 14px !important;
+    font-size: 13px !important;
 }
 div[data-testid="stDataFrame"] td, div[data-testid="stDataEditor"] td {
     text-align: center !important;
-    font-size: 13px !important;
+    font-size: 12.5px !important;
 }
 hr { border-color: #E3CBA0 !important; margin: 0.4rem 0 !important; }
 </style>
@@ -702,7 +698,6 @@ if page == "Daily Entry":
         sold_map = {}
         opening_map = {code: loaded["by_code"][code]["opening"] for code in FLAVOR_CODES}
 
-        # Mobile Card View Loop matching the original UI layout
         for code in FLAVOR_CODES:
             f_info = FLAVOR_MAP[code]
             k_add = f"add_{entry_id}_{code}"
@@ -873,12 +868,18 @@ elif page == "Freezer Stock" and user_role == "admin":
         pos_df = db_conn.query("SELECT id, order_date, location FROM purchase_orders WHERE order_status != 'Completed' ORDER BY order_date DESC;", ttl="0s")
         po_options = ["None (Ad-hoc delivery)"] + [f"PO #{r['id']} ({pd.to_datetime(r['order_date']).strftime('%d %b')})" for _, r in pos_df.iterrows()]
         
+        # Robust Purchase Order ID parsing to prevent ValueError NaN
         default_po_idx = 0
-        if stock_loaded and stock_loaded.get("purchase_order_id"):
-            for idx, opt in enumerate(po_options):
-                if opt.startswith(f"PO #{int(stock_loaded['purchase_order_id'])} "):
-                    default_po_idx = idx
-                    break
+        poid_raw = stock_loaded.get("purchase_order_id") if stock_loaded else None
+        if poid_raw is not None and pd.notna(poid_raw) and str(poid_raw).strip() != "":
+            try:
+                poid_int = int(float(poid_raw))
+                for idx, opt in enumerate(po_options):
+                    if opt.startswith(f"PO #{poid_int} "):
+                        default_po_idx = idx
+                        break
+            except Exception:
+                default_po_idx = 0
 
         c1, c2, c3 = st.columns(3)
         with c1:
@@ -1102,19 +1103,19 @@ elif page == "Freezer Stock" and user_role == "admin":
                 st.error(f"Could not save audit to database: {e}")
 
 # ======================================================================
-# PAGE 3: FREEZER ANALYSIS (100% Supabase PostgreSQL Powered)
+# PAGE 3: FREEZER ANALYSIS (Single-View Compact & Full Totals)
 # ======================================================================
 elif page == "Freezer Analysis" and user_role == "admin":
     st.subheader("Freezer Stock Analysis & Reorder Planner")
-    st.caption("Integrated stock ledger, movement tracking, physical audit variance, and velocity-based order planner.")
+    st.caption("Live comparison of Physical Audit vs Calculated Stock with velocity-based reorder recommendations.")
 
     ac1, ac2, ac3 = st.columns(3)
     with ac1:
-        lookback_days = st.number_input("Lookback window for daily sales pace (days)", min_value=3, max_value=90, value=14, step=1)
+        lookback_days = st.number_input("Sales Velocity Window (days)", min_value=3, max_value=90, value=14, step=1)
     with ac2:
-        buffer_days = st.number_input("Safety buffer threshold (days)", min_value=0, max_value=14, value=3, step=1)
+        buffer_days = st.number_input("Safety Buffer Threshold (days)", min_value=0, max_value=14, value=3, step=1)
     with ac3:
-        cover_days = st.number_input("Next order coverage period (days)", min_value=1, max_value=30, value=7, step=1)
+        cover_days = st.number_input("Reorder Coverage Target (days)", min_value=1, max_value=30, value=7, step=1)
 
     try:
         today_fa = date.today()
@@ -1149,65 +1150,105 @@ elif page == "Freezer Analysis" and user_role == "admin":
         sales_pace_map, rec_map, added_map, audit_map = {}, {}, {}, {}
         audit_date_str = "N/A"
 
-    st.markdown("### 1. Physical Audited Stock vs Calculated Freezer Stock")
-    st.caption(f"Calculated stock = Stock Received − Cart Additions (Issued). Latest audit date: **{audit_date_str}**")
+    # --- SECTION 1: STOCK RECONCILIATION & TOTALS ---
+    st.markdown("---")
+    st.markdown(f"### 1. Physical Stock vs Calculated Freezer Stock &nbsp; *(Latest Audit: {audit_date_str})*")
 
     comparison_rows = []
-    reorder_rows = []
-    trigger_dates = []
-    tot_calc_stock = 0
-    tot_audited_stock = 0
-    tot_rate = 0.0
+    tot_rec, tot_issued, tot_calc, tot_phys = 0, 0, 0, 0
+    has_audit = bool(audit_map)
 
     for code in FLAVOR_CODES:
         f_info = FLAVOR_MAP[code]
         recv_units = int(rec_map.get(code, 0))
         issued_units = int(added_map.get(code, 0))
         calc_stock = recv_units - issued_units
-        tot_calc_stock += calc_stock
+
+        tot_rec += recv_units
+        tot_issued += issued_units
+        tot_calc += calc_stock
 
         phys_stock = audit_map.get(code, None)
         if phys_stock is not None:
             phys_stock = int(phys_stock)
-            tot_audited_stock += phys_stock
+            tot_phys += phys_stock
             var_qty = phys_stock - calc_stock
-            var_pct = f"{(var_qty / calc_stock * 100):+.1f}%" if calc_stock > 0 else ("0.0%" if var_qty == 0 else "N/A")
             if var_qty == 0:
-                var_status = "✅ Matching"
+                var_status = "✅ Match"
             elif var_qty > 0:
-                var_status = f"🟢 Excess (+{var_qty})"
+                var_status = f"🟢 +{var_qty}"
             else:
-                var_status = f"🔴 Shortage ({var_qty})"
-            phys_display = phys_stock
-            avail_stock = phys_stock
+                var_status = f"🔴 {var_qty}"
+            phys_display = str(phys_stock)
+            var_display = str(var_qty)
         else:
-            var_qty = "Not Available"
-            var_pct = "N/A"
-            var_status = "⚪ Missing Audit"
-            phys_display = "Not Available"
-            avail_stock = calc_stock
+            phys_display = "—"
+            var_display = "—"
+            var_status = "⚪ Missing"
 
         comparison_rows.append({
             "Flavour": f_info["name"],
-            "Stock Received (Inward)": recv_units,
-            "Cart Additions (Issued)": issued_units,
-            "Calculated Freezer Stock": calc_stock,
-            "Latest Audited Physical": phys_display,
-            "Variance (Units)": var_qty,
-            "Variance (%)": var_pct,
+            "Received (In)": recv_units,
+            "Issued (Carts)": issued_units,
+            "Calc. Stock": calc_stock,
+            "Physical Audit": phys_display,
+            "Variance": var_display,
             "Audit Status": var_status
         })
+
+    # Metric Banner for Reconciliation
+    c_m1, c_m2, c_m3, c_m4, c_m5 = st.columns(5)
+    c_m1.metric("Total Received (In)", f"{tot_rec} pcs")
+    c_m2.metric("Total Issued (Out)", f"{tot_issued} pcs")
+    c_m3.metric("Calculated Freezer", f"{tot_calc} pcs")
+    c_m4.metric("Physical Audited", f"{tot_phys} pcs" if has_audit else "Not Available")
+    net_var = tot_phys - tot_calc if has_audit else 0
+    c_m5.metric("Net Variance", f"{net_var:+d} pcs" if has_audit else "N/A")
+
+    # Add Summary Total Row directly into table
+    comp_df = pd.DataFrame(comparison_rows)
+    total_row_comp = {
+        "Flavour": "🔥 OVERALL TOTAL",
+        "Received (In)": tot_rec,
+        "Issued (Carts)": tot_issued,
+        "Calc. Stock": tot_calc,
+        "Physical Audit": str(tot_phys) if has_audit else "—",
+        "Variance": f"{net_var:+d}" if has_audit else "—",
+        "Audit Status": "✅ Match" if net_var == 0 and has_audit else (f"⚠️ {net_var:+d}" if has_audit else "—")
+    }
+    comp_df = pd.concat([comp_df, pd.DataFrame([total_row_comp])], ignore_index=True)
+
+    # Render without scrolling (height=365 fits all 10 rows seamlessly)
+    st.dataframe(comp_df, hide_index=True, use_container_width=True, height=370)
+
+    # --- SECTION 2: UPCOMING ORDER RECOMMENDATIONS & TOTALS ---
+    st.markdown("---")
+    st.markdown("### 2. Suggested Orders & Inventory Runway")
+
+    reorder_rows = []
+    trigger_dates = []
+    tot_avail = 0
+    tot_rate = 0.0
+    tot_suggested_units = 0
+    tot_order_cost = 0.0
+
+    for code in FLAVOR_CODES:
+        f_info = FLAVOR_MAP[code]
+        calc_stock = int(rec_map.get(code, 0)) - int(added_map.get(code, 0))
+        phys_stock = audit_map.get(code, None)
+        avail_stock = int(phys_stock) if phys_stock is not None else calc_stock
+        tot_avail += avail_stock
 
         recent_sold = float(sales_pace_map.get(code, 0))
         rate = recent_sold / lookback_days
         tot_rate += rate
-        target_stock_level = int(round(rate * (buffer_days + cover_days)))
+        target_req = int(round(rate * (buffer_days + cover_days)))
 
         if rate <= 0:
-            status = "No recent sales"
+            status = "⚪ No Sales"
             days_left = None
             suggested_qty = 0
-            reason = "No active sales pace detected"
+            reason = "No active sales logged"
         else:
             days_left = avail_stock / rate
             trigger_date = today_fa + timedelta(days=max(0, int(days_left - buffer_days)))
@@ -1215,56 +1256,73 @@ elif page == "Freezer Analysis" and user_role == "admin":
 
             if avail_stock <= (rate * buffer_days):
                 status = "🔴 Order Now"
-                suggested_qty = max(0, int(round((target_stock_level - avail_stock) / 10.0)) * 10)
-                reason = f"Stock ({avail_stock}u) below safety buffer of {buffer_days} days"
+                suggested_qty = max(0, int(round((target_req - avail_stock) / 10.0)) * 10)
+                reason = f"Stock below {buffer_days}d buffer"
             elif avail_stock <= (rate * (buffer_days + 2)):
                 status = "🟡 Order Soon"
-                suggested_qty = max(0, int(round((target_stock_level - avail_stock) / 10.0)) * 10)
-                reason = f"Stock reaches buffer threshold in < 2 days"
+                suggested_qty = max(0, int(round((target_req - avail_stock) / 10.0)) * 10)
+                reason = f"Reaches buffer in < 2 days"
             else:
                 status = "🟢 OK"
                 suggested_qty = 0
-                reason = f"Stock covers {int(round(days_left))} days of demand"
+                reason = f"Stock covers {int(round(days_left))} days"
+
+        tot_suggested_units += suggested_qty
+        tot_order_cost += (suggested_qty * f_info["cost_price"])
 
         reorder_rows.append({
             "Flavour": f_info["name"],
-            "Stock Considered Available": avail_stock,
-            "Avg Daily Pace": round(rate, 1),
-            "Days of Stock Left": int(round(days_left)) if days_left is not None else "—",
-            "Target Requirement": target_stock_level,
-            "Suggested Order Quantity": int(suggested_qty),
-            "Order Urgency": status,
-            "Recommendation Rationale": reason
+            "Active Stock": avail_stock,
+            "Daily Pace": f"{rate:.1f} /d",
+            "Runway": f"{int(round(days_left))} days" if days_left is not None else "—",
+            "Target Buffer": target_req,
+            "Suggested Order": int(suggested_qty),
+            "Urgency": status,
+            "Rationale": reason
         })
 
-    st.dataframe(pd.DataFrame(comparison_rows), hide_index=True, use_container_width=True)
-
-    st.markdown("---")
-    st.markdown("### 2. Upcoming Order Recommendations")
-    
-    rc1, rc2, rc3 = st.columns(3)
+    # Metric Banner for Orders
+    r_m1, r_m2, r_m3, r_m4 = st.columns(4)
     overall_order_date = min(trigger_dates) if trigger_dates else None
-    rc1.metric("Total Active Stock", f"{tot_calc_stock} units")
-    rc2.metric("Total Daily Velocity", f"{round(tot_rate, 1)} units/day")
+    r_m1.metric("Total Active Stock", f"{tot_avail} units")
+    r_m2.metric("Daily Velocity", f"{tot_rate:.1f} units/day")
+    r_m3.metric("Total Order Quantity", f"{tot_suggested_units} pcs")
+    r_m4.metric("Estimated PO Cost", f"₹{tot_order_cost:,.2f}")
+
     if overall_order_date is not None:
         if overall_order_date <= today_fa:
-            rc3.error(f"**Action Required: Place Order Today**")
+            st.error(f"🚨 **Action Required:** At least one flavor has breached the safety buffer. Place replenishment order today!")
         else:
             days_until = (overall_order_date - today_fa).days
-            rc3.info(f"**Next Order Date: {overall_order_date.strftime('%d %b %Y')}** ({days_until}d left)")
+            st.info(f"📅 **Next Order Milestone:** Estimated order placement on **{overall_order_date.strftime('%d %b %Y')}** ({days_until} days remaining).")
 
+    # Add Summary Total Row to Reorder Table
     reorder_df = pd.DataFrame(reorder_rows)
-    st.dataframe(reorder_df, hide_index=True, use_container_width=True)
+    total_row_reorder = {
+        "Flavour": "🔥 OVERALL TOTAL",
+        "Active Stock": tot_avail,
+        "Daily Pace": f"{tot_rate:.1f} /d",
+        "Runway": f"{(tot_avail / tot_rate):.0f} days" if tot_rate > 0 else "—",
+        "Target Buffer": int(round(tot_rate * (buffer_days + cover_days))),
+        "Suggested Order": tot_suggested_units,
+        "Urgency": "🔴 Order Now" if overall_order_date and overall_order_date <= today_fa else "🟢 Stable",
+        "Rationale": f"Est Cost: ₹{tot_order_cost:,.0f}"
+    }
+    reorder_df = pd.concat([reorder_df, pd.DataFrame([total_row_reorder])], ignore_index=True)
 
+    # Render without scrolling (height=370 fits all 10 rows seamlessly)
+    st.dataframe(reorder_df, hide_index=True, use_container_width=True, height=370)
+
+    # --- SECTION 3: DETAILED STOCK MOVEMENT LEDGERS ---
     st.markdown("---")
-    st.markdown("### 3. Detailed Stock Movement Ledgers")
+    st.markdown("### 3. Detailed Stock Movement Logs")
 
-    m_tab1, m_tab2, m_tab3 = st.tabs(["Purchase Orders", "Received Deliveries", "Physical Stock Audits"])
+    m_tab1, m_tab2, m_tab3 = st.tabs(["📋 Purchase Orders", "📦 Received Deliveries", "🔍 Physical Stock Audits"])
 
     with m_tab1:
         po_query_df = db_conn.query("""
             SELECT p.id AS "PO #", p.order_date AS "Order Date", p.expected_date AS "Expected Date",
-                   p.location AS "Location", p.order_status AS "Status", p.notes AS "Notes",
+                   p.location AS "Location", p.order_status AS "Status",
                    json_agg(json_build_object('code', pi.flavor_code, 'qty', pi.ordered_units)) AS items
             FROM purchase_orders p
             LEFT JOIN purchase_order_items pi ON p.id = pi.order_id
@@ -1283,7 +1341,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
                     "Total Qty": sum(int(q or 0) for q in items_dict.values())
                 }
                 for code in FLAVOR_CODES:
-                    row_data[FLAVOR_MAP[code]["name"]] = items_dict.get(code, 0)
+                    row_data[code] = items_dict.get(code, 0)
                 po_display.append(row_data)
             st.dataframe(pd.DataFrame(po_display), hide_index=True, use_container_width=True)
         else:
@@ -1311,7 +1369,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
                     "Total Received": sum(int(q or 0) for q in items_dict.values())
                 }
                 for code in FLAVOR_CODES:
-                    row_data[FLAVOR_MAP[code]["name"]] = items_dict.get(code, 0)
+                    row_data[code] = items_dict.get(code, 0)
                 rec_display.append(row_data)
             st.dataframe(pd.DataFrame(rec_display), hide_index=True, use_container_width=True)
         else:
@@ -1320,7 +1378,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
     with m_tab3:
         audit_query_df = db_conn.query("""
             SELECT audit_id AS "Audit #", audit_date AS "Audit Date", location AS "Location",
-                   audited_by AS "Auditor", total_physical_units AS "Total Units", remarks AS "Remarks",
+                   audited_by AS "Auditor", total_physical_units AS "Total Count", remarks AS "Remarks",
                    ml_units, mm_units, ps_units, mn_units, kb_units, bm_units, sg_units, ch_units, ra_units
             FROM stock_audits_wide
             ORDER BY audit_date DESC, audit_id DESC;
@@ -1333,12 +1391,12 @@ elif page == "Freezer Analysis" and user_role == "admin":
                     "Audit Date": pd.to_datetime(r['Audit Date']).strftime("%d %b %Y"),
                     "Location": r['Location'],
                     "Audited By": r['Auditor'],
-                    "Total Physical Count": r['Total Units'],
+                    "Total Count": r['Total Count'],
                     "Remarks": r['Remarks']
                 }
                 for code in FLAVOR_CODES:
                     col_name = FLAVOR_MAP[code]["audit_col"]
-                    row_data[FLAVOR_MAP[code]["name"]] = r.get(col_name, 0)
+                    row_data[code] = r.get(col_name, 0)
                 aud_display.append(row_data)
             st.dataframe(pd.DataFrame(aud_display), hide_index=True, use_container_width=True)
         else:
