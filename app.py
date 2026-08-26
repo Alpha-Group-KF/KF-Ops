@@ -1,6 +1,8 @@
 """
 Kulfi Ops - multi-user data entry app for the kulfi cart business.
 - Mobile-friendly data entry with dual-write (Google Sheets + Supabase PostgreSQL).
+- Auto-prefill for yesterday (today - 1) from previous day's closing balances.
+- Zero daily sales allowed (e.g. cart closed or no sales made).
 - Freezer Stock, Freezer Analysis, Dashboard, and Expenses powered 100% by Supabase PostgreSQL.
 """
 
@@ -238,10 +240,6 @@ def _int_num(x):
     return int(round(_num(x)))
 
 
-def _pad(row, n):
-    return row + [""] * (n - len(row)) if len(row) < n else row
-
-
 def _col_letter(n):
     letters = ""
     while n > 0:
@@ -326,67 +324,137 @@ def load_active_staff_list():
 
 
 # ----------------------------------------------------------------------
-# DATABASE LOADERS (DAILY ENTRIES, FREEZER STOCK, EXPENSES)
+# DATABASE LOADERS & PRE-FILL HELPERS
 # ----------------------------------------------------------------------
-def list_daily_entries():
+def get_latest_cart_closing_state(cart_name, before_date):
+    """Fetches the latest closing units by flavor code and staff name for a cart before a given date."""
     if db_conn is None:
-        return []
+        return {}, ""
     query = """
     SELECT 
-        e.id AS db_id,
-        e.entry_date,
-        e.cart_name,
         e.staff_name,
-        e.total_collection,
-        e.phonepe,
-        e.cash,
-        e.staff_advance,
-        e.food_tea_cash,
-        e.remarks,
         json_agg(json_build_object(
             'code', i.flavor_code,
-            'open', i.opening_units,
-            'add', i.added_units,
-            'sold', i.sold_units,
             'close', i.closing_units
         )) AS items
     FROM daily_cart_entries e
     LEFT JOIN daily_cart_items i ON e.id = i.daily_entry_id
-    GROUP BY e.id, e.entry_date, e.cart_name, e.staff_name, e.total_collection, e.phonepe, e.cash, e.staff_advance, e.food_tea_cash, e.remarks
-    ORDER BY e.entry_date DESC, e.cart_name ASC;
+    WHERE e.cart_name = :cart AND e.entry_date < :bdate
+    GROUP BY e.id, e.entry_date, e.staff_name
+    ORDER BY e.entry_date DESC
+    LIMIT 1;
     """
-    df = db_conn.query(query, ttl="0s")
-    if df.empty:
-        return []
+    try:
+        df = db_conn.query(query, params={"cart": cart_name, "bdate": before_date}, ttl="0s")
+        if not df.empty:
+            r = df.iloc[0]
+            staff = str(r["staff_name"]) if pd.notna(r["staff_name"]) else ""
+            items = r["items"] if isinstance(r["items"], list) else []
+            closings = {itm["code"]: int(itm["close"] or 0) for itm in items if isinstance(itm, dict) and "code" in itm}
+            return closings, staff
+    except Exception:
+        pass
+    return {}, ""
 
-    out = []
-    for _, r in df.iterrows():
-        items_by_code = {
-            itm["code"]: itm for itm in r["items"] if isinstance(itm, dict) and "code" in itm
-        } if (r["items"] and isinstance(r["items"], list)) else {}
 
-        out.append({
-            "db_id": r["db_id"],
-            "date": pd.to_datetime(r["entry_date"]),
-            "cart": str(r["cart_name"]).strip(),
-            "by_code": {
-                code: {
-                    "opening": int(items_by_code.get(code, {}).get("open") or 0),
-                    "added": int(items_by_code.get(code, {}).get("add") or 0),
-                    "sold": int(items_by_code.get(code, {}).get("sold") or 0),
-                    "closing": int(items_by_code.get(code, {}).get("close") or 0),
+def list_daily_entries_with_prefill():
+    """
+    Loads daily entries from the database.
+    If yesterday (today - 1) has no record for any of the 3 carts, pre-fills a default record
+    where Opening = previous Closing, Closing = Opening (Sold = 0), and Staff = previous Staff.
+    """
+    entries = []
+    if db_conn is not None:
+        query = """
+        SELECT 
+            e.id AS db_id,
+            e.entry_date,
+            e.cart_name,
+            e.staff_name,
+            e.total_collection,
+            e.phonepe,
+            e.cash,
+            e.staff_advance,
+            e.food_tea_cash,
+            e.remarks,
+            json_agg(json_build_object(
+                'code', i.flavor_code,
+                'open', i.opening_units,
+                'add', i.added_units,
+                'sold', i.sold_units,
+                'close', i.closing_units
+            )) AS items
+        FROM daily_cart_entries e
+        LEFT JOIN daily_cart_items i ON e.id = i.daily_entry_id
+        GROUP BY e.id, e.entry_date, e.cart_name, e.staff_name, e.total_collection, e.phonepe, e.cash, e.staff_advance, e.food_tea_cash, e.remarks
+        ORDER BY e.entry_date DESC, e.cart_name ASC;
+        """
+        df = db_conn.query(query, ttl="0s")
+        if not df.empty:
+            for _, r in df.iterrows():
+                items_by_code = {
+                    itm["code"]: itm for itm in r["items"] if isinstance(itm, dict) and "code" in itm
+                } if (r["items"] and isinstance(r["items"], list)) else {}
+
+                entries.append({
+                    "db_id": r["db_id"],
+                    "date": pd.to_datetime(r["entry_date"]),
+                    "cart": str(r["cart_name"]).strip(),
+                    "by_code": {
+                        code: {
+                            "opening": int(items_by_code.get(code, {}).get("open") or 0),
+                            "added": int(items_by_code.get(code, {}).get("add") or 0),
+                            "sold": int(items_by_code.get(code, {}).get("sold") or 0),
+                            "closing": int(items_by_code.get(code, {}).get("close") or 0),
+                        }
+                        for code in FLAVOR_CODES
+                    },
+                    "total": float(r["total_collection"]) if pd.notna(r["total_collection"]) else 0.0,
+                    "phonepe": float(r["phonepe"]) if pd.notna(r["phonepe"]) else 0.0,
+                    "cash": float(r["cash"]) if pd.notna(r["cash"]) else 0.0,
+                    "remarks": str(r["remarks"]) if pd.notna(r["remarks"]) else "",
+                    "staff_name": str(r["staff_name"]) if pd.notna(r["staff_name"]) else "",
+                    "staff_advance": float(r["staff_advance"]) if pd.notna(r["staff_advance"]) else 0.0,
+                    "food_tea_cash": float(r["food_tea_cash"]) if pd.notna(r["food_tea_cash"]) else 0.0,
+                    "is_prefill": False
+                })
+
+    yesterday = date.today() - timedelta(days=1)
+    existing_yesterday_carts = {
+        e["cart"] for e in entries if e["date"].date() == yesterday
+    }
+
+    # For any cart missing yesterday, create a default pre-fill entry
+    for cart in CARTS:
+        if cart not in existing_yesterday_carts:
+            prev_closings, prev_staff = get_latest_cart_closing_state(cart, yesterday)
+            by_code = {}
+            for code in FLAVOR_CODES:
+                prev_close = prev_closings.get(code, 0)
+                by_code[code] = {
+                    "opening": prev_close,
+                    "added": 0,
+                    "closing": prev_close,  # Closing = Opening ensures Sold = 0
+                    "sold": 0,
                 }
-                for code in FLAVOR_CODES
-            },
-            "total": float(r["total_collection"]) if pd.notna(r["total_collection"]) else 0.0,
-            "phonepe": float(r["phonepe"]) if pd.notna(r["phonepe"]) else 0.0,
-            "cash": float(r["cash"]) if pd.notna(r["cash"]) else 0.0,
-            "remarks": str(r["remarks"]) if pd.notna(r["remarks"]) else "",
-            "staff_name": str(r["staff_name"]) if pd.notna(r["staff_name"]) else "",
-            "staff_advance": float(r["staff_advance"]) if pd.notna(r["staff_advance"]) else 0.0,
-            "food_tea_cash": float(r["food_tea_cash"]) if pd.notna(r["food_tea_cash"]) else 0.0,
-        })
-    return out
+
+            entries.append({
+                "db_id": f"prefill_{cart}_{yesterday.strftime('%Y%m%d')}",
+                "date": pd.Timestamp(yesterday),
+                "cart": cart,
+                "by_code": by_code,
+                "total": 0.0,
+                "phonepe": 0.0,
+                "cash": 0.0,
+                "remarks": "",
+                "staff_name": prev_staff,
+                "staff_advance": 0.0,
+                "food_tea_cash": 0.0,
+                "is_prefill": True
+            })
+
+    entries.sort(key=lambda x: (x["date"], x["cart"]), reverse=True)
+    return entries
 
 
 def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map, sold_map, total, phonepe, cash, remarks, staff_name="", staff_advance=0.0, food_tea_cash=0.0):
@@ -632,13 +700,13 @@ with st.sidebar:
 st.title(f"🍦 Kulfi Ops — {page}")
 
 # ======================================================================
-# PAGE 1: DAILY ENTRY (Mobile Flavor Cards + DB Lookup + Dual Write)
+# PAGE 1: DAILY ENTRY (Mobile Flavor Cards + DB Lookup + 0 Sales Allowed)
 # ======================================================================
 if page == "Daily Entry":
     st.subheader("Cart restock & daily sales")
 
     try:
-        daily_entries = list_daily_entries()
+        daily_entries = list_daily_entries_with_prefill()
     except Exception as e:
         daily_entries = []
         st.warning(f"Could not load entries from database ({e}).")
@@ -678,12 +746,6 @@ if page == "Daily Entry":
         staff_options = load_active_staff_list()
 
         default_staff_name = loaded.get("staff_name", "")
-        if not default_staff_name:
-            for past_e in daily_entries:
-                if past_e["cart"] == cart_name and past_e.get("staff_name"):
-                    default_staff_name = past_e["staff_name"]
-                    break
-
         if default_staff_name and default_staff_name not in staff_options:
             staff_options.append(default_staff_name)
 
@@ -698,6 +760,7 @@ if page == "Daily Entry":
         sold_map = {}
         opening_map = {code: loaded["by_code"][code]["opening"] for code in FLAVOR_CODES}
 
+        # Mobile Card View Loop with live Sold calculations
         for code in FLAVOR_CODES:
             f_info = FLAVOR_MAP[code]
             k_add = f"add_{entry_id}_{code}"
@@ -755,7 +818,7 @@ if page == "Daily Entry":
         calculated_mrp_total = float(sum(sold_map[code] * FLAVOR_MAP[code]["mrp"] for code in FLAVOR_CODES))
 
         if k_tot not in st.session_state or st.session_state.get(k_prev_calc) != calculated_mrp_total:
-            default_tot = loaded["total"] if loaded["total"] > 0 else calculated_mrp_total
+            default_tot = loaded["total"] if (loaded["total"] > 0 and not loaded.get("is_prefill", False)) else calculated_mrp_total
             st.session_state[k_tot] = f"{default_tot:.2f}"
             st.session_state[k_prev_calc] = calculated_mrp_total
 
@@ -810,10 +873,9 @@ if page == "Daily Entry":
 
         remarks = st.text_input("Remarks", value=loaded["remarks"], key=f"daily_remarks{data_key_suffix}", placeholder="Enter remarks (mandatory if cash leakage)...")
 
+        # Zero daily sales constraint removed: only negative sales and unremarked leakage are blocked
         if st.button("Update sales", type="primary", use_container_width=True):
-            if sum(added_map.values()) == 0 and closing_map == opening_map:
-                st.error("Enter a stock addition or a closing count that differs from yesterday's balance before saving.")
-            elif any(s < 0 for s in sold_map.values()):
+            if any(s < 0 for s in sold_map.values()):
                 st.error("Today's sales works out negative for at least one flavour - fix closing count before saving.")
             elif has_leakage and not remarks.strip():
                 st.error("Remarks is mandatory when there is a cash leakage. Please enter a reason.")
@@ -1205,7 +1267,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
     net_var = tot_phys - tot_calc if has_audit else 0
     c_m5.metric("Net Variance", f"{net_var:+d} pcs" if has_audit else "N/A")
 
-    # Add Summary Total Row directly into table
+    # Summary Total Row
     comp_df = pd.DataFrame(comparison_rows)
     total_row_comp = {
         "Flavour": "🔥 OVERALL TOTAL",
@@ -1218,7 +1280,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
     }
     comp_df = pd.concat([comp_df, pd.DataFrame([total_row_comp])], ignore_index=True)
 
-    # Render without scrolling (height=365 fits all 10 rows seamlessly)
+    # Render without scrolling
     st.dataframe(comp_df, hide_index=True, use_container_width=True, height=370)
 
     # --- SECTION 2: UPCOMING ORDER RECOMMENDATIONS & TOTALS ---
@@ -1296,7 +1358,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
             days_until = (overall_order_date - today_fa).days
             st.info(f"📅 **Next Order Milestone:** Estimated order placement on **{overall_order_date.strftime('%d %b %Y')}** ({days_until} days remaining).")
 
-    # Add Summary Total Row to Reorder Table
+    # Summary Total Row to Reorder Table
     reorder_df = pd.DataFrame(reorder_rows)
     total_row_reorder = {
         "Flavour": "🔥 OVERALL TOTAL",
@@ -1310,7 +1372,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
     }
     reorder_df = pd.concat([reorder_df, pd.DataFrame([total_row_reorder])], ignore_index=True)
 
-    # Render without scrolling (height=370 fits all 10 rows seamlessly)
+    # Render without scrolling
     st.dataframe(reorder_df, hide_index=True, use_container_width=True, height=370)
 
     # --- SECTION 3: DETAILED STOCK MOVEMENT LEDGERS ---
