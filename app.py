@@ -3,7 +3,7 @@ Kulfi Ops - multi-user data entry app for the kulfi cart business.
 - Mobile-friendly data entry with dual-write (Google Sheets + Supabase PostgreSQL).
 - Auto-prefill for yesterday (today - 1) from previous day's closing balances.
 - Zero daily sales allowed (e.g. cart closed or no sales made).
-- Purchase Order Estimator & Management (Create, price estimate, edit, and track POs).
+- Purchase Order Estimator & Management with editable overall discount and net payable recalculation.
 - Freezer Stock, Freezer Analysis, Dashboard, and Expenses powered 100% by Supabase PostgreSQL.
 """
 
@@ -13,6 +13,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 import pandas as pd
 import hmac
+import re
 from datetime import date, datetime, timedelta
 from sqlalchemy import text
 
@@ -189,11 +190,11 @@ hr { border-color: #E3CBA0 !important; margin: 0.4rem 0 !important; }
 # ----------------------------------------------------------------------
 # CONFIG & CANONICAL MAPPINGS
 # ----------------------------------------------------------------------
-CARTS = ["HOSUR CART 01", "HOSUR CART 02", "HOSUR CART 03"]
-CITY = "HOSUR"
+CARTS = ["HOSUR CART 01", "HOSUR CART 02", "HOSUR CART 03"][cite: 3]
+CITY = "HOSUR"[cite: 3]
 
-PAYMENT_STATUSES = ["Pending", "Partial", "Complete"]
-PO_STATUSES = ["Placed", "Pending", "In Transit", "Completed", "Cancelled"]
+PAYMENT_STATUSES = ["Pending", "Partial", "Complete"][cite: 3]
+PO_STATUSES = ["Placed", "Pending", "In Transit", "Completed", "Cancelled"][cite: 3]
 EXPENSE_CATEGORIES = [
     "Cost of Goods",
     "Labour Charges",
@@ -201,12 +202,12 @@ EXPENSE_CATEGORIES = [
     "Initial Set-up Expense",
     "Miscellaneous Expense",
     "Initial Investment",
-]
-PAYMENT_MODES = ["Cash", "UPI / Bank Transfer"]
+][cite: 3]
+PAYMENT_MODES = ["Cash", "UPI / Bank Transfer"][cite: 3]
 
-DAILY_HEADER_ROWS = 2
-DAILY_TOTAL_COLS = 47
-SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+DAILY_HEADER_ROWS = 2[cite: 3]
+DAILY_TOTAL_COLS = 47[cite: 3]
+SCOPES = ["https://www.googleapis.com/auth/spreadsheets"][cite: 3]
 
 DEFAULT_FLAVORS = [
     ("ML", "Malai", 40.0, 22.0, "ml_units"),
@@ -218,36 +219,40 @@ DEFAULT_FLAVORS = [
     ("SG", "Shahi Gulab", 50.0, 27.5, "sg_units"),
     ("CH", "Chocolate", 50.0, 27.5, "ch_units"),
     ("RA", "Roasted Almond", 60.0, 33.0, "ra_units"),
-]
-FLAVOR_CODES = [f[0] for f in DEFAULT_FLAVORS]
-N_FLAVORS = len(FLAVOR_CODES)
+][cite: 3]
+FLAVOR_CODES = [f[0] for f in DEFAULT_FLAVORS][cite: 3]
+N_FLAVORS = len(FLAVOR_CODES)[cite: 3]
 
 
 def _num(x):
     if x is None or pd.isna(x):
         return 0.0
     if isinstance(x, (int, float)):
-        return float(x)
-    s = str(x).strip().replace(",", "").replace("₹", "").replace("Rs.", "").replace("Rs", "")
-    neg = s.startswith("(") and s.endswith(")")
+        return float(x)[cite: 3]
+    s = str(x).strip().replace(",", "").replace("₹", "").replace("Rs.", "").replace("Rs", "")[cite: 3]
+    neg = s.startswith("(") and s.endswith(")")[cite: 3]
     if neg:
-        s = s[1:-1]
+        s = s[1:-1][cite: 3]
     try:
-        return -float(s) if neg else float(s)
+        return -float(s) if neg else float(s)[cite: 3]
     except ValueError:
-        return 0.0
+        return 0.0[cite: 3]
 
 
 def _int_num(x):
-    return int(round(_num(x)))
+    return int(round(_num(x)))[cite: 3]
+
+
+def _pad(row, n):
+    return row + [""] * (n - len(row)) if len(row) < n else row[cite: 3]
 
 
 def _col_letter(n):
-    letters = ""
+    letters = ""[cite: 3]
     while n > 0:
-        n, rem = divmod(n - 1, 26)
-        letters = chr(65 + rem) + letters
-    return letters
+        n, rem = divmod(n - 1, 26)[cite: 3]
+        letters = chr(65 + rem) + letters[cite: 3]
+    return letters[cite: 3]
 
 
 # ----------------------------------------------------------------------
@@ -257,23 +262,23 @@ def _col_letter(n):
 def get_client():
     creds = Credentials.from_service_account_info(
         st.secrets["gcp_service_account"], scopes=SCOPES
-    )
-    return gspread.authorize(creds)
+    )[cite: 3]
+    return gspread.authorize(creds)[cite: 3]
 
 
 @st.cache_resource
 def get_workbook():
-    return get_client().open_by_key(st.secrets["sheet_id"])
+    return get_client().open_by_key(st.secrets["sheet_id"])[cite: 3]
 
 
 def get_ws(tab_name):
-    return get_workbook().worksheet(tab_name)
+    return get_workbook().worksheet(tab_name)[cite: 3]
 
 
 def _update_sheet_row(tab_name, row_number, values):
-    ws = get_ws(tab_name)
-    end_col = _col_letter(len(values))
-    ws.update(range_name=f"A{row_number}:{end_col}{row_number}", values=[values], value_input_option="USER_ENTERED")
+    ws = get_ws(tab_name)[cite: 3]
+    end_col = _col_letter(len(values))[cite: 3]
+    ws.update(range_name=f"A{row_number}:{end_col}{row_number}", values=[values], value_input_option="USER_ENTERED")[cite: 3]
 
 
 try:
@@ -282,11 +287,11 @@ except Exception:
     db_conn = None
 
 
-@st.dialog("Notification")
+@st.dialog("Notification")[cite: 3]
 def show_success_modal(message):
-    st.success(message)
-    if st.button("OK", type="primary", use_container_width=True):
-        st.rerun()
+    st.success(message)[cite: 3]
+    if st.button("OK", type="primary", use_container_width=True):[cite: 3]
+        st.rerun()[cite: 3]
 
 
 # ----------------------------------------------------------------------
@@ -296,7 +301,7 @@ def get_flavor_meta_by_code():
     meta = {
         code: {"name": name, "mrp": float(mrp), "cost_price": float(cost), "audit_col": acol}
         for code, name, mrp, cost, acol in DEFAULT_FLAVORS
-    }
+    }[cite: 3]
     if db_conn is not None:
         try:
             df = db_conn.query("SELECT code, name, mrp, cost_price FROM flavors;", ttl="1m")
@@ -308,10 +313,10 @@ def get_flavor_meta_by_code():
                     meta[code]["cost_price"] = float(r["cost_price"])
         except Exception:
             pass
-    return meta
+    return meta[cite: 3]
 
 
-FLAVOR_MAP = get_flavor_meta_by_code()
+FLAVOR_MAP = get_flavor_meta_by_code()[cite: 3]
 
 
 def load_active_staff_list():
@@ -322,14 +327,14 @@ def load_active_staff_list():
                 return ["Select Staff"] + df["name"].tolist()
         except Exception:
             pass
-    return ["Select Staff"]
+    return ["Select Staff"][cite: 3]
 
 
 # ----------------------------------------------------------------------
 # DATABASE LOADERS & PRE-FILL HELPERS
 # ----------------------------------------------------------------------
 def get_latest_cart_closing_state(cart_name, before_date):
-    """Fetches the latest closing units by flavor code and staff name for a cart before a given date."""
+    """Fetches the latest closing units by flavor code and staff name for a cart before a given date."""[cite: 3]
     if db_conn is None:
         return {}, ""
     query = """
@@ -364,7 +369,7 @@ def list_daily_entries_with_prefill():
     Loads daily entries from the database.
     If yesterday (today - 1) has no record for any of the 3 carts, pre-fills a default record
     where Opening = previous Closing, Closing = Opening (Sold = 0), and Staff = previous Staff.
-    """
+    """[cite: 3]
     entries = []
     if db_conn is not None:
         query = """
@@ -762,6 +767,7 @@ if page == "Daily Entry":
         sold_map = {}
         opening_map = {code: loaded["by_code"][code]["opening"] for code in FLAVOR_CODES}
 
+        # Mobile Card View Loop with live Sold calculations
         for code in FLAVOR_CODES:
             f_info = FLAVOR_MAP[code]
             k_add = f"add_{entry_id}_{code}"
@@ -874,6 +880,7 @@ if page == "Daily Entry":
 
         remarks = st.text_input("Remarks", value=loaded["remarks"], key=f"daily_remarks{data_key_suffix}", placeholder="Enter remarks (mandatory if cash leakage)...")
 
+        # Zero daily sales allowed: only negative sales and unremarked leakage are blocked
         if st.button("Update sales", type="primary", use_container_width=True):
             if any(s < 0 for s in sold_map.values()):
                 st.error("Today's sales works out negative for at least one flavour - fix closing count before saving.")
@@ -892,26 +899,30 @@ if page == "Daily Entry":
                     st.error(f"Could not save - {e}")
 
 # ======================================================================
-# NEW PAGE: PURCHASE ORDERS (Estimator, Place Orders & Edit Pending)
+# PAGE 2: PURCHASE ORDERS (Estimator, Dynamic Discount & Order Editing)
 # ======================================================================
 elif page == "Purchase Orders" and user_role == "admin":
     st.subheader("Purchase Order Estimator & Order Management")
-    st.caption("Plan order quantities, dynamically calculate order price at cost, and place or edit purchase orders.")
+    st.caption("Plan order quantities, apply overall discounts, calculate net payable cost, and manage orders.")
 
     po_mode = st.radio("Mode", ["Create New Order", "Edit / Track Existing Orders"], horizontal=True, key="po_screen_mode")
 
     if po_mode == "Create New Order":
         st.write("Enter details and specify quantities per flavor to calculate the estimated purchase cost.")
 
-        c1, c2, c3, c4 = st.columns(4)
+        c1, c2, c3 = st.columns(3)
         with c1:
             order_date = st.date_input("Order Date", value=date.today(), key="new_po_order_date")
         with c2:
             expected_date = st.date_input("Expected Delivery Date", value=date.today() + timedelta(days=2), key="new_po_exp_date")
         with c3:
             location = st.text_input("Delivery Location", value=CITY, key="new_po_loc")
+
+        c4, c5 = st.columns(2)
         with c4:
             order_status = st.selectbox("Order Status", PO_STATUSES, index=0, key="new_po_status")
+        with c5:
+            discount_pct = st.number_input("Overall Discount (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.5, format="%.2f", key="new_po_discount")
 
         # Initial data for order calculation grid
         grid_rows = []
@@ -939,13 +950,16 @@ elif page == "Purchase Orders" and user_role == "admin":
         )
 
         total_units = int(po_editor_df["Order Quantity"].sum())
-        total_cost = float(sum(po_editor_df["Order Quantity"] * po_editor_df["Unit Cost (₹)"]))
+        gross_cost = float(sum(po_editor_df["Order Quantity"] * po_editor_df["Unit Cost (₹)"]))
+        discount_amount = gross_cost * (discount_pct / 100.0)
+        final_amount = gross_cost - discount_amount
 
-        st.markdown("#### Dynamic Price Calculation")
-        m1, m2, m3 = st.columns(3)
+        st.markdown("#### Dynamic Price & Discount Calculation")
+        m1, m2, m3, m4 = st.columns(4)
         m1.metric("Total Ordered Units", f"{total_units} units")
-        m2.metric("Total Estimated Order Cost", f"₹{total_cost:,.2f}")
-        m3.metric("Expected By", expected_date.strftime("%d %b %Y"))
+        m2.metric("Gross Cost", f"₹{gross_cost:,.2f}")
+        m3.metric(f"Discount ({discount_pct:.1f}%)", f"-₹{discount_amount:,.2f}")
+        m4.metric("Final Amount to Pay", f"₹{final_amount:,.2f}")
 
         po_notes = st.text_input("Order Notes / Supplier Remarks (Optional)", key="new_po_notes", placeholder="e.g. Regular weekly replenishment order...")
 
@@ -954,6 +968,11 @@ elif page == "Purchase Orders" and user_role == "admin":
                 st.error("Please enter a quantity greater than 0 for at least one flavour before placing the order.")
             else:
                 try:
+                    # Append discount info to notes to guarantee persistence without altering DB schema
+                    combined_notes = po_notes.strip()
+                    if discount_pct > 0:
+                        combined_notes = f"[Discount: {discount_pct:.2f}% | Final: ₹{final_amount:,.2f}] {combined_notes}".strip()
+
                     with db_conn.session as s:
                         res = s.execute(
                             text("""
@@ -961,7 +980,7 @@ elif page == "Purchase Orders" and user_role == "admin":
                             VALUES (:od, :ed, :loc, :stat, :notes)
                             RETURNING id;
                             """),
-                            {"od": order_date, "ed": expected_date, "loc": location, "stat": order_status, "notes": po_notes}
+                            {"od": order_date, "ed": expected_date, "loc": location, "stat": order_status, "notes": combined_notes}
                         )
                         new_poid = res.scalar()
 
@@ -976,7 +995,7 @@ elif page == "Purchase Orders" and user_role == "admin":
                                     {"poid": new_poid, "code": row["Code"], "qty": qty}
                                 )
                         s.commit()
-                    show_success_modal(f"Purchase Order #{new_poid} created successfully! Total: {total_units} units (₹{total_cost:,.2f}).")
+                    show_success_modal(f"Purchase Order #{new_poid} created successfully! Total: {total_units} units | Final Amount: ₹{final_amount:,.2f} ({discount_pct:.1f}% off).")
                 except Exception as e:
                     st.error(f"Could not save purchase order to database: {e}")
 
@@ -1001,7 +1020,19 @@ elif page == "Purchase Orders" and user_role == "admin":
             loaded_po = po_records[po_labels.index(selected_po_label)]
             loaded_po_id = loaded_po["id"]
 
-            c1, c2, c3, c4 = st.columns(4)
+            # Parse existing discount if present in notes
+            existing_notes = str(loaded_po.get("notes") or "")
+            default_disc = 0.0
+            clean_notes = existing_notes
+            disc_match = re.search(r"\[Discount:\s*([\d.]+)%[^\]]*\]", existing_notes)
+            if disc_match:
+                try:
+                    default_disc = float(re.search(r"([\d.]+)", disc_match.group(0)).group(1))
+                    clean_notes = re.sub(r"\[Discount:[^\]]*\]\s*", "", existing_notes).strip()
+                except Exception:
+                    default_disc = 0.0
+
+            c1, c2, c3 = st.columns(3)
             with c1:
                 e_order_date = st.date_input(
                     "Order Date", 
@@ -1016,10 +1047,22 @@ elif page == "Purchase Orders" and user_role == "admin":
                 )
             with c3:
                 e_location = st.text_input("Delivery Location", value=str(loaded_po.get("location", CITY)), key=f"edit_po_loc_{loaded_po_id}")
+
+            c4, c5 = st.columns(2)
             with c4:
                 curr_status = loaded_po.get("order_status", "Placed")
                 def_stat_idx = PO_STATUSES.index(curr_status) if curr_status in PO_STATUSES else 0
                 e_status = st.selectbox("Order Status", PO_STATUSES, index=def_stat_idx, key=f"edit_po_stat_{loaded_po_id}")
+            with c5:
+                e_discount_pct = st.number_input(
+                    "Overall Discount (%)", 
+                    min_value=0.0, 
+                    max_value=100.0, 
+                    value=default_disc, 
+                    step=0.5, 
+                    format="%.2f", 
+                    key=f"edit_po_disc_{loaded_po_id}"
+                )
 
             # Prepopulate items
             items_by_code = {}
@@ -1053,21 +1096,28 @@ elif page == "Purchase Orders" and user_role == "admin":
             )
 
             e_total_units = int(po_edit_editor_df["Order Quantity"].sum())
-            e_total_cost = float(sum(po_edit_editor_df["Order Quantity"] * po_edit_editor_df["Unit Cost (₹)"]))
+            e_gross_cost = float(sum(po_edit_editor_df["Order Quantity"] * po_edit_editor_df["Unit Cost (₹)"]))
+            e_discount_amount = e_gross_cost * (e_discount_pct / 100.0)
+            e_final_amount = e_gross_cost - e_discount_amount
 
             st.markdown("#### Updated Order Summary")
-            em1, em2, em3 = st.columns(3)
+            em1, em2, em3, em4 = st.columns(4)
             em1.metric("Total Ordered Units", f"{e_total_units} units")
-            em2.metric("Total Order Value", f"₹{e_total_cost:,.2f}")
-            em3.metric("Expected By", e_expected_date.strftime("%d %b %Y"))
+            em2.metric("Gross Cost", f"₹{e_gross_cost:,.2f}")
+            em3.metric(f"Discount ({e_discount_pct:.1f}%)", f"-₹{e_discount_amount:,.2f}")
+            em4.metric("Final Amount to Pay", f"₹{e_final_amount:,.2f}")
 
-            e_notes = st.text_input("Order Notes", value=str(loaded_po.get("notes") or ""), key=f"edit_po_notes_{loaded_po_id}")
+            e_notes = st.text_input("Order Notes", value=clean_notes, key=f"edit_po_notes_{loaded_po_id}")
 
             if st.button("💾 Update Purchase Order", type="primary", use_container_width=True):
                 if e_total_units <= 0:
                     st.error("Please specify at least one quantity for the order.")
                 else:
                     try:
+                        combined_edit_notes = e_notes.strip()
+                        if e_discount_pct > 0:
+                            combined_edit_notes = f"[Discount: {e_discount_pct:.2f}% | Final: ₹{e_final_amount:,.2f}] {combined_edit_notes}".strip()
+
                         with db_conn.session as s:
                             s.execute(
                                 text("""
@@ -1075,7 +1125,7 @@ elif page == "Purchase Orders" and user_role == "admin":
                                 SET order_date = :od, expected_date = :ed, location = :loc, order_status = :stat, notes = :notes
                                 WHERE id = :id;
                                 """),
-                                {"od": e_order_date, "ed": e_expected_date, "loc": e_location, "stat": e_status, "notes": e_notes, "id": loaded_po_id}
+                                {"od": e_order_date, "ed": e_expected_date, "loc": e_location, "stat": e_status, "notes": combined_edit_notes, "id": loaded_po_id}
                             )
                             s.execute(text("DELETE FROM purchase_order_items WHERE order_id = :id;"), {"id": loaded_po_id})
 
@@ -1090,7 +1140,7 @@ elif page == "Purchase Orders" and user_role == "admin":
                                         {"poid": loaded_po_id, "code": row["Code"], "qty": qty}
                                     )
                             s.commit()
-                        show_success_modal(f"Purchase Order #{loaded_po_id} updated successfully!")
+                        show_success_modal(f"Purchase Order #{loaded_po_id} updated successfully! Final Amount: ₹{e_final_amount:,.2f}.")
                     except Exception as e:
                         st.error(f"Could not update purchase order: {e}")
 
