@@ -3,6 +3,7 @@ Kulfi Ops - multi-user data entry app for the kulfi cart business.
 - Mobile-friendly data entry with dual-write (Google Sheets + Supabase PostgreSQL).
 - Auto-prefill for yesterday (today - 1) from previous day's closing balances.
 - Zero daily sales allowed (e.g. cart closed or no sales made).
+- Suggested next order calculated from Calculated Stock (Inward - Issued).
 - Freezer Stock, Freezer Analysis, Dashboard, and Expenses powered 100% by Supabase PostgreSQL.
 """
 
@@ -238,6 +239,10 @@ def _num(x):
 
 def _int_num(x):
     return int(round(_num(x)))
+
+
+def _pad(row, n):
+    return row + [""] * (n - len(row)) if len(row) < n else row
 
 
 def _col_letter(n):
@@ -873,7 +878,7 @@ if page == "Daily Entry":
 
         remarks = st.text_input("Remarks", value=loaded["remarks"], key=f"daily_remarks{data_key_suffix}", placeholder="Enter remarks (mandatory if cash leakage)...")
 
-        # Zero daily sales constraint removed: only negative sales and unremarked leakage are blocked
+        # Zero daily sales allowed: only negative sales and unremarked leakage are blocked
         if st.button("Update sales", type="primary", use_container_width=True):
             if any(s < 0 for s in sold_map.values()):
                 st.error("Today's sales works out negative for at least one flavour - fix closing count before saving.")
@@ -1165,7 +1170,7 @@ elif page == "Freezer Stock" and user_role == "admin":
                 st.error(f"Could not save audit to database: {e}")
 
 # ======================================================================
-# PAGE 3: FREEZER ANALYSIS (Single-View Compact & Full Totals)
+# PAGE 3: FREEZER ANALYSIS (Single-View Compact, Full Totals, Orders from Calc Stock)
 # ======================================================================
 elif page == "Freezer Analysis" and user_role == "admin":
     st.subheader("Freezer Stock Analysis & Reorder Planner")
@@ -1283,13 +1288,13 @@ elif page == "Freezer Analysis" and user_role == "admin":
     # Render without scrolling
     st.dataframe(comp_df, hide_index=True, use_container_width=True, height=370)
 
-    # --- SECTION 2: UPCOMING ORDER RECOMMENDATIONS & TOTALS ---
+    # --- SECTION 2: UPCOMING ORDER RECOMMENDATIONS (BASED STRICTLY ON CALC STOCK) ---
     st.markdown("---")
-    st.markdown("### 2. Suggested Orders & Inventory Runway")
+    st.markdown("### 2. Suggested Orders & Inventory Runway &nbsp; *(Calculated from Live Freezer Stock)*")
 
     reorder_rows = []
     trigger_dates = []
-    tot_avail = 0
+    tot_calc_active = 0
     tot_rate = 0.0
     tot_suggested_units = 0
     tot_order_cost = 0.0
@@ -1297,9 +1302,8 @@ elif page == "Freezer Analysis" and user_role == "admin":
     for code in FLAVOR_CODES:
         f_info = FLAVOR_MAP[code]
         calc_stock = int(rec_map.get(code, 0)) - int(added_map.get(code, 0))
-        phys_stock = audit_map.get(code, None)
-        avail_stock = int(phys_stock) if phys_stock is not None else calc_stock
-        tot_avail += avail_stock
+        avail_stock = calc_stock  # Strictly based on Calculated Stock
+        tot_calc_active += avail_stock
 
         recent_sold = float(sales_pace_map.get(code, 0))
         rate = recent_sold / lookback_days
@@ -1334,7 +1338,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
 
         reorder_rows.append({
             "Flavour": f_info["name"],
-            "Active Stock": avail_stock,
+            "Calculated Stock": avail_stock,
             "Daily Pace": f"{rate:.1f} /d",
             "Runway": f"{int(round(days_left))} days" if days_left is not None else "—",
             "Target Buffer": target_req,
@@ -1346,14 +1350,14 @@ elif page == "Freezer Analysis" and user_role == "admin":
     # Metric Banner for Orders
     r_m1, r_m2, r_m3, r_m4 = st.columns(4)
     overall_order_date = min(trigger_dates) if trigger_dates else None
-    r_m1.metric("Total Active Stock", f"{tot_avail} units")
+    r_m1.metric("Calculated Active Stock", f"{tot_calc_active} units")
     r_m2.metric("Daily Velocity", f"{tot_rate:.1f} units/day")
     r_m3.metric("Total Order Quantity", f"{tot_suggested_units} pcs")
     r_m4.metric("Estimated PO Cost", f"₹{tot_order_cost:,.2f}")
 
     if overall_order_date is not None:
         if overall_order_date <= today_fa:
-            st.error(f"🚨 **Action Required:** At least one flavor has breached the safety buffer. Place replenishment order today!")
+            st.error(f"🚨 **Action Required:** At least one flavor has breached the safety buffer based on calculated stock. Place replenishment order today!")
         else:
             days_until = (overall_order_date - today_fa).days
             st.info(f"📅 **Next Order Milestone:** Estimated order placement on **{overall_order_date.strftime('%d %b %Y')}** ({days_until} days remaining).")
@@ -1362,9 +1366,9 @@ elif page == "Freezer Analysis" and user_role == "admin":
     reorder_df = pd.DataFrame(reorder_rows)
     total_row_reorder = {
         "Flavour": "🔥 OVERALL TOTAL",
-        "Active Stock": tot_avail,
+        "Calculated Stock": tot_calc_active,
         "Daily Pace": f"{tot_rate:.1f} /d",
-        "Runway": f"{(tot_avail / tot_rate):.0f} days" if tot_rate > 0 else "—",
+        "Runway": f"{(tot_calc_active / tot_rate):.0f} days" if tot_rate > 0 else "—",
         "Target Buffer": int(round(tot_rate * (buffer_days + cover_days))),
         "Suggested Order": tot_suggested_units,
         "Urgency": "🔴 Order Now" if overall_order_date and overall_order_date <= today_fa else "🟢 Stable",
