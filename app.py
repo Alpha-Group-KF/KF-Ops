@@ -190,11 +190,11 @@ hr { border-color: #E3CBA0 !important; margin: 0.4rem 0 !important; }
 # ----------------------------------------------------------------------
 # CONFIG & CANONICAL MAPPINGS
 # ----------------------------------------------------------------------
-CARTS = ["HOSUR CART 01", "HOSUR CART 02", "HOSUR CART 03"][cite: 3]
-CITY = "HOSUR"[cite: 3]
+CARTS = ["HOSUR CART 01", "HOSUR CART 02", "HOSUR CART 03"]
+CITY = "HOSUR"
 
-PAYMENT_STATUSES = ["Pending", "Partial", "Complete"][cite: 3]
-PO_STATUSES = ["Placed", "Pending", "In Transit", "Completed", "Cancelled"][cite: 3]
+PAYMENT_STATUSES = ["Pending", "Partial", "Complete"]
+PO_STATUSES = ["Placed", "Pending", "In Transit", "Completed", "Cancelled"]
 EXPENSE_CATEGORIES = [
     "Cost of Goods",
     "Labour Charges",
@@ -202,12 +202,12 @@ EXPENSE_CATEGORIES = [
     "Initial Set-up Expense",
     "Miscellaneous Expense",
     "Initial Investment",
-][cite: 3]
-PAYMENT_MODES = ["Cash", "UPI / Bank Transfer"][cite: 3]
+]
+PAYMENT_MODES = ["Cash", "UPI / Bank Transfer"]
 
-DAILY_HEADER_ROWS = 2[cite: 3]
-DAILY_TOTAL_COLS = 47[cite: 3]
-SCOPES = ["https://www.googleapis.com/auth/spreadsheets"][cite: 3]
+DAILY_HEADER_ROWS = 2
+DAILY_TOTAL_COLS = 47
+SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
 DEFAULT_FLAVORS = [
     ("ML", "Malai", 40.0, 22.0, "ml_units"),
@@ -219,40 +219,40 @@ DEFAULT_FLAVORS = [
     ("SG", "Shahi Gulab", 50.0, 27.5, "sg_units"),
     ("CH", "Chocolate", 50.0, 27.5, "ch_units"),
     ("RA", "Roasted Almond", 60.0, 33.0, "ra_units"),
-][cite: 3]
-FLAVOR_CODES = [f[0] for f in DEFAULT_FLAVORS][cite: 3]
-N_FLAVORS = len(FLAVOR_CODES)[cite: 3]
+]
+FLAVOR_CODES = [f[0] for f in DEFAULT_FLAVORS]
+N_FLAVORS = len(FLAVOR_CODES)
 
 
 def _num(x):
     if x is None or pd.isna(x):
         return 0.0
     if isinstance(x, (int, float)):
-        return float(x)[cite: 3]
-    s = str(x).strip().replace(",", "").replace("₹", "").replace("Rs.", "").replace("Rs", "")[cite: 3]
-    neg = s.startswith("(") and s.endswith(")")[cite: 3]
+        return float(x)
+    s = str(x).strip().replace(",", "").replace("₹", "").replace("Rs.", "").replace("Rs", "")
+    neg = s.startswith("(") and s.endswith(")")
     if neg:
-        s = s[1:-1][cite: 3]
+        s = s[1:-1]
     try:
-        return -float(s) if neg else float(s)[cite: 3]
+        return -float(s) if neg else float(s)
     except ValueError:
-        return 0.0[cite: 3]
+        return 0.0
 
 
 def _int_num(x):
-    return int(round(_num(x)))[cite: 3]
+    return int(round(_num(x)))
 
 
 def _pad(row, n):
-    return row + [""] * (n - len(row)) if len(row) < n else row[cite: 3]
+    return row + [""] * (n - len(row)) if len(row) < n else row
 
 
 def _col_letter(n):
-    letters = ""[cite: 3]
+    letters = ""
     while n > 0:
-        n, rem = divmod(n - 1, 26)[cite: 3]
-        letters = chr(65 + rem) + letters[cite: 3]
-    return letters[cite: 3]
+        n, rem = divmod(n - 1, 26)
+        letters = chr(65 + rem) + letters
+    return letters
 
 
 # ----------------------------------------------------------------------
@@ -262,23 +262,23 @@ def _col_letter(n):
 def get_client():
     creds = Credentials.from_service_account_info(
         st.secrets["gcp_service_account"], scopes=SCOPES
-    )[cite: 3]
-    return gspread.authorize(creds)[cite: 3]
+    )
+    return gspread.authorize(creds)
 
 
 @st.cache_resource
 def get_workbook():
-    return get_client().open_by_key(st.secrets["sheet_id"])[cite: 3]
+    return get_client().open_by_key(st.secrets["sheet_id"])
 
 
 def get_ws(tab_name):
-    return get_workbook().worksheet(tab_name)[cite: 3]
+    return get_workbook().worksheet(tab_name)
 
 
 def _update_sheet_row(tab_name, row_number, values):
-    ws = get_ws(tab_name)[cite: 3]
-    end_col = _col_letter(len(values))[cite: 3]
-    ws.update(range_name=f"A{row_number}:{end_col}{row_number}", values=[values], value_input_option="USER_ENTERED")[cite: 3]
+    ws = get_ws(tab_name)
+    end_col = _col_letter(len(values))
+    ws.update(range_name=f"A{row_number}:{end_col}{row_number}", values=[values], value_input_option="USER_ENTERED")
 
 
 try:
@@ -287,11 +287,11 @@ except Exception:
     db_conn = None
 
 
-@st.dialog("Notification")[cite: 3]
+@st.dialog("Notification")
 def show_success_modal(message):
-    st.success(message)[cite: 3]
-    if st.button("OK", type="primary", use_container_width=True):[cite: 3]
-        st.rerun()[cite: 3]
+    st.success(message)
+    if st.button("OK", type="primary", use_container_width=True):
+        st.rerun()
 
 
 # ----------------------------------------------------------------------
@@ -301,7 +301,7 @@ def get_flavor_meta_by_code():
     meta = {
         code: {"name": name, "mrp": float(mrp), "cost_price": float(cost), "audit_col": acol}
         for code, name, mrp, cost, acol in DEFAULT_FLAVORS
-    }[cite: 3]
+    }
     if db_conn is not None:
         try:
             df = db_conn.query("SELECT code, name, mrp, cost_price FROM flavors;", ttl="1m")
@@ -313,10 +313,10 @@ def get_flavor_meta_by_code():
                     meta[code]["cost_price"] = float(r["cost_price"])
         except Exception:
             pass
-    return meta[cite: 3]
+    return meta
 
 
-FLAVOR_MAP = get_flavor_meta_by_code()[cite: 3]
+FLAVOR_MAP = get_flavor_meta_by_code()
 
 
 def load_active_staff_list():
@@ -327,14 +327,14 @@ def load_active_staff_list():
                 return ["Select Staff"] + df["name"].tolist()
         except Exception:
             pass
-    return ["Select Staff"][cite: 3]
+    return ["Select Staff"]
 
 
 # ----------------------------------------------------------------------
 # DATABASE LOADERS & PRE-FILL HELPERS
 # ----------------------------------------------------------------------
 def get_latest_cart_closing_state(cart_name, before_date):
-    """Fetches the latest closing units by flavor code and staff name for a cart before a given date."""[cite: 3]
+    """Fetches the latest closing units by flavor code and staff name for a cart before a given date."""
     if db_conn is None:
         return {}, ""
     query = """
@@ -369,7 +369,7 @@ def list_daily_entries_with_prefill():
     Loads daily entries from the database.
     If yesterday (today - 1) has no record for any of the 3 carts, pre-fills a default record
     where Opening = previous Closing, Closing = Opening (Sold = 0), and Staff = previous Staff.
-    """[cite: 3]
+    """
     entries = []
     if db_conn is not None:
         query = """
@@ -856,7 +856,7 @@ if page == "Daily Entry":
         total_collection_val = _num(total_collection_str)
         phonepe_val = _num(phonepe_str)
         staff_advance_val = _num(staff_advance_str)
-        food_tea_val = _num(food_tea_str)
+        food_tea_val = _num(food_tea_val_raw := food_tea_str)
         cash_val = _num(cash_str)
 
         cash_leakage = total_collection_val - phonepe_val - staff_advance_val - food_tea_val - cash_val
