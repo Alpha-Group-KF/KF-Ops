@@ -3,7 +3,7 @@ Kulfi Ops - multi-user data entry app for the kulfi cart business.
 - Mobile-friendly data entry with dual-write (Google Sheets + Supabase PostgreSQL).
 - Auto-prefill for yesterday (today - 1) from previous day's closing balances.
 - Zero daily sales allowed (e.g. cart closed or no sales made).
-- Suggested next order calculated from Calculated Stock (Inward - Issued).
+- Purchase Order Estimator & Management (Create, price estimate, edit, and track POs).
 - Freezer Stock, Freezer Analysis, Dashboard, and Expenses powered 100% by Supabase PostgreSQL.
 """
 
@@ -193,6 +193,7 @@ CARTS = ["HOSUR CART 01", "HOSUR CART 02", "HOSUR CART 03"]
 CITY = "HOSUR"
 
 PAYMENT_STATUSES = ["Pending", "Partial", "Complete"]
+PO_STATUSES = ["Placed", "Pending", "In Transit", "Completed", "Cancelled"]
 EXPENSE_CATEGORIES = [
     "Cost of Goods",
     "Labour Charges",
@@ -239,10 +240,6 @@ def _num(x):
 
 def _int_num(x):
     return int(round(_num(x)))
-
-
-def _pad(row, n):
-    return row + [""] * (n - len(row)) if len(row) < n else row
 
 
 def _col_letter(n):
@@ -690,7 +687,7 @@ with st.sidebar:
         st.markdown("## 🍦 Kulfi Ops")
 
     if user_role == "admin":
-        nav_options = ["Dashboard", "Daily Entry", "Freezer Stock", "Freezer Analysis", "Expenses"]
+        nav_options = ["Dashboard", "Daily Entry", "Purchase Orders", "Freezer Stock", "Freezer Analysis", "Expenses"]
         page = st.radio("Go to", nav_options, label_visibility="collapsed")
     else:
         page = "Daily Entry"
@@ -765,7 +762,6 @@ if page == "Daily Entry":
         sold_map = {}
         opening_map = {code: loaded["by_code"][code]["opening"] for code in FLAVOR_CODES}
 
-        # Mobile Card View Loop with live Sold calculations
         for code in FLAVOR_CODES:
             f_info = FLAVOR_MAP[code]
             k_add = f"add_{entry_id}_{code}"
@@ -878,7 +874,6 @@ if page == "Daily Entry":
 
         remarks = st.text_input("Remarks", value=loaded["remarks"], key=f"daily_remarks{data_key_suffix}", placeholder="Enter remarks (mandatory if cash leakage)...")
 
-        # Zero daily sales allowed: only negative sales and unremarked leakage are blocked
         if st.button("Update sales", type="primary", use_container_width=True):
             if any(s < 0 for s in sold_map.values()):
                 st.error("Today's sales works out negative for at least one flavour - fix closing count before saving.")
@@ -897,7 +892,210 @@ if page == "Daily Entry":
                     st.error(f"Could not save - {e}")
 
 # ======================================================================
-# PAGE 2: FREEZER STOCK (100% Database Powered)
+# NEW PAGE: PURCHASE ORDERS (Estimator, Place Orders & Edit Pending)
+# ======================================================================
+elif page == "Purchase Orders" and user_role == "admin":
+    st.subheader("Purchase Order Estimator & Order Management")
+    st.caption("Plan order quantities, dynamically calculate order price at cost, and place or edit purchase orders.")
+
+    po_mode = st.radio("Mode", ["Create New Order", "Edit / Track Existing Orders"], horizontal=True, key="po_screen_mode")
+
+    if po_mode == "Create New Order":
+        st.write("Enter details and specify quantities per flavor to calculate the estimated purchase cost.")
+
+        c1, c2, c3, c4 = st.columns(4)
+        with c1:
+            order_date = st.date_input("Order Date", value=date.today(), key="new_po_order_date")
+        with c2:
+            expected_date = st.date_input("Expected Delivery Date", value=date.today() + timedelta(days=2), key="new_po_exp_date")
+        with c3:
+            location = st.text_input("Delivery Location", value=CITY, key="new_po_loc")
+        with c4:
+            order_status = st.selectbox("Order Status", PO_STATUSES, index=0, key="new_po_status")
+
+        # Initial data for order calculation grid
+        grid_rows = []
+        for code in FLAVOR_CODES:
+            f_info = FLAVOR_MAP[code]
+            grid_rows.append({
+                "Flavour": f_info["name"],
+                "Code": code,
+                "Unit Cost (₹)": float(f_info["cost_price"]),
+                "Order Quantity": 0
+            })
+
+        st.write("Enter order quantities per flavour:")
+        po_editor_df = st.data_editor(
+            pd.DataFrame(grid_rows),
+            column_config={
+                "Flavour": st.column_config.TextColumn(disabled=True),
+                "Code": st.column_config.TextColumn(disabled=True),
+                "Unit Cost (₹)": st.column_config.NumberColumn(format="₹%.2f", disabled=True),
+                "Order Quantity": st.column_config.NumberColumn(min_value=0, step=10, format="%d"),
+            },
+            hide_index=True,
+            use_container_width=True,
+            key="new_po_editor"
+        )
+
+        total_units = int(po_editor_df["Order Quantity"].sum())
+        total_cost = float(sum(po_editor_df["Order Quantity"] * po_editor_df["Unit Cost (₹)"]))
+
+        st.markdown("#### Dynamic Price Calculation")
+        m1, m2, m3 = st.columns(3)
+        m1.metric("Total Ordered Units", f"{total_units} units")
+        m2.metric("Total Estimated Order Cost", f"₹{total_cost:,.2f}")
+        m3.metric("Expected By", expected_date.strftime("%d %b %Y"))
+
+        po_notes = st.text_input("Order Notes / Supplier Remarks (Optional)", key="new_po_notes", placeholder="e.g. Regular weekly replenishment order...")
+
+        if st.button("🚀 Submit Purchase Order", type="primary", use_container_width=True):
+            if total_units <= 0:
+                st.error("Please enter a quantity greater than 0 for at least one flavour before placing the order.")
+            else:
+                try:
+                    with db_conn.session as s:
+                        res = s.execute(
+                            text("""
+                            INSERT INTO purchase_orders (order_date, expected_date, location, order_status, notes)
+                            VALUES (:od, :ed, :loc, :stat, :notes)
+                            RETURNING id;
+                            """),
+                            {"od": order_date, "ed": expected_date, "loc": location, "stat": order_status, "notes": po_notes}
+                        )
+                        new_poid = res.scalar()
+
+                        for _, row in po_editor_df.iterrows():
+                            qty = int(row["Order Quantity"])
+                            if qty > 0:
+                                s.execute(
+                                    text("""
+                                    INSERT INTO purchase_order_items (order_id, flavor_code, ordered_units)
+                                    VALUES (:poid, :code, :qty);
+                                    """),
+                                    {"poid": new_poid, "code": row["Code"], "qty": qty}
+                                )
+                        s.commit()
+                    show_success_modal(f"Purchase Order #{new_poid} created successfully! Total: {total_units} units (₹{total_cost:,.2f}).")
+                except Exception as e:
+                    st.error(f"Could not save purchase order to database: {e}")
+
+    elif po_mode == "Edit / Track Existing Orders":
+        po_query_df = db_conn.query("""
+            SELECT p.id, p.order_date, p.expected_date, p.location, p.order_status, p.notes,
+                   json_agg(json_build_object('code', pi.flavor_code, 'qty', pi.ordered_units)) AS items
+            FROM purchase_orders p
+            LEFT JOIN purchase_order_items pi ON p.id = pi.order_id
+            GROUP BY p.id ORDER BY p.order_date DESC, p.id DESC;
+        """, ttl="0s")
+
+        if po_query_df.empty:
+            st.info("No purchase orders found in the database.")
+        else:
+            po_records = po_query_df.to_dict("records")
+            po_labels = [
+                f"PO #{r['id']} — {pd.to_datetime(r['order_date']).strftime('%d %b %Y')} ({r['location']}) — Status: {r['order_status']}"
+                for r in po_records
+            ]
+            selected_po_label = st.selectbox("Select Purchase Order to edit", po_labels, key="edit_po_select")
+            loaded_po = po_records[po_labels.index(selected_po_label)]
+            loaded_po_id = loaded_po["id"]
+
+            c1, c2, c3, c4 = st.columns(4)
+            with c1:
+                e_order_date = st.date_input(
+                    "Order Date", 
+                    value=pd.to_datetime(loaded_po["order_date"]).date() if loaded_po.get("order_date") else date.today(),
+                    key=f"edit_po_od_{loaded_po_id}"
+                )
+            with c2:
+                e_expected_date = st.date_input(
+                    "Expected Delivery Date", 
+                    value=pd.to_datetime(loaded_po["expected_date"]).date() if loaded_po.get("expected_date") else date.today() + timedelta(days=2),
+                    key=f"edit_po_ed_{loaded_po_id}"
+                )
+            with c3:
+                e_location = st.text_input("Delivery Location", value=str(loaded_po.get("location", CITY)), key=f"edit_po_loc_{loaded_po_id}")
+            with c4:
+                curr_status = loaded_po.get("order_status", "Placed")
+                def_stat_idx = PO_STATUSES.index(curr_status) if curr_status in PO_STATUSES else 0
+                e_status = st.selectbox("Order Status", PO_STATUSES, index=def_stat_idx, key=f"edit_po_stat_{loaded_po_id}")
+
+            # Prepopulate items
+            items_by_code = {}
+            if loaded_po.get("items") and isinstance(loaded_po["items"], list):
+                for itm in loaded_po["items"]:
+                    if isinstance(itm, dict) and "code" in itm:
+                        items_by_code[itm["code"]] = itm.get("qty", 0)
+
+            edit_grid_rows = []
+            for code in FLAVOR_CODES:
+                f_info = FLAVOR_MAP[code]
+                edit_grid_rows.append({
+                    "Flavour": f_info["name"],
+                    "Code": code,
+                    "Unit Cost (₹)": float(f_info["cost_price"]),
+                    "Order Quantity": int(items_by_code.get(code) or 0)
+                })
+
+            st.write("Modify order quantities per flavour:")
+            po_edit_editor_df = st.data_editor(
+                pd.DataFrame(edit_grid_rows),
+                column_config={
+                    "Flavour": st.column_config.TextColumn(disabled=True),
+                    "Code": st.column_config.TextColumn(disabled=True),
+                    "Unit Cost (₹)": st.column_config.NumberColumn(format="₹%.2f", disabled=True),
+                    "Order Quantity": st.column_config.NumberColumn(min_value=0, step=10, format="%d"),
+                },
+                hide_index=True,
+                use_container_width=True,
+                key=f"edit_po_editor_{loaded_po_id}"
+            )
+
+            e_total_units = int(po_edit_editor_df["Order Quantity"].sum())
+            e_total_cost = float(sum(po_edit_editor_df["Order Quantity"] * po_edit_editor_df["Unit Cost (₹)"]))
+
+            st.markdown("#### Updated Order Summary")
+            em1, em2, em3 = st.columns(3)
+            em1.metric("Total Ordered Units", f"{e_total_units} units")
+            em2.metric("Total Order Value", f"₹{e_total_cost:,.2f}")
+            em3.metric("Expected By", e_expected_date.strftime("%d %b %Y"))
+
+            e_notes = st.text_input("Order Notes", value=str(loaded_po.get("notes") or ""), key=f"edit_po_notes_{loaded_po_id}")
+
+            if st.button("💾 Update Purchase Order", type="primary", use_container_width=True):
+                if e_total_units <= 0:
+                    st.error("Please specify at least one quantity for the order.")
+                else:
+                    try:
+                        with db_conn.session as s:
+                            s.execute(
+                                text("""
+                                UPDATE purchase_orders
+                                SET order_date = :od, expected_date = :ed, location = :loc, order_status = :stat, notes = :notes
+                                WHERE id = :id;
+                                """),
+                                {"od": e_order_date, "ed": e_expected_date, "loc": e_location, "stat": e_status, "notes": e_notes, "id": loaded_po_id}
+                            )
+                            s.execute(text("DELETE FROM purchase_order_items WHERE order_id = :id;"), {"id": loaded_po_id})
+
+                            for _, row in po_edit_editor_df.iterrows():
+                                qty = int(row["Order Quantity"])
+                                if qty > 0:
+                                    s.execute(
+                                        text("""
+                                        INSERT INTO purchase_order_items (order_id, flavor_code, ordered_units)
+                                        VALUES (:poid, :code, :qty);
+                                        """),
+                                        {"poid": loaded_po_id, "code": row["Code"], "qty": qty}
+                                    )
+                            s.commit()
+                        show_success_modal(f"Purchase Order #{loaded_po_id} updated successfully!")
+                    except Exception as e:
+                        st.error(f"Could not update purchase order: {e}")
+
+# ======================================================================
+# PAGE 3: FREEZER STOCK (100% Database Powered)
 # ======================================================================
 elif page == "Freezer Stock" and user_role == "admin":
     st.subheader("Freezer Stock Management")
@@ -1170,7 +1368,7 @@ elif page == "Freezer Stock" and user_role == "admin":
                 st.error(f"Could not save audit to database: {e}")
 
 # ======================================================================
-# PAGE 3: FREEZER ANALYSIS (Single-View Compact, Full Totals, Orders from Calc Stock)
+# PAGE 4: FREEZER ANALYSIS (Single-View Compact, Orders from Calc Stock)
 # ======================================================================
 elif page == "Freezer Analysis" and user_role == "admin":
     st.subheader("Freezer Stock Analysis & Reorder Planner")
@@ -1469,7 +1667,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
             st.caption("No physical stock audits recorded in database.")
 
 # ======================================================================
-# PAGE 4: EXPENSES (100% Supabase PostgreSQL Powered)
+# PAGE 5: EXPENSES (100% Supabase PostgreSQL Powered)
 # ======================================================================
 elif page == "Expenses" and user_role == "admin":
     st.subheader("Log an expense")
@@ -1549,7 +1747,7 @@ elif page == "Expenses" and user_role == "admin":
                 st.error(f"Could not save expense to database: {e}")
 
 # ======================================================================
-# PAGE 5: DASHBOARD (100% Supabase PostgreSQL Powered)
+# PAGE 6: DASHBOARD (100% Supabase PostgreSQL Powered)
 # ======================================================================
 elif page == "Dashboard" and user_role == "admin":
     st.subheader("Quick view")
