@@ -4,7 +4,7 @@ Kulfi Ops - multi-user data entry app for the kulfi cart business.
 - Auto-prefill for yesterday (today - 1) from previous day's closing balances.
 - Zero daily sales allowed (e.g. cart closed or no sales made).
 - Purchase Order Estimator & Management with editable overall discount and net payable recalculation.
-- Stock Removed (Wastage / Return / Tasting log) with View, Create, and Edit capabilities.
+- Stock Removed (Wastage / Return / Tasting log) with Removed_By and Verified_By fields.
 - Dashboard with COGS So Far (All-Time) & Outstanding Freezer Stock Valuation.
 - Freezer Stock, Freezer Analysis, Dashboard, and Expenses powered 100% by Supabase PostgreSQL.
 """
@@ -1021,6 +1021,7 @@ elif page == "Purchase Orders" and user_role == "admin":
             loaded_po = po_records[po_labels.index(selected_po_label)]
             loaded_po_id = loaded_po["id"]
 
+            # Parse existing discount if present in notes
             existing_notes = str(loaded_po.get("notes") or "")
             default_disc = 0.0
             clean_notes = existing_notes
@@ -1064,6 +1065,7 @@ elif page == "Purchase Orders" and user_role == "admin":
                     key=f"edit_po_disc_{loaded_po_id}"
                 )
 
+            # Prepopulate items
             items_by_code = {}
             if loaded_po.get("items") and isinstance(loaded_po["items"], list):
                 for itm in loaded_po["items"]:
@@ -1727,12 +1729,14 @@ elif page == "Stock Removed" and user_role == "admin":
     if rem_mode == "New Entry":
         st.write("Enter details and specify quantities removed per flavour:")
 
-        c1, c2, c3 = st.columns(3)
+        c1, c2, c3, c4 = st.columns(4)
         with c1:
             removal_date = st.date_input("Removal Date", value=date.today(), key="new_rem_date")
         with c2:
             location = st.text_input("Location", value=CITY, key="new_rem_loc")
         with c3:
+            removed_by = st.text_input("Removed By", placeholder="e.g. Staff / Cart Boy", key="new_rem_rby")
+        with c4:
             verified_by = st.text_input("Verified By", value="Admin", key="new_rem_vby")
 
         reason_for_removal = st.text_input("Reason for Removal (Mandatory)", key="new_rem_reason", placeholder="e.g. Broken packaging, expired batch, festival sampling...")
@@ -1784,11 +1788,11 @@ elif page == "Stock Removed" and user_role == "admin":
                             INSERT INTO stock_removed (
                                 removal_date, location, 
                                 ml_units, mm_units, ps_units, mn_units, kb_units, bm_units, sg_units, ch_units, ra_units,
-                                cost_price_of_removed_items, reason_for_removal, verified_by
+                                cost_price_of_removed_items, reason_for_removal, removed_by, verified_by
                             ) VALUES (
                                 :rd, :loc,
                                 :ml, :mm, :ps, :mn, :kb, :bm, :sg, :ch, :ra,
-                                :cost, :reason, :vby
+                                :cost, :reason, :rby, :vby
                             ) RETURNING id;
                             """),
                             {
@@ -1796,7 +1800,7 @@ elif page == "Stock Removed" and user_role == "admin":
                                 "ml": int(units_map.get("ML", 0)), "mm": int(units_map.get("MM", 0)), "ps": int(units_map.get("PS", 0)),
                                 "mn": int(units_map.get("MN", 0)), "kb": int(units_map.get("KB", 0)), "bm": int(units_map.get("BM", 0)),
                                 "sg": int(units_map.get("SG", 0)), "ch": int(units_map.get("CH", 0)), "ra": int(units_map.get("RA", 0)),
-                                "cost": tot_rem_cost, "reason": reason_for_removal.strip(), "vby": verified_by.strip()
+                                "cost": tot_rem_cost, "reason": reason_for_removal.strip(), "rby": removed_by.strip(), "vby": verified_by.strip()
                             }
                         )
                         new_rem_id = res.scalar()
@@ -1810,7 +1814,7 @@ elif page == "Stock Removed" and user_role == "admin":
             SELECT id AS "ID", removal_date AS "Date", location AS "Location",
                    ml_units, mm_units, ps_units, mn_units, kb_units, bm_units, sg_units, ch_units, ra_units,
                    total_units AS "Total Units", cost_price_of_removed_items AS "Cost (₹)",
-                   reason_for_removal AS "Reason", verified_by AS "Verified By"
+                   reason_for_removal AS "Reason", removed_by AS "Removed By", verified_by AS "Verified By"
             FROM stock_removed
             ORDER BY removal_date DESC, id DESC;
         """, ttl="0s")
@@ -1836,6 +1840,7 @@ elif page == "Stock Removed" and user_role == "admin":
                     "Total Units": int(r['Total Units']) if pd.notna(r['Total Units']) else sum(int(r.get(FLAVOR_MAP[c]['audit_col'], 0)) for c in FLAVOR_CODES),
                     "Cost (₹)": float(r['Cost (₹)']),
                     "Reason": r['Reason'],
+                    "Removed By": r['Removed By'] if pd.notna(r['Removed By']) else "",
                     "Verified By": r['Verified By']
                 }
                 for code in FLAVOR_CODES:
@@ -1854,7 +1859,7 @@ elif page == "Stock Removed" and user_role == "admin":
     elif rem_mode == "Edit Past Entry":
         rem_query_df = db_conn.query("""
             SELECT id, removal_date, location, ml_units, mm_units, ps_units, mn_units, kb_units, bm_units, sg_units, ch_units, ra_units,
-                   cost_price_of_removed_items, reason_for_removal, verified_by
+                   cost_price_of_removed_items, reason_for_removal, removed_by, verified_by
             FROM stock_removed
             ORDER BY removal_date DESC, id DESC;
         """, ttl="0s")
@@ -1871,7 +1876,7 @@ elif page == "Stock Removed" and user_role == "admin":
             loaded_rem = rem_records[rem_labels.index(sel_rem_label)]
             loaded_rem_id = loaded_rem["id"]
 
-            c1, c2, c3 = st.columns(3)
+            c1, c2, c3, c4 = st.columns(4)
             with c1:
                 e_rem_date = st.date_input(
                     "Removal Date", 
@@ -1881,6 +1886,8 @@ elif page == "Stock Removed" and user_role == "admin":
             with c2:
                 e_rem_loc = st.text_input("Location", value=str(loaded_rem.get("location", CITY)), key=f"edit_rem_loc_{loaded_rem_id}")
             with c3:
+                e_rem_rby = st.text_input("Removed By", value=str(loaded_rem.get("removed_by") or ""), key=f"edit_rem_rby_{loaded_rem_id}")
+            with c4:
                 e_rem_vby = st.text_input("Verified By", value=str(loaded_rem.get("verified_by", "Admin")), key=f"edit_rem_vby_{loaded_rem_id}")
 
             e_rem_reason = st.text_input("Reason for Removal", value=str(loaded_rem.get("reason_for_removal") or ""), key=f"edit_rem_reason_{loaded_rem_id}")
@@ -1936,6 +1943,7 @@ elif page == "Stock Removed" and user_role == "admin":
                                     kb_units = :kb, bm_units = :bm, sg_units = :sg, ch_units = :ch, ra_units = :ra,
                                     cost_price_of_removed_items = :cost,
                                     reason_for_removal = :reason,
+                                    removed_by = :rby,
                                     verified_by = :vby,
                                     updated_at = NOW()
                                 WHERE id = :id;
@@ -1945,7 +1953,7 @@ elif page == "Stock Removed" and user_role == "admin":
                                     "ml": int(e_units_map.get("ML", 0)), "mm": int(e_units_map.get("MM", 0)), "ps": int(e_units_map.get("PS", 0)),
                                     "mn": int(e_units_map.get("MN", 0)), "kb": int(e_units_map.get("KB", 0)), "bm": int(e_units_map.get("BM", 0)),
                                     "sg": int(e_units_map.get("SG", 0)), "ch": int(e_units_map.get("CH", 0)), "ra": int(e_units_map.get("RA", 0)),
-                                    "cost": e_tot_rem_cost, "reason": e_rem_reason.strip(), "vby": e_rem_vby.strip(),
+                                    "cost": e_tot_rem_cost, "reason": e_rem_reason.strip(), "rby": e_rem_rby.strip(), "vby": e_rem_vby.strip(),
                                     "id": loaded_rem_id
                                 }
                             )
