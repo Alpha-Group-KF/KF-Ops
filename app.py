@@ -4,6 +4,7 @@ Kulfi Ops - multi-user data entry app for the kulfi cart business.
 - Auto-prefill for yesterday (today - 1) from previous day's closing balances.
 - Zero daily sales allowed (e.g. cart closed or no sales made).
 - Purchase Order Estimator & Management with editable overall discount and net payable recalculation.
+- Stock Removed (Wastage / Return / Tasting log) with View, Create, and Edit capabilities.
 - Dashboard with COGS So Far (All-Time) & Outstanding Freezer Stock Valuation.
 - Freezer Stock, Freezer Analysis, Dashboard, and Expenses powered 100% by Supabase PostgreSQL.
 """
@@ -191,11 +192,11 @@ hr { border-color: #E3CBA0 !important; margin: 0.4rem 0 !important; }
 # ----------------------------------------------------------------------
 # CONFIG & CANONICAL MAPPINGS
 # ----------------------------------------------------------------------
-CARTS = ["HOSUR CART 01", "HOSUR CART 02", "HOSUR CART 03"]
-CITY = "HOSUR"
+CARTS = ["HOSUR CART 01", "HOSUR CART 02", "HOSUR CART 03"][cite: 5]
+CITY = "HOSUR"[cite: 5]
 
-PAYMENT_STATUSES = ["Pending", "Partial", "Complete"]
-PO_STATUSES = ["Placed", "Pending", "In Transit", "Completed", "Cancelled"]
+PAYMENT_STATUSES = ["Pending", "Partial", "Complete"][cite: 5]
+PO_STATUSES = ["Placed", "Pending", "In Transit", "Completed", "Cancelled"][cite: 5]
 EXPENSE_CATEGORIES = [
     "Cost of Goods",
     "Labour Charges",
@@ -203,12 +204,12 @@ EXPENSE_CATEGORIES = [
     "Initial Set-up Expense",
     "Miscellaneous Expense",
     "Initial Investment",
-]
-PAYMENT_MODES = ["Cash", "UPI / Bank Transfer"]
+][cite: 5]
+PAYMENT_MODES = ["Cash", "UPI / Bank Transfer"][cite: 5]
 
-DAILY_HEADER_ROWS = 2
-DAILY_TOTAL_COLS = 47
-SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+DAILY_HEADER_ROWS = 2[cite: 5]
+DAILY_TOTAL_COLS = 47[cite: 5]
+SCOPES = ["https://www.googleapis.com/auth/spreadsheets"][cite: 5]
 
 DEFAULT_FLAVORS = [
     ("ML", "Malai", 40.0, 22.0, "ml_units"),
@@ -220,40 +221,40 @@ DEFAULT_FLAVORS = [
     ("SG", "Shahi Gulab", 50.0, 27.5, "sg_units"),
     ("CH", "Chocolate", 50.0, 27.5, "ch_units"),
     ("RA", "Roasted Almond", 60.0, 33.0, "ra_units"),
-]
-FLAVOR_CODES = [f[0] for f in DEFAULT_FLAVORS]
-N_FLAVORS = len(FLAVOR_CODES)
+][cite: 5]
+FLAVOR_CODES = [f[0] for f in DEFAULT_FLAVORS][cite: 5]
+N_FLAVORS = len(FLAVOR_CODES)[cite: 5]
 
 
 def _num(x):
     if x is None or pd.isna(x):
         return 0.0
     if isinstance(x, (int, float)):
-        return float(x)
-    s = str(x).strip().replace(",", "").replace("₹", "").replace("Rs.", "").replace("Rs", "")
-    neg = s.startswith("(") and s.endswith(")")
+        return float(x)[cite: 5]
+    s = str(x).strip().replace(",", "").replace("₹", "").replace("Rs.", "").replace("Rs", "")[cite: 5]
+    neg = s.startswith("(") and s.endswith(")")[cite: 5]
     if neg:
-        s = s[1:-1]
+        s = s[1:-1][cite: 5]
     try:
-        return -float(s) if neg else float(s)
+        return -float(s) if neg else float(s)[cite: 5]
     except ValueError:
-        return 0.0
+        return 0.0[cite: 5]
 
 
 def _int_num(x):
-    return int(round(_num(x)))
+    return int(round(_num(x)))[cite: 5]
 
 
 def _pad(row, n):
-    return row + [""] * (n - len(row)) if len(row) < n else row
+    return row + [""] * (n - len(row)) if len(row) < n else row[cite: 5]
 
 
 def _col_letter(n):
-    letters = ""
+    letters = ""[cite: 5]
     while n > 0:
-        n, rem = divmod(n - 1, 26)
-        letters = chr(65 + rem) + letters
-    return letters
+        n, rem = divmod(n - 1, 26)[cite: 5]
+        letters = chr(65 + rem) + letters[cite: 5]
+    return letters[cite: 5]
 
 
 # ----------------------------------------------------------------------
@@ -263,23 +264,23 @@ def _col_letter(n):
 def get_client():
     creds = Credentials.from_service_account_info(
         st.secrets["gcp_service_account"], scopes=SCOPES
-    )
-    return gspread.authorize(creds)
+    )[cite: 5]
+    return gspread.authorize(creds)[cite: 5]
 
 
 @st.cache_resource
 def get_workbook():
-    return get_client().open_by_key(st.secrets["sheet_id"])
+    return get_client().open_by_key(st.secrets["sheet_id"])[cite: 5]
 
 
 def get_ws(tab_name):
-    return get_workbook().worksheet(tab_name)
+    return get_workbook().worksheet(tab_name)[cite: 5]
 
 
 def _update_sheet_row(tab_name, row_number, values):
-    ws = get_ws(tab_name)
-    end_col = _col_letter(len(values))
-    ws.update(range_name=f"A{row_number}:{end_col}{row_number}", values=[values], value_input_option="USER_ENTERED")
+    ws = get_ws(tab_name)[cite: 5]
+    end_col = _col_letter(len(values))[cite: 5]
+    ws.update(range_name=f"A{row_number}:{end_col}{row_number}", values=[values], value_input_option="USER_ENTERED")[cite: 5]
 
 
 try:
@@ -288,9 +289,9 @@ except Exception:
     db_conn = None
 
 
-@st.dialog("Notification")
+@st.dialog("Notification")[cite: 5]
 def show_success_modal(message):
-    st.success(message)
+    st.success(message)[cite: 5]
     if st.button("OK", type="primary", use_container_width=True):
         st.rerun()
 
@@ -302,7 +303,7 @@ def get_flavor_meta_by_code():
     meta = {
         code: {"name": name, "mrp": float(mrp), "cost_price": float(cost), "audit_col": acol}
         for code, name, mrp, cost, acol in DEFAULT_FLAVORS
-    }
+    }[cite: 5]
     if db_conn is not None:
         try:
             df = db_conn.query("SELECT code, name, mrp, cost_price FROM flavors;", ttl="1m")
@@ -314,10 +315,10 @@ def get_flavor_meta_by_code():
                     meta[code]["cost_price"] = float(r["cost_price"])
         except Exception:
             pass
-    return meta
+    return meta[cite: 5]
 
 
-FLAVOR_MAP = get_flavor_meta_by_code()
+FLAVOR_MAP = get_flavor_meta_by_code()[cite: 5]
 
 
 def load_active_staff_list():
@@ -328,14 +329,14 @@ def load_active_staff_list():
                 return ["Select Staff"] + df["name"].tolist()
         except Exception:
             pass
-    return ["Select Staff"]
+    return ["Select Staff"][cite: 5]
 
 
 # ----------------------------------------------------------------------
 # DATABASE LOADERS & PRE-FILL HELPERS
 # ----------------------------------------------------------------------
 def get_latest_cart_closing_state(cart_name, before_date):
-    """Fetches the latest closing units by flavor code and staff name for a cart before a given date."""
+    """Fetches the latest closing units by flavor code and staff name for a cart before a given date."""[cite: 5]
     if db_conn is None:
         return {}, ""
     query = """
@@ -370,7 +371,7 @@ def list_daily_entries_with_prefill():
     Loads daily entries from the database.
     If yesterday (today - 1) has no record for any of the 3 carts, pre-fills a default record
     where Opening = previous Closing, Closing = Opening (Sold = 0), and Staff = previous Staff.
-    """
+    """[cite: 5]
     entries = []
     if db_conn is not None:
         query = """
@@ -693,7 +694,7 @@ with st.sidebar:
         st.markdown("## 🍦 Kulfi Ops")
 
     if user_role == "admin":
-        nav_options = ["Dashboard", "Daily Entry", "Purchase Orders", "Freezer Stock", "Freezer Analysis", "Expenses"]
+        nav_options = ["Dashboard", "Daily Entry", "Purchase Orders", "Freezer Stock", "Freezer Analysis", "Stock Removed", "Expenses"]
         page = st.radio("Go to", nav_options, label_visibility="collapsed")
     else:
         page = "Daily Entry"
@@ -968,6 +969,7 @@ elif page == "Purchase Orders" and user_role == "admin":
                 st.error("Please enter a quantity greater than 0 for at least one flavour before placing the order.")
             else:
                 try:
+                    # Append discount info to notes to guarantee persistence without altering DB schema
                     combined_notes = po_notes.strip()
                     if discount_pct > 0:
                         combined_notes = f"[Discount: {discount_pct:.2f}% | Final: ₹{final_amount:,.2f}] {combined_notes}".strip()
@@ -1019,6 +1021,7 @@ elif page == "Purchase Orders" and user_role == "admin":
             loaded_po = po_records[po_labels.index(selected_po_label)]
             loaded_po_id = loaded_po["id"]
 
+            # Parse existing discount if present in notes
             existing_notes = str(loaded_po.get("notes") or "")
             default_disc = 0.0
             clean_notes = existing_notes
@@ -1714,7 +1717,248 @@ elif page == "Freezer Analysis" and user_role == "admin":
             st.caption("No physical stock audits recorded in database.")
 
 # ======================================================================
-# PAGE 5: EXPENSES (100% Supabase PostgreSQL Powered)
+# PAGE 5: STOCK REMOVED (Wastage / Return / Tasting Logs)
+# ======================================================================
+elif page == "Stock Removed" and user_role == "admin":
+    st.subheader("Stock Removed / Wastage Log")
+    st.caption("Record units removed from the freezer (damages, expiry, sampling, staff consumption, or supplier returns).")
+
+    rem_mode = st.radio("Mode", ["New Entry", "View Entries", "Edit Past Entry"], horizontal=True, key="rem_screen_mode")
+
+    if rem_mode == "New Entry":
+        st.write("Enter details and specify quantities removed per flavour:")
+
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            removal_date = st.date_input("Removal Date", value=date.today(), key="new_rem_date")
+        with c2:
+            location = st.text_input("Location", value=CITY, key="new_rem_loc")
+        with c3:
+            verified_by = st.text_input("Verified By", value="Admin", key="new_rem_vby")
+
+        reason_for_removal = st.text_input("Reason for Removal (Mandatory)", key="new_rem_reason", placeholder="e.g. Broken packaging, expired batch, festival sampling...")
+
+        # Setup input grid
+        rem_grid_rows = []
+        for code in FLAVOR_CODES:
+            f_info = FLAVOR_MAP[code]
+            rem_grid_rows.append({
+                "Flavour": f_info["name"],
+                "Code": code,
+                "Unit Cost (₹)": float(f_info["cost_price"]),
+                "Units Removed": 0
+            })
+
+        st.write("Enter units removed per flavour:")
+        rem_editor_df = st.data_editor(
+            pd.DataFrame(rem_grid_rows),
+            column_config={
+                "Flavour": st.column_config.TextColumn(disabled=True),
+                "Code": st.column_config.TextColumn(disabled=True),
+                "Unit Cost (₹)": st.column_config.NumberColumn(format="₹%.2f", disabled=True),
+                "Units Removed": st.column_config.NumberColumn(min_value=0, step=1, format="%d"),
+            },
+            hide_index=True,
+            use_container_width=True,
+            key="new_rem_editor"
+        )
+
+        tot_rem_units = int(rem_editor_df["Units Removed"].sum())
+        tot_rem_cost = float(sum(rem_editor_df["Units Removed"] * rem_editor_df["Unit Cost (₹)"]))
+
+        st.markdown("#### Removal Summary")
+        m1, m2, m3 = st.columns(3)
+        m1.metric("Total Units Removed", f"{tot_rem_units} units")
+        m2.metric("Total Cost Value", f"₹{tot_rem_cost:,.2f}")
+        m3.metric("Date of Removal", removal_date.strftime("%d %b %Y"))
+
+        if st.button("🗑️ Save Stock Removal", type="primary", use_container_width=True):
+            if tot_rem_units <= 0:
+                st.error("Please enter at least one quantity greater than 0 before saving.")
+            elif not reason_for_removal.strip():
+                st.error("Reason for removal is mandatory. Please provide a brief explanation.")
+            else:
+                try:
+                    units_map = dict(zip(rem_editor_df["Code"], rem_editor_df["Units Removed"]))
+                    with db_conn.session as s:
+                        res = s.execute(
+                            text("""
+                            INSERT INTO stock_removed (
+                                removal_date, location, 
+                                ml_units, mm_units, ps_units, mn_units, kb_units, bm_units, sg_units, ch_units, ra_units,
+                                cost_price_of_removed_items, reason_for_removal, verified_by
+                            ) VALUES (
+                                :rd, :loc,
+                                :ml, :mm, :ps, :mn, :kb, :bm, :sg, :ch, :ra,
+                                :cost, :reason, :vby
+                            ) RETURNING id;
+                            """),
+                            {
+                                "rd": removal_date, "loc": location,
+                                "ml": int(units_map.get("ML", 0)), "mm": int(units_map.get("MM", 0)), "ps": int(units_map.get("PS", 0)),
+                                "mn": int(units_map.get("MN", 0)), "kb": int(units_map.get("KB", 0)), "bm": int(units_map.get("BM", 0)),
+                                "sg": int(units_map.get("SG", 0)), "ch": int(units_map.get("CH", 0)), "ra": int(units_map.get("RA", 0)),
+                                "cost": tot_rem_cost, "reason": reason_for_removal.strip(), "vby": verified_by.strip()
+                            }
+                        )
+                        new_rem_id = res.scalar()
+                        s.commit()
+                    show_success_modal(f"Stock Removal #{new_rem_id} recorded successfully! Logged {tot_rem_units} units (₹{tot_rem_cost:,.2f}).")
+                except Exception as e:
+                    st.error(f"Could not save stock removal to database: {e}")
+
+    elif rem_mode == "View Entries":
+        rem_query_df = db_conn.query("""
+            SELECT id AS "ID", removal_date AS "Date", location AS "Location",
+                   ml_units, mm_units, ps_units, mn_units, kb_units, bm_units, sg_units, ch_units, ra_units,
+                   total_units AS "Total Units", cost_price_of_removed_items AS "Cost (₹)",
+                   reason_for_removal AS "Reason", verified_by AS "Verified By"
+            FROM stock_removed
+            ORDER BY removal_date DESC, id DESC;
+        """, ttl="0s")
+
+        if rem_query_df.empty:
+            st.info("No stock removal logs found in the database.")
+        else:
+            total_logs = len(rem_query_df)
+            total_removed_units = int(rem_query_df["Total Units"].sum()) if "Total Units" in rem_query_df.columns else 0
+            total_removed_cost = float(rem_query_df["Cost (₹)"].sum())
+
+            k1, k2, k3 = st.columns(3)
+            k1.metric("Total Removal Events", f"{total_logs}")
+            k2.metric("Total Units Removed", f"{total_removed_units} pcs")
+            k3.metric("Total Value of Removed Stock", f"₹{total_removed_cost:,.2f}")
+
+            # Format and display table
+            display_rem_list = []
+            for _, r in rem_query_df.iterrows():
+                row_data = {
+                    "ID": f"#{r['ID']}",
+                    "Date": pd.to_datetime(r['Date']).strftime("%d %b %Y"),
+                    "Location": r['Location'],
+                    "Total Units": int(r['Total Units']) if pd.notna(r['Total Units']) else sum(int(r.get(FLAVOR_MAP[c]['audit_col'], 0)) for c in FLAVOR_CODES),
+                    "Cost (₹)": float(r['Cost (₹)']),
+                    "Reason": r['Reason'],
+                    "Verified By": r['Verified By']
+                }
+                for code in FLAVOR_CODES:
+                    col_name = FLAVOR_MAP[code]["audit_col"]
+                    row_data[FLAVOR_MAP[code]["name"]] = int(r.get(col_name, 0))
+                display_rem_list.append(row_data)
+
+            rem_table_df = pd.DataFrame(display_rem_list)
+            st.dataframe(
+                rem_table_df, 
+                hide_index=True, 
+                use_container_width=True,
+                column_config={"Cost (₹)": st.column_config.NumberColumn(format="₹%.2f")}
+            )
+
+    elif rem_mode == "Edit Past Entry":
+        rem_query_df = db_conn.query("""
+            SELECT id, removal_date, location, ml_units, mm_units, ps_units, mn_units, kb_units, bm_units, sg_units, ch_units, ra_units,
+                   cost_price_of_removed_items, reason_for_removal, verified_by
+            FROM stock_removed
+            ORDER BY removal_date DESC, id DESC;
+        """, ttl="0s")
+
+        if rem_query_df.empty:
+            st.info("No past stock removals found in database.")
+        else:
+            rem_records = rem_query_df.to_dict("records")
+            rem_labels = [
+                f"Removal #{r['id']} — {pd.to_datetime(r['removal_date']).strftime('%d %b %Y')} ({r['location']}) — {str(r['reason_for_removal'])[:25]} (₹{float(r['cost_price_of_removed_items']):,.0f})"
+                for r in rem_records
+            ]
+            sel_rem_label = st.selectbox("Select removal entry to edit", rem_labels, key="edit_rem_select")
+            loaded_rem = rem_records[rem_labels.index(sel_rem_label)]
+            loaded_rem_id = loaded_rem["id"]
+
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                e_rem_date = st.date_input(
+                    "Removal Date", 
+                    value=pd.to_datetime(loaded_rem["removal_date"]).date() if loaded_rem.get("removal_date") else date.today(),
+                    key=f"edit_rem_date_{loaded_rem_id}"
+                )
+            with c2:
+                e_rem_loc = st.text_input("Location", value=str(loaded_rem.get("location", CITY)), key=f"edit_rem_loc_{loaded_rem_id}")
+            with c3:
+                e_rem_vby = st.text_input("Verified By", value=str(loaded_rem.get("verified_by", "Admin")), key=f"edit_rem_vby_{loaded_rem_id}")
+
+            e_rem_reason = st.text_input("Reason for Removal", value=str(loaded_rem.get("reason_for_removal") or ""), key=f"edit_rem_reason_{loaded_rem_id}")
+
+            edit_rem_rows = []
+            for code in FLAVOR_CODES:
+                f_info = FLAVOR_MAP[code]
+                col_name = f_info["audit_col"]
+                edit_rem_rows.append({
+                    "Flavour": f_info["name"],
+                    "Code": code,
+                    "Unit Cost (₹)": float(f_info["cost_price"]),
+                    "Units Removed": int(loaded_rem.get(col_name, 0))
+                })
+
+            st.write("Modify units removed per flavour:")
+            rem_edit_editor_df = st.data_editor(
+                pd.DataFrame(edit_rem_rows),
+                column_config={
+                    "Flavour": st.column_config.TextColumn(disabled=True),
+                    "Code": st.column_config.TextColumn(disabled=True),
+                    "Unit Cost (₹)": st.column_config.NumberColumn(format="₹%.2f", disabled=True),
+                    "Units Removed": st.column_config.NumberColumn(min_value=0, step=1, format="%d"),
+                },
+                hide_index=True,
+                use_container_width=True,
+                key=f"edit_rem_editor_{loaded_rem_id}"
+            )
+
+            e_tot_rem_units = int(rem_edit_editor_df["Units Removed"].sum())
+            e_tot_rem_cost = float(sum(rem_edit_editor_df["Units Removed"] * rem_edit_editor_df["Unit Cost (₹)"]))
+
+            st.markdown("#### Updated Summary")
+            em1, em2, em3 = st.columns(3)
+            em1.metric("Total Units Removed", f"{e_tot_rem_units} units")
+            em2.metric("Total Cost Value", f"₹{e_tot_rem_cost:,.2f}")
+            em3.metric("Date", e_rem_date.strftime("%d %b %Y"))
+
+            if st.button("💾 Update Stock Removal", type="primary", use_container_width=True):
+                if e_tot_rem_units <= 0:
+                    st.error("Please enter at least one quantity greater than 0.")
+                elif not e_rem_reason.strip():
+                    st.error("Reason for removal cannot be empty.")
+                else:
+                    try:
+                        e_units_map = dict(zip(rem_edit_editor_df["Code"], rem_edit_editor_df["Units Removed"]))
+                        with db_conn.session as s:
+                            s.execute(
+                                text("""
+                                UPDATE stock_removed
+                                SET removal_date = :rd, location = :loc,
+                                    ml_units = :ml, mm_units = :mm, ps_units = :ps, mn_units = :mn,
+                                    kb_units = :kb, bm_units = :bm, sg_units = :sg, ch_units = :ch, ra_units = :ra,
+                                    cost_price_of_removed_items = :cost,
+                                    reason_for_removal = :reason,
+                                    verified_by = :vby,
+                                    updated_at = NOW()
+                                WHERE id = :id;
+                                """),
+                                {
+                                    "rd": e_rem_date, "loc": e_rem_loc,
+                                    "ml": int(e_units_map.get("ML", 0)), "mm": int(e_units_map.get("MM", 0)), "ps": int(e_units_map.get("PS", 0)),
+                                    "mn": int(e_units_map.get("MN", 0)), "kb": int(e_units_map.get("KB", 0)), "bm": int(e_units_map.get("BM", 0)),
+                                    "sg": int(e_units_map.get("SG", 0)), "ch": int(e_units_map.get("CH", 0)), "ra": int(e_units_map.get("RA", 0)),
+                                    "cost": e_tot_rem_cost, "reason": e_rem_reason.strip(), "vby": e_rem_vby.strip(),
+                                    "id": loaded_rem_id
+                                }
+                            )
+                            s.commit()
+                        show_success_modal(f"Stock Removal #{loaded_rem_id} updated successfully! Final Value: ₹{e_tot_rem_cost:,.2f}.")
+                    except Exception as e:
+                        st.error(f"Could not update stock removal entry: {e}")
+
+# ======================================================================
+# PAGE 6: EXPENSES (100% Supabase PostgreSQL Powered)
 # ======================================================================
 elif page == "Expenses" and user_role == "admin":
     st.subheader("Log an expense")
@@ -1794,7 +2038,7 @@ elif page == "Expenses" and user_role == "admin":
                 st.error(f"Could not save expense to database: {e}")
 
 # ======================================================================
-# PAGE 6: DASHBOARD (100% Supabase PostgreSQL Powered)
+# PAGE 7: DASHBOARD (100% Supabase PostgreSQL Powered)
 # ======================================================================
 elif page == "Dashboard" and user_role == "admin":
     st.subheader("Quick view")
