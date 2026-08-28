@@ -4,7 +4,7 @@ Kulfi Ops - multi-user data entry app for the kulfi cart business.
 - Auto-prefill for yesterday (today - 1) from previous day's closing balances.
 - Zero daily sales allowed (e.g. cart closed or no sales made).
 - Purchase Order Estimator & Management with editable overall discount and net payable recalculation.
-- Stock Removed (Wastage / Return / Tasting log) with Removed_By and Verified_By fields.
+- Stock Removed (Wastage / Return / Tasting log) integrated into Available Freezer Stock calculations.
 - Dashboard with COGS So Far (All-Time) & Outstanding Freezer Stock Valuation.
 - Freezer Stock, Freezer Analysis, Dashboard, and Expenses powered 100% by Supabase PostgreSQL.
 """
@@ -609,29 +609,66 @@ def load_db_expenses_list():
     return df.to_dict("records")
 
 
+def get_db_stock_removed_map():
+    """Returns a dictionary of cumulative stock removed per flavor code."""
+    if db_conn is None:
+        return {code: 0 for code in FLAVOR_CODES}
+    try:
+        df = db_conn.query("""
+            SELECT 
+                COALESCE(SUM(ml_units), 0) AS ml_units,
+                COALESCE(SUM(mm_units), 0) AS mm_units,
+                COALESCE(SUM(ps_units), 0) AS ps_units,
+                COALESCE(SUM(mn_units), 0) AS mn_units,
+                COALESCE(SUM(kb_units), 0) AS kb_units,
+                COALESCE(SUM(bm_units), 0) AS bm_units,
+                COALESCE(SUM(sg_units), 0) AS sg_units,
+                COALESCE(SUM(ch_units), 0) AS ch_units,
+                COALESCE(SUM(ra_units), 0) AS ra_units
+            FROM stock_removed;
+        """, ttl="0s")
+        if not df.empty:
+            r = df.iloc[0]
+            return {code: int(r.get(FLAVOR_MAP[code]["audit_col"], 0)) for code in FLAVOR_CODES}
+    except Exception:
+        pass
+    return {code: 0 for code in FLAVOR_CODES}
+
+
 def get_db_freezer_stock():
+    """
+    Computes live available units in the freezer:
+    Units in Freezer = Received (Inward) - Issued (Carts) - Stock Removed (Wastage / Returns)
+    """
     if db_conn is None:
         return pd.DataFrame()
-    query = """
-    SELECT 
-        f.code,
-        f.name AS "Flavour",
-        f.mrp,
-        COALESCE(recv.total_recv, 0) - COALESCE(added.total_added, 0) AS "Units in freezer"
-    FROM flavors f
-    LEFT JOIN (
-        SELECT flavor_code, SUM(received_units) AS total_recv
-        FROM stock_received_items
-        GROUP BY flavor_code
-    ) recv ON f.code = recv.flavor_code
-    LEFT JOIN (
-        SELECT flavor_code, SUM(added_units) AS total_added
-        FROM daily_cart_items
-        GROUP BY flavor_code
-    ) added ON f.code = added.flavor_code
-    ORDER BY f.mrp ASC, f.name ASC;
-    """
-    return db_conn.query(query, ttl="0s")
+    try:
+        recv_df = db_conn.query("SELECT flavor_code, COALESCE(SUM(received_units), 0) AS total_recv FROM stock_received_items GROUP BY flavor_code;", ttl="0s")
+        rec_map = dict(zip(recv_df["flavor_code"], recv_df["total_recv"])) if not recv_df.empty else {}
+
+        added_df = db_conn.query("SELECT flavor_code, COALESCE(SUM(added_units), 0) AS total_added FROM daily_cart_items GROUP BY flavor_code;", ttl="0s")
+        added_map = dict(zip(added_df["flavor_code"], added_df["total_added"])) if not added_df.empty else {}
+
+        rem_map = get_db_stock_removed_map()
+
+        rows = []
+        for code in FLAVOR_CODES:
+            f_info = FLAVOR_MAP[code]
+            in_u = int(rec_map.get(code, 0))
+            out_u = int(added_map.get(code, 0))
+            rem_u = int(rem_map.get(code, 0))
+            curr_freezer = in_u - out_u - rem_u
+
+            rows.append({
+                "code": code,
+                "Flavour": f_info["name"],
+                "mrp": float(f_info["mrp"]),
+                "cost_price": float(f_info["cost_price"]),
+                "Units in freezer": curr_freezer
+            })
+        return pd.DataFrame(rows).sort_values(by=["mrp", "Flavour"], ascending=[True, True])
+    except Exception:
+        return pd.DataFrame()
 
 
 # ----------------------------------------------------------------------
@@ -882,7 +919,6 @@ if page == "Daily Entry":
 
         remarks = st.text_input("Remarks", value=loaded["remarks"], key=f"daily_remarks{data_key_suffix}", placeholder="Enter remarks (mandatory if cash leakage)...")
 
-        # Zero daily sales allowed: only negative sales and unremarked leakage are blocked
         if st.button("Update sales", type="primary", use_container_width=True):
             if any(s < 0 for s in sold_map.values()):
                 st.error("Today's sales works out negative for at least one flavour - fix closing count before saving.")
@@ -969,7 +1005,6 @@ elif page == "Purchase Orders" and user_role == "admin":
                 st.error("Please enter a quantity greater than 0 for at least one flavour before placing the order.")
             else:
                 try:
-                    # Append discount info to notes to guarantee persistence without altering DB schema
                     combined_notes = po_notes.strip()
                     if discount_pct > 0:
                         combined_notes = f"[Discount: {discount_pct:.2f}% | Final: ₹{final_amount:,.2f}] {combined_notes}".strip()
@@ -1021,7 +1056,6 @@ elif page == "Purchase Orders" and user_role == "admin":
             loaded_po = po_records[po_labels.index(selected_po_label)]
             loaded_po_id = loaded_po["id"]
 
-            # Parse existing discount if present in notes
             existing_notes = str(loaded_po.get("notes") or "")
             default_disc = 0.0
             clean_notes = existing_notes
@@ -1065,7 +1099,6 @@ elif page == "Purchase Orders" and user_role == "admin":
                     key=f"edit_po_disc_{loaded_po_id}"
                 )
 
-            # Prepopulate items
             items_by_code = {}
             if loaded_po.get("items") and isinstance(loaded_po["items"], list):
                 for itm in loaded_po["items"]:
@@ -1184,7 +1217,6 @@ elif page == "Freezer Stock" and user_role == "admin":
         pos_df = db_conn.query("SELECT id, order_date, location FROM purchase_orders WHERE order_status != 'Completed' ORDER BY order_date DESC;", ttl="0s")
         po_options = ["None (Ad-hoc delivery)"] + [f"PO #{r['id']} ({pd.to_datetime(r['order_date']).strftime('%d %b')})" for _, r in pos_df.iterrows()]
         
-        # Robust Purchase Order ID parsing to prevent ValueError NaN
         default_po_idx = 0
         poid_raw = stock_loaded.get("purchase_order_id") if stock_loaded else None
         if poid_raw is not None and pd.notna(poid_raw) and str(poid_raw).strip() != "":
@@ -1447,6 +1479,9 @@ elif page == "Freezer Analysis" and user_role == "admin":
         added_df = db_conn.query("SELECT flavor_code, SUM(added_units) AS total_added FROM daily_cart_items GROUP BY flavor_code;", ttl="0s")
         added_map = dict(zip(added_df["flavor_code"], added_df["total_added"])) if not added_df.empty else {}
 
+        # Stock Removed (Wastage / Returns / Samples)
+        rem_map = get_db_stock_removed_map()
+
         # Latest Physical Audit from stock_audits_wide
         latest_audit_df = db_conn.query("""
             SELECT * FROM stock_audits_wide
@@ -1463,7 +1498,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
             audit_date_str = "No audits logged"
     except Exception as e:
         st.error(f"Could not load analysis transactions from database: {e}")
-        sales_pace_map, rec_map, added_map, audit_map = {}, {}, {}, {}
+        sales_pace_map, rec_map, added_map, rem_map, audit_map = {}, {}, {}, {}, {}
         audit_date_str = "N/A"
 
     # --- SECTION 1: STOCK RECONCILIATION & TOTALS ---
@@ -1471,17 +1506,19 @@ elif page == "Freezer Analysis" and user_role == "admin":
     st.markdown(f"### 1. Physical Stock vs Calculated Freezer Stock &nbsp; *(Latest Audit: {audit_date_str})*")
 
     comparison_rows = []
-    tot_rec, tot_issued, tot_calc, tot_phys = 0, 0, 0, 0
+    tot_rec, tot_issued, tot_removed, tot_calc, tot_phys = 0, 0, 0, 0, 0
     has_audit = bool(audit_map)
 
     for code in FLAVOR_CODES:
         f_info = FLAVOR_MAP[code]
         recv_units = int(rec_map.get(code, 0))
         issued_units = int(added_map.get(code, 0))
-        calc_stock = recv_units - issued_units
+        removed_units = int(rem_map.get(code, 0))
+        calc_stock = recv_units - issued_units - removed_units
 
         tot_rec += recv_units
         tot_issued += issued_units
+        tot_removed += removed_units
         tot_calc += calc_stock
 
         phys_stock = audit_map.get(code, None)
@@ -1506,6 +1543,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
             "Flavour": f_info["name"],
             "Received (In)": recv_units,
             "Issued (Carts)": issued_units,
+            "Removed": removed_units,
             "Calc. Stock": calc_stock,
             "Physical Audit": phys_display,
             "Variance": var_display,
@@ -1513,13 +1551,14 @@ elif page == "Freezer Analysis" and user_role == "admin":
         })
 
     # Metric Banner for Reconciliation
-    c_m1, c_m2, c_m3, c_m4, c_m5 = st.columns(5)
-    c_m1.metric("Total Received (In)", f"{tot_rec} pcs")
-    c_m2.metric("Total Issued (Out)", f"{tot_issued} pcs")
-    c_m3.metric("Calculated Freezer", f"{tot_calc} pcs")
-    c_m4.metric("Physical Audited", f"{tot_phys} pcs" if has_audit else "Not Available")
+    c_m1, c_m2, c_m3, c_m4, c_m5, c_m6 = st.columns(6)
+    c_m1.metric("Total Inward", f"{tot_rec} pcs")
+    c_m2.metric("Issued to Carts", f"{tot_issued} pcs")
+    c_m3.metric("Stock Removed", f"{tot_removed} pcs")
+    c_m4.metric("Calculated Freezer", f"{tot_calc} pcs")
+    c_m5.metric("Physical Audited", f"{tot_phys} pcs" if has_audit else "Not Available")
     net_var = tot_phys - tot_calc if has_audit else 0
-    c_m5.metric("Net Variance", f"{net_var:+d} pcs" if has_audit else "N/A")
+    c_m6.metric("Net Variance", f"{net_var:+d} pcs" if has_audit else "N/A")
 
     # Summary Total Row
     comp_df = pd.DataFrame(comparison_rows)
@@ -1527,6 +1566,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
         "Flavour": "🔥 OVERALL TOTAL",
         "Received (In)": tot_rec,
         "Issued (Carts)": tot_issued,
+        "Removed": tot_removed,
         "Calc. Stock": tot_calc,
         "Physical Audit": str(tot_phys) if has_audit else "—",
         "Variance": f"{net_var:+d}" if has_audit else "—",
@@ -1550,8 +1590,8 @@ elif page == "Freezer Analysis" and user_role == "admin":
 
     for code in FLAVOR_CODES:
         f_info = FLAVOR_MAP[code]
-        calc_stock = int(rec_map.get(code, 0)) - int(added_map.get(code, 0))
-        avail_stock = calc_stock  # Strictly based on Calculated Stock
+        calc_stock = int(rec_map.get(code, 0)) - int(added_map.get(code, 0)) - int(rem_map.get(code, 0))
+        avail_stock = calc_stock  # Strictly based on Calculated Stock after accounting for removed items
         tot_calc_active += avail_stock
 
         recent_sold = float(sales_pace_map.get(code, 0))
@@ -1632,7 +1672,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
     st.markdown("---")
     st.markdown("### 3. Detailed Stock Movement Logs")
 
-    m_tab1, m_tab2, m_tab3 = st.tabs(["📋 Purchase Orders", "📦 Received Deliveries", "🔍 Physical Stock Audits"])
+    m_tab1, m_tab2, m_tab3, m_tab4 = st.tabs(["📋 Purchase Orders", "📦 Received Deliveries", "🔍 Physical Stock Audits", "🗑️ Stock Removed"])
 
     with m_tab1:
         po_query_df = db_conn.query("""
@@ -1716,6 +1756,36 @@ elif page == "Freezer Analysis" and user_role == "admin":
             st.dataframe(pd.DataFrame(aud_display), hide_index=True, use_container_width=True)
         else:
             st.caption("No physical stock audits recorded in database.")
+
+    with m_tab4:
+        rem_query_df = db_conn.query("""
+            SELECT id AS "ID", removal_date AS "Date", location AS "Location",
+                   ml_units, mm_units, ps_units, mn_units, kb_units, bm_units, sg_units, ch_units, ra_units,
+                   total_units AS "Total Units", cost_price_of_removed_items AS "Cost (₹)",
+                   reason_for_removal AS "Reason", removed_by AS "Removed By", verified_by AS "Verified By"
+            FROM stock_removed
+            ORDER BY removal_date DESC, id DESC;
+        """, ttl="0s")
+        if not rem_query_df.empty:
+            rem_display = []
+            for _, r in rem_query_df.iterrows():
+                row_data = {
+                    "ID": f"#{r['ID']}",
+                    "Date": pd.to_datetime(r['Date']).strftime("%d %b %Y"),
+                    "Location": r['Location'],
+                    "Total Units": int(r['Total Units']) if pd.notna(r['Total Units']) else sum(int(r.get(FLAVOR_MAP[c]['audit_col'], 0)) for c in FLAVOR_CODES),
+                    "Cost (₹)": float(r['Cost (₹)']),
+                    "Reason": r['Reason'],
+                    "Removed By": r['Removed By'] if pd.notna(r['Removed By']) else "",
+                    "Verified By": r['Verified By']
+                }
+                for code in FLAVOR_CODES:
+                    col_name = FLAVOR_MAP[code]["audit_col"]
+                    row_data[code] = int(r.get(col_name, 0))
+                rem_display.append(row_data)
+            st.dataframe(pd.DataFrame(rem_display), hide_index=True, use_container_width=True)
+        else:
+            st.caption("No stock removals recorded in database.")
 
 # ======================================================================
 # PAGE 5: STOCK REMOVED (Wastage / Return / Tasting Logs)
@@ -2059,7 +2129,7 @@ elif page == "Dashboard" and user_role == "admin":
         freezer_df = pd.DataFrame()
         st.warning(f"Could not load data from database ({e}).")
 
-    # Calculate live freezer stock valuation
+    # Calculate live freezer stock valuation (already accounts for removed items)
     if not freezer_df.empty:
         freezer_df["cost_price"] = freezer_df["code"].map(lambda c: FLAVOR_MAP.get(c, {}).get("cost_price", 0.0))
         freezer_df["Stock_Value"] = freezer_df["Units in freezer"] * freezer_df["cost_price"]
