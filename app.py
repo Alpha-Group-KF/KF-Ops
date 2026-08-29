@@ -6,6 +6,7 @@ Kulfi Ops - multi-user data entry app for the kulfi cart business.
 - Purchase Order Estimator & Management with editable overall discount and net payable recalculation.
 - Stock Received with editable overall discount (defaulted to 2%) and net cost calculation.
 - Stock Removed (Wastage / Return / Tasting log) integrated into Available Freezer Stock calculations.
+- Freezer Analysis variance computed against calculated stock as of the physical audit date.
 - Remodeled Expenses & Payments (Bills vs. Cash Outflows with tranches & P&L summaries).
 - Dashboard with COGS So Far (All-Time) & Outstanding Freezer Stock Valuation.
 - Freezer Stock, Freezer Analysis, Dashboard, and Expenses powered 100% by Supabase PostgreSQL.
@@ -194,13 +195,13 @@ hr { border-color: #E3CBA0 !important; margin: 0.4rem 0 !important; }
 # ----------------------------------------------------------------------
 # CONFIG & CANONICAL MAPPINGS
 # ----------------------------------------------------------------------
-CARTS = ["HOSUR CART 01", "HOSUR CART 02", "HOSUR CART 03"]
-CITY = "HOSUR"
+CARTS = ["HOSUR CART 01", "HOSUR CART 02", "HOSUR CART 03"][cite: 6]
+CITY = "HOSUR"[cite: 6]
 
-PAYMENT_STATUSES = ["Pending", "Partial", "Complete"]
-PO_STATUSES = ["Placed", "Pending", "In Transit", "Completed", "Cancelled"]
+PAYMENT_STATUSES = ["Pending", "Partial", "Complete"][cite: 6]
+PO_STATUSES = ["Placed", "Pending", "In Transit", "Completed", "Cancelled"][cite: 6]
 
-EXPENSE_TYPES = ["OPEX", "COGS", "CAPEX"]
+EXPENSE_TYPES = ["OPEX", "COGS", "CAPEX"][cite: 6]
 EXPENSE_CATEGORIES = [
     "Cost of Goods",
     "Labour Charges",
@@ -212,14 +213,14 @@ EXPENSE_CATEGORIES = [
     "Initial Set-up Expense",
     "Initial Investment",
     "Miscellaneous Expense",
-]
-ATTRIBUTED_OPTIONS = ["Central / Freezer"] + CARTS
-EXPENSE_STATUSES = ["Pending", "Partially Paid", "Paid", "Cancelled"]
-PAYMENT_MODES = ["UPI / Bank Transfer", "Cash"]
+][cite: 6]
+ATTRIBUTED_OPTIONS = ["Central / Freezer"] + CARTS[cite: 6]
+EXPENSE_STATUSES = ["Pending", "Partially Paid", "Paid", "Cancelled"][cite: 6]
+PAYMENT_MODES = ["UPI / Bank Transfer", "Cash"][cite: 6]
 
-DAILY_HEADER_ROWS = 2
-DAILY_TOTAL_COLS = 47
-SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+DAILY_HEADER_ROWS = 2[cite: 6]
+DAILY_TOTAL_COLS = 47[cite: 6]
+SCOPES = ["https://www.googleapis.com/auth/spreadsheets"][cite: 6]
 
 DEFAULT_FLAVORS = [
     ("ML", "Malai", 40.0, 22.0, "ml_units"),
@@ -231,40 +232,40 @@ DEFAULT_FLAVORS = [
     ("SG", "Shahi Gulab", 50.0, 27.5, "sg_units"),
     ("CH", "Chocolate", 50.0, 27.5, "ch_units"),
     ("RA", "Roasted Almond", 60.0, 33.0, "ra_units"),
-]
-FLAVOR_CODES = [f[0] for f in DEFAULT_FLAVORS]
-N_FLAVORS = len(FLAVOR_CODES)
+][cite: 6]
+FLAVOR_CODES = [f[0] for f in DEFAULT_FLAVORS][cite: 6]
+N_FLAVORS = len(FLAVOR_CODES)[cite: 6]
 
 
 def _num(x):
     if x is None or pd.isna(x):
         return 0.0
     if isinstance(x, (int, float)):
-        return float(x)
-    s = str(x).strip().replace(",", "").replace("₹", "").replace("Rs.", "").replace("Rs", "")
-    neg = s.startswith("(") and s.endswith(")")
+        return float(x)[cite: 6]
+    s = str(x).strip().replace(",", "").replace("₹", "").replace("Rs.", "").replace("Rs", "")[cite: 6]
+    neg = s.startswith("(") and s.endswith(")")[cite: 6]
     if neg:
-        s = s[1:-1]
+        s = s[1:-1][cite: 6]
     try:
-        return -float(s) if neg else float(s)
+        return -float(s) if neg else float(s)[cite: 6]
     except ValueError:
-        return 0.0
+        return 0.0[cite: 6]
 
 
 def _int_num(x):
-    return int(round(_num(x)))
+    return int(round(_num(x)))[cite: 6]
 
 
 def _pad(row, n):
-    return row + [""] * (n - len(row)) if len(row) < n else row
+    return row + [""] * (n - len(row)) if len(row) < n else row[cite: 6]
 
 
 def _col_letter(n):
-    letters = ""
+    letters = ""[cite: 6]
     while n > 0:
-        n, rem = divmod(n - 1, 26)
-        letters = chr(65 + rem) + letters
-    return letters
+        n, rem = divmod(n - 1, 26)[cite: 6]
+        letters = chr(65 + rem) + letters[cite: 6]
+    return letters[cite: 6]
 
 
 # ----------------------------------------------------------------------
@@ -274,23 +275,23 @@ def _col_letter(n):
 def get_client():
     creds = Credentials.from_service_account_info(
         st.secrets["gcp_service_account"], scopes=SCOPES
-    )
-    return gspread.authorize(creds)
+    )[cite: 6]
+    return gspread.authorize(creds)[cite: 6]
 
 
 @st.cache_resource
 def get_workbook():
-    return get_client().open_by_key(st.secrets["sheet_id"])
+    return get_client().open_by_key(st.secrets["sheet_id"])[cite: 6]
 
 
 def get_ws(tab_name):
-    return get_workbook().worksheet(tab_name)
+    return get_workbook().worksheet(tab_name)[cite: 6]
 
 
 def _update_sheet_row(tab_name, row_number, values):
-    ws = get_ws(tab_name)
-    end_col = _col_letter(len(values))
-    ws.update(range_name=f"A{row_number}:{end_col}{row_number}", values=[values], value_input_option="USER_ENTERED")
+    ws = get_ws(tab_name)[cite: 6]
+    end_col = _col_letter(len(values))[cite: 6]
+    ws.update(range_name=f"A{row_number}:{end_col}{row_number}", values=[values], value_input_option="USER_ENTERED")[cite: 6]
 
 
 try:
@@ -299,11 +300,11 @@ except Exception:
     db_conn = None
 
 
-@st.dialog("Notification")
+@st.dialog("Notification")[cite: 6]
 def show_success_modal(message):
-    st.success(message)
-    if st.button("OK", type="primary", use_container_width=True):
-        st.rerun()
+    st.success(message)[cite: 6]
+    if st.button("OK", type="primary", use_container_width=True):[cite: 6]
+        st.rerun()[cite: 6]
 
 
 # ----------------------------------------------------------------------
@@ -313,7 +314,7 @@ def get_flavor_meta_by_code():
     meta = {
         code: {"name": name, "mrp": float(mrp), "cost_price": float(cost), "audit_col": acol}
         for code, name, mrp, cost, acol in DEFAULT_FLAVORS
-    }
+    }[cite: 6]
     if db_conn is not None:
         try:
             df = db_conn.query("SELECT code, name, mrp, cost_price FROM flavors;", ttl="1m")
@@ -325,10 +326,10 @@ def get_flavor_meta_by_code():
                     meta[code]["cost_price"] = float(r["cost_price"])
         except Exception:
             pass
-    return meta
+    return meta[cite: 6]
 
 
-FLAVOR_MAP = get_flavor_meta_by_code()
+FLAVOR_MAP = get_flavor_meta_by_code()[cite: 6]
 
 
 def load_active_staff_list():
@@ -339,7 +340,7 @@ def load_active_staff_list():
                 return ["None"] + df["name"].tolist()
         except Exception:
             pass
-    return ["None"]
+    return ["None"][cite: 6]
 
 
 # ----------------------------------------------------------------------
@@ -376,7 +377,7 @@ def get_latest_cart_closing_state(cart_name, before_date):
 
 
 def list_daily_entries_with_prefill():
-    entries = []
+    entries = [][cite: 6]
     if db_conn is not None:
         query = """
         SELECT 
@@ -432,23 +433,23 @@ def list_daily_entries_with_prefill():
                     "is_prefill": False
                 })
 
-    yesterday = date.today() - timedelta(days=1)
+    yesterday = date.today() - timedelta(days=1)[cite: 6]
     existing_yesterday_carts = {
         e["cart"] for e in entries if e["date"].date() == yesterday
-    }
+    }[cite: 6]
 
-    for cart in CARTS:
-        if cart not in existing_yesterday_carts:
-            prev_closings, prev_staff = get_latest_cart_closing_state(cart, yesterday)
-            by_code = {}
-            for code in FLAVOR_CODES:
-                prev_close = prev_closings.get(code, 0)
+    for cart in CARTS:[cite: 6]
+        if cart not in existing_yesterday_carts:[cite: 6]
+            prev_closings, prev_staff = get_latest_cart_closing_state(cart, yesterday)[cite: 6]
+            by_code = {}[cite: 6]
+            for code in FLAVOR_CODES:[cite: 6]
+                prev_close = prev_closings.get(code, 0)[cite: 6]
                 by_code[code] = {
                     "opening": prev_close,
                     "added": 0,
                     "closing": prev_close,
                     "sold": 0,
-                }
+                }[cite: 6]
 
             entries.append({
                 "db_id": f"prefill_{cart}_{yesterday.strftime('%Y%m%d')}",
@@ -463,10 +464,10 @@ def list_daily_entries_with_prefill():
                 "staff_advance": 0.0,
                 "food_tea_cash": 0.0,
                 "is_prefill": True
-            })
+            })[cite: 6]
 
-    entries.sort(key=lambda x: (x["date"], x["cart"]), reverse=True)
-    return entries
+    entries.sort(key=lambda x: (x["date"], x["cart"]), reverse=True)[cite: 6]
+    return entries[cite: 6]
 
 
 def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map, sold_map, total, phonepe, cash, remarks, staff_name="", staff_advance=0.0, food_tea_cash=0.0):
@@ -505,16 +506,16 @@ def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map,
             s.commit()
 
     try:
-        ws = get_ws("Daily Data As Shared")
-        all_vals = ws.get_all_values()
-        target_row = None
-        date_str = entry_date.strftime("%Y-%m-%d")
-        for idx, r in enumerate(all_vals[DAILY_HEADER_ROWS:]):
-            if len(r) >= 2 and r[0].strip() == date_str and r[1].strip() == cart_name:
-                target_row = DAILY_HEADER_ROWS + idx + 1
-                break
+        ws = get_ws("Daily Data As Shared")[cite: 6]
+        all_vals = ws.get_all_values()[cite: 6]
+        target_row = None[cite: 6]
+        date_str = entry_date.strftime("%Y-%m-%d")[cite: 6]
+        for idx, r in enumerate(all_vals[DAILY_HEADER_ROWS:]):[cite: 6]
+            if len(r) >= 2 and r[0].strip() == date_str and r[1].strip() == cart_name:[cite: 6]
+                target_row = DAILY_HEADER_ROWS + idx + 1[cite: 6]
+                break[cite: 6]
 
-        date_cart_id = f"{date_str}||{cart_name}"
+        date_cart_id = f"{date_str}||{cart_name}"[cite: 6]
         sheet_row = (
             [date_str, cart_name, CITY, date_cart_id]
             + [int(opening_map[code]) for code in FLAVOR_CODES]
@@ -522,18 +523,18 @@ def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map,
             + [int(sold_map[code]) for code in FLAVOR_CODES]
             + [int(closing_map[code]) for code in FLAVOR_CODES]
             + [float(total), float(phonepe), float(cash), str(remarks), str(staff_name), float(staff_advance), float(food_tea_cash)]
-        )
-        if target_row:
-            _update_sheet_row("Daily Data As Shared", target_row, sheet_row)
+        )[cite: 6]
+        if target_row:[cite: 6]
+            _update_sheet_row("Daily Data As Shared", target_row, sheet_row)[cite: 6]
         else:
-            ws.append_row(sheet_row, value_input_option="USER_ENTERED")
+            ws.append_row(sheet_row, value_input_option="USER_ENTERED")[cite: 6]
     except Exception as e:
-        st.warning(f"Saved to database, but Google Sheets sync encountered an issue: {e}")
+        st.warning(f"Saved to database, but Google Sheets sync encountered an issue: {e}")[cite: 6]
 
 
 def load_db_daily_df():
     if db_conn is None:
-        return pd.DataFrame()
+        return pd.DataFrame()[cite: 6]
     query = """
     SELECT 
         e.entry_date AS "Date",
@@ -560,7 +561,7 @@ def load_db_daily_df():
 
 def load_db_flavor_sales(start_date=None, end_date=None):
     if db_conn is None:
-        return pd.DataFrame()
+        return pd.DataFrame()[cite: 6]
     where_clauses = []
     params = {}
     if start_date:
@@ -589,7 +590,7 @@ def load_db_flavor_sales(start_date=None, end_date=None):
 
 def load_db_expenses_list():
     if db_conn is None:
-        return []
+        return [][cite: 6]
     query = """
     SELECT 
         id,
@@ -608,17 +609,17 @@ def load_db_expenses_list():
     try:
         df = db_conn.query(query, ttl="0s")
         if df.empty:
-            return []
+            return [][cite: 6]
         df["Date"] = pd.to_datetime(df["Date"])
         df["Amount"] = df["Amount"].astype(float)
         return df.to_dict("records")
     except Exception:
-        return []
+        return [][cite: 6]
 
 
 def get_db_stock_removed_map():
     if db_conn is None:
-        return {code: 0 for code in FLAVOR_CODES}
+        return {code: 0 for code in FLAVOR_CODES}[cite: 6]
     try:
         df = db_conn.query("""
             SELECT 
@@ -635,21 +636,21 @@ def get_db_stock_removed_map():
         """, ttl="0s")
         if not df.empty:
             r = df.iloc[0]
-            return {code: int(r.get(FLAVOR_MAP[code]["audit_col"], 0)) for code in FLAVOR_CODES}
+            return {code: int(r.get(FLAVOR_MAP[code]["audit_col"], 0)) for code in FLAVOR_CODES}[cite: 6]
     except Exception:
         pass
-    return {code: 0 for code in FLAVOR_CODES}
+    return {code: 0 for code in FLAVOR_CODES}[cite: 6]
 
 
 def get_db_freezer_stock():
     if db_conn is None:
-        return pd.DataFrame()
+        return pd.DataFrame()[cite: 6]
     try:
         recv_df = db_conn.query("SELECT flavor_code, COALESCE(SUM(received_units), 0) AS total_recv FROM stock_received_items GROUP BY flavor_code;", ttl="0s")
-        rec_map = dict(zip(recv_df["flavor_code"], recv_df["total_recv"])) if not recv_df.empty else {}
+        rec_map = dict(zip(recv_df["flavor_code"], recv_df["total_recv"])) if not recv_df.empty else {}[cite: 6]
 
         added_df = db_conn.query("SELECT flavor_code, COALESCE(SUM(added_units), 0) AS total_added FROM daily_cart_items GROUP BY flavor_code;", ttl="0s")
-        added_map = dict(zip(added_df["flavor_code"], added_df["total_added"])) if not added_df.empty else {}
+        added_map = dict(zip(added_df["flavor_code"], added_df["total_added"])) if not added_df.empty else {}[cite: 6]
 
         rem_map = get_db_stock_removed_map()
 
@@ -670,7 +671,7 @@ def get_db_freezer_stock():
             })
         return pd.DataFrame(rows).sort_values(by=["mrp", "Flavour"], ascending=[True, True])
     except Exception:
-        return pd.DataFrame()
+        return pd.DataFrame()[cite: 6]
 
 
 # ----------------------------------------------------------------------
@@ -678,7 +679,7 @@ def get_db_freezer_stock():
 # ----------------------------------------------------------------------
 def load_db_expenses_summary_df():
     if db_conn is None:
-        return pd.DataFrame()
+        return pd.DataFrame()[cite: 6]
     query = """
     SELECT 
         e.id,
@@ -705,12 +706,12 @@ def load_db_expenses_summary_df():
     try:
         return db_conn.query(query, ttl="0s")
     except Exception:
-        return pd.DataFrame()
+        return pd.DataFrame()[cite: 6]
 
 
 def load_db_payments_df():
     if db_conn is None:
-        return pd.DataFrame()
+        return pd.DataFrame()[cite: 6]
     query = """
     SELECT 
         p.id,
@@ -732,162 +733,162 @@ def load_db_payments_df():
     try:
         return db_conn.query(query, ttl="0s")
     except Exception:
-        return pd.DataFrame()
+        return pd.DataFrame()[cite: 6]
 
 
 # ----------------------------------------------------------------------
 # AUTHENTICATION
 # ----------------------------------------------------------------------
 def check_login():
-    if st.session_state.get("authenticated", False):
-        return True
+    if st.session_state.get("authenticated", False):[cite: 6]
+        return True[cite: 6]
 
-    _, col_form, _ = st.columns([1, 1.2, 1])
+    _, col_form, _ = st.columns([1, 1.2, 1])[cite: 6]
 
-    with col_form:
+    with col_form:[cite: 6]
         try:
-            st.image("assets/logo.png", width=220)
+            st.image("assets/logo.png", width=220)[cite: 6]
         except Exception:
-            st.title("🍦 Kulfi Ops")
+            st.title("🍦 Kulfi Ops")[cite: 6]
 
-        st.subheader("Sign in")
-        with st.form("login_form"):
-            username = st.text_input("Username")
-            password = st.text_input("Password", type="password")
-            submitted = st.form_submit_button("Sign in", type="primary", use_container_width=True)
+        st.subheader("Sign in")[cite: 6]
+        with st.form("login_form"):[cite: 6]
+            username = st.text_input("Username")[cite: 6]
+            password = st.text_input("Password", type="password")[cite: 6]
+            submitted = st.form_submit_button("Sign in", type="primary", use_container_width=True)[cite: 6]
 
-        if submitted:
-            user_clean = str(username).strip()
-            pass_clean = str(password).strip()
+        if submitted:[cite: 6]
+            user_clean = str(username).strip()[cite: 6]
+            pass_clean = str(password).strip()[cite: 6]
 
-            admin_user = str(st.secrets.get("app_username", "admin")).strip()
-            admin_pass = str(st.secrets.get("app_password", "")).strip()
+            admin_user = str(st.secrets.get("app_username", "admin")).strip()[cite: 6]
+            admin_pass = str(st.secrets.get("app_password", "")).strip()[cite: 6]
 
-            entry_user = str(st.secrets.get("entry_username", "entry")).strip()
-            entry_pass = str(st.secrets.get("entry_password", "")).strip()
+            entry_user = str(st.secrets.get("entry_username", "entry")).strip()[cite: 6]
+            entry_pass = str(st.secrets.get("entry_password", "")).strip()[cite: 6]
 
-            if admin_pass and hmac.compare_digest(user_clean, admin_user) and hmac.compare_digest(pass_clean, admin_pass):
-                st.session_state["authenticated"] = True
-                st.session_state["user_role"] = "admin"
-                st.rerun()
-            elif entry_pass and hmac.compare_digest(user_clean, entry_user) and hmac.compare_digest(pass_clean, entry_pass):
-                st.session_state["authenticated"] = True
-                st.session_state["user_role"] = "entry"
-                st.rerun()
+            if admin_pass and hmac.compare_digest(user_clean, admin_user) and hmac.compare_digest(pass_clean, admin_pass):[cite: 6]
+                st.session_state["authenticated"] = True[cite: 6]
+                st.session_state["user_role"] = "admin"[cite: 6]
+                st.rerun()[cite: 6]
+            elif entry_pass and hmac.compare_digest(user_clean, entry_user) and hmac.compare_digest(pass_clean, entry_pass):[cite: 6]
+                st.session_state["authenticated"] = True[cite: 6]
+                st.session_state["user_role"] = "entry"[cite: 6]
+                st.rerun()[cite: 6]
             else:
-                st.error("Incorrect username or password — try again.")
+                st.error("Incorrect username or password — try again.")[cite: 6]
 
-    return False
+    return False[cite: 6]
 
 
-if not check_login():
-    st.stop()
+if not check_login():[cite: 6]
+    st.stop()[cite: 6]
 
 # ----------------------------------------------------------------------
 # NAVIGATION
 # ----------------------------------------------------------------------
-user_role = st.session_state.get("user_role", "admin")
+user_role = st.session_state.get("user_role", "admin")[cite: 6]
 
-with st.sidebar:
+with st.sidebar:[cite: 6]
     try:
-        st.image("assets/logo.png", use_container_width=True)
+        st.image("assets/logo.png", use_container_width=True)[cite: 6]
     except Exception:
-        st.markdown("## 🍦 Kulfi Ops")
+        st.markdown("## 🍦 Kulfi Ops")[cite: 6]
 
-    if user_role == "admin":
-        nav_options = ["Dashboard", "Daily Entry", "Purchase Orders", "Freezer Stock", "Freezer Analysis", "Stock Removed", "Expenses"]
-        page = st.radio("Go to", nav_options, label_visibility="collapsed")
+    if user_role == "admin":[cite: 6]
+        nav_options = ["Dashboard", "Daily Entry", "Purchase Orders", "Freezer Stock", "Freezer Analysis", "Stock Removed", "Expenses"][cite: 6]
+        page = st.radio("Go to", nav_options, label_visibility="collapsed")[cite: 6]
     else:
-        page = "Daily Entry"
-        st.info("Logged in as Data Entry Staff")
+        page = "Daily Entry"[cite: 6]
+        st.info("Logged in as Data Entry Staff")[cite: 6]
 
-    st.markdown("---")
-    if st.button("Log out", use_container_width=True):
-        st.session_state["authenticated"] = False
-        st.session_state["user_role"] = None
-        st.rerun()
+    st.markdown("---")[cite: 6]
+    if st.button("Log out", use_container_width=True):[cite: 6]
+        st.session_state["authenticated"] = False[cite: 6]
+        st.session_state["user_role"] = None[cite: 6]
+        st.rerun()[cite: 6]
 
-st.title(f"🍦 Kulfi Ops — {page}")
+st.title(f"🍦 Kulfi Ops — {page}")[cite: 6]
 
 # ======================================================================
 # PAGE 1: DAILY ENTRY (Mobile Flavor Cards + DB Lookup + 0 Sales Allowed)
 # ======================================================================
-if page == "Daily Entry":
-    st.subheader("Cart restock & daily sales")
+if page == "Daily Entry":[cite: 6]
+    st.subheader("Cart restock & daily sales")[cite: 6]
 
     try:
-        daily_entries = list_daily_entries_with_prefill()
+        daily_entries = list_daily_entries_with_prefill()[cite: 6]
     except Exception as e:
-        daily_entries = []
-        st.warning(f"Could not load entries from database ({e}).")
+        daily_entries = [][cite: 6]
+        st.warning(f"Could not load entries from database ({e}).")[cite: 6]
 
-    if user_role == "entry" and daily_entries:
-        today_val = date.today()
+    if user_role == "entry" and daily_entries:[cite: 6]
+        today_val = date.today()[cite: 6]
         allowed_dates = {
             today_val - timedelta(days=1),
             today_val - timedelta(days=2),
             today_val - timedelta(days=3),
-        }
-        daily_entries = [e for e in daily_entries if e["date"].date() in allowed_dates]
+        }[cite: 6]
+        daily_entries = [e for e in daily_entries if e["date"].date() in allowed_dates][cite: 6]
 
-    if not daily_entries:
-        st.info("No entries found in database for the active period.")
+    if not daily_entries:[cite: 6]
+        st.info("No entries found in database for the active period.")[cite: 6]
     else:
-        top_c1, top_c2 = st.columns([1.3, 1])
+        top_c1, top_c2 = st.columns([1.3, 1])[cite: 6]
 
-        labels = [f"{e['date'].strftime('%d %b %Y')} — {e['cart']}" for e in daily_entries]
-        with top_c1:
-            sel = st.selectbox("Select entry to update sales", labels, key="daily_update_select")
-        loaded = daily_entries[labels.index(sel)]
-        entry_id = loaded["db_id"]
-        entry_date = loaded["date"].date()
-        cart_name = loaded["cart"]
+        labels = [f"{e['date'].strftime('%d %b %Y')} — {e['cart']}" for e in daily_entries][cite: 6]
+        with top_c1:[cite: 6]
+            sel = st.selectbox("Select entry to update sales", labels, key="daily_update_select")[cite: 6]
+        loaded = daily_entries[labels.index(sel)][cite: 6]
+        entry_id = loaded["db_id"][cite: 6]
+        entry_date = loaded["date"].date()[cite: 6]
+        cart_name = loaded["cart"][cite: 6]
 
-        data_key_suffix = f"_{entry_id}"
+        data_key_suffix = f"_{entry_id}"[cite: 6]
 
-        k_tot = f"daily_total{data_key_suffix}"
-        k_ph = f"daily_phonepe{data_key_suffix}"
-        k_cs = f"daily_cash{data_key_suffix}"
-        k_adv = f"daily_adv{data_key_suffix}"
-        k_food = f"daily_food{data_key_suffix}"
-        k_staff = f"daily_staff{data_key_suffix}"
-        k_prev_calc = f"daily_prev_calc{data_key_suffix}"
+        k_tot = f"daily_total{data_key_suffix}"[cite: 6]
+        k_ph = f"daily_phonepe{data_key_suffix}"[cite: 6]
+        k_cs = f"daily_cash{data_key_suffix}"[cite: 6]
+        k_adv = f"daily_adv{data_key_suffix}"[cite: 6]
+        k_food = f"daily_food{data_key_suffix}"[cite: 6]
+        k_staff = f"daily_staff{data_key_suffix}"[cite: 6]
+        k_prev_calc = f"daily_prev_calc{data_key_suffix}"[cite: 6]
 
-        staff_options = load_active_staff_list()
+        staff_options = load_active_staff_list()[cite: 6]
 
-        default_staff_name = loaded.get("staff_name", "")
-        if default_staff_name and default_staff_name not in staff_options:
-            staff_options.append(default_staff_name)
+        default_staff_name = loaded.get("staff_name", "")[cite: 6]
+        if default_staff_name and default_staff_name not in staff_options:[cite: 6]
+            staff_options.append(default_staff_name)[cite: 6]
 
-        default_staff_idx = staff_options.index(default_staff_name) if default_staff_name in staff_options else 0
-        with top_c2:
-            staff_name = st.selectbox("Cart staff name", staff_options, index=default_staff_idx, key=k_staff)
+        default_staff_idx = staff_options.index(default_staff_name) if default_staff_name in staff_options else 0[cite: 6]
+        with top_c2:[cite: 6]
+            staff_name = st.selectbox("Cart staff name", staff_options, index=default_staff_idx, key=k_staff)[cite: 6]
 
-        st.write("Enter units **added to the cart** and the **actual closing count** observed:")
+        st.write("Enter units **added to the cart** and the **actual closing count** observed:")[cite: 6]
 
-        added_map = {}
-        closing_map = {}
-        sold_map = {}
-        opening_map = {code: loaded["by_code"][code]["opening"] for code in FLAVOR_CODES}
+        added_map = {}[cite: 6]
+        closing_map = {}[cite: 6]
+        sold_map = {}[cite: 6]
+        opening_map = {code: loaded["by_code"][code]["opening"] for code in FLAVOR_CODES}[cite: 6]
 
-        for code in FLAVOR_CODES:
-            f_info = FLAVOR_MAP[code]
-            k_add = f"add_{entry_id}_{code}"
-            k_cls = f"cls_{entry_id}_{code}"
+        for code in FLAVOR_CODES:[cite: 6]
+            f_info = FLAVOR_MAP[code][cite: 6]
+            k_add = f"add_{entry_id}_{code}"[cite: 6]
+            k_cls = f"cls_{entry_id}_{code}"[cite: 6]
 
-            if k_add not in st.session_state:
-                st.session_state[k_add] = loaded["by_code"][code]["added"]
-            if k_cls not in st.session_state:
-                st.session_state[k_cls] = loaded["by_code"][code]["closing"]
+            if k_add not in st.session_state:[cite: 6]
+                st.session_state[k_add] = loaded["by_code"][code]["added"][cite: 6]
+            if k_cls not in st.session_state:[cite: 6]
+                st.session_state[k_cls] = loaded["by_code"][code]["closing"][cite: 6]
 
-            cur_open = opening_map[code]
-            cur_add = _int_num(st.session_state[k_add])
-            cur_cls = _int_num(st.session_state[k_cls])
-            cur_sold = cur_open + cur_add - cur_cls
+            cur_open = opening_map[code][cite: 6]
+            cur_add = _int_num(st.session_state[k_add])[cite: 6]
+            cur_cls = _int_num(st.session_state[k_cls])[cite: 6]
+            cur_sold = cur_open + cur_add - cur_cls[cite: 6]
 
-            added_map[code] = cur_add
-            closing_map[code] = cur_cls
-            sold_map[code] = cur_sold
+            added_map[code] = cur_add[cite: 6]
+            closing_map[code] = cur_cls[cite: 6]
+            sold_map[code] = cur_sold[cite: 6]
 
             st.markdown(
                 f"""
@@ -902,69 +903,69 @@ if page == "Daily Entry":
                 </div>
                 """,
                 unsafe_allow_html=True
-            )
+            )[cite: 6]
 
-            col_a, col_b = st.columns(2)
-            with col_a:
-                st.number_input("+ Added Stock", min_value=0, step=1, format="%d", key=k_add)
-            with col_b:
-                st.number_input("Closing Count", min_value=0, step=1, format="%d", key=k_cls)
+            col_a, col_b = st.columns(2)[cite: 6]
+            with col_a:[cite: 6]
+                st.number_input("+ Added Stock", min_value=0, step=1, format="%d", key=k_add)[cite: 6]
+            with col_b:[cite: 6]
+                st.number_input("Closing Count", min_value=0, step=1, format="%d", key=k_cls)[cite: 6]
 
-        tot_open = sum(opening_map.values())
-        tot_add = sum(added_map.values())
-        tot_close = sum(closing_map.values())
-        tot_sold = sum(sold_map.values())
+        tot_open = sum(opening_map.values())[cite: 6]
+        tot_add = sum(added_map.values())[cite: 6]
+        tot_close = sum(closing_map.values())[cite: 6]
+        tot_sold = sum(sold_map.values())[cite: 6]
 
-        m1, m2, m3, m4 = st.columns(4)
-        m1.metric("Opening Balance", f"{tot_open} units")
-        m2.metric("Stock Added", f"{tot_add} units")
-        m3.metric("Closing Balance", f"{tot_close} units")
-        m4.metric("Total Sold", f"{tot_sold} units")
+        m1, m2, m3, m4 = st.columns(4)[cite: 6]
+        m1.metric("Opening Balance", f"{tot_open} units")[cite: 6]
+        m2.metric("Stock Added", f"{tot_add} units")[cite: 6]
+        m3.metric("Closing Balance", f"{tot_close} units")[cite: 6]
+        m4.metric("Total Sold", f"{tot_sold} units")[cite: 6]
 
-        if any(s < 0 for s in sold_map.values()):
-            st.error("Today's sales works out negative for at least one flavour - closing count is higher than opening + added.")
+        if any(s < 0 for s in sold_map.values()):[cite: 6]
+            st.error("Today's sales works out negative for at least one flavour - closing count is higher than opening + added.")[cite: 6]
 
-        calculated_mrp_total = float(sum(sold_map[code] * FLAVOR_MAP[code]["mrp"] for code in FLAVOR_CODES))
+        calculated_mrp_total = float(sum(sold_map[code] * FLAVOR_MAP[code]["mrp"] for code in FLAVOR_CODES))[cite: 6]
 
-        if k_tot not in st.session_state or st.session_state.get(k_prev_calc) != calculated_mrp_total:
-            default_tot = loaded["total"] if (loaded["total"] > 0 and not loaded.get("is_prefill", False)) else calculated_mrp_total
-            st.session_state[k_tot] = f"{default_tot:.2f}"
-            st.session_state[k_prev_calc] = calculated_mrp_total
+        if k_tot not in st.session_state or st.session_state.get(k_prev_calc) != calculated_mrp_total:[cite: 6]
+            default_tot = loaded["total"] if (loaded["total"] > 0 and not loaded.get("is_prefill", False)) else calculated_mrp_total[cite: 6]
+            st.session_state[k_tot] = f"{default_tot:.2f}"[cite: 6]
+            st.session_state[k_prev_calc] = calculated_mrp_total[cite: 6]
 
-        if k_ph not in st.session_state:
-            st.session_state[k_ph] = f"{loaded['phonepe']:.2f}"
+        if k_ph not in st.session_state:[cite: 6]
+            st.session_state[k_ph] = f"{loaded['phonepe']:.2f}"[cite: 6]
 
-        if k_adv not in st.session_state:
-            st.session_state[k_adv] = f"{loaded['staff_advance']:.2f}" if "staff_advance" in loaded else "0.00"
+        if k_adv not in st.session_state:[cite: 6]
+            st.session_state[k_adv] = f"{loaded['staff_advance']:.2f}" if "staff_advance" in loaded else "0.00"[cite: 6]
 
-        if k_food not in st.session_state:
-            st.session_state[k_food] = f"{loaded['food_tea_cash']:.2f}" if "food_tea_cash" in loaded else "0.00"
+        if k_food not in st.session_state:[cite: 6]
+            st.session_state[k_food] = f"{loaded['food_tea_cash']:.2f}" if "food_tea_cash" in loaded else "0.00"[cite: 6]
 
-        if k_cs not in st.session_state:
-            st.session_state[k_cs] = f"{loaded['cash']:.2f}"
+        if k_cs not in st.session_state:[cite: 6]
+            st.session_state[k_cs] = f"{loaded['cash']:.2f}"[cite: 6]
 
-        st.markdown("---")
-        st.write("**Today's collection & Cash Breakdown**")
+        st.markdown("---")[cite: 6]
+        st.write("**Today's collection & Cash Breakdown**")[cite: 6]
 
-        c3, c4 = st.columns(2)
-        with c3:
-            total_collection_str = st.text_input("Total collection (₹)", key=k_tot)
-            staff_advance_str = st.text_input("Advance to staff (₹)", key=k_adv)
-            food_tea_str = st.text_input("Cash paid for Food / Tea (₹)", key=k_food)
-        with c4:
-            phonepe_str = st.text_input("PhonePe / UPI (₹)", key=k_ph)
-            cash_str = st.text_input("Cash Collected (₹)", key=k_cs)
+        c3, c4 = st.columns(2)[cite: 6]
+        with c3:[cite: 6]
+            total_collection_str = st.text_input("Total collection (₹)", key=k_tot)[cite: 6]
+            staff_advance_str = st.text_input("Advance to staff (₹)", key=k_adv)[cite: 6]
+            food_tea_str = st.text_input("Cash paid for Food / Tea (₹)", key=k_food)[cite: 6]
+        with c4:[cite: 6]
+            phonepe_str = st.text_input("PhonePe / UPI (₹)", key=k_ph)[cite: 6]
+            cash_str = st.text_input("Cash Collected (₹)", key=k_cs)[cite: 6]
 
-        total_collection_val = _num(total_collection_str)
-        phonepe_val = _num(phonepe_str)
-        staff_advance_val = _num(staff_advance_str)
+        total_collection_val = _num(total_collection_str)[cite: 6]
+        phonepe_val = _num(phonepe_str)[cite: 6]
+        staff_advance_val = _num(staff_advance_str)[cite: 6]
         food_tea_val = _num(food_tea_str)
-        cash_val = _num(cash_str)
+        cash_val = _num(cash_str)[cite: 6]
 
-        cash_leakage = total_collection_val - phonepe_val - staff_advance_val - food_tea_val - cash_val
-        has_leakage = cash_leakage > 0.001
+        cash_leakage = total_collection_val - phonepe_val - staff_advance_val - food_tea_val - cash_val[cite: 6]
+        has_leakage = cash_leakage > 0.001[cite: 6]
 
-        if has_leakage:
+        if has_leakage:[cite: 6]
             st.markdown(
                 f"<div style='margin-top:2px;'><label style='font-size:12px; font-weight:700;'>Cash Leakage:</label> "
                 f"<b style='color:#C41C1C; font-size:16px;'>₹{cash_leakage:,.2f}</b></div>"
@@ -972,70 +973,70 @@ if page == "Daily Entry":
                 '⚠️ There is a cash leakage - please correct or enter reason in remarks field'
                 '</p>',
                 unsafe_allow_html=True
-            )
+            )[cite: 6]
         else:
             st.markdown(
                 f"<div style='margin-top:2px;'><label style='font-size:12px; font-weight:700;'>Cash Leakage:</label> "
                 f"<b style='color:#2A1B10; font-size:14px;'>₹{cash_leakage:,.2f}</b></div>",
                 unsafe_allow_html=True
-            )
+            )[cite: 6]
 
-        remarks = st.text_input("Remarks", value=loaded["remarks"], key=f"daily_remarks{data_key_suffix}", placeholder="Enter remarks (mandatory if cash leakage)...")
+        remarks = st.text_input("Remarks", value=loaded["remarks"], key=f"daily_remarks{data_key_suffix}", placeholder="Enter remarks (mandatory if cash leakage)...")[cite: 6]
 
-        if st.button("Update sales", type="primary", use_container_width=True):
-            if any(s < 0 for s in sold_map.values()):
-                st.error("Today's sales works out negative for at least one flavour - fix closing count before saving.")
-            elif has_leakage and not remarks.strip():
-                st.error("Remarks is mandatory when there is a cash leakage. Please enter a reason.")
+        if st.button("Update sales", type="primary", use_container_width=True):[cite: 6]
+            if any(s < 0 for s in sold_map.values()):[cite: 6]
+                st.error("Today's sales works out negative for at least one flavour - fix closing count before saving.")[cite: 6]
+            elif has_leakage and not remarks.strip():[cite: 6]
+                st.error("Remarks is mandatory when there is a cash leakage. Please enter a reason.")[cite: 6]
             else:
                 try:
                     selected_staff = "" if staff_name == "None" else staff_name
                     sync_daily_entry(
                         entry_date, cart_name, added_map, closing_map, opening_map, sold_map, 
                         total_collection_val, phonepe_val, cash_val, remarks, selected_staff, staff_advance_val, food_tea_val
-                    )
-                    st.cache_resource.clear()
-                    show_success_modal(f"Saved successfully to Database & Sheets! Sales updated for {cart_name} on {entry_date.strftime('%d %b %Y')}. Total Sold: {tot_sold} units.")
+                    )[cite: 6]
+                    st.cache_resource.clear()[cite: 6]
+                    show_success_modal(f"Saved successfully to Database & Sheets! Sales updated for {cart_name} on {entry_date.strftime('%d %b %Y')}. Total Sold: {tot_sold} units.")[cite: 6]
                 except Exception as e:
-                    st.error(f"Could not save - {e}")
+                    st.error(f"Could not save - {e}")[cite: 6]
 
 # ======================================================================
 # PAGE 2: PURCHASE ORDERS (Estimator, Dynamic Discount & Order Editing)
 # ======================================================================
-elif page == "Purchase Orders" and user_role == "admin":
-    st.subheader("Purchase Order Estimator & Order Management")
-    st.caption("Plan order quantities, apply overall discounts, calculate net payable cost, and manage orders.")
+elif page == "Purchase Orders" and user_role == "admin":[cite: 6]
+    st.subheader("Purchase Order Estimator & Order Management")[cite: 6]
+    st.caption("Plan order quantities, apply overall discounts, calculate net payable cost, and manage orders.")[cite: 6]
 
-    po_mode = st.radio("Mode", ["Create New Order", "Edit / Track Existing Orders"], horizontal=True, key="po_screen_mode")
+    po_mode = st.radio("Mode", ["Create New Order", "Edit / Track Existing Orders"], horizontal=True, key="po_screen_mode")[cite: 6]
 
-    if po_mode == "Create New Order":
-        st.write("Enter details and specify quantities per flavor to calculate the estimated purchase cost.")
+    if po_mode == "Create New Order":[cite: 6]
+        st.write("Enter details and specify quantities per flavor to calculate the estimated purchase cost.")[cite: 6]
 
-        c1, c2, c3 = st.columns(3)
-        with c1:
-            order_date = st.date_input("Order Date", value=date.today(), key="new_po_order_date")
-        with c2:
-            expected_date = st.date_input("Expected Delivery Date", value=date.today() + timedelta(days=2), key="new_po_exp_date")
-        with c3:
-            location = st.text_input("Delivery Location", value=CITY, key="new_po_loc")
+        c1, c2, c3 = st.columns(3)[cite: 6]
+        with c1:[cite: 6]
+            order_date = st.date_input("Order Date", value=date.today(), key="new_po_order_date")[cite: 6]
+        with c2:[cite: 6]
+            expected_date = st.date_input("Expected Delivery Date", value=date.today() + timedelta(days=2), key="new_po_exp_date")[cite: 6]
+        with c3:[cite: 6]
+            location = st.text_input("Delivery Location", value=CITY, key="new_po_loc")[cite: 6]
 
-        c4, c5 = st.columns(2)
-        with c4:
-            order_status = st.selectbox("Order Status", PO_STATUSES, index=0, key="new_po_status")
-        with c5:
-            discount_pct = st.number_input("Overall Discount (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.5, format="%.2f", key="new_po_discount")
+        c4, c5 = st.columns(2)[cite: 6]
+        with c4:[cite: 6]
+            order_status = st.selectbox("Order Status", PO_STATUSES, index=0, key="new_po_status")[cite: 6]
+        with c5:[cite: 6]
+            discount_pct = st.number_input("Overall Discount (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.5, format="%.2f", key="new_po_discount")[cite: 6]
 
-        grid_rows = []
-        for code in FLAVOR_CODES:
-            f_info = FLAVOR_MAP[code]
+        grid_rows = [][cite: 6]
+        for code in FLAVOR_CODES:[cite: 6]
+            f_info = FLAVOR_MAP[code][cite: 6]
             grid_rows.append({
                 "Flavour": f_info["name"],
                 "Code": code,
                 "Unit Cost (₹)": float(f_info["cost_price"]),
                 "Order Quantity": 0
-            })
+            })[cite: 6]
 
-        st.write("Enter order quantities per flavour:")
+        st.write("Enter order quantities per flavour:")[cite: 6]
         po_editor_df = st.data_editor(
             pd.DataFrame(grid_rows),
             column_config={
@@ -1047,32 +1048,32 @@ elif page == "Purchase Orders" and user_role == "admin":
             hide_index=True,
             use_container_width=True,
             key="new_po_editor"
-        )
+        )[cite: 6]
 
-        total_units = int(po_editor_df["Order Quantity"].sum())
-        gross_cost = float(sum(po_editor_df["Order Quantity"] * po_editor_df["Unit Cost (₹)"]))
-        discount_amount = gross_cost * (discount_pct / 100.0)
-        final_amount = gross_cost - discount_amount
+        total_units = int(po_editor_df["Order Quantity"].sum())[cite: 6]
+        gross_cost = float(sum(po_editor_df["Order Quantity"] * po_editor_df["Unit Cost (₹)"]))[cite: 6]
+        discount_amount = gross_cost * (discount_pct / 100.0)[cite: 6]
+        final_amount = gross_cost - discount_amount[cite: 6]
 
-        st.markdown("#### Dynamic Price & Discount Calculation")
-        m1, m2, m3, m4 = st.columns(4)
-        m1.metric("Total Ordered Units", f"{total_units} units")
-        m2.metric("Gross Cost", f"₹{gross_cost:,.2f}")
-        m3.metric(f"Discount ({discount_pct:.1f}%)", f"-₹{discount_amount:,.2f}")
-        m4.metric("Final Amount to Pay", f"₹{final_amount:,.2f}")
+        st.markdown("#### Dynamic Price & Discount Calculation")[cite: 6]
+        m1, m2, m3, m4 = st.columns(4)[cite: 6]
+        m1.metric("Total Ordered Units", f"{total_units} units")[cite: 6]
+        m2.metric("Gross Cost", f"₹{gross_cost:,.2f}")[cite: 6]
+        m3.metric(f"Discount ({discount_pct:.1f}%)", f"-₹{discount_amount:,.2f}")[cite: 6]
+        m4.metric("Final Amount to Pay", f"₹{final_amount:,.2f}")[cite: 6]
 
-        po_notes = st.text_input("Order Notes / Supplier Remarks (Optional)", key="new_po_notes", placeholder="e.g. Regular weekly replenishment order...")
+        po_notes = st.text_input("Order Notes / Supplier Remarks (Optional)", key="new_po_notes", placeholder="e.g. Regular weekly replenishment order...")[cite: 6]
 
-        if st.button("🚀 Submit Purchase Order", type="primary", use_container_width=True):
-            if total_units <= 0:
-                st.error("Please enter a quantity greater than 0 for at least one flavour before placing the order.")
+        if st.button("🚀 Submit Purchase Order", type="primary", use_container_width=True):[cite: 6]
+            if total_units <= 0:[cite: 6]
+                st.error("Please enter a quantity greater than 0 for at least one flavour before placing the order.")[cite: 6]
             else:
                 try:
-                    combined_notes = po_notes.strip()
-                    if discount_pct > 0:
-                        combined_notes = f"[Discount: {discount_pct:.2f}% | Final: ₹{final_amount:,.2f}] {combined_notes}".strip()
+                    combined_notes = po_notes.strip()[cite: 6]
+                    if discount_pct > 0:[cite: 6]
+                        combined_notes = f"[Discount: {discount_pct:.2f}% | Final: ₹{final_amount:,.2f}] {combined_notes}".strip()[cite: 6]
 
-                    with db_conn.session as s:
+                    with db_conn.session as s:[cite: 6]
                         res = s.execute(
                             text("""
                             INSERT INTO purchase_orders (order_date, expected_date, location, order_status, notes)
@@ -1080,78 +1081,78 @@ elif page == "Purchase Orders" and user_role == "admin":
                             RETURNING id;
                             """),
                             {"od": order_date, "ed": expected_date, "loc": location, "stat": order_status, "notes": combined_notes}
-                        )
-                        new_poid = res.scalar()
+                        )[cite: 6]
+                        new_poid = res.scalar()[cite: 6]
 
-                        for _, row in po_editor_df.iterrows():
-                            qty = int(row["Order Quantity"])
-                            if qty > 0:
+                        for _, row in po_editor_df.iterrows():[cite: 6]
+                            qty = int(row["Order Quantity"])[cite: 6]
+                            if qty > 0:[cite: 6]
                                 s.execute(
                                     text("""
                                     INSERT INTO purchase_order_items (order_id, flavor_code, ordered_units)
                                     VALUES (:poid, :code, :qty);
                                     """),
                                     {"poid": new_poid, "code": row["Code"], "qty": qty}
-                                )
-                        s.commit()
-                    show_success_modal(f"Purchase Order #{new_poid} created successfully! Total: {total_units} units | Final Amount: ₹{final_amount:,.2f} ({discount_pct:.1f}% off).")
+                                )[cite: 6]
+                        s.commit()[cite: 6]
+                    show_success_modal(f"Purchase Order #{new_poid} created successfully! Total: {total_units} units | Final Amount: ₹{final_amount:,.2f} ({discount_pct:.1f}% off).")[cite: 6]
                 except Exception as e:
-                    st.error(f"Could not save purchase order to database: {e}")
+                    st.error(f"Could not save purchase order to database: {e}")[cite: 6]
 
-    elif po_mode == "Edit / Track Existing Orders":
+    elif po_mode == "Edit / Track Existing Orders":[cite: 6]
         po_query_df = db_conn.query("""
             SELECT p.id, p.order_date, p.expected_date, p.location, p.order_status, p.notes,
                    json_agg(json_build_object('code', pi.flavor_code, 'qty', pi.ordered_units)) AS items
             FROM purchase_orders p
             LEFT JOIN purchase_order_items pi ON p.id = pi.order_id
             GROUP BY p.id ORDER BY p.order_date DESC, p.id DESC;
-        """, ttl="0s")
+        """, ttl="0s")[cite: 6]
 
-        if po_query_df.empty:
-            st.info("No purchase orders found in the database.")
+        if po_query_df.empty:[cite: 6]
+            st.info("No purchase orders found in the database.")[cite: 6]
         else:
-            po_records = po_query_df.to_dict("records")
+            po_records = po_query_df.to_dict("records")[cite: 6]
             po_labels = [
                 f"PO #{r['id']} — {pd.to_datetime(r['order_date']).strftime('%d %b %Y')} ({r['location']}) — Status: {r['order_status']}"
                 for r in po_records
-            ]
-            selected_po_label = st.selectbox("Select Purchase Order to edit", po_labels, key="edit_po_select")
-            loaded_po = po_records[po_labels.index(selected_po_label)]
-            loaded_po_id = loaded_po["id"]
+            ][cite: 6]
+            selected_po_label = st.selectbox("Select Purchase Order to edit", po_labels, key="edit_po_select")[cite: 6]
+            loaded_po = po_records[po_labels.index(selected_po_label)][cite: 6]
+            loaded_po_id = loaded_po["id"][cite: 6]
 
-            existing_notes = str(loaded_po.get("notes") or "")
-            default_disc = 0.0
-            clean_notes = existing_notes
-            disc_match = re.search(r"\[Discount:\s*([\d.]+)%[^\]]*\]", existing_notes)
-            if disc_match:
+            existing_notes = str(loaded_po.get("notes") or "")[cite: 6]
+            default_disc = 0.0[cite: 6]
+            clean_notes = existing_notes[cite: 6]
+            disc_match = re.search(r"\[Discount:\s*([\d.]+)%[^\]]*\]", existing_notes)[cite: 6]
+            if disc_match:[cite: 6]
                 try:
-                    default_disc = float(re.search(r"([\d.]+)", disc_match.group(0)).group(1))
-                    clean_notes = re.sub(r"\[Discount:[^\]]*\]\s*", "", existing_notes).strip()
+                    default_disc = float(re.search(r"([\d.]+)", disc_match.group(0)).group(1))[cite: 6]
+                    clean_notes = re.sub(r"\[Discount:[^\]]*\]\s*", "", existing_notes).strip()[cite: 6]
                 except Exception:
-                    default_disc = 0.0
+                    default_disc = 0.0[cite: 6]
 
-            c1, c2, c3 = st.columns(3)
-            with c1:
+            c1, c2, c3 = st.columns(3)[cite: 6]
+            with c1:[cite: 6]
                 e_order_date = st.date_input(
                     "Order Date", 
                     value=pd.to_datetime(loaded_po["order_date"]).date() if loaded_po.get("order_date") else date.today(),
                     key=f"edit_po_od_{loaded_po_id}"
-                )
-            with c2:
+                )[cite: 6]
+            with c2:[cite: 6]
                 e_expected_date = st.date_input(
                     "Expected Delivery Date", 
                     value=pd.to_datetime(loaded_po["expected_date"]).date() if loaded_po.get("expected_date") else date.today() + timedelta(days=2),
                     key=f"edit_po_ed_{loaded_po_id}"
-                )
-            with c3:
-                e_location = st.text_input("Delivery Location", value=str(loaded_po.get("location", CITY)), key=f"edit_po_loc_{loaded_po_id}")
+                )[cite: 6]
+            with c3:[cite: 6]
+                e_location = st.text_input("Delivery Location", value=str(loaded_po.get("location", CITY)), key=f"edit_po_loc_{loaded_po_id}")[cite: 6]
 
-            c4, c5 = st.columns(2)
-            with c4:
-                curr_status = loaded_po.get("order_status", "Placed")
-                def_stat_idx = PO_STATUSES.index(curr_status) if curr_status in PO_STATUSES else 0
-                e_status = st.selectbox("Order Status", PO_STATUSES, index=def_stat_idx, key=f"edit_po_stat_{loaded_po_id}")
-            with c5:
+            c4, c5 = st.columns(2)[cite: 6]
+            with c4:[cite: 6]
+                curr_status = loaded_po.get("order_status", "Placed")[cite: 6]
+                def_stat_idx = PO_STATUSES.index(curr_status) if curr_status in PO_STATUSES else 0[cite: 6]
+                e_status = st.selectbox("Order Status", PO_STATUSES, index=def_stat_idx, key=f"edit_po_stat_{loaded_po_id}")[cite: 6]
+            with c5:[cite: 6]
                 e_discount_pct = st.number_input(
                     "Overall Discount (%)", 
                     min_value=0.0, 
@@ -1160,25 +1161,25 @@ elif page == "Purchase Orders" and user_role == "admin":
                     step=0.5, 
                     format="%.2f", 
                     key=f"edit_po_disc_{loaded_po_id}"
-                )
+                )[cite: 6]
 
-            items_by_code = {}
-            if loaded_po.get("items") and isinstance(loaded_po["items"], list):
-                for itm in loaded_po["items"]:
-                    if isinstance(itm, dict) and "code" in itm:
-                        items_by_code[itm["code"]] = itm.get("qty", 0)
+            items_by_code = {}[cite: 6]
+            if loaded_po.get("items") and isinstance(loaded_po["items"], list):[cite: 6]
+                for itm in loaded_po["items"]:[cite: 6]
+                    if isinstance(itm, dict) and "code" in itm:[cite: 6]
+                        items_by_code[itm["code"]] = itm.get("qty", 0)[cite: 6]
 
-            edit_grid_rows = []
-            for code in FLAVOR_CODES:
-                f_info = FLAVOR_MAP[code]
+            edit_grid_rows = [][cite: 6]
+            for code in FLAVOR_CODES:[cite: 6]
+                f_info = FLAVOR_MAP[code][cite: 6]
                 edit_grid_rows.append({
                     "Flavour": f_info["name"],
                     "Code": code,
                     "Unit Cost (₹)": float(f_info["cost_price"]),
                     "Order Quantity": int(items_by_code.get(code) or 0)
-                })
+                })[cite: 6]
 
-            st.write("Modify order quantities per flavour:")
+            st.write("Modify order quantities per flavour:")[cite: 6]
             po_edit_editor_df = st.data_editor(
                 pd.DataFrame(edit_grid_rows),
                 column_config={
@@ -1190,32 +1191,32 @@ elif page == "Purchase Orders" and user_role == "admin":
                 hide_index=True,
                 use_container_width=True,
                 key=f"edit_po_editor_{loaded_po_id}"
-            )
+            )[cite: 6]
 
-            e_total_units = int(po_edit_editor_df["Order Quantity"].sum())
-            e_gross_cost = float(sum(po_edit_editor_df["Order Quantity"] * po_edit_editor_df["Unit Cost (₹)"]))
-            e_discount_amount = e_gross_cost * (e_discount_pct / 100.0)
-            e_final_amount = e_gross_cost - e_discount_amount
+            e_total_units = int(po_edit_editor_df["Order Quantity"].sum())[cite: 6]
+            e_gross_cost = float(sum(po_edit_editor_df["Order Quantity"] * po_edit_editor_df["Unit Cost (₹)"]))[cite: 6]
+            e_discount_amount = e_gross_cost * (e_discount_pct / 100.0)[cite: 6]
+            e_final_amount = e_gross_cost - e_discount_amount[cite: 6]
 
-            st.markdown("#### Updated Order Summary")
-            em1, em2, em3, em4 = st.columns(4)
-            em1.metric("Total Ordered Units", f"{e_total_units} units")
-            em2.metric("Gross Cost", f"₹{e_gross_cost:,.2f}")
-            em3.metric(f"Discount ({e_discount_pct:.1f}%)", f"-₹{e_discount_amount:,.2f}")
-            em4.metric("Final Amount to Pay", f"₹{e_final_amount:,.2f}")
+            st.markdown("#### Updated Order Summary")[cite: 6]
+            em1, em2, em3, em4 = st.columns(4)[cite: 6]
+            em1.metric("Total Ordered Units", f"{e_total_units} units")[cite: 6]
+            em2.metric("Gross Cost", f"₹{e_gross_cost:,.2f}")[cite: 6]
+            em3.metric(f"Discount ({e_discount_pct:.1f}%)", f"-₹{e_discount_amount:,.2f}")[cite: 6]
+            em4.metric("Final Amount to Pay", f"₹{e_final_amount:,.2f}")[cite: 6]
 
-            e_notes = st.text_input("Order Notes", value=clean_notes, key=f"edit_po_notes_{loaded_po_id}")
+            e_notes = st.text_input("Order Notes", value=clean_notes, key=f"edit_po_notes_{loaded_po_id}")[cite: 6]
 
-            if st.button("💾 Update Purchase Order", type="primary", use_container_width=True):
-                if e_total_units <= 0:
-                    st.error("Please specify at least one quantity for the order.")
+            if st.button("💾 Update Purchase Order", type="primary", use_container_width=True):[cite: 6]
+                if e_total_units <= 0:[cite: 6]
+                    st.error("Please specify at least one quantity for the order.")[cite: 6]
                 else:
                     try:
-                        combined_edit_notes = e_notes.strip()
-                        if e_discount_pct > 0:
-                            combined_edit_notes = f"[Discount: {e_discount_pct:.2f}% | Final: ₹{e_final_amount:,.2f}] {combined_edit_notes}".strip()
+                        combined_edit_notes = e_notes.strip()[cite: 6]
+                        if e_discount_pct > 0:[cite: 6]
+                            combined_edit_notes = f"[Discount: {e_discount_pct:.2f}% | Final: ₹{e_final_amount:,.2f}] {combined_edit_notes}".strip()[cite: 6]
 
-                        with db_conn.session as s:
+                        with db_conn.session as s:[cite: 6]
                             s.execute(
                                 text("""
                                 UPDATE purchase_orders
@@ -1223,35 +1224,35 @@ elif page == "Purchase Orders" and user_role == "admin":
                                 WHERE id = :id;
                                 """),
                                 {"od": e_order_date, "ed": e_expected_date, "loc": e_location, "stat": e_status, "notes": combined_edit_notes, "id": loaded_po_id}
-                            )
-                            s.execute(text("DELETE FROM purchase_order_items WHERE order_id = :id;"), {"id": loaded_po_id})
+                            )[cite: 6]
+                            s.execute(text("DELETE FROM purchase_order_items WHERE order_id = :id;"), {"id": loaded_po_id})[cite: 6]
 
-                            for _, row in po_edit_editor_df.iterrows():
-                                qty = int(row["Order Quantity"])
-                                if qty > 0:
+                            for _, row in po_edit_editor_df.iterrows():[cite: 6]
+                                qty = int(row["Order Quantity"])[cite: 6]
+                                if qty > 0:[cite: 6]
                                     s.execute(
                                         text("""
                                         INSERT INTO purchase_order_items (order_id, flavor_code, ordered_units)
                                         VALUES (:poid, :code, :qty);
                                         """),
                                         {"poid": loaded_po_id, "code": row["Code"], "qty": qty}
-                                    )
-                            s.commit()
-                        show_success_modal(f"Purchase Order #{loaded_po_id} updated successfully! Final Amount: ₹{e_final_amount:,.2f}.")
+                                    )[cite: 6]
+                            s.commit()[cite: 6]
+                        show_success_modal(f"Purchase Order #{loaded_po_id} updated successfully! Final Amount: ₹{e_final_amount:,.2f}.")[cite: 6]
                     except Exception as e:
-                        st.error(f"Could not update purchase order: {e}")
+                        st.error(f"Could not update purchase order: {e}")[cite: 6]
 
 # ======================================================================
 # PAGE 3: FREEZER STOCK (100% Database Powered)
 # ======================================================================
-elif page == "Freezer Stock" and user_role == "admin":
-    st.subheader("Freezer Stock Management")
-    st.caption("All entries are persisted directly to PostgreSQL as the single source of truth.")
+elif page == "Freezer Stock" and user_role == "admin":[cite: 6]
+    st.subheader("Freezer Stock Management")[cite: 6]
+    st.caption("All entries are persisted directly to PostgreSQL as the single source of truth.")[cite: 6]
 
-    freezer_tab_choice = st.radio("Section", ["Stock Received (Inward)", "Stock Audit (Physical Count)"], horizontal=True)
+    freezer_tab_choice = st.radio("Section", ["Stock Received (Inward)", "Stock Audit (Physical Count)"], horizontal=True)[cite: 6]
 
-    if freezer_tab_choice == "Stock Received (Inward)":
-        stock_mode = st.radio("Mode", ["New entry", "Edit past entry"], horizontal=True, key="db_stock_mode")
+    if freezer_tab_choice == "Stock Received (Inward)":[cite: 6]
+        stock_mode = st.radio("Mode", ["New entry", "Edit past entry"], horizontal=True, key="db_stock_mode")[cite: 6]
 
         past_receipts_df = db_conn.query("""
             SELECT r.id, r.received_date, r.location, r.purchase_order_id, r.payment_amount,
@@ -1260,83 +1261,83 @@ elif page == "Freezer Stock" and user_role == "admin":
             FROM stock_received r
             LEFT JOIN stock_received_items i ON r.id = i.received_id
             GROUP BY r.id ORDER BY r.received_date DESC, r.id DESC;
-        """, ttl="0s")
+        """, ttl="0s")[cite: 6]
 
-        past_receipts = past_receipts_df.to_dict("records") if not past_receipts_df.empty else []
+        past_receipts = past_receipts_df.to_dict("records") if not past_receipts_df.empty else [][cite: 6]
 
-        stock_loaded = None
-        loaded_id = None
-        if stock_mode == "Edit past entry":
-            if not past_receipts:
-                st.info("No past delivery receipts found in database.")
+        stock_loaded = None[cite: 6]
+        loaded_id = None[cite: 6]
+        if stock_mode == "Edit past entry":[cite: 6]
+            if not past_receipts:[cite: 6]
+                st.info("No past delivery receipts found in database.")[cite: 6]
             else:
-                labels = [f"Receipt #{r['id']} — {pd.to_datetime(r['received_date']).strftime('%d %b %Y')} ({r['location']})" for r in past_receipts]
-                selected_rec = st.selectbox("Select delivery receipt to edit", labels, key="db_stock_select")
-                stock_loaded = past_receipts[labels.index(selected_rec)]
-                loaded_id = stock_loaded["id"]
+                labels = [f"Receipt #{r['id']} — {pd.to_datetime(r['received_date']).strftime('%d %b %Y')} ({r['location']})" for r in past_receipts][cite: 6]
+                selected_rec = st.selectbox("Select delivery receipt to edit", labels, key="db_stock_select")[cite: 6]
+                stock_loaded = past_receipts[labels.index(selected_rec)][cite: 6]
+                loaded_id = stock_loaded["id"][cite: 6]
 
-        sk = f"_{loaded_id}" if loaded_id else "_new"
+        sk = f"_{loaded_id}" if loaded_id else "_new"[cite: 6]
 
         # Extract discount from notes if editing, else default to 2.0%
-        existing_rec_notes = str(stock_loaded.get("notes") or "") if stock_loaded else ""
-        default_rec_disc = 2.0
-        clean_rec_notes = existing_rec_notes
-        if stock_loaded:
-            disc_match = re.search(r"\[Discount:\s*([\d.]+)%[^\]]*\]", existing_rec_notes)
-            if disc_match:
+        existing_rec_notes = str(stock_loaded.get("notes") or "") if stock_loaded else ""[cite: 6]
+        default_rec_disc = 2.0[cite: 6]
+        clean_rec_notes = existing_rec_notes[cite: 6]
+        if stock_loaded:[cite: 6]
+            disc_match = re.search(r"\[Discount:\s*([\d.]+)%[^\]]*\]", existing_rec_notes)[cite: 6]
+            if disc_match:[cite: 6]
                 try:
-                    default_rec_disc = float(re.search(r"([\d.]+)", disc_match.group(0)).group(1))
-                    clean_rec_notes = re.sub(r"\[Discount:[^\]]*\]\s*", "", existing_rec_notes).strip()
+                    default_rec_disc = float(re.search(r"([\d.]+)", disc_match.group(0)).group(1))[cite: 6]
+                    clean_rec_notes = re.sub(r"\[Discount:[^\]]*\]\s*", "", existing_rec_notes).strip()[cite: 6]
                 except Exception:
-                    default_rec_disc = 2.0
+                    default_rec_disc = 2.0[cite: 6]
 
-        pos_df = db_conn.query("SELECT id, order_date, location FROM purchase_orders WHERE order_status != 'Completed' ORDER BY order_date DESC;", ttl="0s")
-        po_options = ["None (Ad-hoc delivery)"] + [f"PO #{r['id']} ({pd.to_datetime(r['order_date']).strftime('%d %b')})" for _, r in pos_df.iterrows()]
+        pos_df = db_conn.query("SELECT id, order_date, location FROM purchase_orders WHERE order_status != 'Completed' ORDER BY order_date DESC;", ttl="0s")[cite: 6]
+        po_options = ["None (Ad-hoc delivery)"] + [f"PO #{r['id']} ({pd.to_datetime(r['order_date']).strftime('%d %b')})" for _, r in pos_df.iterrows()][cite: 6]
         
-        default_po_idx = 0
-        poid_raw = stock_loaded.get("purchase_order_id") if stock_loaded else None
-        if poid_raw is not None and pd.notna(poid_raw) and str(poid_raw).strip() != "":
+        default_po_idx = 0[cite: 6]
+        poid_raw = stock_loaded.get("purchase_order_id") if stock_loaded else None[cite: 6]
+        if poid_raw is not None and pd.notna(poid_raw) and str(poid_raw).strip() != "":[cite: 6]
             try:
-                poid_int = int(float(poid_raw))
-                for idx, opt in enumerate(po_options):
-                    if opt.startswith(f"PO #{poid_int} "):
-                        default_po_idx = idx
-                        break
+                poid_int = int(float(poid_raw))[cite: 6]
+                for idx, opt in enumerate(po_options):[cite: 6]
+                    if opt.startswith(f"PO #{poid_int} "):[cite: 6]
+                        default_po_idx = idx[cite: 6]
+                        break[cite: 6]
             except Exception:
-                default_po_idx = 0
+                default_po_idx = 0[cite: 6]
 
-        c1, c2, c3, c4 = st.columns(4)
-        with c1:
-            rec_default_date = pd.to_datetime(stock_loaded["received_date"]).date() if (stock_loaded and stock_loaded.get("received_date")) else date.today()
-            received_date = st.date_input("Received date", value=rec_default_date, key=f"rec_date{sk}")
-        with c2:
-            loc_default = str(stock_loaded["location"]) if (stock_loaded and stock_loaded.get("location")) else CITY
-            location = st.text_input("Location", value=loc_default, key=f"rec_loc{sk}")
-        with c3:
-            selected_po = st.selectbox("Link to Purchase Order (Optional)", po_options, index=default_po_idx, key=f"rec_po{sk}")
-        with c4:
-            rec_discount_pct = st.number_input("Overall Discount (%)", min_value=0.0, max_value=100.0, value=default_rec_disc, step=0.5, format="%.2f", key=f"rec_disc{sk}")
+        c1, c2, c3, c4 = st.columns(4)[cite: 6]
+        with c1:[cite: 6]
+            rec_default_date = pd.to_datetime(stock_loaded["received_date"]).date() if (stock_loaded and stock_loaded.get("received_date")) else date.today()[cite: 6]
+            received_date = st.date_input("Received date", value=rec_default_date, key=f"rec_date{sk}")[cite: 6]
+        with c2:[cite: 6]
+            loc_default = str(stock_loaded["location"]) if (stock_loaded and stock_loaded.get("location")) else CITY[cite: 6]
+            location = st.text_input("Location", value=loc_default, key=f"rec_loc{sk}")[cite: 6]
+        with c3:[cite: 6]
+            selected_po = st.selectbox("Link to Purchase Order (Optional)", po_options, index=default_po_idx, key=f"rec_po{sk}")[cite: 6]
+        with c4:[cite: 6]
+            rec_discount_pct = st.number_input("Overall Discount (%)", min_value=0.0, max_value=100.0, value=default_rec_disc, step=0.5, format="%.2f", key=f"rec_disc{sk}")[cite: 6]
 
-        items_map = {}
-        if stock_loaded and stock_loaded.get("items") and isinstance(stock_loaded["items"], list):
-            for itm in stock_loaded["items"]:
-                if isinstance(itm, dict) and "code" in itm:
-                    items_map[itm["code"]] = itm
+        items_map = {}[cite: 6]
+        if stock_loaded and stock_loaded.get("items") and isinstance(stock_loaded["items"], list):[cite: 6]
+            for itm in stock_loaded["items"]:[cite: 6]
+                if isinstance(itm, dict) and "code" in itm:[cite: 6]
+                    items_map[itm["code"]] = itm[cite: 6]
 
-        grid_rows = []
-        for code in FLAVOR_CODES:
-            f_info = FLAVOR_MAP[code]
-            rec_units = items_map[code]["rec"] if (code in items_map and items_map[code].get("rec") is not None) else 0
-            dam_units = items_map[code]["dam"] if (code in items_map and items_map[code].get("dam") is not None) else 0
+        grid_rows = [][cite: 6]
+        for code in FLAVOR_CODES:[cite: 6]
+            f_info = FLAVOR_MAP[code][cite: 6]
+            rec_units = items_map[code]["rec"] if (code in items_map and items_map[code].get("rec") is not None) else 0[cite: 6]
+            dam_units = items_map[code]["dam"] if (code in items_map and items_map[code].get("dam") is not None) else 0[cite: 6]
             grid_rows.append({
                 "Flavour": f_info["name"],
                 "Code": code,
                 "Unit Cost Price (₹)": float(f_info["cost_price"]),
                 "Received": int(rec_units),
                 "Damaged": int(dam_units),
-            })
+            })[cite: 6]
 
-        st.write("Enter units received per flavour:")
+        st.write("Enter units received per flavour:")[cite: 6]
         stock_edited = st.data_editor(
             pd.DataFrame(grid_rows),
             column_config={
@@ -1349,36 +1350,36 @@ elif page == "Freezer Stock" and user_role == "admin":
             hide_index=True,
             use_container_width=True,
             key=f"db_stock_editor{sk}",
-        )
+        )[cite: 6]
 
-        tot_received = int(stock_edited["Received"].sum())
-        tot_damaged = int(stock_edited["Damaged"].sum())
-        gross_cost_val = float(sum(stock_edited["Received"] * stock_edited["Unit Cost Price (₹)"]))
-        rec_discount_amount = gross_cost_val * (rec_discount_pct / 100.0)
-        net_cost_val = gross_cost_val - rec_discount_amount
+        tot_received = int(stock_edited["Received"].sum())[cite: 6]
+        tot_damaged = int(stock_edited["Damaged"].sum())[cite: 6]
+        gross_cost_val = float(sum(stock_edited["Received"] * stock_edited["Unit Cost Price (₹)"]))[cite: 6]
+        rec_discount_amount = gross_cost_val * (rec_discount_pct / 100.0)[cite: 6]
+        net_cost_val = gross_cost_val - rec_discount_amount[cite: 6]
 
-        st.markdown("#### Entry Summary")
-        s_col1, s_col2, s_col3, s_col4 = st.columns(4)
-        s_col1.metric("Total Received", f"{tot_received} units")
-        s_col2.metric("Total Damaged", f"{tot_damaged} units")
-        s_col3.metric("Gross Cost", f"₹{gross_cost_val:,.2f}")
-        s_col4.metric(f"Net Cost ({rec_discount_pct:.1f}% off)", f"₹{net_cost_val:,.2f}")
+        st.markdown("#### Entry Summary")[cite: 6]
+        s_col1, s_col2, s_col3, s_col4 = st.columns(4)[cite: 6]
+        s_col1.metric("Total Received", f"{tot_received} units")[cite: 6]
+        s_col2.metric("Total Damaged", f"{tot_damaged} units")[cite: 6]
+        s_col3.metric("Gross Cost", f"₹{gross_cost_val:,.2f}")[cite: 6]
+        s_col4.metric(f"Net Cost ({rec_discount_pct:.1f}% off)", f"₹{net_cost_val:,.2f}")[cite: 6]
 
-        st.markdown("---")
-        st.write("**Payment & Logistics**")
-        c5, c6 = st.columns(2)
-        with c5:
-            default_payment = float(stock_loaded["payment_amount"]) if (stock_loaded and stock_loaded.get("payment_amount") is not None) else float(net_cost_val)
-            payment_amount = st.number_input("Payment amount (₹)", min_value=0.0, value=default_payment, step=10.0, key=f"db_rec_pay{sk}")
-        with c6:
-            def_stat = stock_loaded["payment_status"] if (stock_loaded and stock_loaded.get("payment_status") in PAYMENT_STATUSES) else "Pending"
-            payment_status = st.selectbox("Payment status", PAYMENT_STATUSES, index=PAYMENT_STATUSES.index(def_stat), key=f"db_rec_status{sk}")
+        st.markdown("---")[cite: 6]
+        st.write("**Payment & Logistics**")[cite: 6]
+        c5, c6 = st.columns(2)[cite: 6]
+        with c5:[cite: 6]
+            default_payment = float(stock_loaded["payment_amount"]) if (stock_loaded and stock_loaded.get("payment_amount") is not None) else float(net_cost_val)[cite: 6]
+            payment_amount = st.number_input("Payment amount (₹)", min_value=0.0, value=default_payment, step=10.0, key=f"db_rec_pay{sk}")[cite: 6]
+        with c6:[cite: 6]
+            def_stat = stock_loaded["payment_status"] if (stock_loaded and stock_loaded.get("payment_status") in PAYMENT_STATUSES) else "Pending"[cite: 6]
+            payment_status = st.selectbox("Payment status", PAYMENT_STATUSES, index=PAYMENT_STATUSES.index(def_stat), key=f"db_rec_status{sk}")[cite: 6]
 
         has_payment_date = st.checkbox(
             "Add payment date", 
             value=bool(stock_loaded and stock_loaded.get("payment_date")), 
             key=f"db_rec_has_pdate{sk}",
-        )
+        )[cite: 6]
         payment_date = (
             st.date_input(
                 "Payment date", 
@@ -1386,18 +1387,18 @@ elif page == "Freezer Stock" and user_role == "admin":
                 key=f"db_rec_pdate{sk}",
             ) 
             if has_payment_date else None
-        )
+        )[cite: 6]
         payment_details = st.text_input(
             "Payment details (optional)", 
             value=(str(stock_loaded["payment_details"]) if (stock_loaded and stock_loaded.get("payment_details")) else ""), 
             key=f"db_rec_pdet{sk}",
-        )
+        )[cite: 6]
 
         has_dam_ret = st.checkbox(
             "Damaged items were returned", 
             value=bool(stock_loaded and stock_loaded.get("damaged_returned_on")), 
             key=f"db_rec_has_dam{sk}",
-        )
+        )[cite: 6]
         damaged_returned_on = (
             st.date_input(
                 "Damaged returned date", 
@@ -1405,27 +1406,27 @@ elif page == "Freezer Stock" and user_role == "admin":
                 key=f"db_rec_damdate{sk}",
             ) 
             if has_dam_ret else None
-        )
+        )[cite: 6]
 
         notes = st.text_input(
             "Notes (optional)", 
             value=clean_rec_notes, 
             key=f"db_rec_notes{sk}",
-        )
+        )[cite: 6]
 
-        btn_label = "Update delivery entry" if loaded_id else "Save stock received"
-        if st.button(btn_label, type="primary", use_container_width=True):
-            if tot_received == 0:
-                st.error("Enter at least one quantity received before saving.")
+        btn_label = "Update delivery entry" if loaded_id else "Save stock received"[cite: 6]
+        if st.button(btn_label, type="primary", use_container_width=True):[cite: 6]
+            if tot_received == 0:[cite: 6]
+                st.error("Enter at least one quantity received before saving.")[cite: 6]
             else:
-                po_id = int(selected_po.split("#")[1].split(" ")[0]) if "PO #" in selected_po else None
+                po_id = int(selected_po.split("#")[1].split(" ")[0]) if "PO #" in selected_po else None[cite: 6]
                 try:
-                    combined_rec_notes = notes.strip()
-                    if rec_discount_pct > 0:
-                        combined_rec_notes = f"[Discount: {rec_discount_pct:.2f}% | Net: ₹{net_cost_val:,.2f}] {combined_rec_notes}".strip()
+                    combined_rec_notes = notes.strip()[cite: 6]
+                    if rec_discount_pct > 0:[cite: 6]
+                        combined_rec_notes = f"[Discount: {rec_discount_pct:.2f}% | Net: ₹{net_cost_val:,.2f}] {combined_rec_notes}".strip()[cite: 6]
 
-                    with db_conn.session as s:
-                        if loaded_id:
+                    with db_conn.session as s:[cite: 6]
+                        if loaded_id:[cite: 6]
                             s.execute(
                                 text("""
                                 UPDATE stock_received
@@ -1439,9 +1440,9 @@ elif page == "Freezer Stock" and user_role == "admin":
                                     "stat": payment_status, "pdate": payment_date, "pdet": payment_details,
                                     "dret": damaged_returned_on, "notes": combined_rec_notes, "id": loaded_id
                                 }
-                            )
-                            s.execute(text("DELETE FROM stock_received_items WHERE received_id = :id;"), {"id": loaded_id})
-                            rec_id = loaded_id
+                            )[cite: 6]
+                            s.execute(text("DELETE FROM stock_received_items WHERE received_id = :id;"), {"id": loaded_id})[cite: 6]
+                            rec_id = loaded_id[cite: 6]
                         else:
                             res = s.execute(
                                 text("""
@@ -1454,46 +1455,46 @@ elif page == "Freezer Stock" and user_role == "admin":
                                     "stat": payment_status, "pdate": payment_date, "pdet": payment_details,
                                     "dret": damaged_returned_on, "notes": combined_rec_notes
                                 }
-                            )
-                            rec_id = res.scalar()
+                            )[cite: 6]
+                            rec_id = res.scalar()[cite: 6]
 
-                        for _, row in stock_edited.iterrows():
-                            if int(row["Received"]) > 0 or int(row["Damaged"]) > 0:
+                        for _, row in stock_edited.iterrows():[cite: 6]
+                            if int(row["Received"]) > 0 or int(row["Damaged"]) > 0:[cite: 6]
                                 s.execute(
                                     text("""
                                     INSERT INTO stock_received_items (received_id, flavor_code, received_units, damaged_units, unit_cost_price)
                                     VALUES (:rid, :code, :rec, :dam, :cost);
                                     """),
                                     {"rid": rec_id, "code": row["Code"], "rec": int(row["Received"]), "dam": int(row["Damaged"]), "cost": float(row["Unit Cost Price (₹)"])}
-                                )
-                        s.commit()
-                    show_success_modal(f"Stock delivery #{rec_id} saved successfully! Logged {tot_received} units (Net Cost: ₹{net_cost_val:,.2f}).")
+                                )[cite: 6]
+                        s.commit()[cite: 6]
+                    show_success_modal(f"Stock delivery #{rec_id} saved successfully! Logged {tot_received} units (Net Cost: ₹{net_cost_val:,.2f}).")[cite: 6]
                 except Exception as e:
-                    st.error(f"Could not save to database: {e}")
+                    st.error(f"Could not save to database: {e}")[cite: 6]
 
-    elif freezer_tab_choice == "Stock Audit (Physical Count)":
-        st.write("Log a physical stock count from the freezer to calculate inventory variance.")
+    elif freezer_tab_choice == "Stock Audit (Physical Count)":[cite: 6]
+        st.write("Log a physical stock count from the freezer to calculate inventory variance.")[cite: 6]
         
-        aud_c1, aud_c2, aud_c3 = st.columns(3)
-        with aud_c1:
-            audit_date = st.date_input("Audit date", value=date.today(), key="audit_dt_entry")
-        with aud_c2:
-            audit_location = st.text_input("Freezer / Location", value=CITY, key="audit_loc_entry")
-        with aud_c3:
-            audited_by = st.text_input("Audited by", value="Admin", key="audit_by_entry")
+        aud_c1, aud_c2, aud_c3 = st.columns(3)[cite: 6]
+        with aud_c1:[cite: 6]
+            audit_date = st.date_input("Audit date", value=date.today(), key="audit_dt_entry")[cite: 6]
+        with aud_c2:[cite: 6]
+            audit_location = st.text_input("Freezer / Location", value=CITY, key="audit_loc_entry")[cite: 6]
+        with aud_c3:[cite: 6]
+            audited_by = st.text_input("Audited by", value="Admin", key="audit_by_entry")[cite: 6]
 
-        freezer_curr_df = get_db_freezer_stock()
-        sys_stock_map = dict(zip(freezer_curr_df["code"], freezer_curr_df["Units in freezer"])) if not freezer_curr_df.empty else {}
+        freezer_curr_df = get_db_freezer_stock()[cite: 6]
+        sys_stock_map = dict(zip(freezer_curr_df["code"], freezer_curr_df["Units in freezer"])) if not freezer_curr_df.empty else {}[cite: 6]
 
-        audit_grid = []
-        for code in FLAVOR_CODES:
-            f_info = FLAVOR_MAP[code]
+        audit_grid = [][cite: 6]
+        for code in FLAVOR_CODES:[cite: 6]
+            f_info = FLAVOR_MAP[code][cite: 6]
             audit_grid.append({
                 "Flavour": f_info["name"],
                 "Code": code,
                 "Current System Stock": int(sys_stock_map.get(code, 0)),
                 "Physical Counted Units": int(sys_stock_map.get(code, 0)),
-            })
+            })[cite: 6]
 
         audit_edited = st.data_editor(
             pd.DataFrame(audit_grid),
@@ -1506,14 +1507,14 @@ elif page == "Freezer Stock" and user_role == "admin":
             hide_index=True,
             use_container_width=True,
             key="audit_editor_grid",
-        )
+        )[cite: 6]
 
-        audit_remarks = st.text_input("Audit remarks / observation notes", key="audit_remarks_input")
+        audit_remarks = st.text_input("Audit remarks / observation notes", key="audit_remarks_input")[cite: 6]
 
-        if st.button("Save stock audit", type="primary", use_container_width=True):
+        if st.button("Save stock audit", type="primary", use_container_width=True):[cite: 6]
             try:
-                phys_by_code = {row["Code"]: int(row["Physical Counted Units"]) for _, row in audit_edited.iterrows()}
-                with db_conn.session as s:
+                phys_by_code = {row["Code"]: int(row["Physical Counted Units"]) for _, row in audit_edited.iterrows()}[cite: 6]
+                with db_conn.session as s:[cite: 6]
                     res = s.execute(
                         text("""
                         INSERT INTO stock_audits_wide (audit_date, location, audited_by, remarks,
@@ -1528,42 +1529,35 @@ elif page == "Freezer Stock" and user_role == "admin":
                             "mn": phys_by_code.get("MN", 0), "kb": phys_by_code.get("KB", 0), "bm": phys_by_code.get("BM", 0),
                             "sg": phys_by_code.get("SG", 0), "ch": phys_by_code.get("CH", 0), "ra": phys_by_code.get("RA", 0),
                         }
-                    )
-                    aid = res.scalar()
-                    s.commit()
-                show_success_modal(f"Stock Audit #{aid} logged successfully into PostgreSQL!")
+                    )[cite: 6]
+                    aid = res.scalar()[cite: 6]
+                    s.commit()[cite: 6]
+                show_success_modal(f"Stock Audit #{aid} logged successfully into PostgreSQL!")[cite: 6]
             except Exception as e:
-                st.error(f"Could not save audit to database: {e}")
+                st.error(f"Could not save audit to database: {e}")[cite: 6]
 
 # ======================================================================
-# PAGE 4: FREEZER ANALYSIS (Single-View Compact, Orders from Calc Stock)
+# PAGE 4: FREEZER ANALYSIS (Calculated Stock as of Audit Date)
 # ======================================================================
-elif page == "Freezer Analysis" and user_role == "admin":
-    st.subheader("Freezer Stock Analysis & Reorder Planner")
-    st.caption("Live comparison of Physical Audit vs Calculated Stock with velocity-based reorder recommendations.")
+elif page == "Freezer Analysis" and user_role == "admin":[cite: 6]
+    st.subheader("Freezer Stock Analysis & Reorder Planner")[cite: 6]
+    st.caption("Live comparison of Physical Audit vs Calculated Stock with velocity-based reorder recommendations.")[cite: 6]
 
-    ac1, ac2, ac3 = st.columns(3)
-    with ac1:
-        lookback_days = st.number_input("Sales Velocity Window (days)", min_value=3, max_value=90, value=14, step=1)
-    with ac2:
-        buffer_days = st.number_input("Safety Buffer Threshold (days)", min_value=0, max_value=14, value=3, step=1)
-    with ac3:
-        cover_days = st.number_input("Reorder Coverage Target (days)", min_value=1, max_value=30, value=7, step=1)
+    ac1, ac2, ac3 = st.columns(3)[cite: 6]
+    with ac1:[cite: 6]
+        lookback_days = st.number_input("Sales Velocity Window (days)", min_value=3, max_value=90, value=14, step=1)[cite: 6]
+    with ac2:[cite: 6]
+        buffer_days = st.number_input("Safety Buffer Threshold (days)", min_value=0, max_value=14, value=3, step=1)[cite: 6]
+    with ac3:[cite: 6]
+        cover_days = st.number_input("Reorder Coverage Target (days)", min_value=1, max_value=30, value=7, step=1)[cite: 6]
 
     try:
-        today_fa = date.today()
-        cutoff_fa = today_fa - timedelta(days=int(lookback_days) - 1)
-        flavor_sales_df = load_db_flavor_sales(start_date=cutoff_fa, end_date=today_fa)
-        sales_pace_map = dict(zip(flavor_sales_df["code"], flavor_sales_df["Units sold"])) if not flavor_sales_df.empty else {}
+        today_fa = date.today()[cite: 6]
+        cutoff_fa = today_fa - timedelta(days=int(lookback_days) - 1)[cite: 6]
+        flavor_sales_df = load_db_flavor_sales(start_date=cutoff_fa, end_date=today_fa)[cite: 6]
+        sales_pace_map = dict(zip(flavor_sales_df["code"], flavor_sales_df["Units sold"])) if not flavor_sales_df.empty else {}[cite: 6]
 
-        rec_df = db_conn.query("SELECT flavor_code, SUM(received_units) AS total_recv FROM stock_received_items GROUP BY flavor_code;", ttl="0s")
-        rec_map = dict(zip(rec_df["flavor_code"], rec_df["total_recv"])) if not rec_df.empty else {}
-
-        added_df = db_conn.query("SELECT flavor_code, SUM(added_units) AS total_added FROM daily_cart_items GROUP BY flavor_code;", ttl="0s")
-        added_map = dict(zip(added_df["flavor_code"], added_df["total_added"])) if not added_df.empty else {}
-
-        rem_map = get_db_stock_removed_map()
-
+        # Latest Physical Audit from stock_audits_wide
         latest_audit_df = db_conn.query("""
             SELECT * FROM stock_audits_wide
             ORDER BY audit_date DESC, audit_id DESC
@@ -1572,35 +1566,93 @@ elif page == "Freezer Analysis" and user_role == "admin":
         
         if not latest_audit_df.empty:
             audit_row = latest_audit_df.iloc[0]
+            audit_date_val = pd.to_datetime(audit_row["audit_date"]).date()
             audit_map = {code: int(audit_row.get(FLAVOR_MAP[code]["audit_col"], 0)) for code in FLAVOR_CODES}
             audit_date_str = pd.to_datetime(audit_row["audit_date"]).strftime("%d %b %Y")
         else:
+            audit_date_val = None
             audit_map = {}
             audit_date_str = "No audits logged"
+
+        # Inward Received (All-Time Live)
+        rec_df = db_conn.query("SELECT flavor_code, SUM(received_units) AS total_recv FROM stock_received_items GROUP BY flavor_code;", ttl="0s")
+        rec_map = dict(zip(rec_df["flavor_code"], rec_df["total_recv"])) if not rec_df.empty else {}
+
+        # Outward Cart Additions (All-Time Live)
+        added_df = db_conn.query("SELECT flavor_code, SUM(added_units) AS total_added FROM daily_cart_items GROUP BY flavor_code;", ttl="0s")
+        added_map = dict(zip(added_df["flavor_code"], added_df["total_added"])) if not added_df.empty else {}
+
+        # Stock Removed (All-Time Live)
+        rem_map = get_db_stock_removed_map()
+
+        # Inward / Outward / Removed AS OF THE PHYSICAL AUDIT DATE (for accurate historical variance)
+        if audit_date_val is not None:
+            rec_audit_df = db_conn.query("""
+                SELECT ri.flavor_code, COALESCE(SUM(ri.received_units), 0) AS total_recv
+                FROM stock_received_items ri
+                JOIN stock_received r ON ri.received_id = r.id
+                WHERE r.received_date <= :adate
+                GROUP BY ri.flavor_code;
+            """, params={"adate": audit_date_val}, ttl="0s")
+            rec_map_audit = dict(zip(rec_audit_df["flavor_code"], rec_audit_df["total_recv"])) if not rec_audit_df.empty else {}
+
+            added_audit_df = db_conn.query("""
+                SELECT i.flavor_code, COALESCE(SUM(i.added_units), 0) AS total_added
+                FROM daily_cart_items i
+                JOIN daily_cart_entries e ON i.daily_entry_id = e.id
+                WHERE e.entry_date <= :adate
+                GROUP BY i.flavor_code;
+            """, params={"adate": audit_date_val}, ttl="0s")
+            added_map_audit = dict(zip(added_audit_df["flavor_code"], added_audit_df["total_added"])) if not added_audit_df.empty else {}
+
+            rem_audit_df = db_conn.query("""
+                SELECT 
+                    COALESCE(SUM(ml_units), 0) AS ml_units,
+                    COALESCE(SUM(mm_units), 0) AS mm_units,
+                    COALESCE(SUM(ps_units), 0) AS ps_units,
+                    COALESCE(SUM(mn_units), 0) AS mn_units,
+                    COALESCE(SUM(kb_units), 0) AS kb_units,
+                    COALESCE(SUM(bm_units), 0) AS bm_units,
+                    COALESCE(SUM(sg_units), 0) AS sg_units,
+                    COALESCE(SUM(ch_units), 0) AS ch_units,
+                    COALESCE(SUM(ra_units), 0) AS ra_units
+                FROM stock_removed
+                WHERE removal_date <= :adate;
+            """, params={"adate": audit_date_val}, ttl="0s")
+            if not rem_audit_df.empty:
+                r_a = rem_audit_df.iloc[0]
+                rem_map_audit = {code: int(r_a.get(FLAVOR_MAP[code]["audit_col"], 0)) for code in FLAVOR_CODES}
+            else:
+                rem_map_audit = {code: 0 for code in FLAVOR_CODES}
+        else:
+            rec_map_audit = rec_map
+            added_map_audit = added_map
+            rem_map_audit = rem_map
     except Exception as e:
         st.error(f"Could not load analysis transactions from database: {e}")
         sales_pace_map, rec_map, added_map, rem_map, audit_map = {}, {}, {}, {}, {}
+        rec_map_audit, added_map_audit, rem_map_audit = {}, {}, {}
         audit_date_str = "N/A"
 
-    # --- SECTION 1: STOCK RECONCILIATION & TOTALS ---
+    # --- SECTION 1: STOCK RECONCILIATION & TOTALS (AS OF PHYSICAL AUDIT DATE) ---
     st.markdown("---")
-    st.markdown(f"### 1. Physical Stock vs Calculated Freezer Stock &nbsp; *(Latest Audit: {audit_date_str})*")
+    st.markdown(f"### 1. Physical Stock vs Calculated Freezer Stock &nbsp; *(As on Audit Date: {audit_date_str})*")
 
     comparison_rows = []
-    tot_rec, tot_issued, tot_removed, tot_calc, tot_phys = 0, 0, 0, 0, 0
+    tot_rec_a, tot_issued_a, tot_removed_a, tot_calc_a, tot_phys = 0, 0, 0, 0, 0
     has_audit = bool(audit_map)
 
     for code in FLAVOR_CODES:
         f_info = FLAVOR_MAP[code]
-        recv_units = int(rec_map.get(code, 0))
-        issued_units = int(added_map.get(code, 0))
-        removed_units = int(rem_map.get(code, 0))
+        recv_units = int(rec_map_audit.get(code, 0))
+        issued_units = int(added_map_audit.get(code, 0))
+        removed_units = int(rem_map_audit.get(code, 0))
         calc_stock = recv_units - issued_units - removed_units
 
-        tot_rec += recv_units
-        tot_issued += issued_units
-        tot_removed += removed_units
-        tot_calc += calc_stock
+        tot_rec_a += recv_units
+        tot_issued_a += issued_units
+        tot_removed_a += removed_units
+        tot_calc_a += calc_stock
 
         phys_stock = audit_map.get(code, None)
         if phys_stock is not None:
@@ -1632,21 +1684,21 @@ elif page == "Freezer Analysis" and user_role == "admin":
         })
 
     c_m1, c_m2, c_m3, c_m4, c_m5, c_m6 = st.columns(6)
-    c_m1.metric("Total Inward", f"{tot_rec} pcs")
-    c_m2.metric("Issued to Carts", f"{tot_issued} pcs")
-    c_m3.metric("Stock Removed", f"{tot_removed} pcs")
-    c_m4.metric("Calculated Freezer", f"{tot_calc} pcs")
+    c_m1.metric("Inward (at Audit)", f"{tot_rec_a} pcs")
+    c_m2.metric("Issued (at Audit)", f"{tot_issued_a} pcs")
+    c_m3.metric("Removed (at Audit)", f"{tot_removed_a} pcs")
+    c_m4.metric("Calc. Stock (at Audit)", f"{tot_calc_a} pcs")
     c_m5.metric("Physical Audited", f"{tot_phys} pcs" if has_audit else "Not Available")
-    net_var = tot_phys - tot_calc if has_audit else 0
+    net_var = tot_phys - tot_calc_a if has_audit else 0
     c_m6.metric("Net Variance", f"{net_var:+d} pcs" if has_audit else "N/A")
 
     comp_df = pd.DataFrame(comparison_rows)
     total_row_comp = {
         "Flavour": "🔥 OVERALL TOTAL",
-        "Received (In)": tot_rec,
-        "Issued (Carts)": tot_issued,
-        "Removed": tot_removed,
-        "Calc. Stock": tot_calc,
+        "Received (In)": tot_rec_a,
+        "Issued (Carts)": tot_issued_a,
+        "Removed": tot_removed_a,
+        "Calc. Stock": tot_calc_a,
         "Physical Audit": str(tot_phys) if has_audit else "—",
         "Variance": f"{net_var:+d}" if has_audit else "—",
         "Audit Status": "✅ Match" if net_var == 0 and has_audit else (f"⚠️ {net_var:+d}" if has_audit else "—")
@@ -1654,9 +1706,9 @@ elif page == "Freezer Analysis" and user_role == "admin":
     comp_df = pd.concat([comp_df, pd.DataFrame([total_row_comp])], ignore_index=True)
     st.dataframe(comp_df, hide_index=True, use_container_width=True, height=370)
 
-    # --- SECTION 2: UPCOMING ORDER RECOMMENDATIONS (BASED ON CALC STOCK) ---
+    # --- SECTION 2: UPCOMING ORDER RECOMMENDATIONS (BASED ON LIVE CALC STOCK TODAY) ---
     st.markdown("---")
-    st.markdown("### 2. Suggested Orders & Inventory Runway &nbsp; *(Calculated from Live Freezer Stock)*")
+    st.markdown("### 2. Suggested Orders & Inventory Runway &nbsp; *(Calculated from Live Freezer Stock Today)*")
 
     reorder_rows = []
     trigger_dates = []
@@ -1863,38 +1915,38 @@ elif page == "Freezer Analysis" and user_role == "admin":
 # ======================================================================
 # PAGE 5: STOCK REMOVED (Wastage / Return / Tasting Logs)
 # ======================================================================
-elif page == "Stock Removed" and user_role == "admin":
-    st.subheader("Stock Removed / Wastage Log")
-    st.caption("Record units removed from the freezer (damages, expiry, sampling, staff consumption, or supplier returns).")
+elif page == "Stock Removed" and user_role == "admin":[cite: 6]
+    st.subheader("Stock Removed / Wastage Log")[cite: 6]
+    st.caption("Record units removed from the freezer (damages, expiry, sampling, staff consumption, or supplier returns).")[cite: 6]
 
-    rem_mode = st.radio("Mode", ["New Entry", "View Entries", "Edit Past Entry"], horizontal=True, key="rem_screen_mode")
+    rem_mode = st.radio("Mode", ["New Entry", "View Entries", "Edit Past Entry"], horizontal=True, key="rem_screen_mode")[cite: 6]
 
-    if rem_mode == "New Entry":
-        st.write("Enter details and specify quantities removed per flavour:")
+    if rem_mode == "New Entry":[cite: 6]
+        st.write("Enter details and specify quantities removed per flavour:")[cite: 6]
 
-        c1, c2, c3, c4 = st.columns(4)
-        with c1:
-            removal_date = st.date_input("Removal Date", value=date.today(), key="new_rem_date")
-        with c2:
-            location = st.text_input("Location", value=CITY, key="new_rem_loc")
-        with c3:
-            removed_by = st.text_input("Removed By", placeholder="e.g. Staff / Cart Boy", key="new_rem_rby")
-        with c4:
-            verified_by = st.text_input("Verified By", value="Admin", key="new_rem_vby")
+        c1, c2, c3, c4 = st.columns(4)[cite: 6]
+        with c1:[cite: 6]
+            removal_date = st.date_input("Removal Date", value=date.today(), key="new_rem_date")[cite: 6]
+        with c2:[cite: 6]
+            location = st.text_input("Location", value=CITY, key="new_rem_loc")[cite: 6]
+        with c3:[cite: 6]
+            removed_by = st.text_input("Removed By", placeholder="e.g. Staff / Cart Boy", key="new_rem_rby")[cite: 6]
+        with c4:[cite: 6]
+            verified_by = st.text_input("Verified By", value="Admin", key="new_rem_vby")[cite: 6]
 
-        reason_for_removal = st.text_input("Reason for Removal (Mandatory)", key="new_rem_reason", placeholder="e.g. Broken packaging, expired batch, festival sampling...")
+        reason_for_removal = st.text_input("Reason for Removal (Mandatory)", key="new_rem_reason", placeholder="e.g. Broken packaging, expired batch, festival sampling...")[cite: 6]
 
-        rem_grid_rows = []
-        for code in FLAVOR_CODES:
-            f_info = FLAVOR_MAP[code]
+        rem_grid_rows = [][cite: 6]
+        for code in FLAVOR_CODES:[cite: 6]
+            f_info = FLAVOR_MAP[code][cite: 6]
             rem_grid_rows.append({
                 "Flavour": f_info["name"],
                 "Code": code,
                 "Unit Cost (₹)": float(f_info["cost_price"]),
                 "Units Removed": 0
-            })
+            })[cite: 6]
 
-        st.write("Enter units removed per flavour:")
+        st.write("Enter units removed per flavour:")[cite: 6]
         rem_editor_df = st.data_editor(
             pd.DataFrame(rem_grid_rows),
             column_config={
@@ -1906,26 +1958,26 @@ elif page == "Stock Removed" and user_role == "admin":
             hide_index=True,
             use_container_width=True,
             key="new_rem_editor"
-        )
+        )[cite: 6]
 
-        tot_rem_units = int(rem_editor_df["Units Removed"].sum())
-        tot_rem_cost = float(sum(rem_editor_df["Units Removed"] * rem_editor_df["Unit Cost (₹)"]))
+        tot_rem_units = int(rem_editor_df["Units Removed"].sum())[cite: 6]
+        tot_rem_cost = float(sum(rem_editor_df["Units Removed"] * rem_editor_df["Unit Cost (₹)"]))[cite: 6]
 
-        st.markdown("#### Removal Summary")
-        m1, m2, m3 = st.columns(3)
-        m1.metric("Total Units Removed", f"{tot_rem_units} units")
-        m2.metric("Total Cost Value", f"₹{tot_rem_cost:,.2f}")
-        m3.metric("Date of Removal", removal_date.strftime("%d %b %Y"))
+        st.markdown("#### Removal Summary")[cite: 6]
+        m1, m2, m3 = st.columns(3)[cite: 6]
+        m1.metric("Total Units Removed", f"{tot_rem_units} units")[cite: 6]
+        m2.metric("Total Cost Value", f"₹{tot_rem_cost:,.2f}")[cite: 6]
+        m3.metric("Date of Removal", removal_date.strftime("%d %b %Y"))[cite: 6]
 
-        if st.button("🗑️ Save Stock Removal", type="primary", use_container_width=True):
-            if tot_rem_units <= 0:
-                st.error("Please enter at least one quantity greater than 0 before saving.")
-            elif not reason_for_removal.strip():
-                st.error("Reason for removal is mandatory. Please provide a brief explanation.")
+        if st.button("🗑️ Save Stock Removal", type="primary", use_container_width=True):[cite: 6]
+            if tot_rem_units <= 0:[cite: 6]
+                st.error("Please enter at least one quantity greater than 0 before saving.")[cite: 6]
+            elif not reason_for_removal.strip():[cite: 6]
+                st.error("Reason for removal is mandatory. Please provide a brief explanation.")[cite: 6]
             else:
                 try:
-                    units_map = dict(zip(rem_editor_df["Code"], rem_editor_df["Units Removed"]))
-                    with db_conn.session as s:
+                    units_map = dict(zip(rem_editor_df["Code"], rem_editor_df["Units Removed"]))[cite: 6]
+                    with db_conn.session as s:[cite: 6]
                         res = s.execute(
                             text("""
                             INSERT INTO stock_removed (
@@ -1945,14 +1997,14 @@ elif page == "Stock Removed" and user_role == "admin":
                                 "sg": int(units_map.get("SG", 0)), "ch": int(units_map.get("CH", 0)), "ra": int(units_map.get("RA", 0)),
                                 "cost": tot_rem_cost, "reason": reason_for_removal.strip(), "rby": removed_by.strip(), "vby": verified_by.strip()
                             }
-                        )
-                        new_rem_id = res.scalar()
-                        s.commit()
-                    show_success_modal(f"Stock Removal #{new_rem_id} recorded successfully! Logged {tot_rem_units} units (₹{tot_rem_cost:,.2f}).")
+                        )[cite: 6]
+                        new_rem_id = res.scalar()[cite: 6]
+                        s.commit()[cite: 6]
+                    show_success_modal(f"Stock Removal #{new_rem_id} recorded successfully! Logged {tot_rem_units} units (₹{tot_rem_cost:,.2f}).")[cite: 6]
                 except Exception as e:
-                    st.error(f"Could not save stock removal to database: {e}")
+                    st.error(f"Could not save stock removal to database: {e}")[cite: 6]
 
-    elif rem_mode == "View Entries":
+    elif rem_mode == "View Entries":[cite: 6]
         rem_query_df = db_conn.query("""
             SELECT id AS "ID", removal_date AS "Date", location AS "Location",
                    ml_units, mm_units, ps_units, mn_units, kb_units, bm_units, sg_units, ch_units, ra_units,
@@ -1960,22 +2012,22 @@ elif page == "Stock Removed" and user_role == "admin":
                    reason_for_removal AS "Reason", removed_by AS "Removed By", verified_by AS "Verified By"
             FROM stock_removed
             ORDER BY removal_date DESC, id DESC;
-        """, ttl="0s")
+        """, ttl="0s")[cite: 6]
 
-        if rem_query_df.empty:
-            st.info("No stock removal logs found in the database.")
+        if rem_query_df.empty:[cite: 6]
+            st.info("No stock removal logs found in the database.")[cite: 6]
         else:
-            total_logs = len(rem_query_df)
-            total_removed_units = int(rem_query_df["Total Units"].sum()) if "Total Units" in rem_query_df.columns else 0
-            total_removed_cost = float(rem_query_df["Cost (₹)"].sum())
+            total_logs = len(rem_query_df)[cite: 6]
+            total_removed_units = int(rem_query_df["Total Units"].sum()) if "Total Units" in rem_query_df.columns else 0[cite: 6]
+            total_removed_cost = float(rem_query_df["Cost (₹)"].sum())[cite: 6]
 
-            k1, k2, k3 = st.columns(3)
-            k1.metric("Total Removal Events", f"{total_logs}")
-            k2.metric("Total Units Removed", f"{total_removed_units} pcs")
-            k3.metric("Total Value of Removed Stock", f"₹{total_removed_cost:,.2f}")
+            k1, k2, k3 = st.columns(3)[cite: 6]
+            k1.metric("Total Removal Events", f"{total_logs}")[cite: 6]
+            k2.metric("Total Units Removed", f"{total_removed_units} pcs")[cite: 6]
+            k3.metric("Total Value of Removed Stock", f"₹{total_removed_cost:,.2f}")[cite: 6]
 
-            display_rem_list = []
-            for _, r in rem_query_df.iterrows():
+            display_rem_list = [][cite: 6]
+            for _, r in rem_query_df.iterrows():[cite: 6]
                 row_data = {
                     "ID": f"#{r['ID']}",
                     "Date": pd.to_datetime(r['Date']).strftime("%d %b %Y"),
@@ -1985,68 +2037,68 @@ elif page == "Stock Removed" and user_role == "admin":
                     "Reason": r['Reason'],
                     "Removed By": r['Removed By'] if pd.notna(r['Removed By']) else "",
                     "Verified By": r['Verified By']
-                }
-                for code in FLAVOR_CODES:
-                    col_name = FLAVOR_MAP[code]["audit_col"]
-                    row_data[code] = int(r.get(col_name, 0))
-                display_rem_list.append(row_data)
+                }[cite: 6]
+                for code in FLAVOR_CODES:[cite: 6]
+                    col_name = FLAVOR_MAP[code]["audit_col"][cite: 6]
+                    row_data[FLAVOR_MAP[code]["name"]] = int(r.get(col_name, 0))[cite: 6]
+                display_rem_list.append(row_data)[cite: 6]
 
-            rem_table_df = pd.DataFrame(display_rem_list)
+            rem_table_df = pd.DataFrame(display_rem_list)[cite: 6]
             st.dataframe(
                 rem_table_df, 
                 hide_index=True, 
                 use_container_width=True,
                 column_config={"Cost (₹)": st.column_config.NumberColumn(format="₹%.2f")}
-            )
+            )[cite: 6]
 
-    elif rem_mode == "Edit Past Entry":
+    elif rem_mode == "Edit Past Entry":[cite: 6]
         rem_query_df = db_conn.query("""
             SELECT id, removal_date, location, ml_units, mm_units, ps_units, mn_units, kb_units, bm_units, sg_units, ch_units, ra_units,
                    cost_price_of_removed_items, reason_for_removal, removed_by, verified_by
             FROM stock_removed
             ORDER BY removal_date DESC, id DESC;
-        """, ttl="0s")
+        """, ttl="0s")[cite: 6]
 
-        if rem_query_df.empty:
-            st.info("No past stock removals found in database.")
+        if rem_query_df.empty:[cite: 6]
+            st.info("No past stock removals found in database.")[cite: 6]
         else:
-            rem_records = rem_query_df.to_dict("records")
+            rem_records = rem_query_df.to_dict("records")[cite: 6]
             rem_labels = [
                 f"Removal #{r['id']} — {pd.to_datetime(r['removal_date']).strftime('%d %b %Y')} ({r['location']}) — {str(r['reason_for_removal'])[:25]} (₹{float(r['cost_price_of_removed_items']):,.0f})"
                 for r in rem_records
-            ]
-            sel_rem_label = st.selectbox("Select removal entry to edit", rem_labels, key="edit_rem_select")
-            loaded_rem = rem_records[rem_labels.index(sel_rem_label)]
-            loaded_rem_id = loaded_rem["id"]
+            ][cite: 6]
+            sel_rem_label = st.selectbox("Select removal entry to edit", rem_labels, key="edit_rem_select")[cite: 6]
+            loaded_rem = rem_records[rem_labels.index(sel_rem_label)][cite: 6]
+            loaded_rem_id = loaded_rem["id"][cite: 6]
 
-            c1, c2, c3, c4 = st.columns(4)
-            with c1:
+            c1, c2, c3, c4 = st.columns(4)[cite: 6]
+            with c1:[cite: 6]
                 e_rem_date = st.date_input(
                     "Removal Date", 
                     value=pd.to_datetime(loaded_rem["removal_date"]).date() if loaded_rem.get("removal_date") else date.today(),
                     key=f"edit_rem_date_{loaded_rem_id}"
-                )
-            with c2:
-                e_rem_loc = st.text_input("Location", value=str(loaded_rem.get("location", CITY)), key=f"edit_rem_loc_{loaded_rem_id}")
-            with c3:
-                e_rem_rby = st.text_input("Removed By", value=str(loaded_rem.get("removed_by") or ""), key=f"edit_rem_rby_{loaded_rem_id}")
-            with c4:
-                e_rem_vby = st.text_input("Verified By", value=str(loaded_rem.get("verified_by", "Admin")), key=f"edit_rem_vby_{loaded_rem_id}")
+                )[cite: 6]
+            with c2:[cite: 6]
+                e_rem_loc = st.text_input("Location", value=str(loaded_rem.get("location", CITY)), key=f"edit_rem_loc_{loaded_rem_id}")[cite: 6]
+            with c3:[cite: 6]
+                e_rem_rby = st.text_input("Removed By", value=str(loaded_rem.get("removed_by") or ""), key=f"edit_rem_rby_{loaded_rem_id}")[cite: 6]
+            with c4:[cite: 6]
+                e_rem_vby = st.text_input("Verified By", value=str(loaded_rem.get("verified_by", "Admin")), key=f"edit_rem_vby_{loaded_rem_id}")[cite: 6]
 
-            e_rem_reason = st.text_input("Reason for Removal", value=str(loaded_rem.get("reason_for_removal") or ""), key=f"edit_rem_reason_{loaded_rem_id}")
+            e_rem_reason = st.text_input("Reason for Removal", value=str(loaded_rem.get("reason_for_removal") or ""), key=f"edit_rem_reason_{loaded_rem_id}")[cite: 6]
 
-            edit_rem_rows = []
-            for code in FLAVOR_CODES:
-                f_info = FLAVOR_MAP[code]
-                col_name = f_info["audit_col"]
+            edit_rem_rows = [][cite: 6]
+            for code in FLAVOR_CODES:[cite: 6]
+                f_info = FLAVOR_MAP[code][cite: 6]
+                col_name = f_info["audit_col"][cite: 6]
                 edit_rem_rows.append({
                     "Flavour": f_info["name"],
                     "Code": code,
                     "Unit Cost (₹)": float(f_info["cost_price"]),
                     "Units Removed": int(loaded_rem.get(col_name, 0))
-                })
+                })[cite: 6]
 
-            st.write("Modify units removed per flavour:")
+            st.write("Modify units removed per flavour:")[cite: 6]
             rem_edit_editor_df = st.data_editor(
                 pd.DataFrame(edit_rem_rows),
                 column_config={
@@ -2058,26 +2110,26 @@ elif page == "Stock Removed" and user_role == "admin":
                 hide_index=True,
                 use_container_width=True,
                 key=f"edit_rem_editor_{loaded_rem_id}"
-            )
+            )[cite: 6]
 
-            e_tot_rem_units = int(rem_edit_editor_df["Units Removed"].sum())
-            e_tot_rem_cost = float(sum(rem_edit_editor_df["Units Removed"] * rem_edit_editor_df["Unit Cost (₹)"]))
+            e_tot_rem_units = int(rem_edit_editor_df["Units Removed"].sum())[cite: 6]
+            e_tot_rem_cost = float(sum(rem_edit_editor_df["Units Removed"] * rem_edit_editor_df["Unit Cost (₹)"]))[cite: 6]
 
-            st.markdown("#### Updated Summary")
-            em1, em2, em3 = st.columns(3)
-            em1.metric("Total Units Removed", f"{e_tot_rem_units} units")
-            em2.metric("Total Cost Value", f"₹{e_tot_rem_cost:,.2f}")
-            em3.metric("Date", e_rem_date.strftime("%d %b %Y"))
+            st.markdown("#### Updated Summary")[cite: 6]
+            em1, em2, em3 = st.columns(3)[cite: 6]
+            em1.metric("Total Units Removed", f"{e_tot_rem_units} units")[cite: 6]
+            em2.metric("Total Cost Value", f"₹{e_tot_rem_cost:,.2f}")[cite: 6]
+            em3.metric("Date", e_rem_date.strftime("%d %b %Y"))[cite: 6]
 
-            if st.button("💾 Update Stock Removal", type="primary", use_container_width=True):
-                if e_tot_rem_units <= 0:
-                    st.error("Please enter at least one quantity greater than 0.")
-                elif not e_rem_reason.strip():
-                    st.error("Reason for removal cannot be empty.")
+            if st.button("💾 Update Stock Removal", type="primary", use_container_width=True):[cite: 6]
+                if e_tot_rem_units <= 0:[cite: 6]
+                    st.error("Please enter at least one quantity greater than 0.")[cite: 6]
+                elif not e_rem_reason.strip():[cite: 6]
+                    st.error("Reason for removal cannot be empty.")[cite: 6]
                 else:
                     try:
-                        e_units_map = dict(zip(rem_edit_editor_df["Code"], rem_edit_editor_df["Units Removed"]))
-                        with db_conn.session as s:
+                        e_units_map = dict(zip(rem_edit_editor_df["Code"], rem_edit_editor_df["Units Removed"]))[cite: 6]
+                        with db_conn.session as s:[cite: 6]
                             s.execute(
                                 text("""
                                 UPDATE stock_removed
@@ -2099,100 +2151,100 @@ elif page == "Stock Removed" and user_role == "admin":
                                     "cost": e_tot_rem_cost, "reason": e_rem_reason.strip(), "rby": e_rem_rby.strip(), "vby": e_rem_vby.strip(),
                                     "id": loaded_rem_id
                                 }
-                            )
-                            s.commit()
-                        show_success_modal(f"Stock Removal #{loaded_rem_id} updated successfully! Final Value: ₹{e_tot_rem_cost:,.2f}.")
+                            )[cite: 6]
+                            s.commit()[cite: 6]
+                        show_success_modal(f"Stock Removal #{loaded_rem_id} updated successfully! Final Value: ₹{e_tot_rem_cost:,.2f}.")[cite: 6]
                     except Exception as e:
-                        st.error(f"Could not update stock removal entry: {e}")
+                        st.error(f"Could not update stock removal entry: {e}")[cite: 6]
 
 # ======================================================================
 # PAGE 6: EXPENSES & PAYMENTS (New Multi-Table Architecture)
 # ======================================================================
-elif page == "Expenses" and user_role == "admin":
-    st.subheader("Expenses & Payments Management")
-    st.caption("Manage supplier bills, operating expenses, payments (Cash vs UPI), and settlement balances.")
+elif page == "Expenses" and user_role == "admin":[cite: 6]
+    st.subheader("Expenses & Payments Management")[cite: 6]
+    st.caption("Manage supplier bills, operating expenses, payments (Cash vs UPI), and settlement balances.")[cite: 6]
 
-    exp_nav = st.radio("Section", ["📋 Expenses (Bills / Invoices)", "💳 Payments (Cash Outflows)", "📊 Summary & Date Reports"], horizontal=True, key="exp_nav_sec")
+    exp_nav = st.radio("Section", ["📋 Expenses (Bills / Invoices)", "💳 Payments (Cash Outflows)", "📊 Summary & Date Reports"], horizontal=True, key="exp_nav_sec")[cite: 6]
 
     # ------------------------------------------------------------------
     # SECTION 1: EXPENSES (BILLS / INVOICES)
     # ------------------------------------------------------------------
-    if exp_nav == "📋 Expenses (Bills / Invoices)":
-        e_sub_mode = st.radio("Action", ["View Expenses", "Add New Expense", "Edit Past Expense"], horizontal=True, key="e_sub_mode_rad")
-        expenses_summary_df = load_db_expenses_summary_df()
+    if exp_nav == "📋 Expenses (Bills / Invoices)":[cite: 6]
+        e_sub_mode = st.radio("Action", ["View Expenses", "Add New Expense", "Edit Past Expense"], horizontal=True, key="e_sub_mode_rad")[cite: 6]
+        expenses_summary_df = load_db_expenses_summary_df()[cite: 6]
 
-        if e_sub_mode == "Add New Expense":
-            st.write("Record a new bill or obligation incurred:")
+        if e_sub_mode == "Add New Expense":[cite: 6]
+            st.write("Record a new bill or obligation incurred:")[cite: 6]
 
-            pos_df = db_conn.query("SELECT id, order_date, location FROM purchase_orders ORDER BY order_date DESC;", ttl="0s") if db_conn else pd.DataFrame()
-            po_opts = ["None"] + [f"PO #{r['id']} ({pd.to_datetime(r['order_date']).strftime('%d %b')})" for _, r in pos_df.iterrows()] if not pos_df.empty else ["None"]
-            staff_opts = load_active_staff_list()
+            pos_df = db_conn.query("SELECT id, order_date, location FROM purchase_orders ORDER BY order_date DESC;", ttl="0s") if db_conn else pd.DataFrame()[cite: 6]
+            po_opts = ["None"] + [f"PO #{r['id']} ({pd.to_datetime(r['order_date']).strftime('%d %b')})" for _, r in pos_df.iterrows()] if not pos_df.empty else ["None"][cite: 6]
+            staff_opts = load_active_staff_list()[cite: 6]
 
-            c1, c2, c3, c4 = st.columns(4)
-            with c1:
-                e_date = st.date_input("Expense Date", value=date.today(), key="add_e_date")
-            with c2:
-                e_type = st.selectbox("Expense Type", EXPENSE_TYPES, index=0, key="add_e_type")
-            with c3:
-                e_cat = st.selectbox("Category", EXPENSE_CATEGORIES, index=0, key="add_e_cat")
-            with c4:
-                e_subcat = st.text_input("Sub-Category (Optional)", placeholder="e.g. Dry Ice, Fuel, Repair", key="add_e_subcat")
+            c1, c2, c3, c4 = st.columns(4)[cite: 6]
+            with c1:[cite: 6]
+                e_date = st.date_input("Expense Date", value=date.today(), key="add_e_date")[cite: 6]
+            with c2:[cite: 6]
+                e_type = st.selectbox("Expense Type", EXPENSE_TYPES, index=0, key="add_e_type")[cite: 6]
+            with c3:[cite: 6]
+                e_cat = st.selectbox("Category", EXPENSE_CATEGORIES, index=0, key="add_e_cat")[cite: 6]
+            with c4:[cite: 6]
+                e_subcat = st.text_input("Sub-Category (Optional)", placeholder="e.g. Dry Ice, Fuel, Repair", key="add_e_subcat")[cite: 6]
 
-            c5, c6, c7 = st.columns(3)
-            with c5:
-                e_amount = st.number_input("Total Amount (₹)", min_value=0.0, step=10.0, key="add_e_amt")
-            with c6:
-                e_attr = st.selectbox("Attributed To", ATTRIBUTED_OPTIONS, index=0, key="add_e_attr")
-            with c7:
-                e_vendor = st.text_input("Vendor / Supplier Name", placeholder="e.g. Deep Freeze Services", key="add_e_vendor")
+            c5, c6, c7 = st.columns(3)[cite: 6]
+            with c5:[cite: 6]
+                e_amount = st.number_input("Total Amount (₹)", min_value=0.0, step=10.0, key="add_e_amt")[cite: 6]
+            with c6:[cite: 6]
+                e_attr = st.selectbox("Attributed To", ATTRIBUTED_OPTIONS, index=0, key="add_e_attr")[cite: 6]
+            with c7:[cite: 6]
+                e_vendor = st.text_input("Vendor / Supplier Name", placeholder="e.g. Deep Freeze Services", key="add_e_vendor")[cite: 6]
 
-            c8, c9, c10 = st.columns(3)
-            with c8:
-                e_staff = st.selectbox("Linked Staff (Optional)", staff_opts, index=0, key="add_e_staff")
-            with c9:
-                e_po = st.selectbox("Linked PO (Optional)", po_opts, index=0, key="add_e_po")
-            with c10:
-                e_stat = st.selectbox("Initial Status", EXPENSE_STATUSES, index=0, key="add_e_stat")
+            c8, c9, c10 = st.columns(3)[cite: 6]
+            with c8:[cite: 6]
+                e_staff = st.selectbox("Linked Staff (Optional)", staff_opts, index=0, key="add_e_staff")[cite: 6]
+            with c9:[cite: 6]
+                e_po = st.selectbox("Linked PO (Optional)", po_opts, index=0, key="add_e_po")[cite: 6]
+            with c10:[cite: 6]
+                e_stat = st.selectbox("Initial Status", EXPENSE_STATUSES, index=0, key="add_e_stat")[cite: 6]
 
-            e_desc = st.text_input("Description", placeholder="Brief description of the purchase...", key="add_e_desc")
-            e_remarks = st.text_input("Remarks / Notes (Optional)", key="add_e_remarks")
+            e_desc = st.text_input("Description", placeholder="Brief description of the purchase...", key="add_e_desc")[cite: 6]
+            e_remarks = st.text_input("Remarks / Notes (Optional)", key="add_e_remarks")[cite: 6]
 
-            st.markdown("---")
-            has_direct_pay = st.checkbox("Record immediate payment now", value=False, key="add_e_direct_pay")
+            st.markdown("---")[cite: 6]
+            has_direct_pay = st.checkbox("Record immediate payment now", value=False, key="add_e_direct_pay")[cite: 6]
             
-            p_date, p_amt, p_mode, p_ref, p_to, p_notes = None, 0.0, "UPI / Bank Transfer", "", "", ""
-            if has_direct_pay:
-                p1, p2, p3 = st.columns(3)
-                with p1:
-                    p_date = st.date_input("Payment Date", value=e_date, key="add_p_date")
-                with p2:
-                    p_amt = st.number_input("Amount Paid (₹)", min_value=0.0, value=float(e_amount), step=10.0, key="add_p_amt")
-                with p3:
-                    p_mode = st.selectbox("Payment Mode", PAYMENT_MODES, index=0, key="add_p_mode")
+            p_date, p_amt, p_mode, p_ref, p_to, p_notes = None, 0.0, "UPI / Bank Transfer", "", "", ""[cite: 6]
+            if has_direct_pay:[cite: 6]
+                p1, p2, p3 = st.columns(3)[cite: 6]
+                with p1:[cite: 6]
+                    p_date = st.date_input("Payment Date", value=e_date, key="add_p_date")[cite: 6]
+                with p2:[cite: 6]
+                    p_amt = st.number_input("Amount Paid (₹)", min_value=0.0, value=float(e_amount), step=10.0, key="add_p_amt")[cite: 6]
+                with p3:[cite: 6]
+                    p_mode = st.selectbox("Payment Mode", PAYMENT_MODES, index=0, key="add_p_mode")[cite: 6]
                 
-                p4, p5 = st.columns(2)
-                with p4:
-                    p_ref = st.text_input("Ref / UTR No.", placeholder="e.g. UPI Ref, Txn ID", key="add_p_ref")
-                with p5:
-                    p_to = st.text_input("Paid To", value=e_vendor, key="add_p_to")
-                p_notes = st.text_input("Payment Notes", placeholder="Optional payment note...", key="add_p_notes")
+                p4, p5 = st.columns(2)[cite: 6]
+                with p4:[cite: 6]
+                    p_ref = st.text_input("Ref / UTR No.", placeholder="e.g. UPI Ref, Txn ID", key="add_p_ref")[cite: 6]
+                with p5:[cite: 6]
+                    p_to = st.text_input("Paid To", value=e_vendor, key="add_p_to")[cite: 6]
+                p_notes = st.text_input("Payment Notes", placeholder="Optional payment note...", key="add_p_notes")[cite: 6]
 
-            if st.button("💾 Save Expense Entry", type="primary", use_container_width=True):
-                if e_amount <= 0:
-                    st.error("Please enter an expense amount greater than 0.")
+            if st.button("💾 Save Expense Entry", type="primary", use_container_width=True):[cite: 6]
+                if e_amount <= 0:[cite: 6]
+                    st.error("Please enter an expense amount greater than 0.")[cite: 6]
                 else:
                     try:
-                        p_po_id = int(e_po.split("#")[1].split(" ")[0]) if "PO #" in e_po else None
-                        sel_staff = None if e_staff == "None" else e_staff
+                        p_po_id = int(e_po.split("#")[1].split(" ")[0]) if "PO #" in e_po else None[cite: 6]
+                        sel_staff = None if e_staff == "None" else e_staff[cite: 6]
                         
-                        computed_status = e_stat
-                        if has_direct_pay:
-                            if p_amt >= e_amount:
-                                computed_status = "Paid"
-                            elif p_amt > 0:
-                                computed_status = "Partially Paid"
+                        computed_status = e_stat[cite: 6]
+                        if has_direct_pay:[cite: 6]
+                            if p_amt >= e_amount:[cite: 6]
+                                computed_status = "Paid"[cite: 6]
+                            elif p_amt > 0:[cite: 6]
+                                computed_status = "Partially Paid"[cite: 6]
 
-                        with db_conn.session as s:
+                        with db_conn.session as s:[cite: 6]
                             res = s.execute(
                                 text("""
                                 INSERT INTO expenses (
@@ -2210,10 +2262,10 @@ elif page == "Expenses" and user_role == "admin":
                                     "amt": float(e_amount), "attr": e_attr, "vendor": e_vendor.strip(), "staff": sel_staff, "poid": p_po_id,
                                     "stat": computed_status, "recby": "Admin", "rem": e_remarks.strip()
                                 }
-                            )
-                            new_exp_id = res.scalar()
+                            )[cite: 6]
+                            new_exp_id = res.scalar()[cite: 6]
 
-                            if has_direct_pay and p_amt > 0:
+                            if has_direct_pay and p_amt > 0:[cite: 6]
                                 s.execute(
                                     text("""
                                     INSERT INTO expense_payments (
@@ -2224,41 +2276,41 @@ elif page == "Expenses" and user_role == "admin":
                                     """),
                                     {
                                         "eid": new_exp_id, "pdate": p_date, "pamt": float(p_amt), "pmode": p_mode,
-                                        "pref": p_ref.strip(), "pto": p_to.strip(), "pby": "Admin", "pnotes": p_notes.strip()
+                                        "pref": p_ref.strip(), "pto": p_to.strip(), "pby": "Admin", "notes": p_notes.strip()
                                     }
-                                )
-                            s.commit()
-                        show_success_modal(f"Expense #{new_exp_id} of ₹{e_amount:,.2f} recorded successfully!")
+                                )[cite: 6]
+                            s.commit()[cite: 6]
+                        show_success_modal(f"Expense #{new_exp_id} of ₹{e_amount:,.2f} recorded successfully!")[cite: 6]
                     except Exception as e:
-                        st.error(f"Could not save expense: {e}")
+                        st.error(f"Could not save expense: {e}")[cite: 6]
 
-        elif e_sub_mode == "View Expenses":
-            if expenses_summary_df.empty:
-                st.info("No expenses found in database.")
+        elif e_sub_mode == "View Expenses":[cite: 6]
+            if expenses_summary_df.empty:[cite: 6]
+                st.info("No expenses found in database.")[cite: 6]
             else:
-                tot_exp_incurred = float(expenses_summary_df["total_amount"].sum())
-                tot_exp_paid = float(expenses_summary_df["total_paid"].sum())
-                tot_exp_bal = float(expenses_summary_df["balance_due"].sum())
+                tot_exp_incurred = float(expenses_summary_df["total_amount"].sum())[cite: 6]
+                tot_exp_paid = float(expenses_summary_df["total_paid"].sum())[cite: 6]
+                tot_exp_bal = float(expenses_summary_df["balance_due"].sum())[cite: 6]
 
-                ek1, ek2, ek3 = st.columns(3)
-                ek1.metric("Total Expenses Incurred", f"₹{tot_exp_incurred:,.2f}")
-                ek2.metric("Total Amount Paid", f"₹{tot_exp_paid:,.2f}")
-                ek3.metric("Outstanding Balance Due", f"₹{tot_exp_bal:,.2f}")
+                ek1, ek2, ek3 = st.columns(3)[cite: 6]
+                ek1.metric("Total Expenses Incurred", f"₹{tot_exp_incurred:,.2f}")[cite: 6]
+                ek2.metric("Total Amount Paid", f"₹{tot_exp_paid:,.2f}")[cite: 6]
+                ek3.metric("Outstanding Balance Due", f"₹{tot_exp_bal:,.2f}")[cite: 6]
 
-                display_exp = expenses_summary_df.copy()
-                display_exp["expense_date"] = pd.to_datetime(display_exp["expense_date"]).dt.strftime("%d %b %Y")
-                display_exp["PO Link"] = display_exp["purchase_order_id"].apply(lambda p: f"PO #{int(p)}" if pd.notna(p) else "—")
+                display_exp = expenses_summary_df.copy()[cite: 6]
+                display_exp["expense_date"] = pd.to_datetime(display_exp["expense_date"]).dt.strftime("%d %b %Y")[cite: 6]
+                display_exp["PO Link"] = display_exp["purchase_order_id"].apply(lambda p: f"PO #{int(p)}" if pd.notna(p) else "—")[cite: 6]
                 
                 table_cols = [
                     "id", "expense_date", "expense_type", "category", "sub_category", "description",
                     "total_amount", "total_paid", "balance_due", "status", "attributed_to", "vendor_name", "PO Link"
-                ]
+                ][cite: 6]
                 renamed_cols = {
                     "id": "ID", "expense_date": "Date", "expense_type": "Type", "category": "Category",
                     "sub_category": "Sub-Category", "description": "Description", "total_amount": "Total (₹)",
                     "total_paid": "Paid (₹)", "balance_due": "Balance (₹)", "status": "Status",
                     "attributed_to": "Attributed To", "vendor_name": "Vendor"
-                }
+                }[cite: 6]
 
                 st.dataframe(
                     display_exp[table_cols].rename(columns=renamed_cols),
@@ -2269,80 +2321,80 @@ elif page == "Expenses" and user_role == "admin":
                         "Paid (₹)": st.column_config.NumberColumn(format="₹%.2f"),
                         "Balance (₹)": st.column_config.NumberColumn(format="₹%.2f"),
                     }
-                )
+                )[cite: 6]
 
-        elif e_sub_mode == "Edit Past Expense":
-            if expenses_summary_df.empty:
-                st.info("No expenses found to edit.")
+        elif e_sub_mode == "Edit Past Expense":[cite: 6]
+            if expenses_summary_df.empty:[cite: 6]
+                st.info("No expenses found to edit.")[cite: 6]
             else:
-                exp_records = expenses_summary_df.to_dict("records")
+                exp_records = expenses_summary_df.to_dict("records")[cite: 6]
                 exp_labels = [
                     f"#{r['id']} — {pd.to_datetime(r['expense_date']).strftime('%d %b %Y')} — {r['category']} (Total: ₹{float(r['total_amount']):,.0f} | Due: ₹{float(r['balance_due']):,.0f})"
                     for r in exp_records
-                ]
-                sel_exp_label = st.selectbox("Select Expense to Edit", exp_labels, key="edit_exp_select")
-                loaded_exp = exp_records[exp_labels.index(sel_exp_label)]
-                loaded_exp_id = loaded_exp["id"]
+                ][cite: 6]
+                sel_exp_label = st.selectbox("Select Expense to Edit", exp_labels, key="edit_exp_select")[cite: 6]
+                loaded_exp = exp_records[exp_labels.index(sel_exp_label)][cite: 6]
+                loaded_exp_id = loaded_exp["id"][cite: 6]
 
-                pos_df = db_conn.query("SELECT id, order_date, location FROM purchase_orders ORDER BY order_date DESC;", ttl="0s") if db_conn else pd.DataFrame()
-                po_opts = ["None"] + [f"PO #{r['id']} ({pd.to_datetime(r['order_date']).strftime('%d %b')})" for _, r in pos_df.iterrows()] if not pos_df.empty else ["None"]
+                pos_df = db_conn.query("SELECT id, order_date, location FROM purchase_orders ORDER BY order_date DESC;", ttl="0s") if db_conn else pd.DataFrame()[cite: 6]
+                po_opts = ["None"] + [f"PO #{r['id']} ({pd.to_datetime(r['order_date']).strftime('%d %b')})" for _, r in pos_df.iterrows()] if not pos_df.empty else ["None"][cite: 6]
                 
-                default_po_idx = 0
-                if loaded_exp.get("purchase_order_id") and pd.notna(loaded_exp["purchase_order_id"]):
-                    poid_str = f"PO #{int(loaded_exp['purchase_order_id'])} "
-                    for idx, opt in enumerate(po_opts):
-                        if opt.startswith(poid_str):
-                            default_po_idx = idx
-                            break
+                default_po_idx = 0[cite: 6]
+                if loaded_exp.get("purchase_order_id") and pd.notna(loaded_exp["purchase_order_id"]):[cite: 6]
+                    poid_str = f"PO #{int(loaded_exp['purchase_order_id'])} "[cite: 6]
+                    for idx, opt in enumerate(po_opts):[cite: 6]
+                        if opt.startswith(poid_str):[cite: 6]
+                            default_po_idx = idx[cite: 6]
+                            break[cite: 6]
 
-                staff_opts = load_active_staff_list()
-                curr_staff = str(loaded_exp.get("staff_name") or "None")
-                if curr_staff not in staff_opts:
-                    staff_opts.append(curr_staff)
+                staff_opts = load_active_staff_list()[cite: 6]
+                curr_staff = str(loaded_exp.get("staff_name") or "None")[cite: 6]
+                if curr_staff not in staff_opts:[cite: 6]
+                    staff_opts.append(curr_staff)[cite: 6]
 
-                c1, c2, c3, c4 = st.columns(4)
-                with c1:
-                    e_edit_date = st.date_input("Expense Date", value=pd.to_datetime(loaded_exp["expense_date"]).date(), key=f"ee_date_{loaded_exp_id}")
-                with c2:
-                    def_t_idx = EXPENSE_TYPES.index(loaded_exp["expense_type"]) if loaded_exp["expense_type"] in EXPENSE_TYPES else 0
-                    e_edit_type = st.selectbox("Expense Type", EXPENSE_TYPES, index=def_t_idx, key=f"ee_type_{loaded_exp_id}")
-                with c3:
-                    def_c_idx = EXPENSE_CATEGORIES.index(loaded_exp["category"]) if loaded_exp["category"] in EXPENSE_CATEGORIES else 0
-                    e_edit_cat = st.selectbox("Category", EXPENSE_CATEGORIES, index=def_c_idx, key=f"ee_cat_{loaded_exp_id}")
-                with c4:
-                    e_edit_subcat = st.text_input("Sub-Category", value=str(loaded_exp.get("sub_category") or ""), key=f"ee_subcat_{loaded_exp_id}")
+                c1, c2, c3, c4 = st.columns(4)[cite: 6]
+                with c1:[cite: 6]
+                    e_edit_date = st.date_input("Expense Date", value=pd.to_datetime(loaded_exp["expense_date"]).date(), key=f"ee_date_{loaded_exp_id}")[cite: 6]
+                with c2:[cite: 6]
+                    def_t_idx = EXPENSE_TYPES.index(loaded_exp["expense_type"]) if loaded_exp["expense_type"] in EXPENSE_TYPES else 0[cite: 6]
+                    e_edit_type = st.selectbox("Expense Type", EXPENSE_TYPES, index=def_t_idx, key=f"ee_type_{loaded_exp_id}")[cite: 6]
+                with c3:[cite: 6]
+                    def_c_idx = EXPENSE_CATEGORIES.index(loaded_exp["category"]) if loaded_exp["category"] in EXPENSE_CATEGORIES else 0[cite: 6]
+                    e_edit_cat = st.selectbox("Category", EXPENSE_CATEGORIES, index=def_c_idx, key=f"ee_cat_{loaded_exp_id}")[cite: 6]
+                with c4:[cite: 6]
+                    e_edit_subcat = st.text_input("Sub-Category", value=str(loaded_exp.get("sub_category") or ""), key=f"ee_subcat_{loaded_exp_id}")[cite: 6]
 
-                c5, c6, c7 = st.columns(3)
-                with c5:
-                    e_edit_amount = st.number_input("Total Amount (₹)", min_value=0.0, value=float(loaded_exp["total_amount"]), step=10.0, key=f"ee_amt_{loaded_exp_id}")
-                with c6:
-                    def_a_idx = ATTRIBUTED_OPTIONS.index(loaded_exp["attributed_to"]) if loaded_exp["attributed_to"] in ATTRIBUTED_OPTIONS else 0
-                    e_edit_attr = st.selectbox("Attributed To", ATTRIBUTED_OPTIONS, index=def_a_idx, key=f"ee_attr_{loaded_exp_id}")
-                with c7:
-                    e_edit_vendor = st.text_input("Vendor Name", value=str(loaded_exp.get("vendor_name") or ""), key=f"ee_vendor_{loaded_exp_id}")
+                c5, c6, c7 = st.columns(3)[cite: 6]
+                with c5:[cite: 6]
+                    e_edit_amount = st.number_input("Total Amount (₹)", min_value=0.0, value=float(loaded_exp["total_amount"]), step=10.0, key=f"ee_amt_{loaded_exp_id}")[cite: 6]
+                with c6:[cite: 6]
+                    def_a_idx = ATTRIBUTED_OPTIONS.index(loaded_exp["attributed_to"]) if loaded_exp["attributed_to"] in ATTRIBUTED_OPTIONS else 0[cite: 6]
+                    e_edit_attr = st.selectbox("Attributed To", ATTRIBUTED_OPTIONS, index=def_a_idx, key=f"ee_attr_{loaded_exp_id}")[cite: 6]
+                with c7:[cite: 6]
+                    e_edit_vendor = st.text_input("Vendor Name", value=str(loaded_exp.get("vendor_name") or ""), key=f"ee_vendor_{loaded_exp_id}")[cite: 6]
 
-                c8, c9, c10 = st.columns(3)
-                with c8:
-                    e_edit_staff = st.selectbox("Linked Staff", staff_opts, index=staff_opts.index(curr_staff), key=f"ee_staff_{loaded_exp_id}")
-                with c9:
-                    e_edit_po = st.selectbox("Linked PO", po_opts, index=default_po_idx, key=f"ee_po_{loaded_exp_id}")
-                with c10:
-                    curr_stat = loaded_exp.get("status", "Pending")
-                    def_s_idx = EXPENSE_STATUSES.index(curr_stat) if curr_stat in EXPENSE_STATUSES else 0
-                    e_edit_stat = st.selectbox("Status", EXPENSE_STATUSES, index=def_s_idx, key=f"ee_stat_{loaded_exp_id}")
+                c8, c9, c10 = st.columns(3)[cite: 6]
+                with c8:[cite: 6]
+                    e_edit_staff = st.selectbox("Linked Staff", staff_opts, index=staff_opts.index(curr_staff), key=f"ee_staff_{loaded_exp_id}")[cite: 6]
+                with c9:[cite: 6]
+                    e_edit_po = st.selectbox("Linked PO", po_opts, index=default_po_idx, key=f"ee_po_{loaded_exp_id}")[cite: 6]
+                with c10:[cite: 6]
+                    curr_stat = loaded_exp.get("status", "Pending")[cite: 6]
+                    def_s_idx = EXPENSE_STATUSES.index(curr_stat) if curr_stat in EXPENSE_STATUSES else 0[cite: 6]
+                    e_edit_stat = st.selectbox("Status", EXPENSE_STATUSES, index=def_s_idx, key=f"ee_stat_{loaded_exp_id}")[cite: 6]
 
-                e_edit_desc = st.text_input("Description", value=str(loaded_exp.get("description") or ""), key=f"ee_desc_{loaded_exp_id}")
-                e_edit_remarks = st.text_input("Remarks", value=str(loaded_exp.get("remarks") or ""), key=f"ee_rem_{loaded_exp_id}")
+                e_edit_desc = st.text_input("Description", value=str(loaded_exp.get("description") or ""), key=f"ee_desc_{loaded_exp_id}")[cite: 6]
+                e_edit_remarks = st.text_input("Remarks", value=str(loaded_exp.get("remarks") or ""), key=f"ee_rem_{loaded_exp_id}")[cite: 6]
 
-                if st.button("💾 Update Expense", type="primary", use_container_width=True):
-                    if e_edit_amount <= 0:
-                        st.error("Amount must be greater than 0.")
+                if st.button("💾 Update Expense", type="primary", use_container_width=True):[cite: 6]
+                    if e_edit_amount <= 0:[cite: 6]
+                        st.error("Amount must be greater than 0.")[cite: 6]
                     else:
                         try:
-                            p_po_id = int(e_edit_po.split("#")[1].split(" ")[0]) if "PO #" in e_edit_po else None
-                            sel_staff = None if e_edit_staff == "None" else e_edit_staff
+                            p_po_id = int(e_edit_po.split("#")[1].split(" ")[0]) if "PO #" in e_edit_po else None[cite: 6]
+                            sel_staff = None if e_edit_staff == "None" else e_edit_staff[cite: 6]
 
-                            with db_conn.session as s:
+                            with db_conn.session as s:[cite: 6]
                                 s.execute(
                                     text("""
                                     UPDATE expenses
@@ -2357,69 +2409,69 @@ elif page == "Expenses" and user_role == "admin":
                                         "desc": e_edit_desc.strip(), "amt": float(e_edit_amount), "attr": e_edit_attr, "vendor": e_edit_vendor.strip(),
                                         "staff": sel_staff, "poid": p_po_id, "stat": e_edit_stat, "rem": e_edit_remarks.strip(), "id": loaded_exp_id
                                     }
-                                )
-                                s.commit()
-                            show_success_modal(f"Expense #{loaded_exp_id} updated successfully!")
+                                )[cite: 6]
+                                s.commit()[cite: 6]
+                            show_success_modal(f"Expense #{loaded_exp_id} updated successfully!")[cite: 6]
                         except Exception as e:
-                            st.error(f"Could not update expense: {e}")
+                            st.error(f"Could not update expense: {e}")[cite: 6]
 
     # ------------------------------------------------------------------
     # SECTION 2: PAYMENTS (CASH OUTFLOWS)
     # ------------------------------------------------------------------
-    elif exp_nav == "💳 Payments (Cash Outflows)":
-        p_sub_mode = st.radio("Action", ["Record New Payment", "View Payments", "Edit Past Payment"], horizontal=True, key="p_sub_mode_rad")
-        payments_df = load_db_payments_df()
-        expenses_summary_df = load_db_expenses_summary_df()
+    elif exp_nav == "💳 Payments (Cash Outflows)":[cite: 6]
+        p_sub_mode = st.radio("Action", ["Record New Payment", "View Payments", "Edit Past Payment"], horizontal=True, key="p_sub_mode_rad")[cite: 6]
+        payments_df = load_db_payments_df()[cite: 6]
+        expenses_summary_df = load_db_expenses_summary_df()[cite: 6]
 
-        if p_sub_mode == "Record New Payment":
-            st.write("Record a disbursement / payment against an existing bill:")
+        if p_sub_mode == "Record New Payment":[cite: 6]
+            st.write("Record a disbursement / payment against an existing bill:")[cite: 6]
 
-            if expenses_summary_df.empty:
-                st.info("No expenses found to make payment against.")
+            if expenses_summary_df.empty:[cite: 6]
+                st.info("No expenses found to make payment against.")[cite: 6]
             else:
-                unpaid_filter = st.checkbox("Show only expenses with pending balance", value=True, key="filter_unpaid_exp")
-                filtered_exp = expenses_summary_df[expenses_summary_df["balance_due"] > 0] if unpaid_filter else expenses_summary_df
+                unpaid_filter = st.checkbox("Show only expenses with pending balance", value=True, key="filter_unpaid_exp")[cite: 6]
+                filtered_exp = expenses_summary_df[expenses_summary_df["balance_due"] > 0] if unpaid_filter else expenses_summary_df[cite: 6]
 
-                if filtered_exp.empty:
-                    st.success("🎉 All logged expenses are fully settled!")
+                if filtered_exp.empty:[cite: 6]
+                    st.success("🎉 All logged expenses are fully settled!")[cite: 6]
                 else:
-                    f_records = filtered_exp.to_dict("records")
+                    f_records = filtered_exp.to_dict("records")[cite: 6]
                     f_labels = [
                         f"Expense #{r['id']} — {r['category']} — {r['description'] or r['vendor_name']} (Total: ₹{float(r['total_amount']):,.0f} | Due: ₹{float(r['balance_due']):,.0f})"
                         for r in f_records
-                    ]
-                    selected_target_label = st.selectbox("Select Expense to Pay", f_labels, key="pay_target_select")
-                    target_exp = f_records[f_labels.index(selected_target_label)]
-                    target_exp_id = target_exp["id"]
-                    curr_due = float(target_exp["balance_due"])
+                    ][cite: 6]
+                    selected_target_label = st.selectbox("Select Expense to Pay", f_labels, key="pay_target_select")[cite: 6]
+                    target_exp = f_records[f_labels.index(selected_target_label)][cite: 6]
+                    target_exp_id = target_exp["id"][cite: 6]
+                    curr_due = float(target_exp["balance_due"])[cite: 6]
 
-                    m1, m2, m3 = st.columns(3)
-                    m1.metric("Bill Total", f"₹{float(target_exp['total_amount']):,.2f}")
-                    m2.metric("Already Paid", f"₹{float(target_exp['total_paid']):,.2f}")
-                    m3.metric("Outstanding Balance", f"₹{curr_due:,.2f}")
+                    m1, m2, m3 = st.columns(3)[cite: 6]
+                    m1.metric("Bill Total", f"₹{float(target_exp['total_amount']):,.2f}")[cite: 6]
+                    m2.metric("Already Paid", f"₹{float(target_exp['total_paid']):,.2f}")[cite: 6]
+                    m3.metric("Outstanding Balance", f"₹{curr_due:,.2f}")[cite: 6]
 
-                    c1, c2, c3 = st.columns(3)
-                    with c1:
-                        new_p_date = st.date_input("Payment Date", value=date.today(), key="rec_p_date")
-                    with c2:
-                        new_p_amount = st.number_input("Amount to Pay (₹)", min_value=0.0, value=max(0.0, curr_due), step=10.0, key="rec_p_amt")
-                    with c3:
-                        new_p_mode = st.selectbox("Payment Mode", PAYMENT_MODES, index=0, key="rec_p_mode")
+                    c1, c2, c3 = st.columns(3)[cite: 6]
+                    with c1:[cite: 6]
+                        new_p_date = st.date_input("Payment Date", value=date.today(), key="rec_p_date")[cite: 6]
+                    with c2:[cite: 6]
+                        new_p_amount = st.number_input("Amount to Pay (₹)", min_value=0.0, value=max(0.0, curr_due), step=10.0, key="rec_p_amt")[cite: 6]
+                    with c3:[cite: 6]
+                        new_p_mode = st.selectbox("Payment Mode", PAYMENT_MODES, index=0, key="rec_p_mode")[cite: 6]
 
-                    c4, c5 = st.columns(2)
-                    with c4:
-                        new_p_ref = st.text_input("Transaction / UTR Ref No.", placeholder="e.g. UPI Ref, IMPS Txn ID", key="rec_p_ref")
-                    with c5:
-                        new_p_to = st.text_input("Paid To", value=str(target_exp.get("vendor_name") or ""), key="rec_p_to")
+                    c4, c5 = st.columns(2)[cite: 6]
+                    with c4:[cite: 6]
+                        new_p_ref = st.text_input("Transaction / UTR Ref No.", placeholder="e.g. UPI Ref, IMPS Txn ID", key="rec_p_ref")[cite: 6]
+                    with c5:[cite: 6]
+                        new_p_to = st.text_input("Paid To", value=str(target_exp.get("vendor_name") or ""), key="rec_p_to")[cite: 6]
 
-                    new_p_notes = st.text_input("Payment Notes / Remarks", placeholder="e.g. Part payment tranche 1...", key="rec_p_notes")
+                    new_p_notes = st.text_input("Payment Notes / Remarks", placeholder="e.g. Part payment tranche 1...", key="rec_p_notes")[cite: 6]
 
-                    if st.button("💳 Disburse Payment", type="primary", use_container_width=True):
-                        if new_p_amount <= 0:
-                            st.error("Please enter a payment amount greater than 0.")
+                    if st.button("💳 Disburse Payment", type="primary", use_container_width=True):[cite: 6]
+                        if new_p_amount <= 0:[cite: 6]
+                            st.error("Please enter a payment amount greater than 0.")[cite: 6]
                         else:
                             try:
-                                with db_conn.session as s:
+                                with db_conn.session as s:[cite: 6]
                                     s.execute(
                                         text("""
                                         INSERT INTO expense_payments (
@@ -2432,79 +2484,79 @@ elif page == "Expenses" and user_role == "admin":
                                             "eid": target_exp_id, "pdate": new_p_date, "pamt": float(new_p_amount), "pmode": new_p_mode,
                                             "pref": new_p_ref.strip(), "pto": new_p_to.strip(), "pby": "Admin", "notes": new_p_notes.strip()
                                         }
-                                    )
-                                    new_total_paid = float(target_exp["total_paid"]) + float(new_p_amount)
-                                    new_status = "Paid" if new_total_paid >= float(target_exp["total_amount"]) else "Partially Paid"
+                                    )[cite: 6]
+                                    new_total_paid = float(target_exp["total_paid"]) + float(new_p_amount)[cite: 6]
+                                    new_status = "Paid" if new_total_paid >= float(target_exp["total_amount"]) else "Partially Paid"[cite: 6]
                                     s.execute(
                                         text("UPDATE expenses SET status = :stat, updated_at = NOW() WHERE id = :id;"),
                                         {"stat": new_status, "id": target_exp_id}
-                                    )
-                                    s.commit()
-                                show_success_modal(f"Payment of ₹{new_p_amount:,.2f} recorded successfully for Expense #{target_exp_id}!")
+                                    )[cite: 6]
+                                    s.commit()[cite: 6]
+                                show_success_modal(f"Payment of ₹{new_p_amount:,.2f} recorded successfully for Expense #{target_exp_id}!")[cite: 6]
                             except Exception as e:
-                                st.error(f"Could not record payment: {e}")
+                                st.error(f"Could not record payment: {e}")[cite: 6]
 
-        elif p_sub_mode == "View Payments":
-            if payments_df.empty:
-                st.info("No payment transactions found in database.")
+        elif p_sub_mode == "View Payments":[cite: 6]
+            if payments_df.empty:[cite: 6]
+                st.info("No payment transactions found in database.")[cite: 6]
             else:
-                tot_disbursed = float(payments_df["amount_paid"].sum())
-                st.metric("Total Payments Disbursed", f"₹{tot_disbursed:,.2f}")
+                tot_disbursed = float(payments_df["amount_paid"].sum())[cite: 6]
+                st.metric("Total Payments Disbursed", f"₹{tot_disbursed:,.2f}")[cite: 6]
 
-                disp_pay = payments_df.copy()
-                disp_pay["payment_date"] = pd.to_datetime(disp_pay["payment_date"]).dt.strftime("%d %b %Y")
-                disp_pay["Expense Link"] = disp_pay.apply(lambda r: f"#{r['expense_id']} — {r['category']} (₹{float(r['expense_total']):,.0f})", axis=1)
+                disp_pay = payments_df.copy()[cite: 6]
+                disp_pay["payment_date"] = pd.to_datetime(disp_pay["payment_date"]).dt.strftime("%d %b %Y")[cite: 6]
+                disp_pay["Expense Link"] = disp_pay.apply(lambda r: f"#{r['expense_id']} — {r['category']} (₹{float(r['expense_total']):,.0f})", axis=1)[cite: 6]
 
-                p_cols = ["id", "payment_date", "Expense Link", "amount_paid", "payment_mode", "ref_no", "paid_to", "paid_by", "notes"]
+                p_cols = ["id", "payment_date", "Expense Link", "amount_paid", "payment_mode", "ref_no", "paid_to", "paid_by", "notes"][cite: 6]
                 p_renamed = {
                     "id": "Payment ID", "payment_date": "Date", "amount_paid": "Amount (₹)",
                     "payment_mode": "Mode", "ref_no": "Ref / UTR", "paid_to": "Paid To",
                     "paid_by": "Paid By", "notes": "Notes"
-                }
+                }[cite: 6]
 
                 st.dataframe(
                     disp_pay[p_cols].rename(columns=p_renamed),
                     hide_index=True,
                     use_container_width=True,
                     column_config={"Amount (₹)": st.column_config.NumberColumn(format="₹%.2f")}
-                )
+                )[cite: 6]
 
-        elif p_sub_mode == "Edit Past Payment":
-            if payments_df.empty:
-                st.info("No payments recorded to edit.")
+        elif p_sub_mode == "Edit Past Payment":[cite: 6]
+            if payments_df.empty:[cite: 6]
+                st.info("No payments recorded to edit.")[cite: 6]
             else:
-                pay_records = payments_df.to_dict("records")
+                pay_records = payments_df.to_dict("records")[cite: 6]
                 pay_labels = [
                     f"Payment #{r['id']} — {pd.to_datetime(r['payment_date']).strftime('%d %b %Y')} — For Expense #{r['expense_id']} ({r['category']}) (₹{float(r['amount_paid']):,.2f})"
                     for r in pay_records
-                ]
-                sel_pay_label = st.selectbox("Select Payment to Edit", pay_labels, key="edit_pay_select")
-                loaded_pay = pay_records[pay_labels.index(sel_pay_label)]
-                loaded_pay_id = loaded_pay["id"]
+                ][cite: 6]
+                sel_pay_label = st.selectbox("Select Payment to Edit", pay_labels, key="edit_pay_select")[cite: 6]
+                loaded_pay = pay_records[pay_labels.index(sel_pay_label)][cite: 6]
+                loaded_pay_id = loaded_pay["id"][cite: 6]
 
-                c1, c2, c3 = st.columns(3)
-                with c1:
-                    ep_date = st.date_input("Payment Date", value=pd.to_datetime(loaded_pay["payment_date"]).date(), key=f"ep_dt_{loaded_pay_id}")
-                with c2:
-                    ep_amt = st.number_input("Amount Paid (₹)", min_value=0.0, value=float(loaded_pay["amount_paid"]), step=10.0, key=f"ep_amt_{loaded_pay_id}")
-                with c3:
-                    def_pm_idx = PAYMENT_MODES.index(loaded_pay["payment_mode"]) if loaded_pay["payment_mode"] in PAYMENT_MODES else 0
-                    ep_mode = st.selectbox("Payment Mode", PAYMENT_MODES, index=def_pm_idx, key=f"ep_mode_{loaded_pay_id}")
+                c1, c2, c3 = st.columns(3)[cite: 6]
+                with c1:[cite: 6]
+                    ep_date = st.date_input("Payment Date", value=pd.to_datetime(loaded_pay["payment_date"]).date(), key=f"ep_dt_{loaded_pay_id}")[cite: 6]
+                with c2:[cite: 6]
+                    ep_amt = st.number_input("Amount Paid (₹)", min_value=0.0, value=float(loaded_pay["amount_paid"]), step=10.0, key=f"ep_amt_{loaded_pay_id}")[cite: 6]
+                with c3:[cite: 6]
+                    def_pm_idx = PAYMENT_MODES.index(loaded_pay["payment_mode"]) if loaded_pay["payment_mode"] in PAYMENT_MODES else 0[cite: 6]
+                    ep_mode = st.selectbox("Payment Mode", PAYMENT_MODES, index=def_pm_idx, key=f"ep_mode_{loaded_pay_id}")[cite: 6]
 
-                c4, c5 = st.columns(2)
-                with c4:
-                    ep_ref = st.text_input("Transaction / UTR Ref No.", value=str(loaded_pay.get("ref_no") or ""), key=f"ep_ref_{loaded_pay_id}")
-                with c5:
-                    ep_to = st.text_input("Paid To", value=str(loaded_pay.get("paid_to") or ""), key=f"ep_to_{loaded_pay_id}")
+                c4, c5 = st.columns(2)[cite: 6]
+                with c4:[cite: 6]
+                    ep_ref = st.text_input("Transaction / UTR Ref No.", value=str(loaded_pay.get("ref_no") or ""), key=f"ep_ref_{loaded_pay_id}")[cite: 6]
+                with c5:[cite: 6]
+                    ep_to = st.text_input("Paid To", value=str(loaded_pay.get("paid_to") or ""), key=f"ep_to_{loaded_pay_id}")[cite: 6]
 
-                ep_notes = st.text_input("Payment Notes", value=str(loaded_pay.get("notes") or ""), key=f"ep_notes_{loaded_pay_id}")
+                ep_notes = st.text_input("Payment Notes", value=str(loaded_pay.get("notes") or ""), key=f"ep_notes_{loaded_pay_id}")[cite: 6]
 
-                if st.button("💾 Update Payment", type="primary", use_container_width=True):
-                    if ep_amt <= 0:
-                        st.error("Amount must be greater than 0.")
+                if st.button("💾 Update Payment", type="primary", use_container_width=True):[cite: 6]
+                    if ep_amt <= 0:[cite: 6]
+                        st.error("Amount must be greater than 0.")[cite: 6]
                     else:
                         try:
-                            with db_conn.session as s:
+                            with db_conn.session as s:[cite: 6]
                                 s.execute(
                                     text("""
                                     UPDATE expense_payments
@@ -2516,68 +2568,68 @@ elif page == "Expenses" and user_role == "admin":
                                         "pdate": ep_date, "pamt": float(ep_amt), "pmode": ep_mode,
                                         "pref": ep_ref.strip(), "pto": ep_to.strip(), "notes": ep_notes.strip(), "id": loaded_pay_id
                                     }
-                                )
-                                s.commit()
-                            show_success_modal(f"Payment #{loaded_pay_id} updated successfully!")
+                                )[cite: 6]
+                                s.commit()[cite: 6]
+                            show_success_modal(f"Payment #{loaded_pay_id} updated successfully!")[cite: 6]
                         except Exception as e:
-                            st.error(f"Could not update payment: {e}")
+                            st.error(f"Could not update payment: {e}")[cite: 6]
 
     # ------------------------------------------------------------------
     # SECTION 3: SUMMARY & DATE RANGE REPORTS
     # ------------------------------------------------------------------
-    elif exp_nav == "📊 Summary & Date Reports":
-        st.write("Analyze expense obligations, actual disbursements, and settlement ratios over any time window:")
+    elif exp_nav == "📊 Summary & Date Reports":[cite: 6]
+        st.write("Analyze expense obligations, actual disbursements, and settlement ratios over any time window:")[cite: 6]
 
-        expenses_summary_df = load_db_expenses_summary_df()
-        payments_df = load_db_payments_df()
+        expenses_summary_df = load_db_expenses_summary_df()[cite: 6]
+        payments_df = load_db_payments_df()[cite: 6]
 
-        if expenses_summary_df.empty and payments_df.empty:
-            st.info("No expense or payment records found in database.")
+        if expenses_summary_df.empty and payments_df.empty:[cite: 6]
+            st.info("No expense or payment records found in database.")[cite: 6]
         else:
-            all_dts = []
-            if not expenses_summary_df.empty:
-                all_dts += [pd.to_datetime(expenses_summary_df["expense_date"]).min().date(), pd.to_datetime(expenses_summary_df["expense_date"]).max().date()]
-            if not payments_df.empty:
-                all_dts += [pd.to_datetime(payments_df["payment_date"]).min().date(), pd.to_datetime(payments_df["payment_date"]).max().date()]
-            min_exp_d, max_exp_d = min(all_dts), max(all_dts)
-            default_start_d = max(min_exp_d, max_exp_d - timedelta(days=29))
+            all_dts = [][cite: 6]
+            if not expenses_summary_df.empty:[cite: 6]
+                all_dts += [pd.to_datetime(expenses_summary_df["expense_date"]).min().date(), pd.to_datetime(expenses_summary_df["expense_date"]).max().date()][cite: 6]
+            if not payments_df.empty:[cite: 6]
+                all_dts += [pd.to_datetime(payments_df["payment_date"]).min().date(), pd.to_datetime(payments_df["payment_date"]).max().date()][cite: 6]
+            min_exp_d, max_exp_d = min(all_dts), max(all_dts)[cite: 6]
+            default_start_d = max(min_exp_d, max_exp_d - timedelta(days=29))[cite: 6]
 
-            rc1, rc2 = st.columns(2)
-            with rc1:
-                rpt_start = st.date_input("From Date", value=default_start_d, min_value=min_exp_d, max_value=max_exp_d, key="exp_rpt_start")
-            with rc2:
-                rpt_end = st.date_input("To Date", value=max_exp_d, min_value=min_exp_d, max_value=max_exp_d, key="exp_rpt_end")
+            rc1, rc2 = st.columns(2)[cite: 6]
+            with rc1:[cite: 6]
+                rpt_start = st.date_input("From Date", value=default_start_d, min_value=min_exp_d, max_value=max_exp_d, key="exp_rpt_start")[cite: 6]
+            with rc2:[cite: 6]
+                rpt_end = st.date_input("To Date", value=max_exp_d, min_value=min_exp_d, max_value=max_exp_d, key="exp_rpt_end")[cite: 6]
 
-            if rpt_start > rpt_end:
-                st.error("'From' date must be before 'To' date.")
-                rpt_start, rpt_end = rpt_end, rpt_start
+            if rpt_start > rpt_end:[cite: 6]
+                st.error("'From' date must be before 'To' date.")[cite: 6]
+                rpt_start, rpt_end = rpt_end, rpt_start[cite: 6]
 
             f_exp = expenses_summary_df[
                 (pd.to_datetime(expenses_summary_df["expense_date"]).dt.date >= rpt_start) & 
                 (pd.to_datetime(expenses_summary_df["expense_date"]).dt.date <= rpt_end)
-            ] if not expenses_summary_df.empty else pd.DataFrame()
+            ] if not expenses_summary_df.empty else pd.DataFrame()[cite: 6]
 
             f_pay = payments_df[
                 (pd.to_datetime(payments_df["payment_date"]).dt.date >= rpt_start) & 
                 (pd.to_datetime(payments_df["payment_date"]).dt.date <= rpt_end)
-            ] if not payments_df.empty else pd.DataFrame()
+            ] if not payments_df.empty else pd.DataFrame()[cite: 6]
 
-            r_incurred = float(f_exp["total_amount"].sum()) if not f_exp.empty else 0.0
-            r_paid = float(f_pay["amount_paid"].sum()) if not f_pay.empty else 0.0
-            r_balance = float(f_exp["balance_due"].sum()) if not f_exp.empty else 0.0
+            r_incurred = float(f_exp["total_amount"].sum()) if not f_exp.empty else 0.0[cite: 6]
+            r_paid = float(f_pay["amount_paid"].sum()) if not f_pay.empty else 0.0[cite: 6]
+            r_balance = float(f_exp["balance_due"].sum()) if not f_exp.empty else 0.0[cite: 6]
 
-            m1, m2, m3 = st.columns(3)
-            m1.metric("Expenses Incurred (In Range)", f"₹{r_incurred:,.2f}")
-            m2.metric("Actual Cash Paid Out", f"₹{r_paid:,.2f}")
-            m3.metric("Outstanding Unpaid Dues", f"₹{r_balance:,.2f}")
+            m1, m2, m3 = st.columns(3)[cite: 6]
+            m1.metric("Expenses Incurred (In Range)", f"₹{r_incurred:,.2f}")[cite: 6]
+            m2.metric("Actual Cash Paid Out", f"₹{r_paid:,.2f}")[cite: 6]
+            m3.metric("Outstanding Unpaid Dues", f"₹{r_balance:,.2f}")[cite: 6]
 
-            st.markdown("---")
-            ch_col1, ch_col2 = st.columns(2)
+            st.markdown("---")[cite: 6]
+            ch_col1, ch_col2 = st.columns(2)[cite: 6]
 
-            with ch_col1:
-                st.markdown("#### Expenses by Category")
-                if not f_exp.empty:
-                    cat_grp = f_exp.groupby("category")["total_amount"].sum().reset_index()
+            with ch_col1:[cite: 6]
+                st.markdown("#### Expenses by Category")[cite: 6]
+                if not f_exp.empty:[cite: 6]
+                    cat_grp = f_exp.groupby("category")["total_amount"].sum().reset_index()[cite: 6]
                     cat_chart = (
                         alt.Chart(cat_grp)
                         .mark_bar(color="#70440E")
@@ -2587,15 +2639,15 @@ elif page == "Expenses" and user_role == "admin":
                             tooltip=[alt.Tooltip("category", title="Category"), alt.Tooltip("total_amount:Q", title="Amount", format=",.2f")]
                         )
                         .properties(height=260)
-                    )
-                    st.altair_chart(cat_chart, use_container_width=True)
+                    )[cite: 6]
+                    st.altair_chart(cat_chart, use_container_width=True)[cite: 6]
                 else:
-                    st.caption("No expenses in this range.")
+                    st.caption("No expenses in this range.")[cite: 6]
 
-            with ch_col2:
-                st.markdown("#### Expenses by Cart / Attribution")
-                if not f_exp.empty:
-                    attr_grp = f_exp.groupby("attributed_to")["total_amount"].sum().reset_index()
+            with ch_col2:[cite: 6]
+                st.markdown("#### Expenses by Cart / Attribution")[cite: 6]
+                if not f_exp.empty:[cite: 6]
+                    attr_grp = f_exp.groupby("attributed_to")["total_amount"].sum().reset_index()[cite: 6]
                     attr_chart = (
                         alt.Chart(attr_grp)
                         .mark_bar(color="#E8542A")
@@ -2605,60 +2657,60 @@ elif page == "Expenses" and user_role == "admin":
                             tooltip=[alt.Tooltip("attributed_to", title="Entity"), alt.Tooltip("total_amount:Q", title="Amount", format=",.2f")]
                         )
                         .properties(height=260)
-                    )
-                    st.altair_chart(attr_chart, use_container_width=True)
+                    )[cite: 6]
+                    st.altair_chart(attr_chart, use_container_width=True)[cite: 6]
                 else:
-                    st.caption("No expenses in this range.")
+                    st.caption("No expenses in this range.")[cite: 6]
 
-            st.markdown("#### Payments Disbursed by Mode")
-            if not f_pay.empty:
-                mode_grp = f_pay.groupby("payment_mode")["amount_paid"].sum().reset_index()
+            st.markdown("#### Payments Disbursed by Mode")[cite: 6]
+            if not f_pay.empty:[cite: 6]
+                mode_grp = f_pay.groupby("payment_mode")["amount_paid"].sum().reset_index()[cite: 6]
                 st.dataframe(
                     mode_grp.rename(columns={"payment_mode": "Payment Mode", "amount_paid": "Amount Paid (₹)"}),
                     hide_index=True,
                     use_container_width=True,
                     column_config={"Amount Paid (₹)": st.column_config.NumberColumn(format="₹%.2f")}
-                )
+                )[cite: 6]
             else:
-                st.caption("No payments in this range.")
+                st.caption("No payments in this range.")[cite: 6]
 
 # ======================================================================
 # PAGE 7: DASHBOARD (100% Supabase PostgreSQL Powered)
 # ======================================================================
-elif page == "Dashboard" and user_role == "admin":
-    st.subheader("Quick view")
+elif page == "Dashboard" and user_role == "admin":[cite: 6]
+    st.subheader("Quick view")[cite: 6]
 
     try:
-        daily_df = load_db_daily_df()
-        exp_list = load_db_expenses_list()
-        exp_df = pd.DataFrame(exp_list)
-        freezer_df = get_db_freezer_stock()
+        daily_df = load_db_daily_df()[cite: 6]
+        exp_list = load_db_expenses_list()[cite: 6]
+        exp_df = pd.DataFrame(exp_list)[cite: 6]
+        freezer_df = get_db_freezer_stock()[cite: 6]
     except Exception as e:
-        daily_df = pd.DataFrame()
-        exp_df = pd.DataFrame()
-        freezer_df = pd.DataFrame()
-        st.warning(f"Could not load data from database ({e}).")
+        daily_df = pd.DataFrame()[cite: 6]
+        exp_df = pd.DataFrame()[cite: 6]
+        freezer_df = pd.DataFrame()[cite: 6]
+        st.warning(f"Could not load data from database ({e}).")[cite: 6]
 
-    if not freezer_df.empty:
-        freezer_df["cost_price"] = freezer_df["code"].map(lambda c: FLAVOR_MAP.get(c, {}).get("cost_price", 0.0))
-        freezer_df["Stock_Value"] = freezer_df["Units in freezer"] * freezer_df["cost_price"]
-        total_freezer_val = float(freezer_df["Stock_Value"].sum())
-        total_freezer_units = int(freezer_df["Units in freezer"].sum())
+    if not freezer_df.empty:[cite: 6]
+        freezer_df["cost_price"] = freezer_df["code"].map(lambda c: FLAVOR_MAP.get(c, {}).get("cost_price", 0.0))[cite: 6]
+        freezer_df["Stock_Value"] = freezer_df["Units in freezer"] * freezer_df["cost_price"][cite: 6]
+        total_freezer_val = float(freezer_df["Stock_Value"].sum())[cite: 6]
+        total_freezer_units = int(freezer_df["Units in freezer"].sum())[cite: 6]
     else:
-        total_freezer_val = 0.0
-        total_freezer_units = 0
+        total_freezer_val = 0.0[cite: 6]
+        total_freezer_units = 0[cite: 6]
 
-    total_cogs_all_time = float(exp_df[exp_df["Category"] == "Cost of Goods"]["Amount"].sum()) if not exp_df.empty else 0.0
+    total_cogs_all_time = float(exp_df[exp_df["Category"] == "Cost of Goods"]["Amount"].sum()) if not exp_df.empty else 0.0[cite: 6]
 
-    today = pd.Timestamp(date.today())
-    day_labels = [today - pd.Timedelta(days=3), today - pd.Timedelta(days=2), today - pd.Timedelta(days=1)]
-    if not daily_df.empty:
-        day_rows = [daily_df[daily_df["Date"].dt.date == d.date()] for d in day_labels]
-        day_rev = [r["Total_Collection"].sum() for r in day_rows]
-        day_units = [int(round(r["Sold_Total"].sum())) for r in day_rows]
+    today = pd.Timestamp(date.today())[cite: 6]
+    day_labels = [today - pd.Timedelta(days=3), today - pd.Timedelta(days=2), today - pd.Timedelta(days=1)][cite: 6]
+    if not daily_df.empty:[cite: 6]
+        day_rows = [daily_df[daily_df["Date"].dt.date == d.date()] for d in day_labels][cite: 6]
+        day_rev = [r["Total_Collection"].sum() for r in day_rows][cite: 6]
+        day_units = [int(round(r["Sold_Total"].sum())) for r in day_rows][cite: 6]
 
-        col_names = [d.strftime("%d %b") for d in day_labels]
-        col_names[-1] = col_names[-1] + " (Yesterday)"
+        col_names = [d.strftime("%d %b") for d in day_labels][cite: 6]
+        col_names[-1] = col_names[-1] + " (Yesterday)"[cite: 6]
 
         compare_df = pd.DataFrame(
             {
@@ -2667,20 +2719,20 @@ elif page == "Dashboard" and user_role == "admin":
                 col_names[1]: [f"₹{day_rev[1]:,.0f}", f"{day_units[1]}"],
                 col_names[2]: [f"₹{day_rev[2]:,.0f}", f"{day_units[2]}"],
             }
-        )
-        st.markdown('<div id="last-3-days"></div>', unsafe_allow_html=True)
-        st.markdown("**Last 3 days**")
-        st.dataframe(compare_df, hide_index=True, use_container_width=True)
+        )[cite: 6]
+        st.markdown('<div id="last-3-days"></div>', unsafe_allow_html=True)[cite: 6]
+        st.markdown("**Last 3 days**")[cite: 6]
+        st.dataframe(compare_df, hide_index=True, use_container_width=True)[cite: 6]
 
-        st.markdown('<div id="revenue-trend"></div>', unsafe_allow_html=True)
-        st.markdown("**Revenue, last 14 days**")
+        st.markdown('<div id="revenue-trend"></div>', unsafe_allow_html=True)[cite: 6]
+        st.markdown("**Revenue, last 14 days**")[cite: 6]
         trend_df = (
             daily_df.assign(Day=daily_df["Date"].dt.normalize())
             .groupby("Day", as_index=False)["Total_Collection"]
             .sum()
             .sort_values("Day")
             .tail(14)
-        )
+        )[cite: 6]
         trend_chart = (
             alt.Chart(trend_df)
             .mark_bar(color="#E8542A")
@@ -2690,193 +2742,193 @@ elif page == "Dashboard" and user_role == "admin":
                 tooltip=[alt.Tooltip("Day:T", title="Date", format="%d %b %Y"), alt.Tooltip("Total_Collection:Q", title="Revenue", format=",.0f")],
             )
             .properties(height=280)
-        )
-        st.altair_chart(trend_chart, use_container_width=True)
+        )[cite: 6]
+        st.altair_chart(trend_chart, use_container_width=True)[cite: 6]
     else:
-        st.info("No sales logged in database yet.")
+        st.info("No sales logged in database yet.")[cite: 6]
 
     # Date-range reports
-    if not daily_df.empty or not exp_df.empty:
-        st.markdown("---")
-        st.markdown('<div id="reports"></div>', unsafe_allow_html=True)
-        st.markdown("## Reports")
+    if not daily_df.empty or not exp_df.empty:[cite: 6]
+        st.markdown("---")[cite: 6]
+        st.markdown('<div id="reports"></div>', unsafe_allow_html=True)[cite: 6]
+        st.markdown("## Reports")[cite: 6]
 
-        all_dates = []
-        if not daily_df.empty:
-            all_dates += [daily_df["Date"].min().date(), daily_df["Date"].max().date()]
-        if not exp_df.empty and exp_df["Date"].notna().any():
-            all_dates += [exp_df["Date"].min().date(), exp_df["Date"].max().date()]
-        min_d, max_d = min(all_dates), max(all_dates)
-        default_start = max(min_d, max_d - timedelta(days=29))
+        all_dates = [][cite: 6]
+        if not daily_df.empty:[cite: 6]
+            all_dates += [daily_df["Date"].min().date(), daily_df["Date"].max().date()][cite: 6]
+        if not exp_df.empty and exp_df["Date"].notna().any():[cite: 6]
+            all_dates += [exp_df["Date"].min().date(), exp_df["Date"].max().date()][cite: 6]
+        min_d, max_d = min(all_dates), max(all_dates)[cite: 6]
+        default_start = max(min_d, max_d - timedelta(days=29))[cite: 6]
 
-        if "applied_start" not in st.session_state:
-            st.session_state["applied_start"] = default_start
-        if "applied_end" not in st.session_state:
-            st.session_state["applied_end"] = max_d
-        st.session_state["applied_start"] = min(max(st.session_state["applied_start"], min_d), max_d)
-        st.session_state["applied_end"] = min(max(st.session_state["applied_end"], min_d), max_d)
+        if "applied_start" not in st.session_state:[cite: 6]
+            st.session_state["applied_start"] = default_start[cite: 6]
+        if "applied_end" not in st.session_state:[cite: 6]
+            st.session_state["applied_end"] = max_d[cite: 6]
+        st.session_state["applied_start"] = min(max(st.session_state["applied_start"], min_d), max_d)[cite: 6]
+        st.session_state["applied_end"] = min(max(st.session_state["applied_end"], min_d), max_d)[cite: 6]
 
-        with st.form("date_range_form"):
-            rc1, rc2, rc3 = st.columns([2, 2, 1])
-            with rc1:
-                pending_start = st.date_input("From", value=st.session_state["applied_start"], min_value=min_d, max_value=max_d)
-            with rc2:
-                pending_end = st.date_input("To", value=st.session_state["applied_end"], min_value=min_d, max_value=max_d)
-            with rc3:
-                st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
-                apply_clicked = st.form_submit_button("Apply", type="primary", use_container_width=True)
+        with st.form("date_range_form"):[cite: 6]
+            rc1, rc2, rc3 = st.columns([2, 2, 1])[cite: 6]
+            with rc1:[cite: 6]
+                pending_start = st.date_input("From", value=st.session_state["applied_start"], min_value=min_d, max_value=max_d)[cite: 6]
+            with rc2:[cite: 6]
+                pending_end = st.date_input("To", value=st.session_state["applied_end"], min_value=min_d, max_value=max_d)[cite: 6]
+            with rc3:[cite: 6]
+                st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)[cite: 6]
+                apply_clicked = st.form_submit_button("Apply", type="primary", use_container_width=True)[cite: 6]
 
-        if apply_clicked:
-            st.session_state["applied_start"] = pending_start
-            st.session_state["applied_end"] = pending_end
+        if apply_clicked:[cite: 6]
+            st.session_state["applied_start"] = pending_start[cite: 6]
+            st.session_state["applied_end"] = pending_end[cite: 6]
 
-        range_start = st.session_state["applied_start"]
-        range_end = st.session_state["applied_end"]
+        range_start = st.session_state["applied_start"][cite: 6]
+        range_end = st.session_state["applied_end"][cite: 6]
 
-        if range_start > range_end:
-            st.error("'From' date is after 'To' date - swap them and click Apply again.")
-            range_start, range_end = range_end, range_start
+        if range_start > range_end:[cite: 6]
+            st.error("'From' date is after 'To' date - swap them and click Apply again.")[cite: 6]
+            range_start, range_end = range_end, range_start[cite: 6]
 
-        st.caption(f"Showing (PostgreSQL Data): {range_start.strftime('%d %b %Y')} – {range_end.strftime('%d %b %Y')}")
+        st.caption(f"Showing (PostgreSQL Data): {range_start.strftime('%d %b %Y')} – {range_end.strftime('%d %b %Y')}")[cite: 6]
 
-        range_df = daily_df[(daily_df["Date"].dt.date >= range_start) & (daily_df["Date"].dt.date <= range_end)] if not daily_df.empty else daily_df
-        range_exp = exp_df[(exp_df["Date"].dt.date >= range_start) & (exp_df["Date"].dt.date <= range_end)] if not exp_df.empty else exp_df
+        range_df = daily_df[(daily_df["Date"].dt.date >= range_start) & (daily_df["Date"].dt.date <= range_end)] if not daily_df.empty else daily_df[cite: 6]
+        range_exp = exp_df[(exp_df["Date"].dt.date >= range_start) & (exp_df["Date"].dt.date <= range_end)] if not exp_df.empty else exp_df[cite: 6]
 
-        total_rev = range_df["Total_Collection"].sum() if not range_df.empty else 0.0
-        total_units = int(round(range_df["Sold_Total"].sum())) if not range_df.empty else 0
-        total_exp_all = range_exp["Amount"].sum() if not range_exp.empty else 0.0
-        cogs_in_range = range_exp[range_exp["Category"] == "Cost of Goods"]["Amount"].sum() if not range_exp.empty else 0.0
+        total_rev = range_df["Total_Collection"].sum() if not range_df.empty else 0.0[cite: 6]
+        total_units = int(round(range_df["Sold_Total"].sum())) if not range_df.empty else 0[cite: 6]
+        total_exp_all = range_exp["Amount"].sum() if not range_exp.empty else 0.0[cite: 6]
+        cogs_in_range = range_exp[range_exp["Category"] == "Cost of Goods"]["Amount"].sum() if not range_exp.empty else 0.0[cite: 6]
 
         # Metric Banner for Reports
-        mc1, mc2, mc3, mc4, mc5 = st.columns(5)
-        mc1.metric("Revenue in range", f"₹{total_rev:,.0f}")
-        mc2.metric("Units sold in range", f"{total_units}")
-        mc3.metric("COGS (In Range)", f"₹{cogs_in_range:,.0f}")
-        mc4.metric("COGS So Far (All-Time)", f"₹{total_cogs_all_time:,.0f}")
-        mc5.metric("Freezer Stock Value", f"₹{total_freezer_val:,.0f}")
+        mc1, mc2, mc3, mc4, mc5 = st.columns(5)[cite: 6]
+        mc1.metric("Revenue in range", f"₹{total_rev:,.0f}")[cite: 6]
+        mc2.metric("Units sold in range", f"{total_units}")[cite: 6]
+        mc3.metric("COGS (In Range)", f"₹{cogs_in_range:,.0f}")[cite: 6]
+        mc4.metric("COGS So Far (All-Time)", f"₹{total_cogs_all_time:,.0f}")[cite: 6]
+        mc5.metric("Freezer Stock Value", f"₹{total_freezer_val:,.0f}")[cite: 6]
 
         # Cart-wise comparison
-        st.markdown('<div id="cart-wise-comparison"></div>', unsafe_allow_html=True)
-        st.markdown("### Cart-wise comparison")
-        if not range_df.empty:
+        st.markdown('<div id="cart-wise-comparison"></div>', unsafe_allow_html=True)[cite: 6]
+        st.markdown("### Cart-wise comparison")[cite: 6]
+        if not range_df.empty:[cite: 6]
             cart_grp = (
                 range_df.groupby("Cart")
                 .agg(**{"Revenue (₹)": ("Total_Collection", "sum"), "Units sold": ("Sold_Total", "sum")})
                 .reset_index()
                 .sort_values("Revenue (₹)", ascending=False)
-            )
-            cart_grp["Units sold"] = cart_grp["Units sold"].apply(lambda x: int(round(x)))
-            st.dataframe(cart_grp, hide_index=True, use_container_width=True)
-            st.bar_chart(cart_grp.set_index("Cart")["Revenue (₹)"])
+            )[cite: 6]
+            cart_grp["Units sold"] = cart_grp["Units sold"].apply(lambda x: int(round(x)))[cite: 6]
+            st.dataframe(cart_grp, hide_index=True, use_container_width=True)[cite: 6]
+            st.bar_chart(cart_grp.set_index("Cart")["Revenue (₹)"])[cite: 6]
         else:
-            st.caption("No sales in this date range.")
+            st.caption("No sales in this date range.")[cite: 6]
 
         # Cart-wise average sales by day of week
-        st.markdown('<div id="cart-wise-day-of-week"></div>', unsafe_allow_html=True)
-        st.markdown("### Cart-wise average sales by day of the week")
-        if not range_df.empty:
-            day_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-            dow_df = range_df[range_df["Sold_Total"] > 0].copy()
-            dow_df["Day"] = dow_df["Date"].dt.day_name()
+        st.markdown('<div id="cart-wise-day-of-week"></div>', unsafe_allow_html=True)[cite: 6]
+        st.markdown("### Cart-wise average sales by day of the week")[cite: 6]
+        if not range_df.empty:[cite: 6]
+            day_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"][cite: 6]
+            dow_df = range_df[range_df["Sold_Total"] > 0].copy()[cite: 6]
+            dow_df["Day"] = dow_df["Date"].dt.day_name()[cite: 6]
 
-            if dow_df.empty:
-                st.caption("No days with actual sales in this date range.")
+            if dow_df.empty:[cite: 6]
+                st.caption("No days with actual sales in this date range.")[cite: 6]
             else:
                 units_pivot = dow_df.pivot_table(
                     index="Cart", columns="Day", values="Sold_Total", aggfunc="mean", fill_value=0, margins=True, margins_name="All carts"
-                )
-                day_cols = [d for d in day_order if d in units_pivot.columns] + ["All carts"]
-                units_pivot = units_pivot.reindex(columns=day_cols)
+                )[cite: 6]
+                day_cols = [d for d in day_order if d in units_pivot.columns] + ["All carts"][cite: 6]
+                units_pivot = units_pivot.reindex(columns=day_cols)[cite: 6]
 
                 rev_pivot = dow_df.pivot_table(
                     index="Cart", columns="Day", values="Total_Collection", aggfunc="mean", fill_value=0, margins=True, margins_name="All carts"
-                )
-                rev_pivot = rev_pivot.reindex(columns=day_cols)
+                )[cite: 6]
+                rev_pivot = rev_pivot.reindex(columns=day_cols)[cite: 6]
 
-                st.write("**Avg. units sold** (rows = cart, columns = day of week)")
-                st.dataframe(units_pivot.round(0).astype(int), use_container_width=True)
+                st.write("**Avg. units sold** (rows = cart, columns = day of week)")[cite: 6]
+                st.dataframe(units_pivot.round(0).astype(int), use_container_width=True)[cite: 6]
 
-                st.write("**Avg. revenue (₹)** (rows = cart, columns = day of week)")
-                st.dataframe(rev_pivot.round(0).astype(int), use_container_width=True)
+                st.write("**Avg. revenue (₹)** (rows = cart, columns = day of week)")[cite: 6]
+                st.dataframe(rev_pivot.round(0).astype(int), use_container_width=True)[cite: 6]
         else:
-            st.caption("No sales in this date range.")
+            st.caption("No sales in this date range.")[cite: 6]
 
         # Flavour-wise performance
-        st.markdown('<div id="flavour-wise-performance"></div>', unsafe_allow_html=True)
-        st.markdown("### Flavour-wise performance")
-        flavor_range_df = load_db_flavor_sales(start_date=range_start, end_date=range_end)
-        if not flavor_range_df.empty and flavor_range_df["Units sold"].sum() > 0:
-            st.dataframe(flavor_range_df[["Flavour", "Units sold", "Est. revenue (₹)"]], hide_index=True, use_container_width=True)
-            st.bar_chart(flavor_range_df.set_index("Flavour")["Units sold"])
-            st.caption("Estimated revenue = units sold × MRP per flavour; actual collections may vary slightly.")
+        st.markdown('<div id="flavour-wise-performance"></div>', unsafe_allow_html=True)[cite: 6]
+        st.markdown("### Flavour-wise performance")[cite: 6]
+        flavor_range_df = load_db_flavor_sales(start_date=range_start, end_date=range_end)[cite: 6]
+        if not flavor_range_df.empty and flavor_range_df["Units sold"].sum() > 0:[cite: 6]
+            st.dataframe(flavor_range_df[["Flavour", "Units sold", "Est. revenue (₹)"]], hide_index=True, use_container_width=True)[cite: 6]
+            st.bar_chart(flavor_range_df.set_index("Flavour")["Units sold"])[cite: 6]
+            st.caption("Estimated revenue = units sold × MRP per flavour; actual collections may vary slightly.")[cite: 6]
         else:
-            st.caption("No sales in this date range.")
+            st.caption("No sales in this date range.")[cite: 6]
 
         # Profit & Loss summary
-        st.markdown('<div id="profit-loss-summary"></div>', unsafe_allow_html=True)
-        st.markdown("### Profit & loss summary")
+        st.markdown('<div id="profit-loss-summary"></div>', unsafe_allow_html=True)[cite: 6]
+        st.markdown("### Profit & loss summary")[cite: 6]
         cogs = cogs_in_range
-        opex_cats = ["Labour Charges", "Leakage Expense", "Logistics & Transport", "Rent & Utilities", "Maintenance & Repairs", "Permits & Compliance", "Miscellaneous Expense"]
-        opex = range_exp[range_exp["Category"].isin(opex_cats)]["Amount"].sum() if not range_exp.empty else 0.0
-        capital_cats = ["Initial Investment", "Initial Set-up Expense"]
-        capital = range_exp[range_exp["Category"].isin(capital_cats)]["Amount"].sum() if not range_exp.empty else 0.0
-        gross_profit = total_rev - cogs
-        net_profit = gross_profit - opex
+        opex_cats = ["Labour Charges", "Leakage Expense", "Logistics & Transport", "Rent & Utilities", "Maintenance & Repairs", "Permits & Compliance", "Miscellaneous Expense"][cite: 6]
+        opex = range_exp[range_exp["Category"].isin(opex_cats)]["Amount"].sum() if not range_exp.empty else 0.0[cite: 6]
+        capital_cats = ["Initial Investment", "Initial Set-up Expense"][cite: 6]
+        capital = range_exp[range_exp["Category"].isin(capital_cats)]["Amount"].sum() if not range_exp.empty else 0.0[cite: 6]
+        gross_profit = total_rev - cogs[cite: 6]
+        net_profit = gross_profit - opex[cite: 6]
 
         pnl_df = pd.DataFrame(
             {
                 "Line item": ["Revenue", "Cost of Goods", "Gross profit", "Operating expenses (labour, logistics, rent, misc.)", "Net profit"],
                 "Amount (₹)": [total_rev, -cogs, gross_profit, -opex, net_profit],
             }
-        )
-        st.dataframe(pnl_df, hide_index=True, use_container_width=True)
-        pc1, pc2 = st.columns(2)
-        pc1.metric("Net profit", f"₹{net_profit:,.0f}")
-        pc2.metric("Margin", f"{(net_profit / total_rev * 100) if total_rev else 0:.1f}%")
+        )[cite: 6]
+        st.dataframe(pnl_df, hide_index=True, use_container_width=True)[cite: 6]
+        pc1, pc2 = st.columns(2)[cite: 6]
+        pc1.metric("Net profit", f"₹{net_profit:,.0f}")[cite: 6]
+        pc2.metric("Margin", f"{(net_profit / total_rev * 100) if total_rev else 0:.1f}%")[cite: 6]
 
         # Expense breakdown
-        st.markdown('<div id="expense-breakdown"></div>', unsafe_allow_html=True)
-        st.markdown("### Expense breakdown by category")
-        if not range_exp.empty:
-            by_cat = range_exp.groupby("Category")["Amount"].sum().sort_values(ascending=False)
+        st.markdown('<div id="expense-breakdown"></div>', unsafe_allow_html=True)[cite: 6]
+        st.markdown("### Expense breakdown by category")[cite: 6]
+        if not range_exp.empty:[cite: 6]
+            by_cat = range_exp.groupby("Category")["Amount"].sum().sort_values(ascending=False)[cite: 6]
             st.dataframe(
                 by_cat.reset_index().rename(columns={"Amount": "₹"}),
                 hide_index=True,
                 use_container_width=True,
                 column_config={"₹": st.column_config.ProgressColumn("Share", format="₹%.0f", min_value=0, max_value=float(by_cat.max()))},
-            )
-            st.bar_chart(by_cat)
+            )[cite: 6]
+            st.bar_chart(by_cat)[cite: 6]
         else:
-            st.caption("No expenses logged in this date range.")
+            st.caption("No expenses logged in this date range.")[cite: 6]
 
         # Cash vs PhonePe vs Advance vs Food/Tea
-        st.markdown('<div id="cash-vs-phonepe"></div>', unsafe_allow_html=True)
-        st.markdown("### Cash vs PhonePe / UPI vs Advance vs Food/Tea")
-        if not range_df.empty:
-            total_cash = range_df["Cash"].sum()
-            total_phonepe = range_df["PhonePe"].sum()
-            total_advance = range_df["Staff_Advance"].sum() if "Staff_Advance" in range_df.columns else 0.0
-            total_food = range_df["Food_Tea_Cash"].sum() if "Food_Tea_Cash" in range_df.columns else 0.0
+        st.markdown('<div id="cash-vs-phonepe"></div>', unsafe_allow_html=True)[cite: 6]
+        st.markdown("### Cash vs PhonePe / UPI vs Advance vs Food/Tea")[cite: 6]
+        if not range_df.empty:[cite: 6]
+            total_cash = range_df["Cash"].sum()[cite: 6]
+            total_phonepe = range_df["PhonePe"].sum()[cite: 6]
+            total_advance = range_df["Staff_Advance"].sum() if "Staff_Advance" in range_df.columns else 0.0[cite: 6]
+            total_food = range_df["Food_Tea_Cash"].sum() if "Food_Tea_Cash" in range_df.columns else 0.0[cite: 6]
 
-            cc1, cc2, cc3, cc4 = st.columns(4)
-            cc1.metric("Cash", f"₹{total_cash:,.0f}")
-            cc2.metric("PhonePe / UPI", f"₹{total_phonepe:,.0f}")
-            cc3.metric("Staff Advance", f"₹{total_advance:,.0f}")
-            cc4.metric("Food / Tea", f"₹{total_food:,.0f}")
+            cc1, cc2, cc3, cc4 = st.columns(4)[cite: 6]
+            cc1.metric("Cash", f"₹{total_cash:,.0f}")[cite: 6]
+            cc2.metric("PhonePe / UPI", f"₹{total_phonepe:,.0f}")[cite: 6]
+            cc3.metric("Staff Advance", f"₹{total_advance:,.0f}")[cite: 6]
+            cc4.metric("Food / Tea", f"₹{total_food:,.0f}")[cite: 6]
 
             split_df = pd.DataFrame({
                 "Mode": ["Cash", "PhonePe / UPI", "Staff Advance", "Food / Tea"], 
                 "Amount (₹)": [total_cash, total_phonepe, total_advance, total_food],
-            })
-            st.bar_chart(split_df.set_index("Mode")["Amount (₹)"])
+            })[cite: 6]
+            st.bar_chart(split_df.set_index("Mode")["Amount (₹)"])[cite: 6]
         else:
-            st.caption("No collections in this date range.")
+            st.caption("No collections in this date range.")[cite: 6]
 
         # Sales table
-        st.markdown('<div id="sales-in-range"></div>', unsafe_allow_html=True)
-        st.markdown("### Sales in this range")
-        if not range_df.empty:
-            display_cols = ["Date", "Cart", "Sold_Total", "Total_Collection", "PhonePe", "Cash", "Staff_Name", "Staff_Advance", "Food_Tea_Cash"]
+        st.markdown('<div id="sales-in-range"></div>', unsafe_allow_html=True)[cite: 6]
+        st.markdown("### Sales in this range")[cite: 6]
+        if not range_df.empty:[cite: 6]
+            display_cols = ["Date", "Cart", "Sold_Total", "Total_Collection", "PhonePe", "Cash", "Staff_Name", "Staff_Advance", "Food_Tea_Cash"][cite: 6]
             sales_table = range_df.sort_values(["Date", "Cart"])[display_cols].rename(
                 columns={
                     "Sold_Total": "Units sold", 
@@ -2887,34 +2939,34 @@ elif page == "Dashboard" and user_role == "admin":
                     "Staff_Advance": "Staff Advance (₹)",
                     "Food_Tea_Cash": "Food / Tea (₹)",
                 }
-            )
-            sales_table["Units sold"] = sales_table["Units sold"].apply(lambda x: int(round(x)))
-            sales_table["Date"] = sales_table["Date"].dt.strftime("%d %b %Y")
-            st.dataframe(sales_table, hide_index=True, use_container_width=True)
+            )[cite: 6]
+            sales_table["Units sold"] = sales_table["Units sold"].apply(lambda x: int(round(x)))[cite: 6]
+            sales_table["Date"] = sales_table["Date"].dt.strftime("%d %b %Y")[cite: 6]
+            st.dataframe(sales_table, hide_index=True, use_container_width=True)[cite: 6]
         else:
-            st.caption("No sales in this date range.")
+            st.caption("No sales in this date range.")[cite: 6]
 
     # Current Inventory Status
-    if not daily_df.empty:
-        st.markdown("---")
-        st.markdown('<div id="inventory-status"></div>', unsafe_allow_html=True)
-        st.markdown("## Current Inventory Status")
+    if not daily_df.empty:[cite: 6]
+        st.markdown("---")[cite: 6]
+        st.markdown('<div id="inventory-status"></div>', unsafe_allow_html=True)[cite: 6]
+        st.markdown("## Current Inventory Status")[cite: 6]
 
-        inv_c1, inv_c2, inv_c3 = st.columns(3)
-        cart_stock_tot = int(round(daily_df.sort_values('Date').groupby('Cart').tail(1)['Closing_Total'].sum()))
-        inv_c1.metric("Stock across carts", f"{cart_stock_tot} units")
-        inv_c2.metric("Units in Freezer", f"{total_freezer_units} units")
-        inv_c3.metric("Freezer Stock Valuation", f"₹{total_freezer_val:,.2f}")
+        inv_c1, inv_c2, inv_c3 = st.columns(3)[cite: 6]
+        cart_stock_tot = int(round(daily_df.sort_values('Date').groupby('Cart').tail(1)['Closing_Total'].sum()))[cite: 6]
+        inv_c1.metric("Stock across carts", f"{cart_stock_tot} units")[cite: 6]
+        inv_c2.metric("Units in Freezer", f"{total_freezer_units} units")[cite: 6]
+        inv_c3.metric("Freezer Stock Valuation", f"₹{total_freezer_val:,.2f}")[cite: 6]
 
         try:
-            if not freezer_df.empty:
-                st.markdown('<div id="freezer-stock-current"></div>', unsafe_allow_html=True)
-                st.markdown("**Freezer stock breakdown & cost valuation**")
+            if not freezer_df.empty:[cite: 6]
+                st.markdown('<div id="freezer-stock-current"></div>', unsafe_allow_html=True)[cite: 6]
+                st.markdown("**Freezer stock breakdown & cost valuation**")[cite: 6]
                 
                 disp_freezer = freezer_df.rename(columns={
                     "cost_price": "Unit Cost (₹)",
                     "Stock_Value": "Stock Value (₹)"
-                })[["Flavour", "Units in freezer", "Unit Cost (₹)", "Stock Value (₹)"]]
+                })[["Flavour", "Units in freezer", "Unit Cost (₹)", "Stock Value (₹)"]][cite: 6]
                 
                 st.dataframe(
                     disp_freezer, 
@@ -2924,13 +2976,13 @@ elif page == "Dashboard" and user_role == "admin":
                         "Unit Cost (₹)": st.column_config.NumberColumn(format="₹%.2f"),
                         "Stock Value (₹)": st.column_config.NumberColumn(format="₹%.2f"),
                     }
-                )
+                )[cite: 6]
         except Exception as e:
-            st.caption(f"Could not compute freezer stock from DB ({e}).")
+            st.caption(f"Could not compute freezer stock from DB ({e}).")[cite: 6]
 
-        st.markdown('<div id="latest-stock-per-cart"></div>', unsafe_allow_html=True)
-        st.markdown("**Latest stock per cart**")
-        latest_per_cart = daily_df.sort_values("Date").groupby("Cart").tail(1)[["Cart", "Date", "Closing_Total"]].copy()
-        latest_per_cart["Closing_Total"] = latest_per_cart["Closing_Total"].apply(lambda x: int(round(x)))
-        latest_per_cart["Date"] = latest_per_cart["Date"].dt.strftime("%d %b %Y")
-        st.dataframe(latest_per_cart, hide_index=True, use_container_width=True)
+        st.markdown('<div id="latest-stock-per-cart"></div>', unsafe_allow_html=True)[cite: 6]
+        st.markdown("**Latest stock per cart**")[cite: 6]
+        latest_per_cart = daily_df.sort_values("Date").groupby("Cart").tail(1)[["Cart", "Date", "Closing_Total"]].copy()[cite: 6]
+        latest_per_cart["Closing_Total"] = latest_per_cart["Closing_Total"].apply(lambda x: int(round(x)))[cite: 6]
+        latest_per_cart["Date"] = latest_per_cart["Date"].dt.strftime("%d %b %Y")[cite: 6]
+        st.dataframe(latest_per_cart, hide_index=True, use_container_width=True)[cite: 6]
