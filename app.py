@@ -8,7 +8,12 @@ Kulfi Ops - multi-user data entry app for the kulfi cart business.
 - Stock Removed (Wastage / Return / Tasting log) integrated into Available Freezer Stock calculations.
 - Freezer Analysis variance computed against calculated stock as of the physical audit date.
 - Remodeled Expenses & Payments (Bills vs. Cash Outflows with tranches & P&L summaries).
-- Staff & Payroll Module (KYC details, versioned compensation plans, live month-end dues & deductions settlement).
+- Staff & Payroll Module:
+    * KYC profile management & versioned compensation plans.
+    * Attendance & Leave Management (Record, View, Edit past leave entries).
+    * Apportioned fixed salary (calculated at Rs 600/day worked).
+    * Monthly settlement integrating days worked, leave days, commissions, allowances, food/tea, and advances.
+    * Day-wise staff ledger displaying Staff Name along with Operated Cart for reassignment tracking.
 - Dashboard with COGS So Far (All-Time) & Outstanding Freezer Stock Valuation.
 - Freezer Stock, Freezer Analysis, Dashboard, and Expenses powered 100% by Supabase PostgreSQL.
 """
@@ -220,6 +225,8 @@ ATTRIBUTED_OPTIONS = ["Central / Freezer"] + CARTS
 EXPENSE_STATUSES = ["Pending", "Partially Paid", "Paid", "Cancelled"]
 PAYMENT_MODES = ["UPI / Bank Transfer", "Cash"]
 STAFF_STATUSES = ["active", "inactive", "on_leave"]
+LEAVE_STATUS_OPTIONS = ["Leave", "Sick Leave", "Casual Leave", "Absent"]
+LEAVE_TYPE_OPTIONS = ["Unpaid", "Paid"]
 
 DAILY_HEADER_ROWS = 2
 DAILY_TOTAL_COLS = 47
@@ -740,7 +747,7 @@ def load_db_payments_df():
 
 
 # ----------------------------------------------------------------------
-# STAFF & COMPENSATION DB LOADERS
+# STAFF, ATTENDANCE & COMPENSATION LOADERS
 # ----------------------------------------------------------------------
 def load_full_staff_df():
     if db_conn is None:
@@ -779,6 +786,33 @@ def load_staff_compensation_history(staff_id):
     """
     try:
         return db_conn.query(query, params={"sid": staff_id}, ttl="0s")
+    except Exception:
+        return pd.DataFrame()
+
+
+def load_staff_attendance_df(start_date=None, end_date=None):
+    if db_conn is None:
+        return pd.DataFrame()
+    where_clauses = []
+    params = {}
+    if start_date:
+        where_clauses.append("a.attendance_date >= :sdate")
+        params["sdate"] = start_date
+    if end_date:
+        where_clauses.append("a.attendance_date <= :edate")
+        params["edate"] = end_date
+    where_sql = ("WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
+    query = f"""
+    SELECT 
+        a.id, a.staff_id, s.name AS staff_name, a.attendance_date, a.status,
+        a.leave_type, a.reason, a.recorded_by, a.created_at
+    FROM staff_attendance a
+    JOIN staff s ON a.staff_id = s.id
+    {where_sql}
+    ORDER BY a.attendance_date DESC, a.id DESC;
+    """
+    try:
+        return db_conn.query(query, params=params, ttl="0s")
     except Exception:
         return pd.DataFrame()
 
@@ -1603,7 +1637,6 @@ elif page == "Freezer Analysis" and user_role == "admin":
         flavor_sales_df = load_db_flavor_sales(start_date=cutoff_fa, end_date=today_fa)
         sales_pace_map = dict(zip(flavor_sales_df["code"], flavor_sales_df["Units sold"])) if not flavor_sales_df.empty else {}
 
-        # Latest Physical Audit from stock_audits_wide
         latest_audit_df = db_conn.query("""
             SELECT * FROM stock_audits_wide
             ORDER BY audit_date DESC, audit_id DESC
@@ -1620,18 +1653,14 @@ elif page == "Freezer Analysis" and user_role == "admin":
             audit_map = {}
             audit_date_str = "No audits logged"
 
-        # Inward Received (All-Time Live)
         rec_df = db_conn.query("SELECT flavor_code, SUM(received_units) AS total_recv FROM stock_received_items GROUP BY flavor_code;", ttl="0s")
         rec_map = dict(zip(rec_df["flavor_code"], rec_df["total_recv"])) if not rec_df.empty else {}
 
-        # Outward Cart Additions (All-Time Live)
         added_df = db_conn.query("SELECT flavor_code, SUM(added_units) AS total_added FROM daily_cart_items GROUP BY flavor_code;", ttl="0s")
         added_map = dict(zip(added_df["flavor_code"], added_df["total_added"])) if not added_df.empty else {}
 
-        # Stock Removed (All-Time Live)
         rem_map = get_db_stock_removed_map()
 
-        # Inward / Outward / Removed AS OF THE PHYSICAL AUDIT DATE (for accurate historical variance)
         if audit_date_val is not None:
             rec_audit_df = db_conn.query("""
                 SELECT ri.flavor_code, COALESCE(SUM(ri.received_units), 0) AS total_recv
@@ -2086,7 +2115,7 @@ elif page == "Stock Removed" and user_role == "admin":
                 }
                 for code in FLAVOR_CODES:
                     col_name = FLAVOR_MAP[code]["audit_col"]
-                    row_data[FLAVOR_MAP[code]["name"]] = int(r.get(col_name, 0))
+                    row_data[code] = int(r.get(col_name, 0))
                 display_rem_list.append(row_data)
 
             rem_table_df = pd.DataFrame(display_rem_list)
@@ -2721,13 +2750,18 @@ elif page == "Expenses" and user_role == "admin":
                 st.caption("No payments in this range.")
 
 # ======================================================================
-# PAGE 7: STAFF & PAYROLL (KYC, Plans, Monthly Dues & Settlement)
+# PAGE 7: STAFF & PAYROLL (KYC, Leaves, Plans & Settlement)
 # ======================================================================
 elif page == "Staff & Payroll" and user_role == "admin":
     st.subheader("Staff & Payroll Management")
-    st.caption("Manage staff profile & KYC records, versioned compensation plans, and live monthly dues settlements.")
+    st.caption("Manage staff profile & KYC records, leaves & attendance, versioned compensation plans, and live monthly dues settlements.")
 
-    staff_tab_sel = st.radio("Section", ["👥 Staff Directory & KYC", "⚙️ Compensation Plans", "💵 Monthly Dues & Settlement"], horizontal=True, key="staff_top_nav")
+    staff_tab_sel = st.radio(
+        "Section", 
+        ["👥 Staff Directory & KYC", "📅 Attendance & Leave", "⚙️ Compensation Plans", "💵 Monthly Dues & Settlement"], 
+        horizontal=True, 
+        key="staff_top_nav"
+    )
 
     staff_df = load_full_staff_df()
 
@@ -2851,12 +2885,12 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 st.metric("Total Staff Registered", f"{len(staff_df)} ({active_cnt} Active)")
 
                 disp_staff = staff_df.copy()
-                disp_staff["Monthly Salary"] = disp_staff["monthly_fixed_salary"].apply(lambda v: f"₹{_num(v):,.0f}")
+                disp_staff["Daily Fixed Rate"] = disp_staff["monthly_fixed_salary"].apply(lambda v: f"₹600/day (₹{_num(v):,.0f}/mo)")
                 disp_staff["Commission"] = disp_staff.apply(lambda r: f"{_num(r['commission_percentage']):.0f}% > ₹{_num(r['commission_threshold_daily']):,.0f}", axis=1)
                 disp_staff["Daily Food/Tea"] = disp_staff.apply(lambda r: f"₹{_num(r['allowance_weekday']):.0f} / ₹{_num(r['allowance_sunday']):.0f}", axis=1)
                 disp_staff["Joined"] = pd.to_datetime(disp_staff["date_of_joining"]).dt.strftime("%d %b %Y")
 
-                summary_cols = ["id", "name", "status", "phone_number", "Joined", "Monthly Salary", "Commission", "Daily Food/Tea", "emergency_contact_phone"]
+                summary_cols = ["id", "name", "status", "phone_number", "Joined", "Daily Fixed Rate", "Commission", "Daily Food/Tea", "emergency_contact_phone"]
                 st.dataframe(
                     disp_staff[summary_cols].rename(columns={
                         "id": "ID", "name": "Name", "status": "Status", "phone_number": "Phone",
@@ -2965,7 +2999,130 @@ elif page == "Staff & Payroll" and user_role == "admin":
                             st.error(f"Could not update staff profile: {e}")
 
     # ------------------------------------------------------------------
-    # 2. COMPENSATION PLANS & REVISIONS
+    # 2. ATTENDANCE & LEAVE MANAGEMENT
+    # ------------------------------------------------------------------
+    elif staff_tab_sel == "📅 Attendance & Leave":
+        st.write("Record and manage staff leaves and absences for payroll deductions and day-wise attendance:")
+
+        att_mode = st.radio("Action", ["Record Staff Leave / Absence", "View Attendance & Leaves", "Edit Past Leave Entry"], horizontal=True, key="att_sub_nav")
+
+        if att_mode == "Record Staff Leave / Absence":
+            if staff_df.empty:
+                st.info("No staff registered yet.")
+            else:
+                st_names = staff_df["name"].tolist()
+                with st.form("add_leave_form"):
+                    ac1, ac2 = st.columns(2)
+                    with ac1:
+                        att_staff_name = st.selectbox("Staff Member *", st_names, key="leave_sname")
+                    with ac2:
+                        att_date = st.date_input("Leave Date *", value=date.today(), key="leave_dt")
+
+                    ac3, ac4 = st.columns(2)
+                    with ac3:
+                        att_status = st.selectbox("Status", LEAVE_STATUS_OPTIONS, index=0, key="leave_stat")
+                    with ac4:
+                        att_type = st.selectbox("Leave Type", LEAVE_TYPE_OPTIONS, index=0, key="leave_type")
+
+                    att_reason = st.text_input("Reason / Observation", placeholder="e.g. Family function, unwell, uninformed absence...", key="leave_reason")
+
+                    submit_leave = st.form_submit_button("📝 Record Leave Entry", type="primary", use_container_width=True)
+
+                if submit_leave:
+                    try:
+                        target_s_id = int(staff_df[staff_df["name"] == att_staff_name].iloc[0]["id"])
+                        with db_conn.session as s:
+                            s.execute(
+                                text("""
+                                INSERT INTO staff_attendance (
+                                    staff_id, attendance_date, status, leave_type, reason, recorded_by
+                                ) VALUES (
+                                    :sid, :adate, :stat, :ltype, :reason, :recby
+                                )
+                                ON CONFLICT (staff_id, attendance_date) DO UPDATE
+                                SET status = EXCLUDED.status, leave_type = EXCLUDED.leave_type,
+                                    reason = EXCLUDED.reason, updated_at = NOW();
+                                """),
+                                {
+                                    "sid": target_s_id, "adate": att_date, "stat": att_status,
+                                    "ltype": att_type, "reason": att_reason.strip(), "recby": "Admin"
+                                }
+                            )
+                            s.commit()
+                        show_success_modal(f"{att_status} ({att_type}) recorded for {att_staff_name} on {att_date.strftime('%d %b %Y')}!")
+                    except Exception as e:
+                        st.error(f"Could not record attendance: {e}")
+
+        elif att_mode == "View Attendance & Leaves":
+            att_df = load_staff_attendance_df()
+            if att_df.empty:
+                st.info("No leave records logged.")
+            else:
+                k1, k2, k3 = st.columns(3)
+                k1.metric("Total Leave Logs", len(att_df))
+                k2.metric("Unpaid Leaves", len(att_df[att_df["leave_type"] == "Unpaid"]))
+                k3.metric("Paid Leaves", len(att_df[att_df["leave_type"] == "Paid"]))
+
+                disp_att = att_df.copy()
+                disp_att["attendance_date"] = pd.to_datetime(disp_att["attendance_date"]).dt.strftime("%d %b %Y")
+                
+                st.dataframe(
+                    disp_att[["id", "staff_name", "attendance_date", "status", "leave_type", "reason", "recorded_by"]].rename(columns={
+                        "id": "ID", "staff_name": "Staff Name", "attendance_date": "Date", "status": "Status",
+                        "leave_type": "Leave Type", "reason": "Reason", "recorded_by": "Recorded By"
+                    }),
+                    hide_index=True,
+                    use_container_width=True
+                )
+
+        elif att_mode == "Edit Past Leave Entry":
+            att_df = load_staff_attendance_df()
+            if att_df.empty:
+                st.info("No attendance records to edit.")
+            else:
+                att_records = att_df.to_dict("records")
+                att_labels = [
+                    f"#{r['id']} — {r['staff_name']} on {pd.to_datetime(r['attendance_date']).strftime('%d %b %Y')} ({r['status']} - {r['leave_type']})"
+                    for r in att_records
+                ]
+                sel_att_label = st.selectbox("Select Leave Entry to Edit", att_labels, key="edit_att_select")
+                loaded_att = att_records[att_labels.index(sel_att_label)]
+                loaded_att_id = loaded_att["id"]
+
+                c1, c2 = st.columns(2)
+                with c1:
+                    e_att_date = st.date_input("Leave Date", value=pd.to_datetime(loaded_att["attendance_date"]).date(), key=f"e_att_dt_{loaded_att_id}")
+                with c2:
+                    e_att_stat = st.selectbox("Status", LEAVE_STATUS_OPTIONS, index=LEAVE_STATUS_OPTIONS.index(loaded_att["status"]) if loaded_att["status"] in LEAVE_STATUS_OPTIONS else 0, key=f"e_att_st_{loaded_att_id}")
+
+                c3, c4 = st.columns(2)
+                with c3:
+                    e_att_type = st.selectbox("Leave Type", LEAVE_TYPE_OPTIONS, index=LEAVE_TYPE_OPTIONS.index(loaded_att["leave_type"]) if loaded_att["leave_type"] in LEAVE_TYPE_OPTIONS else 0, key=f"e_att_tp_{loaded_att_id}")
+                with c4:
+                    e_att_reason = st.text_input("Reason", value=str(loaded_att.get("reason") or ""), key=f"e_att_rs_{loaded_att_id}")
+
+                if st.button("💾 Update Leave Entry", type="primary", use_container_width=True):
+                    try:
+                        with db_conn.session as s:
+                            s.execute(
+                                text("""
+                                UPDATE staff_attendance
+                                SET attendance_date = :adate, status = :stat, leave_type = :ltype,
+                                    reason = :reason, updated_at = NOW()
+                                WHERE id = :id;
+                                """),
+                                {
+                                    "adate": e_att_date, "stat": e_att_stat, "ltype": e_att_type,
+                                    "reason": e_att_reason.strip(), "id": loaded_att_id
+                                }
+                            )
+                            s.commit()
+                        show_success_modal(f"Attendance record #{loaded_att_id} updated successfully!")
+                    except Exception as e:
+                        st.error(f"Could not update attendance: {e}")
+
+    # ------------------------------------------------------------------
+    # 3. COMPENSATION PLANS & REVISIONS
     # ------------------------------------------------------------------
     elif staff_tab_sel == "⚙️ Compensation Plans":
         st.write("View and assign effective-dated salary, commission slabs, and food/tea allowances:")
@@ -2979,7 +3136,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
 
             st.markdown(f"#### Active Plan for {sel_s_plan}")
             m1, m2, m3, m4 = st.columns(4)
-            m1.metric("Monthly Base Salary", f"₹{_num(target_s_row['monthly_fixed_salary']):,.2f}")
+            m1.metric("Daily Base Rate", "₹600.00/day", "Apportioned per day worked")
             m2.metric("Commission Threshold", f"₹{_num(target_s_row['commission_threshold_daily']):,.2f}/day")
             m3.metric("Commission Rate", f"{_num(target_s_row['commission_percentage']):.1f}%")
             m4.metric("Daily Allowances", f"₹{_num(target_s_row['allowance_weekday']):.0f} (W) | ₹{_num(target_s_row['allowance_sunday']):.0f} (S)")
@@ -3012,7 +3169,6 @@ elif page == "Staff & Payroll" and user_role == "admin":
             if submit_plan:
                 try:
                     with db_conn.session as s:
-                        # Close previous plan effective_to
                         s.execute(
                             text("""
                             UPDATE staff_compensation_plans
@@ -3060,10 +3216,10 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 )
 
     # ------------------------------------------------------------------
-    # 3. MONTHLY DUES & SETTLEMENT ENGINE
+    # 4. MONTHLY DUES & SETTLEMENT ENGINE
     # ------------------------------------------------------------------
     elif staff_tab_sel == "💵 Monthly Dues & Settlement":
-        st.write("Calculate month-end payroll, commissions earned on daily sales > ₹3,000, daily food/tea allowances, advances, and net amount due:")
+        st.write("Calculate monthly dues with fixed salary apportioned at **Rs 600/day worked**, commissions (15% > Rs 3,000), daily food/tea allowances, leave deductions, and cash advances:")
 
         now = date.today()
         m_col1, m_col2 = st.columns(2)
@@ -3078,9 +3234,10 @@ elif page == "Staff & Payroll" and user_role == "admin":
         m_start_dt = date(sel_year, sel_month_idx, 1)
         m_end_dt = date(sel_year, sel_month_idx, num_days_in_month)
 
-        st.caption(f"Calculating for period: **{m_start_dt.strftime('%d %b %Y')}** to **{m_end_dt.strftime('%d %b %Y')}**")
+        st.caption(f"Calculating for period: **{m_start_dt.strftime('%d %b %Y')}** to **{m_end_dt.strftime('%d %b %Y')}** ({num_days_in_month} Days in Month)")
 
         daily_month_df = pd.DataFrame()
+        att_month_df = pd.DataFrame()
         if db_conn is not None:
             query_month = """
             SELECT entry_date, cart_name, staff_name, total_collection, staff_advance, food_tea_cash
@@ -3088,6 +3245,14 @@ elif page == "Staff & Payroll" and user_role == "admin":
             WHERE entry_date >= :sdate AND entry_date <= :edate AND staff_name IS NOT NULL AND staff_name != '' AND staff_name != 'Select Staff';
             """
             daily_month_df = db_conn.query(query_month, params={"sdate": m_start_dt, "edate": m_end_dt}, ttl="0s")
+
+            query_att_m = """
+            SELECT a.staff_id, s.name AS staff_name, a.attendance_date, a.status, a.leave_type, a.reason
+            FROM staff_attendance a
+            JOIN staff s ON a.staff_id = s.id
+            WHERE a.attendance_date >= :sdate AND a.attendance_date <= :edate;
+            """
+            att_month_df = db_conn.query(query_att_m, params={"sdate": m_start_dt, "edate": m_end_dt}, ttl="0s")
 
         if staff_df.empty:
             st.info("No staff records found.")
@@ -3099,15 +3264,14 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 st_name = str(s_row["name"]).strip()
                 st_id = int(s_row["id"])
 
-                # Get staff compensation plan active in this month
-                base_salary = float(_num(s_row.get("monthly_fixed_salary")) or 18000.0)
                 comm_thresh = float(_num(s_row.get("commission_threshold_daily")) or 3000.0)
                 comm_pct = float(_num(s_row.get("commission_percentage")) or 15.0)
                 allow_wd = float(_num(s_row.get("allowance_weekday")) or 210.0)
                 allow_sun = float(_num(s_row.get("allowance_sunday")) or 250.0)
+                daily_rate = 600.0
 
-                # Filter shifts worked by this staff member in the selected month
                 st_shifts = daily_month_df[daily_month_df["staff_name"] == st_name].copy() if not daily_month_df.empty else pd.DataFrame()
+                st_leaves = att_month_df[att_month_df["staff_name"] == st_name].copy() if not att_month_df.empty else pd.DataFrame()
 
                 total_sales_done = 0.0
                 total_comm_earned = 0.0
@@ -3125,7 +3289,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
 
                     for _, shift in st_shifts.iterrows():
                         s_dt = shift["entry_date"].date()
-                        s_dow = s_dt.weekday() # 6 is Sunday
+                        s_dow = s_dt.weekday()
                         is_sun = (s_dow == 6)
 
                         if is_sun:
@@ -3138,8 +3302,6 @@ elif page == "Staff & Payroll" and user_role == "admin":
                         s_col = float(_num(shift["total_collection"]))
                         s_adv = float(_num(shift["staff_advance"]))
                         s_food = float(_num(shift["food_tea_cash"]))
-
-                        # Commission calculated only on daily sales exceeding threshold
                         day_comm = max(0.0, s_col - comm_thresh) * (comm_pct / 100.0)
 
                         total_sales_done += s_col
@@ -3151,17 +3313,50 @@ elif page == "Staff & Payroll" and user_role == "admin":
                         staff_shift_records.append({
                             "Date": s_dt.strftime("%d %b %Y"),
                             "Day": s_dt.strftime("%A"),
-                            "Cart": shift["cart_name"],
+                            "Staff Name": st_name,
+                            "Cart Operated": shift["cart_name"],
+                            "Shift Status": "Worked",
                             "Daily Sales (₹)": s_col,
+                            "Salary Apportioned (₹)": daily_rate,
                             "Commission (₹)": day_comm,
                             "Allowance Entitled (₹)": day_allow,
                             "Food / Tea Taken (₹)": s_food,
                             "Advance Taken (₹)": s_adv,
-                            "Net Daily Balance (₹)": day_comm + day_allow - s_food - s_adv
+                            "Net Daily Balance (₹)": daily_rate + day_comm + day_allow - s_food - s_adv
+                        })
+
+                paid_leave_cnt = 0
+                unpaid_leave_cnt = 0
+                if not st_leaves.empty:
+                    st_leaves["attendance_date"] = pd.to_datetime(st_leaves["attendance_date"])
+                    for _, l_row in st_leaves.iterrows():
+                        l_dt = l_row["attendance_date"].date()
+                        l_type = str(l_row.get("leave_type", "Unpaid"))
+                        if l_type == "Paid":
+                            paid_leave_cnt += 1
+                            day_sal = daily_rate
+                        else:
+                            unpaid_leave_cnt += 1
+                            day_sal = 0.0
+
+                        staff_shift_records.append({
+                            "Date": l_dt.strftime("%d %b %Y"),
+                            "Day": l_dt.strftime("%A"),
+                            "Staff Name": st_name,
+                            "Cart Operated": "— (On Leave)",
+                            "Shift Status": f"{l_row['status']} ({l_type})",
+                            "Daily Sales (₹)": 0.0,
+                            "Salary Apportioned (₹)": day_sal,
+                            "Commission (₹)": 0.0,
+                            "Allowance Entitled (₹)": 0.0,
+                            "Food / Tea Taken (₹)": 0.0,
+                            "Advance Taken (₹)": 0.0,
+                            "Net Daily Balance (₹)": day_sal
                         })
 
                 days_worked = weekdays_worked + sundays_worked
-                gross_earnings = base_salary + total_comm_earned + total_allow_entitled
+                apportioned_base_salary = (days_worked + paid_leave_cnt) * daily_rate
+                gross_earnings = apportioned_base_salary + total_comm_earned + total_allow_entitled
                 total_deductions = total_food_withdrawn + total_advance_taken
                 net_payable_due = gross_earnings - total_deductions
 
@@ -3169,7 +3364,8 @@ elif page == "Staff & Payroll" and user_role == "admin":
                     "Staff Name": st_name,
                     "Status": s_row["status"],
                     "Days Worked": f"{days_worked} ({weekdays_worked}W / {sundays_worked}S)",
-                    "Base Salary (₹)": base_salary,
+                    "Leaves Logged": f"{len(st_leaves)} ({paid_leave_cnt}P / {unpaid_leave_cnt}U)",
+                    "Apportioned Salary (₹)": apportioned_base_salary,
                     "Total Sales (₹)": total_sales_done,
                     "Commission Earned (₹)": total_comm_earned,
                     "Allowances Entitled (₹)": total_allow_entitled,
@@ -3180,11 +3376,15 @@ elif page == "Staff & Payroll" and user_role == "admin":
                     "Net Amount Due (₹)": net_payable_due
                 })
 
-                detailed_staff_logs[st_name] = pd.DataFrame(staff_shift_records)
+                if staff_shift_records:
+                    s_ledger_df = pd.DataFrame(staff_shift_records)
+                    s_ledger_df["dt_sort"] = pd.to_datetime(s_ledger_df["Date"], format="%d %b %Y")
+                    detailed_staff_logs[st_name] = s_ledger_df.sort_values(by="dt_sort").drop(columns=["dt_sort"])
+                else:
+                    detailed_staff_logs[st_name] = pd.DataFrame()
 
             settlement_df = pd.DataFrame(settlement_summary_rows)
 
-            # Month-End Metric KPI Strip
             tot_gross = float(settlement_df["Gross Payable (₹)"].sum())
             tot_ded = float(settlement_df["Total Deductions (₹)"].sum())
             tot_net = float(settlement_df["Net Amount Due (₹)"].sum())
@@ -3197,14 +3397,14 @@ elif page == "Staff & Payroll" and user_role == "admin":
             kpi4.metric("Net Total Payable", f"₹{tot_net:,.2f}")
 
             st.markdown("---")
-            st.markdown("#### Staff Settlement Summary Table")
+            st.markdown("#### Staff Settlement Summary Table &nbsp; *(Salary Apportioned @ ₹600/day)*")
 
             st.dataframe(
                 settlement_df,
                 hide_index=True,
                 use_container_width=True,
                 column_config={
-                    "Base Salary (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                    "Apportioned Salary (₹)": st.column_config.NumberColumn(format="₹%.2f"),
                     "Total Sales (₹)": st.column_config.NumberColumn(format="₹%.2f"),
                     "Commission Earned (₹)": st.column_config.NumberColumn(format="₹%.2f"),
                     "Allowances Entitled (₹)": st.column_config.NumberColumn(format="₹%.2f"),
@@ -3217,13 +3417,13 @@ elif page == "Staff & Payroll" and user_role == "admin":
             )
 
             st.markdown("---")
-            st.markdown("#### Detailed Shift & Deduction Ledger per Staff")
+            st.markdown("#### Detailed Day-wise Shift & Attendance Ledger (With Cart & Staff Name)")
 
-            sel_staff_drill = st.selectbox("Select Staff Member for Daily Breakdown", staff_df["name"].tolist(), key="drill_staff_sel")
+            sel_staff_drill = st.selectbox("Select Staff Member for Detailed Day-Wise Breakdown", staff_df["name"].tolist(), key="drill_staff_sel")
             target_staff_log = detailed_staff_logs.get(sel_staff_drill, pd.DataFrame())
 
             if target_staff_log.empty:
-                st.info(f"No shifts logged for {sel_staff_drill} in {sel_month_name} {sel_year}.")
+                st.info(f"No shifts or leave records logged for {sel_staff_drill} in {sel_month_name} {sel_year}.")
             else:
                 st.dataframe(
                     target_staff_log,
@@ -3231,6 +3431,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                     use_container_width=True,
                     column_config={
                         "Daily Sales (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                        "Salary Apportioned (₹)": st.column_config.NumberColumn(format="₹%.2f"),
                         "Commission (₹)": st.column_config.NumberColumn(format="₹%.2f"),
                         "Allowance Entitled (₹)": st.column_config.NumberColumn(format="₹%.2f"),
                         "Food / Tea Taken (₹)": st.column_config.NumberColumn(format="₹%.2f"),
@@ -3364,7 +3565,6 @@ elif page == "Dashboard" and user_role == "admin":
         total_exp_all = range_exp["Amount"].sum() if not range_exp.empty else 0.0
         cogs_in_range = range_exp[range_exp["Category"] == "Cost of Goods"]["Amount"].sum() if not range_exp.empty else 0.0
 
-        # Metric Banner for Reports
         mc1, mc2, mc3, mc4, mc5 = st.columns(5)
         mc1.metric("Revenue in range", f"₹{total_rev:,.0f}")
         mc2.metric("Units sold in range", f"{total_units}")
@@ -3372,7 +3572,6 @@ elif page == "Dashboard" and user_role == "admin":
         mc4.metric("COGS So Far (All-Time)", f"₹{total_cogs_all_time:,.0f}")
         mc5.metric("Freezer Stock Value", f"₹{total_freezer_val:,.0f}")
 
-        # Cart-wise comparison
         st.markdown('<div id="cart-wise-comparison"></div>', unsafe_allow_html=True)
         st.markdown("### Cart-wise comparison")
         if not range_df.empty:
@@ -3388,7 +3587,6 @@ elif page == "Dashboard" and user_role == "admin":
         else:
             st.caption("No sales in this date range.")
 
-        # Cart-wise average sales by day of week
         st.markdown('<div id="cart-wise-day-of-week"></div>', unsafe_allow_html=True)
         st.markdown("### Cart-wise average sales by day of the week")
         if not range_df.empty:
@@ -3418,7 +3616,6 @@ elif page == "Dashboard" and user_role == "admin":
         else:
             st.caption("No sales in this date range.")
 
-        # Flavour-wise performance
         st.markdown('<div id="flavour-wise-performance"></div>', unsafe_allow_html=True)
         st.markdown("### Flavour-wise performance")
         flavor_range_df = load_db_flavor_sales(start_date=range_start, end_date=range_end)
@@ -3429,7 +3626,6 @@ elif page == "Dashboard" and user_role == "admin":
         else:
             st.caption("No sales in this date range.")
 
-        # Profit & Loss summary
         st.markdown('<div id="profit-loss-summary"></div>', unsafe_allow_html=True)
         st.markdown("### Profit & loss summary")
         cogs = cogs_in_range
@@ -3451,7 +3647,6 @@ elif page == "Dashboard" and user_role == "admin":
         pc1.metric("Net profit", f"₹{net_profit:,.0f}")
         pc2.metric("Margin", f"{(net_profit / total_rev * 100) if total_rev else 0:.1f}%")
 
-        # Expense breakdown
         st.markdown('<div id="expense-breakdown"></div>', unsafe_allow_html=True)
         st.markdown("### Expense breakdown by category")
         if not range_exp.empty:
@@ -3466,7 +3661,6 @@ elif page == "Dashboard" and user_role == "admin":
         else:
             st.caption("No expenses logged in this date range.")
 
-        # Cash vs PhonePe vs Advance vs Food/Tea
         st.markdown('<div id="cash-vs-phonepe"></div>', unsafe_allow_html=True)
         st.markdown("### Cash vs PhonePe / UPI vs Advance vs Food/Tea")
         if not range_df.empty:
@@ -3489,7 +3683,6 @@ elif page == "Dashboard" and user_role == "admin":
         else:
             st.caption("No collections in this date range.")
 
-        # Sales table
         st.markdown('<div id="sales-in-range"></div>', unsafe_allow_html=True)
         st.markdown("### Sales in this range")
         if not range_df.empty:
