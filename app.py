@@ -8,6 +8,7 @@ Kulfi Ops - multi-user data entry app for the kulfi cart business.
 - Stock Removed (Wastage / Return / Tasting log) integrated into Available Freezer Stock calculations.
 - Freezer Analysis variance computed against calculated stock as of the physical audit date.
 - Remodeled Expenses & Payments (Bills vs. Cash Outflows with tranches & P&L summaries).
+- Staff & Payroll Module (KYC details, versioned compensation plans, live month-end dues & deductions settlement).
 - Dashboard with COGS So Far (All-Time) & Outstanding Freezer Stock Valuation.
 - Freezer Stock, Freezer Analysis, Dashboard, and Expenses powered 100% by Supabase PostgreSQL.
 """
@@ -19,6 +20,7 @@ from google.oauth2.service_account import Credentials
 import pandas as pd
 import hmac
 import re
+import calendar
 from datetime import date, datetime, timedelta
 from sqlalchemy import text
 
@@ -217,6 +219,7 @@ EXPENSE_CATEGORIES = [
 ATTRIBUTED_OPTIONS = ["Central / Freezer"] + CARTS
 EXPENSE_STATUSES = ["Pending", "Partially Paid", "Paid", "Cancelled"]
 PAYMENT_MODES = ["UPI / Bank Transfer", "Cash"]
+STAFF_STATUSES = ["active", "inactive", "on_leave"]
 
 DAILY_HEADER_ROWS = 2
 DAILY_TOTAL_COLS = 47
@@ -337,10 +340,10 @@ def load_active_staff_list():
         try:
             df = db_conn.query("SELECT name FROM staff WHERE status = 'active' ORDER BY name ASC;", ttl="1m")
             if not df.empty:
-                return ["None"] + df["name"].tolist()
+                return ["Select Staff"] + df["name"].tolist()
         except Exception:
             pass
-    return ["None"]
+    return ["Select Staff"]
 
 
 # ----------------------------------------------------------------------
@@ -447,7 +450,7 @@ def list_daily_entries_with_prefill():
                 by_code[code] = {
                     "opening": prev_close,
                     "added": 0,
-                    "closing": prev_close,  # Closing = Opening ensures Sold = 0
+                    "closing": prev_close,
                     "sold": 0,
                 }
 
@@ -737,6 +740,50 @@ def load_db_payments_df():
 
 
 # ----------------------------------------------------------------------
+# STAFF & COMPENSATION DB LOADERS
+# ----------------------------------------------------------------------
+def load_full_staff_df():
+    if db_conn is None:
+        return pd.DataFrame()
+    query = """
+    SELECT 
+        s.id, s.name, s.status, s.phone_number, s.emergency_contact_name, s.emergency_contact_phone,
+        s.date_of_birth, s.place_of_birth, s.pan_number, s.aadhaar_number, s.current_address, s.permanent_address,
+        s.date_of_joining, s.date_of_leaving, s.notes,
+        c.monthly_fixed_salary, c.commission_threshold_daily, c.commission_percentage,
+        c.allowance_weekday, c.allowance_sunday
+    FROM staff s
+    LEFT JOIN LATERAL (
+        SELECT * FROM staff_compensation_plans
+        WHERE staff_id = s.id
+        ORDER BY effective_from DESC, id DESC
+        LIMIT 1
+    ) c ON true
+    ORDER BY s.status ASC, s.name ASC;
+    """
+    try:
+        return db_conn.query(query, ttl="0s")
+    except Exception:
+        return pd.DataFrame()
+
+
+def load_staff_compensation_history(staff_id):
+    if db_conn is None:
+        return pd.DataFrame()
+    query = """
+    SELECT id, staff_id, effective_from, effective_to, monthly_fixed_salary,
+           commission_threshold_daily, commission_percentage, allowance_weekday, allowance_sunday, created_at
+    FROM staff_compensation_plans
+    WHERE staff_id = :sid
+    ORDER BY effective_from DESC, id DESC;
+    """
+    try:
+        return db_conn.query(query, params={"sid": staff_id}, ttl="0s")
+    except Exception:
+        return pd.DataFrame()
+
+
+# ----------------------------------------------------------------------
 # AUTHENTICATION
 # ----------------------------------------------------------------------
 def check_login():
@@ -796,7 +843,7 @@ with st.sidebar:
         st.markdown("## 🍦 Kulfi Ops")
 
     if user_role == "admin":
-        nav_options = ["Dashboard", "Daily Entry", "Purchase Orders", "Freezer Stock", "Freezer Analysis", "Stock Removed", "Expenses"]
+        nav_options = ["Dashboard", "Daily Entry", "Purchase Orders", "Freezer Stock", "Freezer Analysis", "Stock Removed", "Expenses", "Staff & Payroll"]
         page = st.radio("Go to", nav_options, label_visibility="collapsed")
     else:
         page = "Daily Entry"
@@ -923,7 +970,7 @@ if page == "Daily Entry":
         m4.metric("Total Sold", f"{tot_sold} units")
 
         if any(s < 0 for s in sold_map.values()):
-            st.error("Today's sales works out negative for at least one flavour - closing count is higher than opening + added.")
+            st.error("Today's sales works out negative for at least one flavour - fix closing count before saving.")
 
         calculated_mrp_total = float(sum(sold_map[code] * FLAVOR_MAP[code]["mrp"] for code in FLAVOR_CODES))
 
@@ -990,7 +1037,7 @@ if page == "Daily Entry":
                 st.error("Remarks is mandatory when there is a cash leakage. Please enter a reason.")
             else:
                 try:
-                    selected_staff = "" if staff_name == "None" else staff_name
+                    selected_staff = "" if staff_name == "Select Staff" else staff_name
                     sync_daily_entry(
                         entry_date, cart_name, added_map, closing_map, opening_map, sold_map, 
                         total_collection_val, phonepe_val, cash_val, remarks, selected_staff, staff_advance_val, food_tea_val
@@ -1278,7 +1325,6 @@ elif page == "Freezer Stock" and user_role == "admin":
 
         sk = f"_{loaded_id}" if loaded_id else "_new"
 
-        # Extract discount from notes if editing, else default to 2.0%
         existing_rec_notes = str(stock_loaded.get("notes") or "") if stock_loaded else ""
         default_rec_disc = 2.0
         clean_rec_notes = existing_rec_notes
@@ -2235,7 +2281,7 @@ elif page == "Expenses" and user_role == "admin":
                 else:
                     try:
                         p_po_id = int(e_po.split("#")[1].split(" ")[0]) if "PO #" in e_po else None
-                        sel_staff = None if e_staff == "None" else e_staff
+                        sel_staff = None if e_staff == "Select Staff" else e_staff
                         
                         computed_status = e_stat
                         if has_direct_pay:
@@ -2348,7 +2394,7 @@ elif page == "Expenses" and user_role == "admin":
                             break
 
                 staff_opts = load_active_staff_list()
-                curr_staff = str(loaded_exp.get("staff_name") or "None")
+                curr_staff = str(loaded_exp.get("staff_name") or "Select Staff")
                 if curr_staff not in staff_opts:
                     staff_opts.append(curr_staff)
 
@@ -2392,7 +2438,7 @@ elif page == "Expenses" and user_role == "admin":
                     else:
                         try:
                             p_po_id = int(e_edit_po.split("#")[1].split(" ")[0]) if "PO #" in e_edit_po else None
-                            sel_staff = None if e_edit_staff == "None" else e_edit_staff
+                            sel_staff = None if e_edit_staff == "Select Staff" else e_edit_staff
 
                             with db_conn.session as s:
                                 s.execute(
@@ -2675,7 +2721,526 @@ elif page == "Expenses" and user_role == "admin":
                 st.caption("No payments in this range.")
 
 # ======================================================================
-# PAGE 7: DASHBOARD (100% Supabase PostgreSQL Powered)
+# PAGE 7: STAFF & PAYROLL (KYC, Plans, Monthly Dues & Settlement)
+# ======================================================================
+elif page == "Staff & Payroll" and user_role == "admin":
+    st.subheader("Staff & Payroll Management")
+    st.caption("Manage staff profile & KYC records, versioned compensation plans, and live monthly dues settlements.")
+
+    staff_tab_sel = st.radio("Section", ["👥 Staff Directory & KYC", "⚙️ Compensation Plans", "💵 Monthly Dues & Settlement"], horizontal=True, key="staff_top_nav")
+
+    staff_df = load_full_staff_df()
+
+    # ------------------------------------------------------------------
+    # 1. STAFF DIRECTORY & KYC
+    # ------------------------------------------------------------------
+    if staff_tab_sel == "👥 Staff Directory & KYC":
+        st_mode = st.radio("Mode", ["View All Staff", "Add New Staff", "Edit Staff Profile & KYC"], horizontal=True, key="staff_dir_mode")
+
+        if st_mode == "Add New Staff":
+            st.write("Register a new staff member and configure their starting compensation package:")
+
+            with st.form("new_staff_form"):
+                sc1, sc2, sc3 = st.columns(3)
+                with sc1:
+                    new_s_name = st.text_input("Full Name *", placeholder="e.g. Ramesh Kumar")
+                with sc2:
+                    new_s_phone = st.text_input("Mobile Number", placeholder="e.g. 9876543210")
+                with sc3:
+                    new_s_status = st.selectbox("Status", STAFF_STATUSES, index=0)
+
+                sc4, sc5, sc6 = st.columns(3)
+                with sc4:
+                    new_s_doj = st.date_input("Date of Joining", value=date.today())
+                with sc5:
+                    new_s_dob = st.date_input("Date of Birth", value=date(1995, 1, 1))
+                with sc6:
+                    new_s_pob = st.text_input("Place of Birth", placeholder="e.g. Hosur, Tamil Nadu")
+
+                sc7, sc8 = st.columns(2)
+                with sc7:
+                    new_s_pan = st.text_input("PAN Number", placeholder="e.g. ABCDE1234F")
+                with sc8:
+                    new_s_aadhaar = st.text_input("Aadhaar Number", placeholder="12-digit Aadhaar")
+
+                sc9, sc10 = st.columns(2)
+                with sc9:
+                    new_s_cur_addr = st.text_area("Current Residential Address", rows=2)
+                with sc10:
+                    new_s_perm_addr = st.text_area("Permanent Address", rows=2)
+
+                sc11, sc12 = st.columns(2)
+                with sc11:
+                    new_s_emg_name = st.text_input("Emergency Contact Person", placeholder="e.g. Brother / Father")
+                with sc12:
+                    new_s_emg_phone = st.text_input("Emergency Contact Number", placeholder="e.g. 9123456789")
+
+                st.markdown("#### Starting Compensation Package")
+                cp1, cp2, cp3 = st.columns(3)
+                with cp1:
+                    new_s_salary = st.number_input("Monthly Fixed Salary (₹)", min_value=0.0, value=18000.0, step=500.0)
+                with cp2:
+                    new_s_thresh = st.number_input("Daily Sales Threshold for Commission (₹)", min_value=0.0, value=3000.0, step=100.0)
+                with cp3:
+                    new_s_comm_pct = st.number_input("Commission Percentage (%)", min_value=0.0, max_value=100.0, value=15.0, step=0.5)
+
+                cp4, cp5 = st.columns(2)
+                with cp4:
+                    new_s_allow_wd = st.number_input("Food & Tea Allowance: Mon to Sat (₹/day)", min_value=0.0, value=210.0, step=10.0)
+                with cp5:
+                    new_s_allow_sun = st.number_input("Food & Tea Allowance: Sunday (₹/day)", min_value=0.0, value=250.0, step=10.0)
+
+                new_s_notes = st.text_input("Notes / Background Remarks (Optional)")
+
+                submit_staff = st.form_submit_button("👤 Register Staff Member", type="primary", use_container_width=True)
+
+            if submit_staff:
+                if not new_s_name.strip():
+                    st.error("Staff Name is mandatory.")
+                else:
+                    try:
+                        with db_conn.session as s:
+                            res = s.execute(
+                                text("""
+                                INSERT INTO staff (
+                                    name, status, phone_number, emergency_contact_name, emergency_contact_phone,
+                                    date_of_birth, place_of_birth, pan_number, aadhaar_number, current_address,
+                                    permanent_address, date_of_joining, notes
+                                ) VALUES (
+                                    :name, :status, :phone, :emg_n, :emg_p,
+                                    :dob, :pob, :pan, :aadhaar, :caddr,
+                                    :paddr, :doj, :notes
+                                ) RETURNING id;
+                                """),
+                                {
+                                    "name": new_s_name.strip(), "status": new_s_status, "phone": new_s_phone.strip(),
+                                    "emg_n": new_s_emg_name.strip(), "emg_p": new_s_emg_phone.strip(),
+                                    "dob": new_s_dob, "pob": new_s_pob.strip(), "pan": new_s_pan.strip().upper(),
+                                    "aadhaar": new_s_aadhaar.strip(), "caddr": new_s_cur_addr.strip(),
+                                    "paddr": new_s_perm_addr.strip(), "doj": new_s_doj, "notes": new_s_notes.strip()
+                                }
+                            )
+                            new_sid = res.scalar()
+
+                            s.execute(
+                                text("""
+                                INSERT INTO staff_compensation_plans (
+                                    staff_id, effective_from, monthly_fixed_salary,
+                                    commission_threshold_daily, commission_percentage,
+                                    allowance_weekday, allowance_sunday
+                                ) VALUES (
+                                    :sid, :efrom, :sal, :thresh, :comm, :awd, :asun
+                                );
+                                """),
+                                {
+                                    "sid": new_sid, "efrom": new_s_doj, "sal": float(new_s_salary),
+                                    "thresh": float(new_s_thresh), "comm": float(new_s_comm_pct),
+                                    "awd": float(new_s_allow_wd), "asun": float(new_s_allow_sun)
+                                }
+                            )
+                            s.commit()
+                        show_success_modal(f"Staff member '{new_s_name}' registered successfully with ID #{new_sid}!")
+                    except Exception as e:
+                        st.error(f"Could not register staff: {e}")
+
+        elif st_mode == "View All Staff":
+            if staff_df.empty:
+                st.info("No staff records found in database.")
+            else:
+                active_cnt = len(staff_df[staff_df["status"] == "active"])
+                st.metric("Total Staff Registered", f"{len(staff_df)} ({active_cnt} Active)")
+
+                disp_staff = staff_df.copy()
+                disp_staff["Monthly Salary"] = disp_staff["monthly_fixed_salary"].apply(lambda v: f"₹{_num(v):,.0f}")
+                disp_staff["Commission"] = disp_staff.apply(lambda r: f"{_num(r['commission_percentage']):.0f}% > ₹{_num(r['commission_threshold_daily']):,.0f}", axis=1)
+                disp_staff["Daily Food/Tea"] = disp_staff.apply(lambda r: f"₹{_num(r['allowance_weekday']):.0f} / ₹{_num(r['allowance_sunday']):.0f}", axis=1)
+                disp_staff["Joined"] = pd.to_datetime(disp_staff["date_of_joining"]).dt.strftime("%d %b %Y")
+
+                summary_cols = ["id", "name", "status", "phone_number", "Joined", "Monthly Salary", "Commission", "Daily Food/Tea", "emergency_contact_phone"]
+                st.dataframe(
+                    disp_staff[summary_cols].rename(columns={
+                        "id": "ID", "name": "Name", "status": "Status", "phone_number": "Phone",
+                        "emergency_contact_phone": "Emergency Phone"
+                    }),
+                    hide_index=True,
+                    use_container_width=True
+                )
+
+                st.markdown("---")
+                st.markdown("#### Detailed KYC Inspection")
+                sel_inspect = st.selectbox("Select staff member to inspect KYC profile", staff_df["name"].tolist(), key="inspect_staff_sel")
+                s_row = staff_df[staff_df["name"] == sel_inspect].iloc[0]
+
+                k1, k2, k3 = st.columns(3)
+                k1.write(f"**Date of Birth:** {pd.to_datetime(s_row['date_of_birth']).strftime('%d %b %Y') if pd.notna(s_row['date_of_birth']) else '—'}")
+                k1.write(f"**Place of Birth:** {s_row['place_of_birth'] or '—'}")
+                k2.write(f"**PAN Number:** {s_row['pan_number'] or '—'}")
+                k2.write(f"**Aadhaar Number:** {s_row['aadhaar_number'] or '—'}")
+                k3.write(f"**Emergency Contact:** {s_row['emergency_contact_name'] or '—'} ({s_row['emergency_contact_phone'] or '—'})")
+                k3.write(f"**Current Status:** `{s_row['status']}`")
+
+                st.write(f"**Current Address:** {s_row['current_address'] or '—'}")
+                st.write(f"**Permanent Address:** {s_row['permanent_address'] or '—'}")
+                if s_row.get("notes"):
+                    st.caption(f"Remarks: {s_row['notes']}")
+
+        elif st_mode == "Edit Staff Profile & KYC":
+            if staff_df.empty:
+                st.info("No staff records found to edit.")
+            else:
+                staff_names = staff_df["name"].tolist()
+                sel_edit_name = st.selectbox("Select Staff to Edit", staff_names, key="edit_staff_picker")
+                s_edit = staff_df[staff_df["name"] == sel_edit_name].iloc[0]
+                s_id = int(s_edit["id"])
+
+                with st.form("edit_staff_form"):
+                    ec1, ec2, ec3 = st.columns(3)
+                    with ec1:
+                        e_name = st.text_input("Full Name *", value=str(s_edit["name"]))
+                    with ec2:
+                        e_phone = st.text_input("Mobile Number", value=str(s_edit.get("phone_number") or ""))
+                    with ec3:
+                        stat_idx = STAFF_STATUSES.index(s_edit["status"]) if s_edit["status"] in STAFF_STATUSES else 0
+                        e_status = st.selectbox("Status", STAFF_STATUSES, index=stat_idx)
+
+                    ec4, ec5, ec6 = st.columns(3)
+                    with ec4:
+                        doj_val = pd.to_datetime(s_edit["date_of_joining"]).date() if pd.notna(s_edit["date_of_joining"]) else date.today()
+                        e_doj = st.date_input("Date of Joining", value=doj_val)
+                    with ec5:
+                        dob_val = pd.to_datetime(s_edit["date_of_birth"]).date() if pd.notna(s_edit["date_of_birth"]) else date(1995, 1, 1)
+                        e_dob = st.date_input("Date of Birth", value=dob_val)
+                    with ec6:
+                        e_pob = st.text_input("Place of Birth", value=str(s_edit.get("place_of_birth") or ""))
+
+                    ec7, ec8 = st.columns(2)
+                    with ec7:
+                        e_pan = st.text_input("PAN Number", value=str(s_edit.get("pan_number") or ""))
+                    with ec8:
+                        e_aadhaar = st.text_input("Aadhaar Number", value=str(s_edit.get("aadhaar_number") or ""))
+
+                    ec9, ec10 = st.columns(2)
+                    with ec9:
+                        e_caddr = st.text_area("Current Address", value=str(s_edit.get("current_address") or ""), rows=2)
+                    with ec10:
+                        e_paddr = st.text_area("Permanent Address", value=str(s_edit.get("permanent_address") or ""), rows=2)
+
+                    ec11, ec12 = st.columns(2)
+                    with ec11:
+                        e_emg_n = st.text_input("Emergency Contact Name", value=str(s_edit.get("emergency_contact_name") or ""))
+                    with ec12:
+                        e_emg_p = st.text_input("Emergency Contact Phone", value=str(s_edit.get("emergency_contact_phone") or ""))
+
+                    e_notes = st.text_input("Notes", value=str(s_edit.get("notes") or ""))
+
+                    save_edit_staff = st.form_submit_button("💾 Save Profile Changes", type="primary", use_container_width=True)
+
+                if save_edit_staff:
+                    if not e_name.strip():
+                        st.error("Name cannot be blank.")
+                    else:
+                        try:
+                            with db_conn.session as s:
+                                s.execute(
+                                    text("""
+                                    UPDATE staff
+                                    SET name = :name, status = :status, phone_number = :phone,
+                                        emergency_contact_name = :emg_n, emergency_contact_phone = :emg_p,
+                                        date_of_birth = :dob, place_of_birth = :pob, pan_number = :pan,
+                                        aadhaar_number = :aadhaar, current_address = :caddr, permanent_address = :paddr,
+                                        date_of_joining = :doj, notes = :notes, updated_at = NOW()
+                                    WHERE id = :id;
+                                    """),
+                                    {
+                                        "name": e_name.strip(), "status": e_status, "phone": e_phone.strip(),
+                                        "emg_n": e_emg_n.strip(), "emg_p": e_emg_p.strip(), "dob": e_dob,
+                                        "pob": e_pob.strip(), "pan": e_pan.strip().upper(), "aadhaar": e_aadhaar.strip(),
+                                        "caddr": e_caddr.strip(), "paddr": e_paddr.strip(), "doj": e_doj,
+                                        "notes": e_notes.strip(), "id": s_id
+                                    }
+                                )
+                                s.commit()
+                            show_success_modal(f"Staff profile for '{e_name}' updated successfully!")
+                        except Exception as e:
+                            st.error(f"Could not update staff profile: {e}")
+
+    # ------------------------------------------------------------------
+    # 2. COMPENSATION PLANS & REVISIONS
+    # ------------------------------------------------------------------
+    elif staff_tab_sel == "⚙️ Compensation Plans":
+        st.write("View and assign effective-dated salary, commission slabs, and food/tea allowances:")
+
+        if staff_df.empty:
+            st.info("No staff records found in database.")
+        else:
+            sel_s_plan = st.selectbox("Select Staff Member", staff_df["name"].tolist(), key="staff_comp_sel")
+            target_s_row = staff_df[staff_df["name"] == sel_s_plan].iloc[0]
+            target_s_id = int(target_s_row["id"])
+
+            st.markdown(f"#### Active Plan for {sel_s_plan}")
+            m1, m2, m3, m4 = st.columns(4)
+            m1.metric("Monthly Base Salary", f"₹{_num(target_s_row['monthly_fixed_salary']):,.2f}")
+            m2.metric("Commission Threshold", f"₹{_num(target_s_row['commission_threshold_daily']):,.2f}/day")
+            m3.metric("Commission Rate", f"{_num(target_s_row['commission_percentage']):.1f}%")
+            m4.metric("Daily Allowances", f"₹{_num(target_s_row['allowance_weekday']):.0f} (W) | ₹{_num(target_s_row['allowance_sunday']):.0f} (S)")
+
+            st.markdown("---")
+            st.markdown("#### Revision / Add New Compensation Plan")
+            st.caption("Adding a new plan sets an effective starting date without altering past calculation history.")
+
+            with st.form("new_comp_plan_form"):
+                cp1, cp2 = st.columns(2)
+                with cp1:
+                    plan_eff_from = st.date_input("Effective From Date", value=date.today())
+                with cp2:
+                    plan_salary = st.number_input("Monthly Fixed Salary (₹)", min_value=0.0, value=float(_num(target_s_row['monthly_fixed_salary']) or 18000.0), step=500.0)
+
+                cp3, cp4 = st.columns(2)
+                with cp3:
+                    plan_threshold = st.number_input("Daily Sales Threshold (₹)", min_value=0.0, value=float(_num(target_s_row['commission_threshold_daily']) or 3000.0), step=100.0)
+                with cp4:
+                    plan_comm_pct = st.number_input("Commission Rate (%)", min_value=0.0, max_value=100.0, value=float(_num(target_s_row['commission_percentage']) or 15.0), step=0.5)
+
+                cp5, cp6 = st.columns(2)
+                with cp5:
+                    plan_allow_wd = st.number_input("Food/Tea Allowance: Mon to Sat (₹/day)", min_value=0.0, value=float(_num(target_s_row['allowance_weekday']) or 210.0), step=10.0)
+                with cp6:
+                    plan_allow_sun = st.number_input("Food & Tea Allowance: Sunday (₹/day)", min_value=0.0, value=float(_num(target_s_row['allowance_sunday']) or 250.0), step=10.0)
+
+                submit_plan = st.form_submit_button("💾 Save & Activate Compensation Plan", type="primary", use_container_width=True)
+
+            if submit_plan:
+                try:
+                    with db_conn.session as s:
+                        # Close previous plan effective_to
+                        s.execute(
+                            text("""
+                            UPDATE staff_compensation_plans
+                            SET effective_to = :prev_end
+                            WHERE staff_id = :sid AND effective_to IS NULL AND effective_from < :new_start;
+                            """),
+                            {"prev_end": plan_eff_from - timedelta(days=1), "sid": target_s_id, "new_start": plan_eff_from}
+                        )
+                        s.execute(
+                            text("""
+                            INSERT INTO staff_compensation_plans (
+                                staff_id, effective_from, monthly_fixed_salary,
+                                commission_threshold_daily, commission_percentage,
+                                allowance_weekday, allowance_sunday
+                            ) VALUES (
+                                :sid, :efrom, :sal, :thresh, :comm, :awd, :asun
+                            );
+                            """),
+                            {
+                                "sid": target_s_id, "efrom": plan_eff_from, "sal": float(plan_salary),
+                                "thresh": float(plan_threshold), "comm": float(plan_comm_pct),
+                                "awd": float(plan_allow_wd), "asun": float(plan_allow_sun)
+                            }
+                        )
+                        s.commit()
+                    show_success_modal(f"New compensation plan activated for {sel_s_plan} from {plan_eff_from.strftime('%d %b %Y')}!")
+                except Exception as e:
+                    st.error(f"Could not save compensation plan: {e}")
+
+            st.markdown("---")
+            st.markdown("#### Historical Plans")
+            hist_df = load_staff_compensation_history(target_s_id)
+            if not hist_df.empty:
+                disp_hist = hist_df.copy()
+                disp_hist["effective_from"] = pd.to_datetime(disp_hist["effective_from"]).dt.strftime("%d %b %Y")
+                disp_hist["effective_to"] = disp_hist["effective_to"].apply(lambda d: pd.to_datetime(d).strftime("%d %b %Y") if pd.notna(d) else "Active Present")
+                st.dataframe(
+                    disp_hist[["effective_from", "effective_to", "monthly_fixed_salary", "commission_threshold_daily", "commission_percentage", "allowance_weekday", "allowance_sunday"]].rename(columns={
+                        "effective_from": "From", "effective_to": "To", "monthly_fixed_salary": "Fixed Salary (₹)",
+                        "commission_threshold_daily": "Threshold (₹)", "commission_percentage": "Commission (%)",
+                        "allowance_weekday": "Weekday Allw. (₹)", "allowance_sunday": "Sunday Allw. (₹)"
+                    }),
+                    hide_index=True,
+                    use_container_width=True
+                )
+
+    # ------------------------------------------------------------------
+    # 3. MONTHLY DUES & SETTLEMENT ENGINE
+    # ------------------------------------------------------------------
+    elif staff_tab_sel == "💵 Monthly Dues & Settlement":
+        st.write("Calculate month-end payroll, commissions earned on daily sales > ₹3,000, daily food/tea allowances, advances, and net amount due:")
+
+        now = date.today()
+        m_col1, m_col2 = st.columns(2)
+        with m_col1:
+            month_names = list(calendar.month_name)[1:]
+            sel_month_name = st.selectbox("Select Settlement Month", month_names, index=now.month - 1, key="pay_calc_month")
+            sel_month_idx = month_names.index(sel_month_name) + 1
+        with m_col2:
+            sel_year = st.number_input("Select Year", min_value=2024, max_value=2030, value=now.year, step=1, key="pay_calc_year")
+
+        num_days_in_month = calendar.monthrange(sel_year, sel_month_idx)[1]
+        m_start_dt = date(sel_year, sel_month_idx, 1)
+        m_end_dt = date(sel_year, sel_month_idx, num_days_in_month)
+
+        st.caption(f"Calculating for period: **{m_start_dt.strftime('%d %b %Y')}** to **{m_end_dt.strftime('%d %b %Y')}**")
+
+        daily_month_df = pd.DataFrame()
+        if db_conn is not None:
+            query_month = """
+            SELECT entry_date, cart_name, staff_name, total_collection, staff_advance, food_tea_cash
+            FROM daily_cart_entries
+            WHERE entry_date >= :sdate AND entry_date <= :edate AND staff_name IS NOT NULL AND staff_name != '' AND staff_name != 'Select Staff';
+            """
+            daily_month_df = db_conn.query(query_month, params={"sdate": m_start_dt, "edate": m_end_dt}, ttl="0s")
+
+        if staff_df.empty:
+            st.info("No staff records found.")
+        else:
+            settlement_summary_rows = []
+            detailed_staff_logs = {}
+
+            for _, s_row in staff_df.iterrows():
+                st_name = str(s_row["name"]).strip()
+                st_id = int(s_row["id"])
+
+                # Get staff compensation plan active in this month
+                base_salary = float(_num(s_row.get("monthly_fixed_salary")) or 18000.0)
+                comm_thresh = float(_num(s_row.get("commission_threshold_daily")) or 3000.0)
+                comm_pct = float(_num(s_row.get("commission_percentage")) or 15.0)
+                allow_wd = float(_num(s_row.get("allowance_weekday")) or 210.0)
+                allow_sun = float(_num(s_row.get("allowance_sunday")) or 250.0)
+
+                # Filter shifts worked by this staff member in the selected month
+                st_shifts = daily_month_df[daily_month_df["staff_name"] == st_name].copy() if not daily_month_df.empty else pd.DataFrame()
+
+                total_sales_done = 0.0
+                total_comm_earned = 0.0
+                total_allow_entitled = 0.0
+                total_food_withdrawn = 0.0
+                total_advance_taken = 0.0
+                weekdays_worked = 0
+                sundays_worked = 0
+
+                staff_shift_records = []
+
+                if not st_shifts.empty:
+                    st_shifts["entry_date"] = pd.to_datetime(st_shifts["entry_date"])
+                    st_shifts = st_shifts.sort_values(by="entry_date")
+
+                    for _, shift in st_shifts.iterrows():
+                        s_dt = shift["entry_date"].date()
+                        s_dow = s_dt.weekday() # 6 is Sunday
+                        is_sun = (s_dow == 6)
+
+                        if is_sun:
+                            sundays_worked += 1
+                            day_allow = allow_sun
+                        else:
+                            weekdays_worked += 1
+                            day_allow = allow_wd
+
+                        s_col = float(_num(shift["total_collection"]))
+                        s_adv = float(_num(shift["staff_advance"]))
+                        s_food = float(_num(shift["food_tea_cash"]))
+
+                        # Commission calculated only on daily sales exceeding threshold
+                        day_comm = max(0.0, s_col - comm_thresh) * (comm_pct / 100.0)
+
+                        total_sales_done += s_col
+                        total_comm_earned += day_comm
+                        total_allow_entitled += day_allow
+                        total_food_withdrawn += s_food
+                        total_advance_taken += s_adv
+
+                        staff_shift_records.append({
+                            "Date": s_dt.strftime("%d %b %Y"),
+                            "Day": s_dt.strftime("%A"),
+                            "Cart": shift["cart_name"],
+                            "Daily Sales (₹)": s_col,
+                            "Commission (₹)": day_comm,
+                            "Allowance Entitled (₹)": day_allow,
+                            "Food / Tea Taken (₹)": s_food,
+                            "Advance Taken (₹)": s_adv,
+                            "Net Daily Balance (₹)": day_comm + day_allow - s_food - s_adv
+                        })
+
+                days_worked = weekdays_worked + sundays_worked
+                gross_earnings = base_salary + total_comm_earned + total_allow_entitled
+                total_deductions = total_food_withdrawn + total_advance_taken
+                net_payable_due = gross_earnings - total_deductions
+
+                settlement_summary_rows.append({
+                    "Staff Name": st_name,
+                    "Status": s_row["status"],
+                    "Days Worked": f"{days_worked} ({weekdays_worked}W / {sundays_worked}S)",
+                    "Base Salary (₹)": base_salary,
+                    "Total Sales (₹)": total_sales_done,
+                    "Commission Earned (₹)": total_comm_earned,
+                    "Allowances Entitled (₹)": total_allow_entitled,
+                    "Gross Payable (₹)": gross_earnings,
+                    "Food / Tea Taken (₹)": total_food_withdrawn,
+                    "Advances Taken (₹)": total_advance_taken,
+                    "Total Deductions (₹)": total_deductions,
+                    "Net Amount Due (₹)": net_payable_due
+                })
+
+                detailed_staff_logs[st_name] = pd.DataFrame(staff_shift_records)
+
+            settlement_df = pd.DataFrame(settlement_summary_rows)
+
+            # Month-End Metric KPI Strip
+            tot_gross = float(settlement_df["Gross Payable (₹)"].sum())
+            tot_ded = float(settlement_df["Total Deductions (₹)"].sum())
+            tot_net = float(settlement_df["Net Amount Due (₹)"].sum())
+            tot_comm = float(settlement_df["Commission Earned (₹)"].sum())
+
+            kpi1, kpi2, kpi3, kpi4 = st.columns(4)
+            kpi1.metric("Total Gross Entitled", f"₹{tot_gross:,.2f}")
+            kpi2.metric("Total Commissions", f"₹{tot_comm:,.2f}")
+            kpi3.metric("Total Deductions Taken", f"-₹{tot_ded:,.2f}")
+            kpi4.metric("Net Total Payable", f"₹{tot_net:,.2f}")
+
+            st.markdown("---")
+            st.markdown("#### Staff Settlement Summary Table")
+
+            st.dataframe(
+                settlement_df,
+                hide_index=True,
+                use_container_width=True,
+                column_config={
+                    "Base Salary (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                    "Total Sales (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                    "Commission Earned (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                    "Allowances Entitled (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                    "Gross Payable (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                    "Food / Tea Taken (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                    "Advances Taken (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                    "Total Deductions (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                    "Net Amount Due (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                }
+            )
+
+            st.markdown("---")
+            st.markdown("#### Detailed Shift & Deduction Ledger per Staff")
+
+            sel_staff_drill = st.selectbox("Select Staff Member for Daily Breakdown", staff_df["name"].tolist(), key="drill_staff_sel")
+            target_staff_log = detailed_staff_logs.get(sel_staff_drill, pd.DataFrame())
+
+            if target_staff_log.empty:
+                st.info(f"No shifts logged for {sel_staff_drill} in {sel_month_name} {sel_year}.")
+            else:
+                st.dataframe(
+                    target_staff_log,
+                    hide_index=True,
+                    use_container_width=True,
+                    column_config={
+                        "Daily Sales (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                        "Commission (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                        "Allowance Entitled (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                        "Food / Tea Taken (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                        "Advance Taken (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                        "Net Daily Balance (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                    }
+                )
+
+# ======================================================================
+# PAGE 8: DASHBOARD (100% Supabase PostgreSQL Powered)
 # ======================================================================
 elif page == "Dashboard" and user_role == "admin":
     st.subheader("Quick view")
