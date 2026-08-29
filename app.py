@@ -5,6 +5,7 @@ Kulfi Ops - multi-user data entry app for the kulfi cart business.
 - Zero daily sales allowed (e.g. cart closed or no sales made).
 - Purchase Order Estimator & Management with editable overall discount and net payable recalculation.
 - Stock Removed (Wastage / Return / Tasting log) integrated into Available Freezer Stock calculations.
+- Remodeled Expenses & Payments (Bills vs. Cash Outflows with tranches & P&L summaries).
 - Dashboard with COGS So Far (All-Time) & Outstanding Freezer Stock Valuation.
 - Freezer Stock, Freezer Analysis, Dashboard, and Expenses powered 100% by Supabase PostgreSQL.
 """
@@ -197,15 +198,23 @@ CITY = "HOSUR"
 
 PAYMENT_STATUSES = ["Pending", "Partial", "Complete"]
 PO_STATUSES = ["Placed", "Pending", "In Transit", "Completed", "Cancelled"]
+
+EXPENSE_TYPES = ["OPEX", "COGS", "CAPEX"]
 EXPENSE_CATEGORIES = [
     "Cost of Goods",
     "Labour Charges",
+    "Logistics & Transport",
+    "Rent & Utilities",
+    "Maintenance & Repairs",
+    "Permits & Compliance",
     "Leakage Expense",
     "Initial Set-up Expense",
-    "Miscellaneous Expense",
     "Initial Investment",
+    "Miscellaneous Expense",
 ]
-PAYMENT_MODES = ["Cash", "UPI / Bank Transfer"]
+ATTRIBUTED_OPTIONS = ["Central / Freezer"] + CARTS
+EXPENSE_STATUSES = ["Pending", "Partially Paid", "Paid", "Cancelled"]
+PAYMENT_MODES = ["UPI / Bank Transfer", "Cash"]
 
 DAILY_HEADER_ROWS = 2
 DAILY_TOTAL_COLS = 47
@@ -326,17 +335,16 @@ def load_active_staff_list():
         try:
             df = db_conn.query("SELECT name FROM staff WHERE status = 'active' ORDER BY name ASC;", ttl="1m")
             if not df.empty:
-                return ["Select Staff"] + df["name"].tolist()
+                return ["None"] + df["name"].tolist()
         except Exception:
             pass
-    return ["Select Staff"]
+    return ["None"]
 
 
 # ----------------------------------------------------------------------
 # DATABASE LOADERS & PRE-FILL HELPERS
 # ----------------------------------------------------------------------
 def get_latest_cart_closing_state(cart_name, before_date):
-    """Fetches the latest closing units by flavor code and staff name for a cart before a given date."""
     if db_conn is None:
         return {}, ""
     query = """
@@ -367,11 +375,6 @@ def get_latest_cart_closing_state(cart_name, before_date):
 
 
 def list_daily_entries_with_prefill():
-    """
-    Loads daily entries from the database.
-    If yesterday (today - 1) has no record for any of the 3 carts, pre-fills a default record
-    where Opening = previous Closing, Closing = Opening (Sold = 0), and Staff = previous Staff.
-    """
     entries = []
     if db_conn is not None:
         query = """
@@ -433,7 +436,6 @@ def list_daily_entries_with_prefill():
         e["cart"] for e in entries if e["date"].date() == yesterday
     }
 
-    # For any cart missing yesterday, create a default pre-fill entry
     for cart in CARTS:
         if cart not in existing_yesterday_carts:
             prev_closings, prev_staff = get_latest_cart_closing_state(cart, yesterday)
@@ -443,7 +445,7 @@ def list_daily_entries_with_prefill():
                 by_code[code] = {
                     "opening": prev_close,
                     "added": 0,
-                    "closing": prev_close,  # Closing = Opening ensures Sold = 0
+                    "closing": prev_close,
                     "sold": 0,
                 }
 
@@ -585,6 +587,7 @@ def load_db_flavor_sales(start_date=None, end_date=None):
 
 
 def load_db_expenses_list():
+    """Compatible loader for Dashboard P&L and Expense breakdowns."""
     if db_conn is None:
         return []
     query = """
@@ -592,25 +595,28 @@ def load_db_expenses_list():
         id,
         expense_date AS "Date",
         description AS "Description",
-        amount AS "Amount",
+        total_amount AS "Amount",
         category AS "Category",
-        payment_mode AS "Mode",
-        ref_no AS "Ref No",
-        paid_to AS "Paid To",
+        expense_type AS "Expense_Type",
+        attributed_to AS "Attributed_To",
+        vendor_name AS "Vendor",
+        status AS "Status",
         remarks AS "Remarks"
     FROM expenses
     ORDER BY expense_date DESC, id DESC;
     """
-    df = db_conn.query(query, ttl="0s")
-    if df.empty:
+    try:
+        df = db_conn.query(query, ttl="0s")
+        if df.empty:
+            return []
+        df["Date"] = pd.to_datetime(df["Date"])
+        df["Amount"] = df["Amount"].astype(float)
+        return df.to_dict("records")
+    except Exception:
         return []
-    df["Date"] = pd.to_datetime(df["Date"])
-    df["Amount"] = df["Amount"].astype(float)
-    return df.to_dict("records")
 
 
 def get_db_stock_removed_map():
-    """Returns a dictionary of cumulative stock removed per flavor code."""
     if db_conn is None:
         return {code: 0 for code in FLAVOR_CODES}
     try:
@@ -636,10 +642,6 @@ def get_db_stock_removed_map():
 
 
 def get_db_freezer_stock():
-    """
-    Computes live available units in the freezer:
-    Units in Freezer = Received (Inward) - Issued (Carts) - Stock Removed (Wastage / Returns)
-    """
     if db_conn is None:
         return pd.DataFrame()
     try:
@@ -667,6 +669,68 @@ def get_db_freezer_stock():
                 "Units in freezer": curr_freezer
             })
         return pd.DataFrame(rows).sort_values(by=["mrp", "Flavour"], ascending=[True, True])
+    except Exception:
+        return pd.DataFrame()
+
+
+# ----------------------------------------------------------------------
+# EXPENSES & PAYMENTS DB LOADERS
+# ----------------------------------------------------------------------
+def load_db_expenses_summary_df():
+    if db_conn is None:
+        return pd.DataFrame()
+    query = """
+    SELECT 
+        e.id,
+        e.expense_date,
+        e.expense_type,
+        e.category,
+        e.sub_category,
+        e.description,
+        e.total_amount,
+        e.attributed_to,
+        e.vendor_name,
+        e.staff_name,
+        e.purchase_order_id,
+        e.status,
+        e.remarks,
+        COALESCE(SUM(p.amount_paid), 0) AS total_paid,
+        e.total_amount - COALESCE(SUM(p.amount_paid), 0) AS balance_due,
+        COUNT(p.id) AS payment_count
+    FROM expenses e
+    LEFT JOIN expense_payments p ON e.id = p.expense_id
+    GROUP BY e.id, e.expense_date, e.expense_type, e.category, e.sub_category, e.description, e.total_amount, e.attributed_to, e.vendor_name, e.staff_name, e.purchase_order_id, e.status, e.remarks
+    ORDER BY e.expense_date DESC, e.id DESC;
+    """
+    try:
+        return db_conn.query(query, ttl="0s")
+    except Exception:
+        return pd.DataFrame()
+
+
+def load_db_payments_df():
+    if db_conn is None:
+        return pd.DataFrame()
+    query = """
+    SELECT 
+        p.id,
+        p.expense_id,
+        p.payment_date,
+        p.amount_paid,
+        p.payment_mode,
+        p.ref_no,
+        p.paid_to,
+        p.paid_by,
+        p.notes,
+        e.category,
+        e.description AS expense_desc,
+        e.total_amount AS expense_total
+    FROM expense_payments p
+    JOIN expenses e ON p.expense_id = e.id
+    ORDER BY p.payment_date DESC, p.id DESC;
+    """
+    try:
+        return db_conn.query(query, ttl="0s")
     except Exception:
         return pd.DataFrame()
 
@@ -806,7 +870,6 @@ if page == "Daily Entry":
         sold_map = {}
         opening_map = {code: loaded["by_code"][code]["opening"] for code in FLAVOR_CODES}
 
-        # Mobile Card View Loop with live Sold calculations
         for code in FLAVOR_CODES:
             f_info = FLAVOR_MAP[code]
             k_add = f"add_{entry_id}_{code}"
@@ -926,7 +989,7 @@ if page == "Daily Entry":
                 st.error("Remarks is mandatory when there is a cash leakage. Please enter a reason.")
             else:
                 try:
-                    selected_staff = "" if staff_name == "Select Staff" else staff_name
+                    selected_staff = "" if staff_name == "None" else staff_name
                     sync_daily_entry(
                         entry_date, cart_name, added_map, closing_map, opening_map, sold_map, 
                         total_collection_val, phonepe_val, cash_val, remarks, selected_staff, staff_advance_val, food_tea_val
@@ -1471,18 +1534,14 @@ elif page == "Freezer Analysis" and user_role == "admin":
         flavor_sales_df = load_db_flavor_sales(start_date=cutoff_fa, end_date=today_fa)
         sales_pace_map = dict(zip(flavor_sales_df["code"], flavor_sales_df["Units sold"])) if not flavor_sales_df.empty else {}
 
-        # Inward Received
         rec_df = db_conn.query("SELECT flavor_code, SUM(received_units) AS total_recv FROM stock_received_items GROUP BY flavor_code;", ttl="0s")
         rec_map = dict(zip(rec_df["flavor_code"], rec_df["total_recv"])) if not rec_df.empty else {}
 
-        # Outward Cart Additions
         added_df = db_conn.query("SELECT flavor_code, SUM(added_units) AS total_added FROM daily_cart_items GROUP BY flavor_code;", ttl="0s")
         added_map = dict(zip(added_df["flavor_code"], added_df["total_added"])) if not added_df.empty else {}
 
-        # Stock Removed (Wastage / Returns / Samples)
         rem_map = get_db_stock_removed_map()
 
-        # Latest Physical Audit from stock_audits_wide
         latest_audit_df = db_conn.query("""
             SELECT * FROM stock_audits_wide
             ORDER BY audit_date DESC, audit_id DESC
@@ -1550,7 +1609,6 @@ elif page == "Freezer Analysis" and user_role == "admin":
             "Audit Status": var_status
         })
 
-    # Metric Banner for Reconciliation
     c_m1, c_m2, c_m3, c_m4, c_m5, c_m6 = st.columns(6)
     c_m1.metric("Total Inward", f"{tot_rec} pcs")
     c_m2.metric("Issued to Carts", f"{tot_issued} pcs")
@@ -1560,7 +1618,6 @@ elif page == "Freezer Analysis" and user_role == "admin":
     net_var = tot_phys - tot_calc if has_audit else 0
     c_m6.metric("Net Variance", f"{net_var:+d} pcs" if has_audit else "N/A")
 
-    # Summary Total Row
     comp_df = pd.DataFrame(comparison_rows)
     total_row_comp = {
         "Flavour": "🔥 OVERALL TOTAL",
@@ -1573,11 +1630,9 @@ elif page == "Freezer Analysis" and user_role == "admin":
         "Audit Status": "✅ Match" if net_var == 0 and has_audit else (f"⚠️ {net_var:+d}" if has_audit else "—")
     }
     comp_df = pd.concat([comp_df, pd.DataFrame([total_row_comp])], ignore_index=True)
-
-    # Render without scrolling
     st.dataframe(comp_df, hide_index=True, use_container_width=True, height=370)
 
-    # --- SECTION 2: UPCOMING ORDER RECOMMENDATIONS (BASED STRICTLY ON CALC STOCK) ---
+    # --- SECTION 2: UPCOMING ORDER RECOMMENDATIONS (BASED ON CALC STOCK) ---
     st.markdown("---")
     st.markdown("### 2. Suggested Orders & Inventory Runway &nbsp; *(Calculated from Live Freezer Stock)*")
 
@@ -1591,7 +1646,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
     for code in FLAVOR_CODES:
         f_info = FLAVOR_MAP[code]
         calc_stock = int(rec_map.get(code, 0)) - int(added_map.get(code, 0)) - int(rem_map.get(code, 0))
-        avail_stock = calc_stock  # Strictly based on Calculated Stock after accounting for removed items
+        avail_stock = calc_stock
         tot_calc_active += avail_stock
 
         recent_sold = float(sales_pace_map.get(code, 0))
@@ -1636,7 +1691,6 @@ elif page == "Freezer Analysis" and user_role == "admin":
             "Rationale": reason
         })
 
-    # Metric Banner for Orders
     r_m1, r_m2, r_m3, r_m4 = st.columns(4)
     overall_order_date = min(trigger_dates) if trigger_dates else None
     r_m1.metric("Calculated Active Stock", f"{tot_calc_active} units")
@@ -1651,7 +1705,6 @@ elif page == "Freezer Analysis" and user_role == "admin":
             days_until = (overall_order_date - today_fa).days
             st.info(f"📅 **Next Order Milestone:** Estimated order placement on **{overall_order_date.strftime('%d %b %Y')}** ({days_until} days remaining).")
 
-    # Summary Total Row to Reorder Table
     reorder_df = pd.DataFrame(reorder_rows)
     total_row_reorder = {
         "Flavour": "🔥 OVERALL TOTAL",
@@ -1664,8 +1717,6 @@ elif page == "Freezer Analysis" and user_role == "admin":
         "Rationale": f"Est Cost: ₹{tot_order_cost:,.0f}"
     }
     reorder_df = pd.concat([reorder_df, pd.DataFrame([total_row_reorder])], ignore_index=True)
-
-    # Render without scrolling
     st.dataframe(reorder_df, hide_index=True, use_container_width=True, height=370)
 
     # --- SECTION 3: DETAILED STOCK MOVEMENT LEDGERS ---
@@ -1751,7 +1802,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
                 }
                 for code in FLAVOR_CODES:
                     col_name = FLAVOR_MAP[code]["audit_col"]
-                    row_data[code] = r.get(col_name, 0)
+                    row_data[code] = int(r.get(col_name, 0))
                 aud_display.append(row_data)
             st.dataframe(pd.DataFrame(aud_display), hide_index=True, use_container_width=True)
         else:
@@ -2033,84 +2084,524 @@ elif page == "Stock Removed" and user_role == "admin":
                         st.error(f"Could not update stock removal entry: {e}")
 
 # ======================================================================
-# PAGE 6: EXPENSES (100% Supabase PostgreSQL Powered)
+# PAGE 6: EXPENSES & PAYMENTS (New Multi-Table Architecture)
 # ======================================================================
 elif page == "Expenses" and user_role == "admin":
-    st.subheader("Log an expense")
+    st.subheader("Expenses & Payments Management")
+    st.caption("Manage supplier bills, operating expenses, payments (Cash vs UPI), and settlement balances.")
 
-    exp_mode = st.radio("Mode", ["New entry", "Edit past entry"], horizontal=True, key="db_exp_mode")
+    exp_nav = st.radio("Section", ["📋 Expenses (Bills / Invoices)", "💳 Payments (Cash Outflows)", "📊 Summary & Date Reports"], horizontal=True, key="exp_nav_sec")
 
-    expenses_list = load_db_expenses_list()
+    # ------------------------------------------------------------------
+    # SECTION 1: EXPENSES (BILLS / INVOICES)
+    # ------------------------------------------------------------------
+    if exp_nav == "📋 Expenses (Bills / Invoices)":
+        e_sub_mode = st.radio("Action", ["View Expenses", "Add New Expense", "Edit Past Expense"], horizontal=True, key="e_sub_mode_rad")
+        expenses_summary_df = load_db_expenses_summary_df()
 
-    exp_loaded = None
-    exp_editing_id = None
-    if exp_mode == "Edit past entry":
-        if not expenses_list:
-            st.info("No expenses found in database yet.")
-        else:
-            exp_labels = [f"#{r['id']} — {r['Date'].strftime('%d %b %Y')} — {r['Description'] or r['Category']} (₹{r['Amount']:,.0f})" for r in expenses_list]
-            exp_sel = st.selectbox("Select expense to edit", exp_labels, key="db_exp_select")
-            exp_loaded = expenses_list[exp_labels.index(exp_sel)]
-            exp_editing_id = exp_loaded["id"]
+        if e_sub_mode == "Add New Expense":
+            st.write("Record a new bill or obligation incurred:")
 
-    ek = f"_{exp_editing_id}" if exp_editing_id else "_new"
+            pos_df = db_conn.query("SELECT id, order_date, location FROM purchase_orders ORDER BY order_date DESC;", ttl="0s") if db_conn else pd.DataFrame()
+            po_opts = ["None"] + [f"PO #{r['id']} ({pd.to_datetime(r['order_date']).strftime('%d %b')})" for _, r in pos_df.iterrows()] if not pos_df.empty else ["None"]
+            staff_opts = load_active_staff_list()
 
-    c1, c2 = st.columns(2)
-    with c1:
-        exp_date_val = exp_loaded["Date"].date() if (exp_loaded and exp_loaded.get("Date")) else date.today()
-        exp_date = st.date_input("Date", value=exp_date_val, key=f"db_exp_date{ek}")
-    with c2:
-        default_cat_idx = EXPENSE_CATEGORIES.index(exp_loaded["Category"]) if (exp_loaded and exp_loaded.get("Category") in EXPENSE_CATEGORIES) else 0
-        category = st.selectbox("Category", EXPENSE_CATEGORIES, index=default_cat_idx, key=f"db_exp_category{ek}")
+            c1, c2, c3, c4 = st.columns(4)
+            with c1:
+                e_date = st.date_input("Expense Date", value=date.today(), key="add_e_date")
+            with c2:
+                e_type = st.selectbox("Expense Type", EXPENSE_TYPES, index=0, key="add_e_type")
+            with c3:
+                e_cat = st.selectbox("Category", EXPENSE_CATEGORIES, index=0, key="add_e_cat")
+            with c4:
+                e_subcat = st.text_input("Sub-Category (Optional)", placeholder="e.g. Dry Ice, Fuel, Repair", key="add_e_subcat")
 
-    description = st.text_input("Description", value=(str(exp_loaded["Description"]) if (exp_loaded and exp_loaded.get("Description")) else ""), key=f"db_exp_desc{ek}")
-    amount = st.number_input("Amount (₹)", min_value=0.0, value=(float(exp_loaded["Amount"]) if (exp_loaded and exp_loaded.get("Amount") is not None) else 0.0), step=10.0, key=f"db_exp_amt{ek}")
+            c5, c6, c7 = st.columns(3)
+            with c5:
+                e_amount = st.number_input("Total Amount (₹)", min_value=0.0, step=10.0, key="add_e_amt")
+            with c6:
+                e_attr = st.selectbox("Attributed To", ATTRIBUTED_OPTIONS, index=0, key="add_e_attr")
+            with c7:
+                e_vendor = st.text_input("Vendor / Supplier Name", placeholder="e.g. Deep Freeze Services", key="add_e_vendor")
 
-    c3, c4 = st.columns(2)
-    with c3:
-        default_mode_idx = PAYMENT_MODES.index(exp_loaded["Mode"]) if (exp_loaded and exp_loaded.get("Mode") in PAYMENT_MODES) else 0
-        mode = st.selectbox("Payment mode", PAYMENT_MODES, index=default_mode_idx, key=f"db_exp_mode_sel{ek}")
-    with c4:
-        ref_no = st.text_input("Transaction ref. no. (optional)", value=(str(exp_loaded["Ref No"]) if (exp_loaded and exp_loaded.get("Ref No")) else ""), key=f"db_exp_ref{ek}")
+            c8, c9, c10 = st.columns(3)
+            with c8:
+                e_staff = st.selectbox("Linked Staff (Optional)", staff_opts, index=0, key="add_e_staff")
+            with c9:
+                e_po = st.selectbox("Linked PO (Optional)", po_opts, index=0, key="add_e_po")
+            with c10:
+                e_stat = st.selectbox("Initial Status", EXPENSE_STATUSES, index=0, key="add_e_stat")
 
-    paid_to = st.text_input("Paid to (optional)", value=(str(exp_loaded["Paid To"]) if (exp_loaded and exp_loaded.get("Paid To")) else ""), key=f"db_exp_paidto{ek}")
-    exp_remarks = st.text_input("Remarks (optional)", value=(str(exp_loaded["Remarks"]) if (exp_loaded and exp_loaded.get("Remarks")) else ""), key=f"db_exp_remarks{ek}")
+            e_desc = st.text_input("Description", placeholder="Brief description of the purchase...", key="add_e_desc")
+            e_remarks = st.text_input("Remarks / Notes (Optional)", key="add_e_remarks")
 
-    exp_btn_label = "Update expense" if exp_editing_id else "Save expense"
-    if st.button(exp_btn_label, type="primary", use_container_width=True):
-        if amount <= 0:
-            st.error("Enter an amount greater than 0.")
-        else:
-            try:
-                with db_conn.session as s:
-                    if exp_editing_id:
-                        s.execute(
-                            text("""
-                            UPDATE expenses
-                            SET expense_date = :d, description = :desc, amount = :amt, category = :cat,
-                                payment_mode = :m, ref_no = :ref, paid_to = :paid, remarks = :rem
-                            WHERE id = :id;
-                            """),
-                            {
-                                "d": exp_date, "desc": description, "amt": amount, "cat": category,
-                                "m": mode, "ref": ref_no, "paid": paid_to, "rem": exp_remarks, "id": exp_editing_id
-                            },
-                        )
+            st.markdown("---")
+            has_direct_pay = st.checkbox("Record immediate payment now", value=False, key="add_e_direct_pay")
+            
+            p_date, p_amt, p_mode, p_ref, p_to, p_notes = None, 0.0, "UPI / Bank Transfer", "", "", ""
+            if has_direct_pay:
+                p1, p2, p3 = st.columns(3)
+                with p1:
+                    p_date = st.date_input("Payment Date", value=e_date, key="add_p_date")
+                with p2:
+                    p_amt = st.number_input("Amount Paid (₹)", min_value=0.0, value=float(e_amount), step=10.0, key="add_p_amt")
+                with p3:
+                    p_mode = st.selectbox("Payment Mode", PAYMENT_MODES, index=0, key="add_p_mode")
+                
+                p4, p5 = st.columns(2)
+                with p4:
+                    p_ref = st.text_input("Ref / UTR No.", placeholder="e.g. UPI Ref, Txn ID", key="add_p_ref")
+                with p5:
+                    p_to = st.text_input("Paid To", value=e_vendor, key="add_p_to")
+                p_notes = st.text_input("Payment Notes", placeholder="Optional payment note...", key="add_p_notes")
+
+            if st.button("💾 Save Expense Entry", type="primary", use_container_width=True):
+                if e_amount <= 0:
+                    st.error("Please enter an expense amount greater than 0.")
+                else:
+                    try:
+                        p_po_id = int(e_po.split("#")[1].split(" ")[0]) if "PO #" in e_po else None
+                        sel_staff = None if e_staff == "None" else e_staff
+                        
+                        computed_status = e_stat
+                        if has_direct_pay:
+                            if p_amt >= e_amount:
+                                computed_status = "Paid"
+                            elif p_amt > 0:
+                                computed_status = "Partially Paid"
+
+                        with db_conn.session as s:
+                            res = s.execute(
+                                text("""
+                                INSERT INTO expenses (
+                                    expense_date, expense_type, category, sub_category, description,
+                                    total_amount, attributed_to, vendor_name, staff_name, purchase_order_id,
+                                    status, recorded_by, remarks
+                                ) VALUES (
+                                    :ed, :et, :cat, :subcat, :desc,
+                                    :amt, :attr, :vendor, :staff, :poid,
+                                    :stat, :recby, :rem
+                                ) RETURNING id;
+                                """),
+                                {
+                                    "ed": e_date, "et": e_type, "cat": e_cat, "subcat": e_subcat.strip(), "desc": e_desc.strip(),
+                                    "amt": float(e_amount), "attr": e_attr, "vendor": e_vendor.strip(), "staff": sel_staff, "poid": p_po_id,
+                                    "stat": computed_status, "recby": "Admin", "rem": e_remarks.strip()
+                                }
+                            )
+                            new_exp_id = res.scalar()
+
+                            if has_direct_pay and p_amt > 0:
+                                s.execute(
+                                    text("""
+                                    INSERT INTO expense_payments (
+                                        expense_id, payment_date, amount_paid, payment_mode, ref_no, paid_to, paid_by, notes
+                                    ) VALUES (
+                                        :eid, :pdate, :pamt, :pmode, :pref, :pto, :pby, :pnotes
+                                    );
+                                    """),
+                                    {
+                                        "eid": new_exp_id, "pdate": p_date, "pamt": float(p_amt), "pmode": p_mode,
+                                        "pref": p_ref.strip(), "pto": p_to.strip(), "pby": "Admin", "pnotes": p_notes.strip()
+                                    }
+                                )
+                            s.commit()
+                        show_success_modal(f"Expense #{new_exp_id} of ₹{e_amount:,.2f} recorded successfully!")
+                    except Exception as e:
+                        st.error(f"Could not save expense: {e}")
+
+        elif e_sub_mode == "View Expenses":
+            if expenses_summary_df.empty:
+                st.info("No expenses found in database.")
+            else:
+                tot_exp_incurred = float(expenses_summary_df["total_amount"].sum())
+                tot_exp_paid = float(expenses_summary_df["total_paid"].sum())
+                tot_exp_bal = float(expenses_summary_df["balance_due"].sum())
+
+                ek1, ek2, ek3 = st.columns(3)
+                ek1.metric("Total Expenses Incurred", f"₹{tot_exp_incurred:,.2f}")
+                ek2.metric("Total Amount Paid", f"₹{tot_exp_paid:,.2f}")
+                ek3.metric("Outstanding Balance Due", f"₹{tot_exp_bal:,.2f}")
+
+                display_exp = expenses_summary_df.copy()
+                display_exp["expense_date"] = pd.to_datetime(display_exp["expense_date"]).dt.strftime("%d %b %Y")
+                display_exp["PO Link"] = display_exp["purchase_order_id"].apply(lambda p: f"PO #{int(p)}" if pd.notna(p) else "—")
+                
+                table_cols = [
+                    "id", "expense_date", "expense_type", "category", "sub_category", "description",
+                    "total_amount", "total_paid", "balance_due", "status", "attributed_to", "vendor_name", "PO Link"
+                ]
+                renamed_cols = {
+                    "id": "ID", "expense_date": "Date", "expense_type": "Type", "category": "Category",
+                    "sub_category": "Sub-Category", "description": "Description", "total_amount": "Total (₹)",
+                    "total_paid": "Paid (₹)", "balance_due": "Balance (₹)", "status": "Status",
+                    "attributed_to": "Attributed To", "vendor_name": "Vendor"
+                }
+
+                st.dataframe(
+                    display_exp[table_cols].rename(columns=renamed_cols),
+                    hide_index=True,
+                    use_container_width=True,
+                    column_config={
+                        "Total (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                        "Paid (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                        "Balance (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                    }
+                )
+
+        elif e_sub_mode == "Edit Past Expense":
+            if expenses_summary_df.empty:
+                st.info("No expenses found to edit.")
+            else:
+                exp_records = expenses_summary_df.to_dict("records")
+                exp_labels = [
+                    f"#{r['id']} — {pd.to_datetime(r['expense_date']).strftime('%d %b %Y')} — {r['category']} (Total: ₹{float(r['total_amount']):,.0f} | Due: ₹{float(r['balance_due']):,.0f})"
+                    for r in exp_records
+                ]
+                sel_exp_label = st.selectbox("Select Expense to Edit", exp_labels, key="edit_exp_select")
+                loaded_exp = exp_records[exp_labels.index(sel_exp_label)]
+                loaded_exp_id = loaded_exp["id"]
+
+                pos_df = db_conn.query("SELECT id, order_date, location FROM purchase_orders ORDER BY order_date DESC;", ttl="0s") if db_conn else pd.DataFrame()
+                po_opts = ["None"] + [f"PO #{r['id']} ({pd.to_datetime(r['order_date']).strftime('%d %b')})" for _, r in pos_df.iterrows()] if not pos_df.empty else ["None"]
+                
+                default_po_idx = 0
+                if loaded_exp.get("purchase_order_id") and pd.notna(loaded_exp["purchase_order_id"]):
+                    poid_str = f"PO #{int(loaded_exp['purchase_order_id'])} "
+                    for idx, opt in enumerate(po_opts):
+                        if opt.startswith(poid_str):
+                            default_po_idx = idx
+                            break
+
+                staff_opts = load_active_staff_list()
+                curr_staff = str(loaded_exp.get("staff_name") or "None")
+                if curr_staff not in staff_opts:
+                    staff_opts.append(curr_staff)
+
+                c1, c2, c3, c4 = st.columns(4)
+                with c1:
+                    e_edit_date = st.date_input("Expense Date", value=pd.to_datetime(loaded_exp["expense_date"]).date(), key=f"ee_date_{loaded_exp_id}")
+                with c2:
+                    def_t_idx = EXPENSE_TYPES.index(loaded_exp["expense_type"]) if loaded_exp["expense_type"] in EXPENSE_TYPES else 0
+                    e_edit_type = st.selectbox("Expense Type", EXPENSE_TYPES, index=def_t_idx, key=f"ee_type_{loaded_exp_id}")
+                with c3:
+                    def_c_idx = EXPENSE_CATEGORIES.index(loaded_exp["category"]) if loaded_exp["category"] in EXPENSE_CATEGORIES else 0
+                    e_edit_cat = st.selectbox("Category", EXPENSE_CATEGORIES, index=def_c_idx, key=f"ee_cat_{loaded_exp_id}")
+                with c4:
+                    e_edit_subcat = st.text_input("Sub-Category", value=str(loaded_exp.get("sub_category") or ""), key=f"ee_subcat_{loaded_exp_id}")
+
+                c5, c6, c7 = st.columns(3)
+                with c5:
+                    e_edit_amount = st.number_input("Total Amount (₹)", min_value=0.0, value=float(loaded_exp["total_amount"]), step=10.0, key=f"ee_amt_{loaded_exp_id}")
+                with c6:
+                    def_a_idx = ATTRIBUTED_OPTIONS.index(loaded_exp["attributed_to"]) if loaded_exp["attributed_to"] in ATTRIBUTED_OPTIONS else 0
+                    e_edit_attr = st.selectbox("Attributed To", ATTRIBUTED_OPTIONS, index=def_a_idx, key=f"ee_attr_{loaded_exp_id}")
+                with c7:
+                    e_edit_vendor = st.text_input("Vendor Name", value=str(loaded_exp.get("vendor_name") or ""), key=f"ee_vendor_{loaded_exp_id}")
+
+                c8, c9, c10 = st.columns(3)
+                with c8:
+                    e_edit_staff = st.selectbox("Linked Staff", staff_opts, index=staff_opts.index(curr_staff), key=f"ee_staff_{loaded_exp_id}")
+                with c9:
+                    e_edit_po = st.selectbox("Linked PO", po_opts, index=default_po_idx, key=f"ee_po_{loaded_exp_id}")
+                with c10:
+                    curr_stat = loaded_exp.get("status", "Pending")
+                    def_s_idx = EXPENSE_STATUSES.index(curr_stat) if curr_stat in EXPENSE_STATUSES else 0
+                    e_edit_stat = st.selectbox("Status", EXPENSE_STATUSES, index=def_s_idx, key=f"ee_stat_{loaded_exp_id}")
+
+                e_edit_desc = st.text_input("Description", value=str(loaded_exp.get("description") or ""), key=f"ee_desc_{loaded_exp_id}")
+                e_edit_remarks = st.text_input("Remarks", value=str(loaded_exp.get("remarks") or ""), key=f"ee_rem_{loaded_exp_id}")
+
+                if st.button("💾 Update Expense", type="primary", use_container_width=True):
+                    if e_edit_amount <= 0:
+                        st.error("Amount must be greater than 0.")
                     else:
-                        s.execute(
-                            text("""
-                            INSERT INTO expenses (expense_date, description, amount, category, payment_mode, ref_no, paid_to, remarks)
-                            VALUES (:d, :desc, :amt, :cat, :m, :ref, :paid, :rem);
-                            """),
-                            {
-                                "d": exp_date, "desc": description, "amt": amount, "cat": category,
-                                "m": mode, "ref": ref_no, "paid": paid_to, "rem": exp_remarks
-                            },
+                        try:
+                            p_po_id = int(e_edit_po.split("#")[1].split(" ")[0]) if "PO #" in e_edit_po else None
+                            sel_staff = None if e_edit_staff == "None" else e_edit_staff
+
+                            with db_conn.session as s:
+                                s.execute(
+                                    text("""
+                                    UPDATE expenses
+                                    SET expense_date = :ed, expense_type = :et, category = :cat, sub_category = :subcat,
+                                        description = :desc, total_amount = :amt, attributed_to = :attr, vendor_name = :vendor,
+                                        staff_name = :staff, purchase_order_id = :poid, status = :stat, remarks = :rem,
+                                        updated_at = NOW()
+                                    WHERE id = :id;
+                                    """),
+                                    {
+                                        "ed": e_edit_date, "et": e_edit_type, "cat": e_edit_cat, "subcat": e_edit_subcat.strip(),
+                                        "desc": e_edit_desc.strip(), "amt": float(e_edit_amount), "attr": e_edit_attr, "vendor": e_edit_vendor.strip(),
+                                        "staff": sel_staff, "poid": p_po_id, "stat": e_edit_stat, "rem": e_edit_remarks.strip(), "id": loaded_exp_id
+                                    }
+                                )
+                                s.commit()
+                            show_success_modal(f"Expense #{loaded_exp_id} updated successfully!")
+                        except Exception as e:
+                            st.error(f"Could not update expense: {e}")
+
+    # ------------------------------------------------------------------
+    # SECTION 2: PAYMENTS (CASH OUTFLOWS)
+    # ------------------------------------------------------------------
+    elif exp_nav == "💳 Payments (Cash Outflows)":
+        p_sub_mode = st.radio("Action", ["Record New Payment", "View Payments", "Edit Past Payment"], horizontal=True, key="p_sub_mode_rad")
+        payments_df = load_db_payments_df()
+        expenses_summary_df = load_db_expenses_summary_df()
+
+        if p_sub_mode == "Record New Payment":
+            st.write("Record a disbursement / payment against an existing bill:")
+
+            if expenses_summary_df.empty:
+                st.info("No expenses found to make payment against.")
+            else:
+                unpaid_filter = st.checkbox("Show only expenses with pending balance", value=True, key="filter_unpaid_exp")
+                filtered_exp = expenses_summary_df[expenses_summary_df["balance_due"] > 0] if unpaid_filter else expenses_summary_df
+
+                if filtered_exp.empty:
+                    st.success("🎉 All logged expenses are fully settled!")
+                else:
+                    f_records = filtered_exp.to_dict("records")
+                    f_labels = [
+                        f"Expense #{r['id']} — {r['category']} — {r['description'] or r['vendor_name']} (Total: ₹{float(r['total_amount']):,.0f} | Due: ₹{float(r['balance_due']):,.0f})"
+                        for r in f_records
+                    ]
+                    selected_target_label = st.selectbox("Select Expense to Pay", f_labels, key="pay_target_select")
+                    target_exp = f_records[f_labels.index(selected_target_label)]
+                    target_exp_id = target_exp["id"]
+                    curr_due = float(target_exp["balance_due"])
+
+                    m1, m2, m3 = st.columns(3)
+                    m1.metric("Bill Total", f"₹{float(target_exp['total_amount']):,.2f}")
+                    m2.metric("Already Paid", f"₹{float(target_exp['total_paid']):,.2f}")
+                    m3.metric("Outstanding Balance", f"₹{curr_due:,.2f}")
+
+                    c1, c2, c3 = st.columns(3)
+                    with c1:
+                        new_p_date = st.date_input("Payment Date", value=date.today(), key="rec_p_date")
+                    with c2:
+                        new_p_amount = st.number_input("Amount to Pay (₹)", min_value=0.0, value=max(0.0, curr_due), step=10.0, key="rec_p_amt")
+                    with c3:
+                        new_p_mode = st.selectbox("Payment Mode", PAYMENT_MODES, index=0, key="rec_p_mode")
+
+                    c4, c5 = st.columns(2)
+                    with c4:
+                        new_p_ref = st.text_input("Transaction / UTR Ref No.", placeholder="e.g. UPI Ref, IMPS Txn ID", key="rec_p_ref")
+                    with c5:
+                        new_p_to = st.text_input("Paid To", value=str(target_exp.get("vendor_name") or ""), key="rec_p_to")
+
+                    new_p_notes = st.text_input("Payment Notes / Remarks", placeholder="e.g. Part payment tranche 1...", key="rec_p_notes")
+
+                    if st.button("💳 Disburse Payment", type="primary", use_container_width=True):
+                        if new_p_amount <= 0:
+                            st.error("Please enter a payment amount greater than 0.")
+                        else:
+                            try:
+                                with db_conn.session as s:
+                                    s.execute(
+                                        text("""
+                                        INSERT INTO expense_payments (
+                                            expense_id, payment_date, amount_paid, payment_mode, ref_no, paid_to, paid_by, notes
+                                        ) VALUES (
+                                            :eid, :pdate, :pamt, :pmode, :pref, :pto, :pby, :notes
+                                        );
+                                        """),
+                                        {
+                                            "eid": target_exp_id, "pdate": new_p_date, "pamt": float(new_p_amount), "pmode": new_p_mode,
+                                            "pref": new_p_ref.strip(), "pto": new_p_to.strip(), "pby": "Admin", "notes": new_p_notes.strip()
+                                        }
+                                    )
+                                    # Update parent expense status
+                                    new_total_paid = float(target_exp["total_paid"]) + float(new_p_amount)
+                                    new_status = "Paid" if new_total_paid >= float(target_exp["total_amount"]) else "Partially Paid"
+                                    s.execute(
+                                        text("UPDATE expenses SET status = :stat, updated_at = NOW() WHERE id = :id;"),
+                                        {"stat": new_status, "id": target_exp_id}
+                                    )
+                                    s.commit()
+                                show_success_modal(f"Payment of ₹{new_p_amount:,.2f} recorded successfully for Expense #{target_exp_id}!")
+                            except Exception as e:
+                                st.error(f"Could not record payment: {e}")
+
+        elif p_sub_mode == "View Payments":
+            if payments_df.empty:
+                st.info("No payment transactions found in database.")
+            else:
+                tot_disbursed = float(payments_df["amount_paid"].sum())
+                st.metric("Total Payments Disbursed", f"₹{tot_disbursed:,.2f}")
+
+                disp_pay = payments_df.copy()
+                disp_pay["payment_date"] = pd.to_datetime(disp_pay["payment_date"]).dt.strftime("%d %b %Y")
+                disp_pay["Expense Link"] = disp_pay.apply(lambda r: f"#{r['expense_id']} — {r['category']} (₹{float(r['expense_total']):,.0f})", axis=1)
+
+                p_cols = ["id", "payment_date", "Expense Link", "amount_paid", "payment_mode", "ref_no", "paid_to", "paid_by", "notes"]
+                p_renamed = {
+                    "id": "Payment ID", "payment_date": "Date", "amount_paid": "Amount (₹)",
+                    "payment_mode": "Mode", "ref_no": "Ref / UTR", "paid_to": "Paid To",
+                    "paid_by": "Paid By", "notes": "Notes"
+                }
+
+                st.dataframe(
+                    disp_pay[p_cols].rename(columns=p_renamed),
+                    hide_index=True,
+                    use_container_width=True,
+                    column_config={"Amount (₹)": st.column_config.NumberColumn(format="₹%.2f")}
+                )
+
+        elif p_sub_mode == "Edit Past Payment":
+            if payments_df.empty:
+                st.info("No payments recorded to edit.")
+            else:
+                pay_records = payments_df.to_dict("records")
+                pay_labels = [
+                    f"Payment #{r['id']} — {pd.to_datetime(r['payment_date']).strftime('%d %b %Y')} — For Expense #{r['expense_id']} ({r['category']}) (₹{float(r['amount_paid']):,.2f})"
+                    for r in pay_records
+                ]
+                sel_pay_label = st.selectbox("Select Payment to Edit", pay_labels, key="edit_pay_select")
+                loaded_pay = pay_records[pay_labels.index(sel_pay_label)]
+                loaded_pay_id = loaded_pay["id"]
+                linked_exp_id = loaded_pay["expense_id"]
+
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    ep_date = st.date_input("Payment Date", value=pd.to_datetime(loaded_pay["payment_date"]).date(), key=f"ep_dt_{loaded_pay_id}")
+                with c2:
+                    ep_amt = st.number_input("Amount Paid (₹)", min_value=0.0, value=float(loaded_pay["amount_paid"]), step=10.0, key=f"ep_amt_{loaded_pay_id}")
+                with c3:
+                    def_pm_idx = PAYMENT_MODES.index(loaded_pay["payment_mode"]) if loaded_pay["payment_mode"] in PAYMENT_MODES else 0
+                    ep_mode = st.selectbox("Payment Mode", PAYMENT_MODES, index=def_pm_idx, key=f"ep_mode_{loaded_pay_id}")
+
+                c4, c5 = st.columns(2)
+                with c4:
+                    ep_ref = st.text_input("Transaction / UTR Ref No.", value=str(loaded_pay.get("ref_no") or ""), key=f"ep_ref_{loaded_pay_id}")
+                with c5:
+                    ep_to = st.text_input("Paid To", value=str(loaded_pay.get("paid_to") or ""), key=f"ep_to_{loaded_pay_id}")
+
+                ep_notes = st.text_input("Payment Notes", value=str(loaded_pay.get("notes") or ""), key=f"ep_notes_{loaded_pay_id}")
+
+                if st.button("💾 Update Payment", type="primary", use_container_width=True):
+                    if ep_amt <= 0:
+                        st.error("Amount must be greater than 0.")
+                    else:
+                        try:
+                            with db_conn.session as s:
+                                s.execute(
+                                    text("""
+                                    UPDATE expense_payments
+                                    SET payment_date = :pdate, amount_paid = :pamt, payment_mode = :pmode,
+                                        ref_no = :pref, paid_to = :pto, notes = :notes
+                                    WHERE id = :id;
+                                    """),
+                                    {
+                                        "pdate": ep_date, "pamt": float(ep_amt), "pmode": ep_mode,
+                                        "pref": ep_ref.strip(), "pto": ep_to.strip(), "notes": ep_notes.strip(), "id": loaded_pay_id
+                                    }
+                                )
+                                s.commit()
+                            show_success_modal(f"Payment #{loaded_pay_id} updated successfully!")
+                        except Exception as e:
+                            st.error(f"Could not update payment: {e}")
+
+    # ------------------------------------------------------------------
+    # SECTION 3: SUMMARY & DATE RANGE REPORTS
+    # ------------------------------------------------------------------
+    elif exp_nav == "📊 Summary & Date Reports":
+        st.write("Analyze expense obligations, actual disbursements, and settlement ratios over any time window:")
+
+        expenses_summary_df = load_db_expenses_summary_df()
+        payments_df = load_db_payments_df()
+
+        if expenses_summary_df.empty and payments_df.empty:
+            st.info("No expense or payment records found in database.")
+        else:
+            all_dts = []
+            if not expenses_summary_df.empty:
+                all_dts += [pd.to_datetime(expenses_summary_df["expense_date"]).min().date(), pd.to_datetime(expenses_summary_df["expense_date"]).max().date()]
+            if not payments_df.empty:
+                all_dts += [pd.to_datetime(payments_df["payment_date"]).min().date(), pd.to_datetime(payments_df["payment_date"]).max().date()]
+            min_exp_d, max_exp_d = min(all_dts), max(all_dts)
+            default_start_d = max(min_exp_d, max_exp_d - timedelta(days=29))
+
+            rc1, rc2 = st.columns(2)
+            with rc1:
+                rpt_start = st.date_input("From Date", value=default_start_d, min_value=min_exp_d, max_value=max_exp_d, key="exp_rpt_start")
+            with rc2:
+                rpt_end = st.date_input("To Date", value=max_exp_d, min_value=min_exp_d, max_value=max_exp_d, key="exp_rpt_end")
+
+            if rpt_start > rpt_end:
+                st.error("'From' date must be before 'To' date.")
+                rpt_start, rpt_end = rpt_end, rpt_start
+
+            # Filter data
+            f_exp = expenses_summary_df[
+                (pd.to_datetime(expenses_summary_df["expense_date"]).dt.date >= rpt_start) & 
+                (pd.to_datetime(expenses_summary_df["expense_date"]).dt.date <= rpt_end)
+            ] if not expenses_summary_df.empty else pd.DataFrame()
+
+            f_pay = payments_df[
+                (pd.to_datetime(payments_df["payment_date"]).dt.date >= rpt_start) & 
+                (pd.to_datetime(payments_df["payment_date"]).dt.date <= rpt_end)
+            ] if not payments_df.empty else pd.DataFrame()
+
+            r_incurred = float(f_exp["total_amount"].sum()) if not f_exp.empty else 0.0
+            r_paid = float(f_pay["amount_paid"].sum()) if not f_pay.empty else 0.0
+            r_balance = float(f_exp["balance_due"].sum()) if not f_exp.empty else 0.0
+
+            m1, m2, m3 = st.columns(3)
+            m1.metric("Expenses Incurred (In Range)", f"₹{r_incurred:,.2f}")
+            m2.metric("Actual Cash Paid Out", f"₹{r_paid:,.2f}")
+            m3.metric("Outstanding Unpaid Dues", f"₹{r_balance:,.2f}")
+
+            st.markdown("---")
+            ch_col1, ch_col2 = st.columns(2)
+
+            with ch_col1:
+                st.markdown("#### Expenses by Category")
+                if not f_exp.empty:
+                    cat_grp = f_exp.groupby("category")["total_amount"].sum().reset_index()
+                    cat_chart = (
+                        alt.Chart(cat_grp)
+                        .mark_bar(color="#70440E")
+                        .encode(
+                            x=alt.X("category:N", title="", sort="-y", axis=alt.Axis(labelAngle=-30)),
+                            y=alt.Y("total_amount:Q", title="Incurred (₹)"),
+                            tooltip=[alt.Tooltip("category", title="Category"), alt.Tooltip("total_amount:Q", title="Amount", format=",.2f")]
                         )
-                    s.commit()
-                show_success_modal(f"Expense of ₹{amount:,.0f} saved under {category}!")
-            except Exception as e:
-                st.error(f"Could not save expense to database: {e}")
+                        .properties(height=260)
+                    )
+                    st.altair_chart(cat_chart, use_container_width=True)
+                else:
+                    st.caption("No expenses in this range.")
+
+            with ch_col2:
+                st.markdown("#### Expenses by Cart / Attribution")
+                if not f_exp.empty:
+                    attr_grp = f_exp.groupby("attributed_to")["total_amount"].sum().reset_index()
+                    attr_chart = (
+                        alt.Chart(attr_grp)
+                        .mark_bar(color="#E8542A")
+                        .encode(
+                            x=alt.X("attributed_to:N", title="", sort="-y", axis=alt.Axis(labelAngle=-20)),
+                            y=alt.Y("total_amount:Q", title="Total (₹)"),
+                            tooltip=[alt.Tooltip("attributed_to", title="Entity"), alt.Tooltip("total_amount:Q", title="Amount", format=",.2f")]
+                        )
+                        .properties(height=260)
+                    )
+                    st.altair_chart(attr_chart, use_container_width=True)
+                else:
+                    st.caption("No expenses in this range.")
+
+            st.markdown("#### Payments Disbursed by Mode")
+            if not f_pay.empty:
+                mode_grp = f_pay.groupby("payment_mode")["amount_paid"].sum().reset_index()
+                st.dataframe(
+                    mode_grp.rename(columns={"payment_mode": "Payment Mode", "amount_paid": "Amount Paid (₹)"}),
+                    hide_index=True,
+                    use_container_width=True,
+                    column_config={"Amount Paid (₹)": st.column_config.NumberColumn(format="₹%.2f")}
+                )
+            else:
+                st.caption("No payments in this range.")
 
 # ======================================================================
 # PAGE 7: DASHBOARD (100% Supabase PostgreSQL Powered)
@@ -2129,7 +2620,6 @@ elif page == "Dashboard" and user_role == "admin":
         freezer_df = pd.DataFrame()
         st.warning(f"Could not load data from database ({e}).")
 
-    # Calculate live freezer stock valuation (already accounts for removed items)
     if not freezer_df.empty:
         freezer_df["cost_price"] = freezer_df["code"].map(lambda c: FLAVOR_MAP.get(c, {}).get("cost_price", 0.0))
         freezer_df["Stock_Value"] = freezer_df["Units in freezer"] * freezer_df["cost_price"]
@@ -2139,7 +2629,6 @@ elif page == "Dashboard" and user_role == "admin":
         total_freezer_val = 0.0
         total_freezer_units = 0
 
-    # Total COGS all-time so far from expenses
     total_cogs_all_time = float(exp_df[exp_df["Category"] == "Cost of Goods"]["Amount"].sum()) if not exp_df.empty else 0.0
 
     today = pd.Timestamp(date.today())
@@ -2308,7 +2797,7 @@ elif page == "Dashboard" and user_role == "admin":
         st.markdown('<div id="profit-loss-summary"></div>', unsafe_allow_html=True)
         st.markdown("### Profit & loss summary")
         cogs = cogs_in_range
-        opex_cats = ["Labour Charges", "Leakage Expense", "Miscellaneous Expense"]
+        opex_cats = ["Labour Charges", "Leakage Expense", "Logistics & Transport", "Rent & Utilities", "Maintenance & Repairs", "Permits & Compliance", "Miscellaneous Expense"]
         opex = range_exp[range_exp["Category"].isin(opex_cats)]["Amount"].sum() if not range_exp.empty else 0.0
         capital_cats = ["Initial Investment", "Initial Set-up Expense"]
         capital = range_exp[range_exp["Category"].isin(capital_cats)]["Amount"].sum() if not range_exp.empty else 0.0
@@ -2317,7 +2806,7 @@ elif page == "Dashboard" and user_role == "admin":
 
         pnl_df = pd.DataFrame(
             {
-                "Line item": ["Revenue", "Cost of Goods", "Gross profit", "Operating expenses (labour, leakage, misc.)", "Net profit"],
+                "Line item": ["Revenue", "Cost of Goods", "Gross profit", "Operating expenses (labour, logistics, rent, misc.)", "Net profit"],
                 "Amount (₹)": [total_rev, -cogs, gross_profit, -opex, net_profit],
             }
         )
