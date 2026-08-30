@@ -14,6 +14,7 @@ Kulfi Ops - multi-user data entry app for the kulfi cart business.
     * Retained Top Quick-View (Last 3 Days & 14-Day Revenue Bar Chart).
     * Reorganized Reports with RCM & Financials upfront, grouped Cart-wise and Day-wise analysis.
     * COGS exactly matching sold goods in the period (Units Sold x Cost Price).
+    * True Accrual Net Profit Margin accounting for Paid + Incurred-yet-to-be-paid Staff Labour.
     * CAPEX, OPEX, and COGS financial distribution graphs.
     * Default report date range set to the 1st of the current month to today.
 - Freezer Stock, Freezer Analysis, Dashboard, and Expenses powered 100% by Supabase PostgreSQL.
@@ -502,7 +503,6 @@ def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map,
             )
             daily_id = res.scalar()
             
-            # 1. Update items
             s.execute(text("DELETE FROM daily_cart_items WHERE daily_entry_id = :id;"), {"id": daily_id})
             for code in FLAVOR_CODES:
                 s.execute(
@@ -517,7 +517,6 @@ def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map,
                     }
                 )
 
-            # 2. Sync auto-created Labour Charges expenses & payments for staff advance & food/tea
             s.execute(text("DELETE FROM expenses WHERE remarks LIKE :tag;"), {"tag": f"[Auto: Daily Entry #{daily_id}]%"})
 
             if float(staff_advance) > 0 and staff_name:
@@ -700,6 +699,7 @@ def load_db_expenses_list():
         expense_type AS "Expense_Type",
         attributed_to AS "Attributed_To",
         vendor_name AS "Vendor",
+        staff_name AS "Staff_Name",
         status AS "Status",
         remarks AS "Remarks"
     FROM expenses
@@ -838,7 +838,7 @@ def load_db_payments_df():
 
 
 # ----------------------------------------------------------------------
-# STAFF, ATTENDANCE & COMPENSATION LOADERS
+# STAFF, ATTENDANCE & ACCRUAL LABOUR CALCULATIONS
 # ----------------------------------------------------------------------
 def load_full_staff_df():
     if db_conn is None:
@@ -906,6 +906,107 @@ def load_staff_attendance_df(start_date=None, end_date=None):
         return db_conn.query(query, params=params, ttl="0s")
     except Exception:
         return pd.DataFrame()
+
+
+def calculate_incurred_labour_for_range(start_date, end_date):
+    """
+    Computes true accrued labour costs for all staff active in [start_date, end_date]:
+    - Fixed salary apportioned at Rs 600/day worked + paid leaves
+    - Daily sales commissions (15% on sales > threshold)
+    - Entitled food/tea daily allowances (Rs 210 Mon-Sat, Rs 250 Sunday)
+    - Total paid vs. Accrued yet to be paid
+    """
+    if db_conn is None:
+        return 0.0, 0.0, 0.0, {}
+
+    staff_df = load_full_staff_df()
+    if staff_df.empty:
+        return 0.0, 0.0, 0.0, {}
+
+    query_entries = """
+    SELECT entry_date, cart_name, staff_name, total_collection, staff_advance, food_tea_cash
+    FROM daily_cart_entries
+    WHERE entry_date >= :sdate AND entry_date <= :edate AND staff_name IS NOT NULL AND staff_name != '' AND staff_name != 'Select Staff';
+    """
+    entries_df = db_conn.query(query_entries, params={"sdate": start_date, "edate": end_date}, ttl="0s")
+
+    query_att = """
+    SELECT a.staff_id, s.name AS staff_name, a.attendance_date, a.status, a.leave_type
+    FROM staff_attendance a
+    JOIN staff s ON a.staff_id = s.id
+    WHERE a.attendance_date >= :sdate AND a.attendance_date <= :edate;
+    """
+    att_df = db_conn.query(query_att, params={"sdate": start_date, "edate": end_date}, ttl="0s")
+
+    query_pay = """
+    SELECT p.amount_paid, e.staff_name
+    FROM expense_payments p
+    JOIN expenses e ON p.expense_id = e.id
+    WHERE e.category = 'Labour Charges'
+      AND p.payment_date >= :sdate
+      AND p.payment_date <= :edate;
+    """
+    pay_df = db_conn.query(query_pay, params={"sdate": start_date, "edate": end_date}, ttl="0s")
+
+    total_labour_incurred = 0.0
+    total_labour_paid = 0.0
+    breakdown_by_staff = {}
+    daily_rate = 600.0
+
+    for _, s_row in staff_df.iterrows():
+        st_name = str(s_row["name"]).strip()
+        comm_thresh = float(_num(s_row.get("commission_threshold_daily")) or 3000.0)
+        comm_pct = float(_num(s_row.get("commission_percentage")) or 15.0)
+        allow_wd = float(_num(s_row.get("allowance_weekday")) or 210.0)
+        allow_sun = float(_num(s_row.get("allowance_sunday")) or 250.0)
+
+        st_shifts = entries_df[entries_df["staff_name"] == st_name] if not entries_df.empty else pd.DataFrame()
+        st_leaves = att_df[att_df["staff_name"] == st_name] if not att_df.empty else pd.DataFrame()
+        st_pay = pay_df[pay_df["staff_name"] == st_name] if not pay_df.empty else pd.DataFrame()
+
+        shift_sal = 0.0
+        shift_comm = 0.0
+        shift_allow = 0.0
+        days_worked = 0
+
+        if not st_shifts.empty:
+            for _, sh in st_shifts.iterrows():
+                days_worked += 1
+                s_dt = pd.to_datetime(sh["entry_date"]).date()
+                is_sun = (s_dt.weekday() == 6)
+                day_allow = allow_sun if is_sun else allow_wd
+                s_col = float(_num(sh["total_collection"]))
+                day_comm = max(0.0, s_col - comm_thresh) * (comm_pct / 100.0)
+
+                shift_sal += daily_rate
+                shift_comm += day_comm
+                shift_allow += day_allow
+
+        paid_leaves_cnt = 0
+        if not st_leaves.empty:
+            paid_leaves_cnt = len(st_leaves[st_leaves["leave_type"] == "Paid"])
+            shift_sal += (paid_leaves_cnt * daily_rate)
+
+        staff_incurred = shift_sal + shift_comm + shift_allow
+        staff_paid = float(st_pay["amount_paid"].sum()) if not st_pay.empty else 0.0
+        staff_due = staff_incurred - staff_paid
+
+        total_labour_incurred += staff_incurred
+        total_labour_paid += staff_paid
+
+        breakdown_by_staff[st_name] = {
+            "days_worked": days_worked,
+            "paid_leaves": paid_leaves_cnt,
+            "salary": shift_sal,
+            "commissions": shift_comm,
+            "allowances": shift_allow,
+            "incurred": staff_incurred,
+            "paid": staff_paid,
+            "due": staff_due
+        }
+
+    total_labour_due = total_labour_incurred - total_labour_paid
+    return total_labour_incurred, total_labour_paid, total_labour_due, breakdown_by_staff
 
 
 # ----------------------------------------------------------------------
@@ -1450,7 +1551,6 @@ elif page == "Freezer Stock" and user_role == "admin":
 
         sk = f"_{loaded_id}" if loaded_id else "_new"
 
-        # Extract discount from notes if editing, else default to 2.0%
         existing_rec_notes = str(stock_loaded.get("notes") or "") if stock_loaded else ""
         default_rec_disc = 2.0
         clean_rec_notes = existing_rec_notes
@@ -3596,8 +3696,6 @@ elif page == "Dashboard" and user_role == "admin":
         total_freezer_val = 0.0
         total_freezer_units = 0
 
-    total_cogs_all_time = float(exp_df[exp_df["Category"] == "Cost of Goods"]["Amount"].sum()) if not exp_df.empty else 0.0
-
     today = pd.Timestamp(date.today())
     day_labels = [today - pd.Timedelta(days=3), today - pd.Timedelta(days=2), today - pd.Timedelta(days=1)]
     if not daily_df.empty:
@@ -3644,7 +3742,7 @@ elif page == "Dashboard" and user_role == "admin":
         st.info("No sales logged in database yet.")
 
     # ------------------------------------------------------------------
-    # REPORTS SECTION (Reorganized with RCM upfront, Cart & Day groups)
+    # REPORTS SECTION (RCM Upfront, Exact COGS, Accrued Labour & Net Margin)
     # ------------------------------------------------------------------
     if not daily_df.empty or not exp_df.empty:
         st.markdown("---")
@@ -3703,12 +3801,20 @@ elif page == "Dashboard" and user_role == "admin":
         total_rev = range_df["Total_Collection"].sum() if not range_df.empty else 0.0
         total_units = int(round(range_df["Sold_Total"].sum())) if not range_df.empty else 0
 
-        # OPEX & CAPEX from expenses
-        opex_total = float(range_exp[range_exp["Expense_Type"] == "OPEX"]["Amount"].sum()) if not range_exp.empty and "Expense_Type" in range_exp.columns else 0.0
-        if opex_total == 0.0 and not range_exp.empty:
-            opex_cats = ["Labour Charges", "Leakage Expense", "Logistics & Transport", "Rent & Utilities", "Maintenance & Repairs", "Permits & Compliance", "Miscellaneous Expense"]
-            opex_total = float(range_exp[range_exp["Category"].isin(opex_cats)]["Amount"].sum())
+        # 2. Accrual Staff Labour: Calculate Full Incurred Labour Charges (Paid + Accrued yet to be paid)
+        tot_labour_incurred, tot_labour_paid, tot_labour_due, _ = calculate_incurred_labour_for_range(range_start, range_end)
 
+        # 3. Non-Labour Operating Expenses from expenses table
+        non_labour_opex_df = range_exp[
+            (range_exp["Category"] != "Labour Charges") & 
+            ((range_exp.get("Expense_Type") == "OPEX") | (range_exp["Category"].isin(["Leakage Expense", "Logistics & Transport", "Rent & Utilities", "Maintenance & Repairs", "Permits & Compliance", "Miscellaneous Expense"])))
+        ] if not range_exp.empty else pd.DataFrame()
+        other_opex_total = float(non_labour_opex_df["Amount"].sum()) if not non_labour_opex_df.empty else 0.0
+
+        # Total OPEX Incurred = Accrued Labour + Non-Labour OPEX
+        total_incurred_opex = tot_labour_incurred + other_opex_total
+
+        # CAPEX from expenses
         capex_total = float(range_exp[range_exp["Expense_Type"] == "CAPEX"]["Amount"].sum()) if not range_exp.empty and "Expense_Type" in range_exp.columns else 0.0
         if capex_total == 0.0 and not range_exp.empty:
             capex_cats = ["Initial Investment", "Initial Set-up Expense"]
@@ -3716,24 +3822,23 @@ elif page == "Dashboard" and user_role == "admin":
 
         gross_profit = total_rev - exact_cogs_sold
         gross_margin = (gross_profit / total_rev * 100) if total_rev > 0 else 0.0
-        net_profit = gross_profit - opex_total
+        net_profit = gross_profit - total_incurred_opex
         net_margin = (net_profit / total_rev * 100) if total_rev > 0 else 0.0
 
         # ==============================================================
-        # GROUP 1: REVENUE CYCLE MANAGEMENT & FINANCIAL SUMMARY (UPFRONT)
+        # GROUP 1: REVENUE CYCLE MANAGEMENT & FINANCIAL PERFORMANCE (UPFRONT)
         # ==============================================================
         st.markdown("### 1. Revenue Cycle Management & Financial Performance")
 
         mc1, mc2, mc3, mc4, mc5, mc6 = st.columns(6)
         mc1.metric("Revenue in Range", f"₹{total_rev:,.0f}")
         mc2.metric("Units Sold", f"{total_units}")
-        mc3.metric("COGS (Exact Goods Sold)", f"₹{exact_cogs_sold:,.0f}")
+        mc3.metric("COGS (Exact Sold)", f"₹{exact_cogs_sold:,.0f}")
         mc4.metric("Gross Profit", f"₹{gross_profit:,.0f}", f"{gross_margin:.1f}% Margin")
-        mc5.metric("OPEX Incurred", f"₹{opex_total:,.0f}")
-        mc6.metric("Net Profit", f"₹{net_profit:,.0f}", f"{net_margin:.1f}% Net")
+        mc5.metric("Total OPEX (Incurred)", f"₹{total_incurred_opex:,.0f}", f"Labour: ₹{tot_labour_incurred:,.0f}")
+        mc6.metric("Net Profit", f"₹{net_profit:,.0f}", f"{net_margin:.1f}% Net Margin")
 
-        # P&L and Cost Distribution Graphs
-        pl_c1, pl_c2 = st.columns([1, 1.2])
+        pl_c1, pl_c2 = st.columns([1.1, 1.2])
 
         with pl_c1:
             st.markdown("#### Profit & Loss Statement (P&L)")
@@ -3743,10 +3848,20 @@ elif page == "Dashboard" and user_role == "admin":
                         "1. Gross Revenue",
                         "2. COGS (Exact Goods Sold)",
                         "3. Gross Profit (1 - 2)",
-                        "4. Operating Expenses (OPEX)",
-                        "5. Net Operating Profit (3 - 4)"
+                        "4. Staff Labour Charges (Incurred: Paid + Due)",
+                        "5. Other Operating Expenses (Rent, Logistics, etc.)",
+                        "6. Total Incurred OPEX (4 + 5)",
+                        "7. Net Operating Profit (3 - 6)"
                     ],
-                    "Amount (₹)": [total_rev, -exact_cogs_sold, gross_profit, -opex_total, net_profit],
+                    "Amount (₹)": [
+                        total_rev, 
+                        -exact_cogs_sold, 
+                        gross_profit, 
+                        -tot_labour_incurred, 
+                        -other_opex_total, 
+                        -total_incurred_opex, 
+                        net_profit
+                    ],
                 }
             )
             st.dataframe(
@@ -3755,12 +3870,13 @@ elif page == "Dashboard" and user_role == "admin":
                 use_container_width=True,
                 column_config={"Amount (₹)": st.column_config.NumberColumn(format="₹%.2f")}
             )
+            st.caption(f"ℹ️ **Labour breakdown:** ₹{tot_labour_paid:,.0f} disbursed / paid + ₹{tot_labour_due:,.0f} accrued / yet to be paid.")
 
         with pl_c2:
             st.markdown("#### Cost Distribution: COGS, OPEX & CAPEX")
             cost_dist_df = pd.DataFrame({
                 "Cost Bucket": ["COGS (Goods Sold)", "Operating Expenses (OPEX)", "Capital Expenditure (CAPEX)"],
-                "Amount (₹)": [exact_cogs_sold, opex_total, capex_total]
+                "Amount (₹)": [exact_cogs_sold, total_incurred_opex, capex_total]
             })
             cost_chart = (
                 alt.Chart(cost_dist_df)
@@ -3778,7 +3894,6 @@ elif page == "Dashboard" and user_role == "admin":
             )
             st.altair_chart(cost_chart, use_container_width=True)
 
-        # Cash & Collections Breakdown and Flavour Matrix
         rcm_sub1, rcm_sub2 = st.columns([1, 1.2])
 
         with rcm_sub1:
@@ -3823,6 +3938,27 @@ elif page == "Dashboard" and user_role == "admin":
                 st.bar_chart(flavor_range_df.set_index("Flavour")["Units sold"])
             else:
                 st.caption("No flavor sales recorded in this date range.")
+
+        # Incurred Expense Breakdown by Category
+        st.markdown("#### Incurred Operating Expense Breakdown by Category")
+        exp_cat_list = []
+        if tot_labour_incurred > 0:
+            exp_cat_list.append({"Category": "Labour Charges (Incurred)", "Amount (₹)": tot_labour_incurred})
+        if not non_labour_opex_df.empty:
+            for cat, amt in non_labour_opex_df.groupby("Category")["Amount"].sum().items():
+                exp_cat_list.append({"Category": cat, "Amount (₹)": float(amt)})
+
+        if exp_cat_list:
+            exp_cat_df = pd.DataFrame(exp_cat_list).sort_values(by="Amount (₹)", ascending=False)
+            st.dataframe(
+                exp_cat_df,
+                hide_index=True,
+                use_container_width=True,
+                column_config={"Amount (₹)": st.column_config.NumberColumn(format="₹%.2f")}
+            )
+            st.bar_chart(exp_cat_df.set_index("Category")["Amount (₹)"])
+        else:
+            st.caption("No operating expenses incurred in this date range.")
 
         # ==============================================================
         # GROUP 2: CART-WISE PERFORMANCE & ANALYSIS
