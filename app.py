@@ -8,8 +8,8 @@ Kulfi Ops - multi-user data entry app for the kulfi cart business.
 - Stock Removed (Wastage / Return / Tasting log) integrated into Available Freezer Stock calculations.
 - Freezer Analysis variance computed against calculated stock as of the physical audit date.
 - Remodeled Expenses & Payments (Bills vs. Cash Outflows with tranches & P&L summaries).
-- Automatic creation of Labour Charges expenses & cash payments on Daily Entry advance/food cash.
-- Staff & Payroll Module (KYC profile, leaves, compensation plans, and payments-backed settlement).
+- Automatic creation of Labour Charges expenses & cash payments on Daily Entry advance/food cash[cite: 4].
+- Staff & Payroll Module (KYC profile, leaves, compensation plans, and payments-backed settlement)[cite: 4].
 - Remodeled Daily Entry Screen:
     * 3-Cart Home Screen buttons for quick cart selection (Admin & Data Entry).
     * Side-by-side 2-column layout (Left: Sales & Closing / Right: Today's Restock & Opening).
@@ -239,13 +239,13 @@ hr { border-color: #E3CBA0 !important; margin: 0.35rem 0 !important; }
 # ----------------------------------------------------------------------
 # CONFIG & CANONICAL MAPPINGS
 # ----------------------------------------------------------------------
-CARTS = ["HOSUR CART 01", "HOSUR CART 02", "HOSUR CART 03"]
-CITY = "HOSUR"
+CARTS = ["HOSUR CART 01", "HOSUR CART 02", "HOSUR CART 03"][cite: 3]
+CITY = "HOSUR"[cite: 3]
 
-PAYMENT_STATUSES = ["Pending", "Partial", "Complete"]
-PO_STATUSES = ["Placed", "Pending", "In Transit", "Completed", "Cancelled"]
+PAYMENT_STATUSES = ["Pending", "Partial", "Complete"][cite: 3]
+PO_STATUSES = ["Placed", "Pending", "In Transit", "Completed", "Cancelled"][cite: 3]
 
-EXPENSE_TYPES = ["OPEX", "COGS", "CAPEX"]
+EXPENSE_TYPES = ["OPEX", "COGS", "CAPEX"][cite: 3]
 EXPENSE_CATEGORIES = [
     "Cost of Goods",
     "Labour Charges",
@@ -257,17 +257,17 @@ EXPENSE_CATEGORIES = [
     "Initial Set-up Expense",
     "Initial Investment",
     "Miscellaneous Expense",
-]
-ATTRIBUTED_OPTIONS = ["Central / Freezer"] + CARTS
-EXPENSE_STATUSES = ["Pending", "Partially Paid", "Paid", "Cancelled"]
-PAYMENT_MODES = ["UPI / Bank Transfer", "Cash"]
-STAFF_STATUSES = ["active", "inactive", "on_leave"]
-LEAVE_STATUS_OPTIONS = ["Leave", "Sick Leave", "Casual Leave", "Absent"]
-LEAVE_TYPE_OPTIONS = ["Unpaid", "Paid"]
+][cite: 3]
+ATTRIBUTED_OPTIONS = ["Central / Freezer"] + CARTS[cite: 3]
+EXPENSE_STATUSES = ["Pending", "Partially Paid", "Paid", "Cancelled"][cite: 3]
+PAYMENT_MODES = ["UPI / Bank Transfer", "Cash"][cite: 3]
+STAFF_STATUSES = ["active", "inactive", "on_leave"][cite: 3]
+LEAVE_STATUS_OPTIONS = ["Leave", "Sick Leave", "Casual Leave", "Absent"][cite: 3]
+LEAVE_TYPE_OPTIONS = ["Unpaid", "Paid"][cite: 3]
 
-DAILY_HEADER_ROWS = 2
-DAILY_TOTAL_COLS = 47
-SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+DAILY_HEADER_ROWS = 2[cite: 3]
+DAILY_TOTAL_COLS = 47[cite: 3]
+SCOPES = ["https://www.googleapis.com/auth/spreadsheets"][cite: 3]
 
 DEFAULT_FLAVORS = [
     ("ML", "Malai", 40.0, 22.0, "ml_units"),
@@ -279,40 +279,40 @@ DEFAULT_FLAVORS = [
     ("SG", "Shahi Gulab", 50.0, 27.5, "sg_units"),
     ("CH", "Chocolate", 50.0, 27.5, "ch_units"),
     ("RA", "Roasted Almond", 60.0, 33.0, "ra_units"),
-]
-FLAVOR_CODES = [f[0] for f in DEFAULT_FLAVORS]
-N_FLAVORS = len(FLAVOR_CODES)
+][cite: 3]
+FLAVOR_CODES = [f[0] for f in DEFAULT_FLAVORS][cite: 3]
+N_FLAVORS = len(FLAVOR_CODES)[cite: 3]
 
 
 def _num(x):
     if x is None or pd.isna(x):
         return 0.0
     if isinstance(x, (int, float)):
-        return float(x)
-    s = str(x).strip().replace(",", "").replace("₹", "").replace("Rs.", "").replace("Rs", "")
-    neg = s.startswith("(") and s.endswith(")")
+        return float(x)[cite: 3]
+    s = str(x).strip().replace(",", "").replace("₹", "").replace("Rs.", "").replace("Rs", "")[cite: 3]
+    neg = s.startswith("(") and s.endswith(")")[cite: 3]
     if neg:
-        s = s[1:-1]
+        s = s[1:-1][cite: 3]
     try:
-        return -float(s) if neg else float(s)
+        return -float(s) if neg else float(s)[cite: 3]
     except ValueError:
-        return 0.0
+        return 0.0[cite: 3]
 
 
 def _int_num(x):
-    return int(round(_num(x)))
+    return int(round(_num(x)))[cite: 3]
 
 
 def _pad(row, n):
-    return row + [""] * (n - len(row)) if len(row) < n else row
+    return row + [""] * (n - len(row)) if len(row) < n else row[cite: 3]
 
 
 def _col_letter(n):
-    letters = ""
+    letters = ""[cite: 3]
     while n > 0:
-        n, rem = divmod(n - 1, 26)
-        letters = chr(65 + rem) + letters
-    return letters
+        n, rem = divmod(n - 1, 26)[cite: 3]
+        letters = chr(65 + rem) + letters[cite: 3]
+    return letters[cite: 3]
 
 
 # ----------------------------------------------------------------------
@@ -322,23 +322,23 @@ def _col_letter(n):
 def get_client():
     creds = Credentials.from_service_account_info(
         st.secrets["gcp_service_account"], scopes=SCOPES
-    )
-    return gspread.authorize(creds)
+    )[cite: 3]
+    return gspread.authorize(creds)[cite: 3]
 
 
 @st.cache_resource
 def get_workbook():
-    return get_client().open_by_key(st.secrets["sheet_id"])
+    return get_client().open_by_key(st.secrets["sheet_id"])[cite: 3]
 
 
 def get_ws(tab_name):
-    return get_workbook().worksheet(tab_name)
+    return get_workbook().worksheet(tab_name)[cite: 3]
 
 
 def _update_sheet_row(tab_name, row_number, values):
-    ws = get_ws(tab_name)
-    end_col = _col_letter(len(values))
-    ws.update(range_name=f"A{row_number}:{end_col}{row_number}", values=[values], value_input_option="USER_ENTERED")
+    ws = get_ws(tab_name)[cite: 3]
+    end_col = _col_letter(len(values))[cite: 3]
+    ws.update(range_name=f"A{row_number}:{end_col}{row_number}", values=[values], value_input_option="USER_ENTERED")[cite: 3]
 
 
 try:
@@ -347,11 +347,11 @@ except Exception:
     db_conn = None
 
 
-@st.dialog("Notification")
+@st.dialog("Notification")[cite: 3]
 def show_success_modal(message):
-    st.success(message)
-    if st.button("OK", type="primary", use_container_width=True):
-        st.rerun()
+    st.success(message)[cite: 3]
+    if st.button("OK", type="primary", use_container_width=True):[cite: 3]
+        st.rerun()[cite: 3]
 
 
 # ----------------------------------------------------------------------
@@ -361,7 +361,7 @@ def get_flavor_meta_by_code():
     meta = {
         code: {"name": name, "mrp": float(mrp), "cost_price": float(cost), "audit_col": acol}
         for code, name, mrp, cost, acol in DEFAULT_FLAVORS
-    }
+    }[cite: 3]
     if db_conn is not None:
         try:
             df = db_conn.query("SELECT code, name, mrp, cost_price FROM flavors;", ttl="1m")
@@ -373,10 +373,10 @@ def get_flavor_meta_by_code():
                     meta[code]["cost_price"] = float(r["cost_price"])
         except Exception:
             pass
-    return meta
+    return meta[cite: 3]
 
 
-FLAVOR_MAP = get_flavor_meta_by_code()
+FLAVOR_MAP = get_flavor_meta_by_code()[cite: 3]
 
 
 def load_active_staff_list():
@@ -387,7 +387,7 @@ def load_active_staff_list():
                 return ["Select Staff"] + df["name"].tolist()
         except Exception:
             pass
-    return ["Select Staff"]
+    return ["Select Staff"][cite: 3]
 
 
 # ----------------------------------------------------------------------
@@ -424,7 +424,7 @@ def get_latest_cart_closing_state(cart_name, before_date):
 
 
 def list_daily_entries_with_prefill():
-    entries = []
+    entries = [][cite: 3]
     if db_conn is not None:
         query = """
         SELECT 
@@ -480,23 +480,23 @@ def list_daily_entries_with_prefill():
                     "is_prefill": False
                 })
 
-    yesterday = date.today() - timedelta(days=1)
+    yesterday = date.today() - timedelta(days=1)[cite: 3]
     existing_yesterday_carts = {
         e["cart"] for e in entries if e["date"].date() == yesterday
-    }
+    }[cite: 3]
 
-    for cart in CARTS:
-        if cart not in existing_yesterday_carts:
-            prev_closings, prev_staff = get_latest_cart_closing_state(cart, yesterday)
-            by_code = {}
-            for code in FLAVOR_CODES:
-                prev_close = prev_closings.get(code, 0)
+    for cart in CARTS:[cite: 3]
+        if cart not in existing_yesterday_carts:[cite: 3]
+            prev_closings, prev_staff = get_latest_cart_closing_state(cart, yesterday)[cite: 3]
+            by_code = {}[cite: 3]
+            for code in FLAVOR_CODES:[cite: 3]
+                prev_close = prev_closings.get(code, 0)[cite: 3]
                 by_code[code] = {
                     "opening": prev_close,
                     "added": 0,
                     "closing": prev_close,
                     "sold": 0,
-                }
+                }[cite: 3]
 
             entries.append({
                 "db_id": f"prefill_{cart}_{yesterday.strftime('%Y%m%d')}",
@@ -511,10 +511,10 @@ def list_daily_entries_with_prefill():
                 "staff_advance": 0.0,
                 "food_tea_cash": 0.0,
                 "is_prefill": True
-            })
+            })[cite: 3]
 
-    entries.sort(key=lambda x: (x["date"], x["cart"]), reverse=True)
-    return entries
+    entries.sort(key=lambda x: (x["date"], x["cart"]), reverse=True)[cite: 3]
+    return entries[cite: 3]
 
 
 def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map, sold_map, total, phonepe, cash, remarks, staff_name="", staff_advance=0.0, food_tea_cash=0.0):
@@ -637,16 +637,16 @@ def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map,
             s.commit()
 
     try:
-        ws = get_ws("Daily Data As Shared")
-        all_vals = ws.get_all_values()
-        target_row = None
-        date_str = entry_date.strftime("%Y-%m-%d")
-        for idx, r in enumerate(all_vals[DAILY_HEADER_ROWS:]):
-            if len(r) >= 2 and r[0].strip() == date_str and r[1].strip() == cart_name:
-                target_row = DAILY_HEADER_ROWS + idx + 1
-                break
+        ws = get_ws("Daily Data As Shared")[cite: 3]
+        all_vals = ws.get_all_values()[cite: 3]
+        target_row = None[cite: 3]
+        date_str = entry_date.strftime("%Y-%m-%d")[cite: 3]
+        for idx, r in enumerate(all_vals[DAILY_HEADER_ROWS:]):[cite: 3]
+            if len(r) >= 2 and r[0].strip() == date_str and r[1].strip() == cart_name:[cite: 3]
+                target_row = DAILY_HEADER_ROWS + idx + 1[cite: 3]
+                break[cite: 3]
 
-        date_cart_id = f"{date_str}||{cart_name}"
+        date_cart_id = f"{date_str}||{cart_name}"[cite: 3]
         sheet_row = (
             [date_str, cart_name, CITY, date_cart_id]
             + [int(opening_map[code]) for code in FLAVOR_CODES]
@@ -654,13 +654,13 @@ def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map,
             + [int(sold_map[code]) for code in FLAVOR_CODES]
             + [int(closing_map[code]) for code in FLAVOR_CODES]
             + [float(total), float(phonepe), float(cash), str(remarks), str(staff_name), float(staff_advance), float(food_tea_cash)]
-        )
-        if target_row:
-            _update_sheet_row("Daily Data As Shared", target_row, sheet_row)
+        )[cite: 3]
+        if target_row:[cite: 3]
+            _update_sheet_row("Daily Data As Shared", target_row, sheet_row)[cite: 3]
         else:
-            ws.append_row(sheet_row, value_input_option="USER_ENTERED")
+            ws.append_row(sheet_row, value_input_option="USER_ENTERED")[cite: 3]
     except Exception as e:
-        st.warning(f"Saved to database, but Google Sheets sync encountered an issue: {e}")
+        st.warning(f"Saved to database, but Google Sheets sync encountered an issue: {e}")[cite: 3]
 
 
 def sync_today_restock_entry(today_date, cart_name, staff_name, today_opening_map, today_added_map):
@@ -757,7 +757,7 @@ def sync_today_restock_entry(today_date, cart_name, staff_name, today_opening_ma
 
 def load_db_daily_df():
     if db_conn is None:
-        return pd.DataFrame()
+        return pd.DataFrame()[cite: 3]
     query = """
     SELECT 
         e.entry_date AS "Date",
@@ -784,7 +784,7 @@ def load_db_daily_df():
 
 def load_db_flavor_sales(start_date=None, end_date=None):
     if db_conn is None:
-        return pd.DataFrame()
+        return pd.DataFrame()[cite: 3]
     where_clauses = []
     params = {}
     if start_date:
@@ -815,7 +815,7 @@ def load_db_flavor_sales(start_date=None, end_date=None):
 
 def load_db_expenses_list():
     if db_conn is None:
-        return []
+        return [][cite: 3]
     query = """
     SELECT 
         id,
@@ -835,17 +835,17 @@ def load_db_expenses_list():
     try:
         df = db_conn.query(query, ttl="0s")
         if df.empty:
-            return []
+            return [][cite: 3]
         df["Date"] = pd.to_datetime(df["Date"])
         df["Amount"] = df["Amount"].astype(float)
         return df.to_dict("records")
     except Exception:
-        return []
+        return [][cite: 3]
 
 
 def get_db_stock_removed_map():
     if db_conn is None:
-        return {code: 0 for code in FLAVOR_CODES}
+        return {code: 0 for code in FLAVOR_CODES}[cite: 3]
     try:
         df = db_conn.query("""
             SELECT 
@@ -862,21 +862,21 @@ def get_db_stock_removed_map():
         """, ttl="0s")
         if not df.empty:
             r = df.iloc[0]
-            return {code: int(r.get(FLAVOR_MAP[code]["audit_col"], 0)) for code in FLAVOR_CODES}
+            return {code: int(r.get(FLAVOR_MAP[code]["audit_col"], 0)) for code in FLAVOR_CODES}[cite: 3]
     except Exception:
         pass
-    return {code: 0 for code in FLAVOR_CODES}
+    return {code: 0 for code in FLAVOR_CODES}[cite: 3]
 
 
 def get_db_freezer_stock():
     if db_conn is None:
-        return pd.DataFrame()
+        return pd.DataFrame()[cite: 3]
     try:
         recv_df = db_conn.query("SELECT flavor_code, COALESCE(SUM(received_units), 0) AS total_recv FROM stock_received_items GROUP BY flavor_code;", ttl="0s")
-        rec_map = dict(zip(recv_df["flavor_code"], recv_df["total_recv"])) if not recv_df.empty else {}
+        rec_map = dict(zip(recv_df["flavor_code"], recv_df["total_recv"])) if not recv_df.empty else {}[cite: 3]
 
         added_df = db_conn.query("SELECT flavor_code, COALESCE(SUM(added_units), 0) AS total_added FROM daily_cart_items GROUP BY flavor_code;", ttl="0s")
-        added_map = dict(zip(added_df["flavor_code"], added_df["total_added"])) if not added_df.empty else {}
+        added_map = dict(zip(added_df["flavor_code"], added_df["total_added"])) if not added_df.empty else {}[cite: 3]
 
         rem_map = get_db_stock_removed_map()
 
@@ -897,7 +897,7 @@ def get_db_freezer_stock():
             })
         return pd.DataFrame(rows).sort_values(by=["mrp", "Flavour"], ascending=[True, True])
     except Exception:
-        return pd.DataFrame()
+        return pd.DataFrame()[cite: 3]
 
 
 # ----------------------------------------------------------------------
@@ -905,7 +905,7 @@ def get_db_freezer_stock():
 # ----------------------------------------------------------------------
 def load_db_expenses_summary_df():
     if db_conn is None:
-        return pd.DataFrame()
+        return pd.DataFrame()[cite: 3]
     query = """
     SELECT 
         e.id,
@@ -932,12 +932,12 @@ def load_db_expenses_summary_df():
     try:
         return db_conn.query(query, ttl="0s")
     except Exception:
-        return pd.DataFrame()
+        return pd.DataFrame()[cite: 3]
 
 
 def load_db_payments_df():
     if db_conn is None:
-        return pd.DataFrame()
+        return pd.DataFrame()[cite: 3]
     query = """
     SELECT 
         p.id,
@@ -961,7 +961,7 @@ def load_db_payments_df():
     try:
         return db_conn.query(query, ttl="0s")
     except Exception:
-        return pd.DataFrame()
+        return pd.DataFrame()[cite: 3]
 
 
 # ----------------------------------------------------------------------
@@ -969,7 +969,7 @@ def load_db_payments_df():
 # ----------------------------------------------------------------------
 def load_full_staff_df():
     if db_conn is None:
-        return pd.DataFrame()
+        return pd.DataFrame()[cite: 3]
     query = """
     SELECT 
         s.id, s.name, s.status, s.phone_number, s.emergency_contact_name, s.emergency_contact_phone,
@@ -989,12 +989,12 @@ def load_full_staff_df():
     try:
         return db_conn.query(query, ttl="0s")
     except Exception:
-        return pd.DataFrame()
+        return pd.DataFrame()[cite: 3]
 
 
 def load_staff_compensation_history(staff_id):
     if db_conn is None:
-        return pd.DataFrame()
+        return pd.DataFrame()[cite: 3]
     query = """
     SELECT id, staff_id, effective_from, effective_to, monthly_fixed_salary,
            commission_threshold_daily, commission_percentage, allowance_weekday, allowance_sunday, created_at
@@ -1005,12 +1005,12 @@ def load_staff_compensation_history(staff_id):
     try:
         return db_conn.query(query, params={"sid": staff_id}, ttl="0s")
     except Exception:
-        return pd.DataFrame()
+        return pd.DataFrame()[cite: 3]
 
 
 def load_staff_attendance_df(start_date=None, end_date=None):
     if db_conn is None:
-        return pd.DataFrame()
+        return pd.DataFrame()[cite: 3]
     where_clauses = []
     params = {}
     if start_date:
@@ -1032,7 +1032,7 @@ def load_staff_attendance_df(start_date=None, end_date=None):
     try:
         return db_conn.query(query, params=params, ttl="0s")
     except Exception:
-        return pd.DataFrame()
+        return pd.DataFrame()[cite: 3]
 
 
 def calculate_incurred_labour_for_range(start_date, end_date):
@@ -1502,7 +1502,7 @@ if page == "Daily Entry":
                     tm2.metric("Today's Total Opening Balance", f"{tot_today_open} pcs")
 
             # --------------------------------------------------------------
-            # FULL-WIDTH SUBMIT ACTION (WITH REQUESTED POPUP TEXT FORMAT)
+            # FULL-WIDTH SUBMIT ACTION (WITH CUSTOM SUCCESS MODAL TEXT)
             # --------------------------------------------------------------
             st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
             if st.button("💾 Submit Daily Sales & Today's Restock Entry", type="primary", use_container_width=True):
@@ -2372,7 +2372,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
         if not rec_query_df.empty:
             rec_display = []
             for _, r in rec_query_df.iterrows():
-                items_dict = {itm['code']: itm['rec'] for r in r['items']} if r['items'] else {}
+                items_dict = {itm['code']: itm['rec'] for itm in r['items']} if r['items'] else {}
                 row_data = {
                     "Receipt #": f"#{r['Receipt #']}",
                     "Received Date": pd.to_datetime(r['Received Date']).strftime("%d %b %Y"),
@@ -4263,4 +4263,107 @@ elif page == "Dashboard" and user_role == "admin":
                 st.markdown("#### Comparative Cart Revenue")
                 st.bar_chart(cart_grp.set_index("Cart")["Revenue (₹)"])
         else:
-            st.caption("No cart sales in thisSorry, something went wrong. Please try your request again.
+            st.caption("No cart sales in this date range.")
+
+        # ==============================================================
+        # GROUP 3: DAY-WISE & TIMING ANALYSIS
+        # ==============================================================
+        st.markdown("---")
+        st.markdown("### 3. Day-Wise & Timing Patterns")
+
+        if not range_df.empty:
+            day_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+            dow_df = range_df[range_df["Sold_Total"] > 0].copy()
+            dow_df["Day"] = dow_df["Date"].dt.day_name()
+
+            if not dow_df.empty:
+                dw1, dw2 = st.columns(2)
+
+                with dw1:
+                    st.write("**Average Units Sold per Day of Week**")
+                    units_pivot = dow_df.pivot_table(
+                        index="Cart", columns="Day", values="Sold_Total", aggfunc="mean", fill_value=0, margins=True, margins_name="All Carts"
+                    )
+                    day_cols = [d for d in day_order if d in units_pivot.columns] + ["All Carts"]
+                    units_pivot = units_pivot.reindex(columns=day_cols)
+                    st.dataframe(units_pivot.round(0).astype(int), use_container_width=True)
+
+                with dw2:
+                    st.write("**Average Revenue (₹) per Day of Week**")
+                    rev_pivot = dow_df.pivot_table(
+                        index="Cart", columns="Day", values="Total_Collection", aggfunc="mean", fill_value=0, margins=True, margins_name="All Carts"
+                    )
+                    rev_pivot = rev_pivot.reindex(columns=day_cols)
+                    st.dataframe(rev_pivot.round(0).astype(int), use_container_width=True)
+            else:
+                st.caption("No active selling days found in this range.")
+
+            st.markdown("#### Itemized Daily Cart Sales Log")
+            display_cols = ["Date", "Cart", "Sold_Total", "Total_Collection", "PhonePe", "Cash", "Staff_Name", "Staff_Advance", "Food_Tea_Cash", "Remarks"]
+            sales_table = range_df.sort_values(["Date", "Cart"])[display_cols].rename(
+                columns={
+                    "Sold_Total": "Units Sold", 
+                    "Total_Collection": "Revenue (₹)",
+                    "PhonePe": "PhonePe (₹)",
+                    "Cash": "Cash (₹)",
+                    "Staff_Name": "Staff Name",
+                    "Staff_Advance": "Staff Advance (₹)",
+                    "Food_Tea_Cash": "Food / Tea (₹)",
+                }
+            )
+            sales_table["Units Sold"] = sales_table["Units Sold"].apply(lambda x: int(round(x)))
+            sales_table["Date"] = sales_table["Date"].dt.strftime("%d %b %Y")
+            st.dataframe(
+                sales_table, 
+                hide_index=True, 
+                use_container_width=True,
+                column_config={
+                    "Revenue (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                    "PhonePe (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                    "Cash (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                    "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                    "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                }
+            )
+        else:
+            st.caption("No sales data recorded in this period.")
+
+    # ------------------------------------------------------------------
+    # CURRENT INVENTORY STATUS
+    # ------------------------------------------------------------------
+    if not daily_df.empty:
+        st.markdown("---")
+        st.markdown('<div id="inventory-status"></div>', unsafe_allow_html=True)
+        st.markdown("## Current Live Inventory Status")
+
+        inv_c1, inv_c2, inv_c3 = st.columns(3)
+        cart_stock_tot = int(round(daily_df.sort_values('Date').groupby('Cart').tail(1)['Closing_Total'].sum()))
+        inv_c1.metric("Stock Across Carts", f"{cart_stock_tot} units")
+        inv_c2.metric("Units in Freezer", f"{total_freezer_units} units")
+        inv_c3.metric("Freezer Stock Valuation (Cost)", f"₹{total_freezer_val:,.2f}")
+
+        try:
+            if not freezer_df.empty:
+                st.markdown("**Freezer stock breakdown & cost valuation**")
+                disp_freezer = freezer_df.rename(columns={
+                    "cost_price": "Unit Cost (₹)",
+                    "Stock_Value": "Stock Value (₹)"
+                })[["Flavour", "Units in freezer", "Unit Cost (₹)", "Stock Value (₹)"]]
+                
+                st.dataframe(
+                    disp_freezer, 
+                    hide_index=True, 
+                    use_container_width=True,
+                    column_config={
+                        "Unit Cost (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                        "Stock Value (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                    }
+                )
+        except Exception as e:
+            st.caption(f"Could not compute freezer stock from DB ({e}).")
+
+        st.markdown("**Latest stock per cart**")
+        latest_per_cart = daily_df.sort_values("Date").groupby("Cart").tail(1)[["Cart", "Date", "Closing_Total"]].copy()
+        latest_per_cart["Closing_Total"] = latest_per_cart["Closing_Total"].apply(lambda x: int(round(x)))
+        latest_per_cart["Date"] = latest_per_cart["Date"].dt.strftime("%d %b %Y")
+        st.dataframe(latest_per_cart, hide_index=True, use_container_width=True)
