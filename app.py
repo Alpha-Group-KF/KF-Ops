@@ -12,9 +12,10 @@ Kulfi Ops - multi-user data entry app for the kulfi cart business.
 - Staff & Payroll Module (KYC profile, leaves, compensation plans, and payments-backed settlement).
 - Remodeled Daily Entry Screen:
     * 3-Cart Home Screen buttons for quick cart selection (Admin & Data Entry).
-    * Side-by-side 2-column layout with clear button navigation to return to cart selection.
-    * Today's Restock updates the `added_units` field in the database.
-    * Today's DB opening units stored as previous day's closing balance, while displaying live calculated `Opening + Restock` under each flavor.
+    * Prominent solid-colored primary button for "Back to Cart Selection" with bold, high-contrast text.
+    * Side-by-side 2-column layout (Left: Sales & Closing / Right: Today's Restock & Opening).
+    * Pre-populates today's restock values from DB if already saved, allowing edits.
+    * Customized success modal notification format upon submission, returning to cart selector.
 - Dashboard with COGS So Far (All-Time), exact COGS in range, and accrual-based net margin tracking.
 - Freezer Stock, Freezer Analysis, Dashboard, and Expenses powered 100% by Supabase PostgreSQL.
 """
@@ -1234,8 +1235,8 @@ if page == "Daily Entry":
     else:
         cart_name = st.session_state["active_daily_cart"]
         
-        # Clearly visible button at the top to go back to cart selection
-        if st.button("⬅ Back to Cart Selection", type="secondary", use_container_width=False):
+        # Clearly visible primary button at the top to go back to cart selection
+        if st.button("⬅ Back to Cart Selection", type="primary", use_container_width=False):
             st.session_state["active_daily_cart"] = None
             st.rerun()
 
@@ -1529,7 +1530,7 @@ if page == "Daily Entry":
                             total_collection_val, phonepe_val, cash_val, remarks, selected_staff, staff_advance_val, food_tea_val
                         )
 
-                        # 2. Sync Right Box: Today's Restock & Opening Balance Entry
+                        # 2. Sync Right Box: Today's Restock & Opening Balance Entry (added_units updated)
                         sync_today_restock_entry(
                             today_val, cart_name, selected_staff, today_db_opening_map, today_added_map
                         )
@@ -3143,7 +3144,7 @@ elif page == "Expenses" and user_role == "admin":
                 rpt_end = st.date_input("To Date", value=max_exp_d, min_value=min_exp_d, max_value=max_exp_d, key="exp_rpt_end")
 
             if rpt_start > rpt_end:
-                st.error("'From' date is after 'To' date.")
+                st.error("'From' date must be before 'To' date.")
                 rpt_start, rpt_end = rpt_end, rpt_start
 
             f_exp = expenses_summary_df[
