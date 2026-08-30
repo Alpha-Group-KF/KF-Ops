@@ -8,8 +8,8 @@ Kulfi Ops - multi-user data entry app for the kulfi cart business.
 - Stock Removed (Wastage / Return / Tasting log) integrated into Available Freezer Stock calculations.
 - Freezer Analysis variance computed against calculated stock as of the physical audit date.
 - Remodeled Expenses & Payments (Bills vs. Cash Outflows with tranches & P&L summaries).
-- Automatic creation of Labour Charges expenses & cash payments on Daily Entry advance/food cash[cite: 4].
-- Staff & Payroll Module (KYC profile, leaves, compensation plans, and payments-backed settlement)[cite: 4].
+- Automatic creation of Labour Charges expenses & cash payments on Daily Entry advance/food cash.
+- Staff & Payroll Module (KYC profile, leaves, compensation plans, and payments-backed settlement).
 - Remodeled Daily Entry Screen:
     * Side-by-side 2-column layout (Left: Sales & Closing / Right: Today's Restock & Opening).
     * Compact input fields and flavor cards for zero-scroll visibility.
@@ -240,13 +240,13 @@ hr { border-color: #E3CBA0 !important; margin: 0.35rem 0 !important; }
 # ----------------------------------------------------------------------
 # CONFIG & CANONICAL MAPPINGS
 # ----------------------------------------------------------------------
-CARTS = ["HOSUR CART 01", "HOSUR CART 02", "HOSUR CART 03"][cite: 3]
-CITY = "HOSUR"[cite: 3]
+CARTS = ["HOSUR CART 01", "HOSUR CART 02", "HOSUR CART 03"]
+CITY = "HOSUR"
 
-PAYMENT_STATUSES = ["Pending", "Partial", "Complete"][cite: 3]
-PO_STATUSES = ["Placed", "Pending", "In Transit", "Completed", "Cancelled"][cite: 3]
+PAYMENT_STATUSES = ["Pending", "Partial", "Complete"]
+PO_STATUSES = ["Placed", "Pending", "In Transit", "Completed", "Cancelled"]
 
-EXPENSE_TYPES = ["OPEX", "COGS", "CAPEX"][cite: 3]
+EXPENSE_TYPES = ["OPEX", "COGS", "CAPEX"]
 EXPENSE_CATEGORIES = [
     "Cost of Goods",
     "Labour Charges",
@@ -258,17 +258,17 @@ EXPENSE_CATEGORIES = [
     "Initial Set-up Expense",
     "Initial Investment",
     "Miscellaneous Expense",
-][cite: 3]
-ATTRIBUTED_OPTIONS = ["Central / Freezer"] + CARTS[cite: 3]
-EXPENSE_STATUSES = ["Pending", "Partially Paid", "Paid", "Cancelled"][cite: 3]
-PAYMENT_MODES = ["UPI / Bank Transfer", "Cash"][cite: 3]
-STAFF_STATUSES = ["active", "inactive", "on_leave"][cite: 3]
-LEAVE_STATUS_OPTIONS = ["Leave", "Sick Leave", "Casual Leave", "Absent"][cite: 3]
-LEAVE_TYPE_OPTIONS = ["Unpaid", "Paid"][cite: 3]
+]
+ATTRIBUTED_OPTIONS = ["Central / Freezer"] + CARTS
+EXPENSE_STATUSES = ["Pending", "Partially Paid", "Paid", "Cancelled"]
+PAYMENT_MODES = ["UPI / Bank Transfer", "Cash"]
+STAFF_STATUSES = ["active", "inactive", "on_leave"]
+LEAVE_STATUS_OPTIONS = ["Leave", "Sick Leave", "Casual Leave", "Absent"]
+LEAVE_TYPE_OPTIONS = ["Unpaid", "Paid"]
 
-DAILY_HEADER_ROWS = 2[cite: 3]
-DAILY_TOTAL_COLS = 47[cite: 3]
-SCOPES = ["https://www.googleapis.com/auth/spreadsheets"][cite: 3]
+DAILY_HEADER_ROWS = 2
+DAILY_TOTAL_COLS = 47
+SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
 DEFAULT_FLAVORS = [
     ("ML", "Malai", 40.0, 22.0, "ml_units"),
@@ -280,40 +280,40 @@ DEFAULT_FLAVORS = [
     ("SG", "Shahi Gulab", 50.0, 27.5, "sg_units"),
     ("CH", "Chocolate", 50.0, 27.5, "ch_units"),
     ("RA", "Roasted Almond", 60.0, 33.0, "ra_units"),
-][cite: 3]
-FLAVOR_CODES = [f[0] for f in DEFAULT_FLAVORS][cite: 3]
-N_FLAVORS = len(FLAVOR_CODES)[cite: 3]
+]
+FLAVOR_CODES = [f[0] for f in DEFAULT_FLAVORS]
+N_FLAVORS = len(FLAVOR_CODES)
 
 
 def _num(x):
     if x is None or pd.isna(x):
         return 0.0
     if isinstance(x, (int, float)):
-        return float(x)[cite: 3]
-    s = str(x).strip().replace(",", "").replace("₹", "").replace("Rs.", "").replace("Rs", "")[cite: 3]
-    neg = s.startswith("(") and s.endswith(")")[cite: 3]
+        return float(x)
+    s = str(x).strip().replace(",", "").replace("₹", "").replace("Rs.", "").replace("Rs", "")
+    neg = s.startswith("(") and s.endswith(")")
     if neg:
-        s = s[1:-1][cite: 3]
+        s = s[1:-1]
     try:
-        return -float(s) if neg else float(s)[cite: 3]
+        return -float(s) if neg else float(s)
     except ValueError:
-        return 0.0[cite: 3]
+        return 0.0
 
 
 def _int_num(x):
-    return int(round(_num(x)))[cite: 3]
+    return int(round(_num(x)))
 
 
 def _pad(row, n):
-    return row + [""] * (n - len(row)) if len(row) < n else row[cite: 3]
+    return row + [""] * (n - len(row)) if len(row) < n else row
 
 
 def _col_letter(n):
-    letters = ""[cite: 3]
+    letters = ""
     while n > 0:
-        n, rem = divmod(n - 1, 26)[cite: 3]
-        letters = chr(65 + rem) + letters[cite: 3]
-    return letters[cite: 3]
+        n, rem = divmod(n - 1, 26)
+        letters = chr(65 + rem) + letters
+    return letters
 
 
 # ----------------------------------------------------------------------
@@ -323,23 +323,23 @@ def _col_letter(n):
 def get_client():
     creds = Credentials.from_service_account_info(
         st.secrets["gcp_service_account"], scopes=SCOPES
-    )[cite: 3]
-    return gspread.authorize(creds)[cite: 3]
+    )
+    return gspread.authorize(creds)
 
 
 @st.cache_resource
 def get_workbook():
-    return get_client().open_by_key(st.secrets["sheet_id"])[cite: 3]
+    return get_client().open_by_key(st.secrets["sheet_id"])
 
 
 def get_ws(tab_name):
-    return get_workbook().worksheet(tab_name)[cite: 3]
+    return get_workbook().worksheet(tab_name)
 
 
 def _update_sheet_row(tab_name, row_number, values):
-    ws = get_ws(tab_name)[cite: 3]
-    end_col = _col_letter(len(values))[cite: 3]
-    ws.update(range_name=f"A{row_number}:{end_col}{row_number}", values=[values], value_input_option="USER_ENTERED")[cite: 3]
+    ws = get_ws(tab_name)
+    end_col = _col_letter(len(values))
+    ws.update(range_name=f"A{row_number}:{end_col}{row_number}", values=[values], value_input_option="USER_ENTERED")
 
 
 try:
@@ -348,11 +348,11 @@ except Exception:
     db_conn = None
 
 
-@st.dialog("Notification")[cite: 3]
+@st.dialog("Notification")
 def show_success_modal(message):
-    st.success(message)[cite: 3]
-    if st.button("OK", type="primary", use_container_width=True):[cite: 3]
-        st.rerun()[cite: 3]
+    st.success(message)
+    if st.button("OK", type="primary", use_container_width=True):
+        st.rerun()
 
 
 # ----------------------------------------------------------------------
@@ -362,7 +362,7 @@ def get_flavor_meta_by_code():
     meta = {
         code: {"name": name, "mrp": float(mrp), "cost_price": float(cost), "audit_col": acol}
         for code, name, mrp, cost, acol in DEFAULT_FLAVORS
-    }[cite: 3]
+    }
     if db_conn is not None:
         try:
             df = db_conn.query("SELECT code, name, mrp, cost_price FROM flavors;", ttl="1m")
@@ -374,10 +374,10 @@ def get_flavor_meta_by_code():
                     meta[code]["cost_price"] = float(r["cost_price"])
         except Exception:
             pass
-    return meta[cite: 3]
+    return meta
 
 
-FLAVOR_MAP = get_flavor_meta_by_code()[cite: 3]
+FLAVOR_MAP = get_flavor_meta_by_code()
 
 
 def load_active_staff_list():
@@ -388,7 +388,7 @@ def load_active_staff_list():
                 return ["Select Staff"] + df["name"].tolist()
         except Exception:
             pass
-    return ["Select Staff"][cite: 3]
+    return ["Select Staff"]
 
 
 # ----------------------------------------------------------------------
@@ -425,7 +425,7 @@ def get_latest_cart_closing_state(cart_name, before_date):
 
 
 def list_daily_entries_with_prefill():
-    entries = [][cite: 3]
+    entries = []
     if db_conn is not None:
         query = """
         SELECT 
@@ -481,23 +481,23 @@ def list_daily_entries_with_prefill():
                     "is_prefill": False
                 })
 
-    yesterday = date.today() - timedelta(days=1)[cite: 3]
+    yesterday = date.today() - timedelta(days=1)
     existing_yesterday_carts = {
         e["cart"] for e in entries if e["date"].date() == yesterday
-    }[cite: 3]
+    }
 
-    for cart in CARTS:[cite: 3]
-        if cart not in existing_yesterday_carts:[cite: 3]
-            prev_closings, prev_staff = get_latest_cart_closing_state(cart, yesterday)[cite: 3]
-            by_code = {}[cite: 3]
-            for code in FLAVOR_CODES:[cite: 3]
-                prev_close = prev_closings.get(code, 0)[cite: 3]
+    for cart in CARTS:
+        if cart not in existing_yesterday_carts:
+            prev_closings, prev_staff = get_latest_cart_closing_state(cart, yesterday)
+            by_code = {}
+            for code in FLAVOR_CODES:
+                prev_close = prev_closings.get(code, 0)
                 by_code[code] = {
                     "opening": prev_close,
                     "added": 0,
                     "closing": prev_close,
                     "sold": 0,
-                }[cite: 3]
+                }
 
             entries.append({
                 "db_id": f"prefill_{cart}_{yesterday.strftime('%Y%m%d')}",
@@ -512,10 +512,10 @@ def list_daily_entries_with_prefill():
                 "staff_advance": 0.0,
                 "food_tea_cash": 0.0,
                 "is_prefill": True
-            })[cite: 3]
+            })
 
-    entries.sort(key=lambda x: (x["date"], x["cart"]), reverse=True)[cite: 3]
-    return entries[cite: 3]
+    entries.sort(key=lambda x: (x["date"], x["cart"]), reverse=True)
+    return entries
 
 
 def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map, sold_map, total, phonepe, cash, remarks, staff_name="", staff_advance=0.0, food_tea_cash=0.0):
@@ -553,7 +553,6 @@ def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map,
                     }
                 )
 
-            # Sync auto-created Labour Charges expenses & payments for staff advance & food/tea
             s.execute(text("DELETE FROM expenses WHERE remarks LIKE :tag;"), {"tag": f"[Auto: Daily Entry #{daily_id}]%"})
 
             if float(staff_advance) > 0 and staff_name:
@@ -639,16 +638,16 @@ def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map,
             s.commit()
 
     try:
-        ws = get_ws("Daily Data As Shared")[cite: 3]
-        all_vals = ws.get_all_values()[cite: 3]
-        target_row = None[cite: 3]
-        date_str = entry_date.strftime("%Y-%m-%d")[cite: 3]
-        for idx, r in enumerate(all_vals[DAILY_HEADER_ROWS:]):[cite: 3]
-            if len(r) >= 2 and r[0].strip() == date_str and r[1].strip() == cart_name:[cite: 3]
-                target_row = DAILY_HEADER_ROWS + idx + 1[cite: 3]
-                break[cite: 3]
+        ws = get_ws("Daily Data As Shared")
+        all_vals = ws.get_all_values()
+        target_row = None
+        date_str = entry_date.strftime("%Y-%m-%d")
+        for idx, r in enumerate(all_vals[DAILY_HEADER_ROWS:]):
+            if len(r) >= 2 and r[0].strip() == date_str and r[1].strip() == cart_name:
+                target_row = DAILY_HEADER_ROWS + idx + 1
+                break
 
-        date_cart_id = f"{date_str}||{cart_name}"[cite: 3]
+        date_cart_id = f"{date_str}||{cart_name}"
         sheet_row = (
             [date_str, cart_name, CITY, date_cart_id]
             + [int(opening_map[code]) for code in FLAVOR_CODES]
@@ -656,13 +655,13 @@ def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map,
             + [int(sold_map[code]) for code in FLAVOR_CODES]
             + [int(closing_map[code]) for code in FLAVOR_CODES]
             + [float(total), float(phonepe), float(cash), str(remarks), str(staff_name), float(staff_advance), float(food_tea_cash)]
-        )[cite: 3]
-        if target_row:[cite: 3]
-            _update_sheet_row("Daily Data As Shared", target_row, sheet_row)[cite: 3]
+        )
+        if target_row:
+            _update_sheet_row("Daily Data As Shared", target_row, sheet_row)
         else:
-            ws.append_row(sheet_row, value_input_option="USER_ENTERED")[cite: 3]
+            ws.append_row(sheet_row, value_input_option="USER_ENTERED")
     except Exception as e:
-        st.warning(f"Saved to database, but Google Sheets sync encountered an issue: {e}")[cite: 3]
+        st.warning(f"Saved to database, but Google Sheets sync encountered an issue: {e}")
 
 
 def sync_today_restock_entry(today_date, cart_name, staff_name, today_opening_map, today_added_map):
@@ -715,7 +714,6 @@ def sync_today_restock_entry(today_date, cart_name, staff_name, today_opening_ma
                     )
             s.commit()
 
-    # Sync today's opening row to Google Sheets
     try:
         ws = get_ws("Daily Data As Shared")
         all_vals = ws.get_all_values()
@@ -748,7 +746,7 @@ def sync_today_restock_entry(today_date, cart_name, staff_name, today_opening_ma
 
 def load_db_daily_df():
     if db_conn is None:
-        return pd.DataFrame()[cite: 3]
+        return pd.DataFrame()
     query = """
     SELECT 
         e.entry_date AS "Date",
@@ -775,7 +773,7 @@ def load_db_daily_df():
 
 def load_db_flavor_sales(start_date=None, end_date=None):
     if db_conn is None:
-        return pd.DataFrame()[cite: 3]
+        return pd.DataFrame()
     where_clauses = []
     params = {}
     if start_date:
@@ -806,7 +804,7 @@ def load_db_flavor_sales(start_date=None, end_date=None):
 
 def load_db_expenses_list():
     if db_conn is None:
-        return [][cite: 3]
+        return []
     query = """
     SELECT 
         id,
@@ -826,17 +824,17 @@ def load_db_expenses_list():
     try:
         df = db_conn.query(query, ttl="0s")
         if df.empty:
-            return [][cite: 3]
+            return []
         df["Date"] = pd.to_datetime(df["Date"])
         df["Amount"] = df["Amount"].astype(float)
         return df.to_dict("records")
     except Exception:
-        return [][cite: 3]
+        return []
 
 
 def get_db_stock_removed_map():
     if db_conn is None:
-        return {code: 0 for code in FLAVOR_CODES}[cite: 3]
+        return {code: 0 for code in FLAVOR_CODES}
     try:
         df = db_conn.query("""
             SELECT 
@@ -853,21 +851,21 @@ def get_db_stock_removed_map():
         """, ttl="0s")
         if not df.empty:
             r = df.iloc[0]
-            return {code: int(r.get(FLAVOR_MAP[code]["audit_col"], 0)) for code in FLAVOR_CODES}[cite: 3]
+            return {code: int(r.get(FLAVOR_MAP[code]["audit_col"], 0)) for code in FLAVOR_CODES}
     except Exception:
         pass
-    return {code: 0 for code in FLAVOR_CODES}[cite: 3]
+    return {code: 0 for code in FLAVOR_CODES}
 
 
 def get_db_freezer_stock():
     if db_conn is None:
-        return pd.DataFrame()[cite: 3]
+        return pd.DataFrame()
     try:
         recv_df = db_conn.query("SELECT flavor_code, COALESCE(SUM(received_units), 0) AS total_recv FROM stock_received_items GROUP BY flavor_code;", ttl="0s")
-        rec_map = dict(zip(recv_df["flavor_code"], recv_df["total_recv"])) if not recv_df.empty else {}[cite: 3]
+        rec_map = dict(zip(recv_df["flavor_code"], recv_df["total_recv"])) if not recv_df.empty else {}
 
         added_df = db_conn.query("SELECT flavor_code, COALESCE(SUM(added_units), 0) AS total_added FROM daily_cart_items GROUP BY flavor_code;", ttl="0s")
-        added_map = dict(zip(added_df["flavor_code"], added_df["total_added"])) if not added_df.empty else {}[cite: 3]
+        added_map = dict(zip(added_df["flavor_code"], added_df["total_added"])) if not added_df.empty else {}
 
         rem_map = get_db_stock_removed_map()
 
@@ -888,7 +886,7 @@ def get_db_freezer_stock():
             })
         return pd.DataFrame(rows).sort_values(by=["mrp", "Flavour"], ascending=[True, True])
     except Exception:
-        return pd.DataFrame()[cite: 3]
+        return pd.DataFrame()
 
 
 # ----------------------------------------------------------------------
@@ -896,7 +894,7 @@ def get_db_freezer_stock():
 # ----------------------------------------------------------------------
 def load_db_expenses_summary_df():
     if db_conn is None:
-        return pd.DataFrame()[cite: 3]
+        return pd.DataFrame()
     query = """
     SELECT 
         e.id,
@@ -923,12 +921,12 @@ def load_db_expenses_summary_df():
     try:
         return db_conn.query(query, ttl="0s")
     except Exception:
-        return pd.DataFrame()[cite: 3]
+        return pd.DataFrame()
 
 
 def load_db_payments_df():
     if db_conn is None:
-        return pd.DataFrame()[cite: 3]
+        return pd.DataFrame()
     query = """
     SELECT 
         p.id,
@@ -952,7 +950,7 @@ def load_db_payments_df():
     try:
         return db_conn.query(query, ttl="0s")
     except Exception:
-        return pd.DataFrame()[cite: 3]
+        return pd.DataFrame()
 
 
 # ----------------------------------------------------------------------
@@ -960,7 +958,7 @@ def load_db_payments_df():
 # ----------------------------------------------------------------------
 def load_full_staff_df():
     if db_conn is None:
-        return pd.DataFrame()[cite: 3]
+        return pd.DataFrame()
     query = """
     SELECT 
         s.id, s.name, s.status, s.phone_number, s.emergency_contact_name, s.emergency_contact_phone,
@@ -980,12 +978,12 @@ def load_full_staff_df():
     try:
         return db_conn.query(query, ttl="0s")
     except Exception:
-        return pd.DataFrame()[cite: 3]
+        return pd.DataFrame()
 
 
 def load_staff_compensation_history(staff_id):
     if db_conn is None:
-        return pd.DataFrame()[cite: 3]
+        return pd.DataFrame()
     query = """
     SELECT id, staff_id, effective_from, effective_to, monthly_fixed_salary,
            commission_threshold_daily, commission_percentage, allowance_weekday, allowance_sunday, created_at
@@ -996,12 +994,12 @@ def load_staff_compensation_history(staff_id):
     try:
         return db_conn.query(query, params={"sid": staff_id}, ttl="0s")
     except Exception:
-        return pd.DataFrame()[cite: 3]
+        return pd.DataFrame()
 
 
 def load_staff_attendance_df(start_date=None, end_date=None):
     if db_conn is None:
-        return pd.DataFrame()[cite: 3]
+        return pd.DataFrame()
     where_clauses = []
     params = {}
     if start_date:
@@ -1023,7 +1021,7 @@ def load_staff_attendance_df(start_date=None, end_date=None):
     try:
         return db_conn.query(query, params=params, ttl="0s")
     except Exception:
-        return pd.DataFrame()[cite: 3]
+        return pd.DataFrame()
 
 
 def calculate_incurred_labour_for_range(start_date, end_date):
@@ -1131,75 +1129,75 @@ def calculate_incurred_labour_for_range(start_date, end_date):
 # AUTHENTICATION
 # ----------------------------------------------------------------------
 def check_login():
-    if st.session_state.get("authenticated", False):[cite: 3]
-        return True[cite: 3]
+    if st.session_state.get("authenticated", False):
+        return True
 
-    _, col_form, _ = st.columns([1, 1.2, 1])[cite: 3]
+    _, col_form, _ = st.columns([1, 1.2, 1])
 
-    with col_form:[cite: 3]
+    with col_form:
         try:
-            st.image("assets/logo.png", width=220)[cite: 3]
+            st.image("assets/logo.png", width=220)
         except Exception:
-            st.title("🍦 Kulfi Ops")[cite: 3]
+            st.title("🍦 Kulfi Ops")
 
-        st.subheader("Sign in")[cite: 3]
-        with st.form("login_form"):[cite: 3]
-            username = st.text_input("Username")[cite: 3]
-            password = st.text_input("Password", type="password")[cite: 3]
-            submitted = st.form_submit_button("Sign in", type="primary", use_container_width=True)[cite: 3]
+        st.subheader("Sign in")
+        with st.form("login_form"):
+            username = st.text_input("Username")
+            password = st.text_input("Password", type="password")
+            submitted = st.form_submit_button("Sign in", type="primary", use_container_width=True)
 
-        if submitted:[cite: 3]
-            user_clean = str(username).strip()[cite: 3]
-            pass_clean = str(password).strip()[cite: 3]
+        if submitted:
+            user_clean = str(username).strip()
+            pass_clean = str(password).strip()
 
-            admin_user = str(st.secrets.get("app_username", "admin")).strip()[cite: 3]
-            admin_pass = str(st.secrets.get("app_password", "")).strip()[cite: 3]
+            admin_user = str(st.secrets.get("app_username", "admin")).strip()
+            admin_pass = str(st.secrets.get("app_password", "")).strip()
 
-            entry_user = str(st.secrets.get("entry_username", "entry")).strip()[cite: 3]
-            entry_pass = str(st.secrets.get("entry_password", "")).strip()[cite: 3]
+            entry_user = str(st.secrets.get("entry_username", "entry")).strip()
+            entry_pass = str(st.secrets.get("entry_password", "")).strip()
 
-            if admin_pass and hmac.compare_digest(user_clean, admin_user) and hmac.compare_digest(pass_clean, admin_pass):[cite: 3]
-                st.session_state["authenticated"] = True[cite: 3]
-                st.session_state["user_role"] = "admin"[cite: 3]
-                st.rerun()[cite: 3]
-            elif entry_pass and hmac.compare_digest(user_clean, entry_user) and hmac.compare_digest(pass_clean, entry_pass):[cite: 3]
-                st.session_state["authenticated"] = True[cite: 3]
-                st.session_state["user_role"] = "entry"[cite: 3]
-                st.rerun()[cite: 3]
+            if admin_pass and hmac.compare_digest(user_clean, admin_user) and hmac.compare_digest(pass_clean, admin_pass):
+                st.session_state["authenticated"] = True
+                st.session_state["user_role"] = "admin"
+                st.rerun()
+            elif entry_pass and hmac.compare_digest(user_clean, entry_user) and hmac.compare_digest(pass_clean, entry_pass):
+                st.session_state["authenticated"] = True
+                st.session_state["user_role"] = "entry"
+                st.rerun()
             else:
-                st.error("Incorrect username or password — try again.")[cite: 3]
+                st.error("Incorrect username or password — try again.")
 
-    return False[cite: 3]
+    return False
 
 
-if not check_login():[cite: 3]
-    st.stop()[cite: 3]
+if not check_login():
+    st.stop()
 
 # ----------------------------------------------------------------------
 # NAVIGATION
 # ----------------------------------------------------------------------
-user_role = st.session_state.get("user_role", "admin")[cite: 3]
+user_role = st.session_state.get("user_role", "admin")
 
-with st.sidebar:[cite: 3]
+with st.sidebar:
     try:
-        st.image("assets/logo.png", use_container_width=True)[cite: 3]
+        st.image("assets/logo.png", use_container_width=True)
     except Exception:
-        st.markdown("## 🍦 Kulfi Ops")[cite: 3]
+        st.markdown("## 🍦 Kulfi Ops")
 
-    if user_role == "admin":[cite: 3]
-        nav_options = ["Dashboard", "Daily Entry", "Purchase Orders", "Freezer Stock", "Freezer Analysis", "Stock Removed", "Expenses", "Staff & Payroll"][cite: 3]
-        page = st.radio("Go to", nav_options, label_visibility="collapsed")[cite: 3]
+    if user_role == "admin":
+        nav_options = ["Dashboard", "Daily Entry", "Purchase Orders", "Freezer Stock", "Freezer Analysis", "Stock Removed", "Expenses", "Staff & Payroll"]
+        page = st.radio("Go to", nav_options, label_visibility="collapsed")
     else:
-        page = "Daily Entry"[cite: 3]
-        st.info("Logged in as Data Entry Staff")[cite: 3]
+        page = "Daily Entry"
+        st.info("Logged in as Data Entry Staff")
 
-    st.markdown("---")[cite: 3]
-    if st.button("Log out", use_container_width=True):[cite: 3]
-        st.session_state["authenticated"] = False[cite: 3]
-        st.session_state["user_role"] = None[cite: 3]
-        st.rerun()[cite: 3]
+    st.markdown("---")
+    if st.button("Log out", use_container_width=True):
+        st.session_state["authenticated"] = False
+        st.session_state["user_role"] = None
+        st.rerun()
 
-st.title(f"🍦 Kulfi Ops — {page}")[cite: 3]
+st.title(f"🍦 Kulfi Ops — {page}")
 
 # ======================================================================
 # PAGE 1: DAILY ENTRY (Side-by-Side Dual Boxes + Compact Fields)
@@ -3646,7 +3644,6 @@ elif page == "Staff & Payroll" and user_role == "admin":
         staff_payments_df = pd.DataFrame()
 
         if db_conn is not None:
-            # Shifts worked
             query_month = """
             SELECT entry_date, cart_name, staff_name, total_collection, staff_advance, food_tea_cash
             FROM daily_cart_entries
@@ -3654,7 +3651,6 @@ elif page == "Staff & Payroll" and user_role == "admin":
             """
             daily_month_df = db_conn.query(query_month, params={"sdate": m_start_dt, "edate": m_end_dt}, ttl="0s")
 
-            # Leaves logged
             query_att_m = """
             SELECT a.staff_id, s.name AS staff_name, a.attendance_date, a.status, a.leave_type, a.reason
             FROM staff_attendance a
@@ -3663,7 +3659,6 @@ elif page == "Staff & Payroll" and user_role == "admin":
             """
             att_month_df = db_conn.query(query_att_m, params={"sdate": m_start_dt, "edate": m_end_dt}, ttl="0s")
 
-            # Actual Labour Payments / Deductions from expense_payments table
             query_labour_payments = """
             SELECT 
                 p.id AS payment_id,
@@ -4010,27 +4005,22 @@ elif page == "Dashboard" and user_role == "admin":
         range_df = daily_df[(daily_df["Date"].dt.date >= range_start) & (daily_df["Date"].dt.date <= range_end)] if not daily_df.empty else daily_df
         range_exp = exp_df[(exp_df["Date"].dt.date >= range_start) & (exp_df["Date"].dt.date <= range_end)] if not exp_df.empty else exp_df
 
-        # 1. RCM: Calculate Exact COGS of Goods Sold in this specific period
         flavor_range_df = load_db_flavor_sales(start_date=range_start, end_date=range_end)
         exact_cogs_sold = float(flavor_range_df["COGS (₹)"].sum()) if not flavor_range_df.empty else 0.0
 
         total_rev = range_df["Total_Collection"].sum() if not range_df.empty else 0.0
         total_units = int(round(range_df["Sold_Total"].sum())) if not range_df.empty else 0
 
-        # 2. Accrual Staff Labour: Calculate Full Incurred Labour Charges (Paid + Accrued yet to be paid)
         tot_labour_incurred, tot_labour_paid, tot_labour_due, _ = calculate_incurred_labour_for_range(range_start, range_end)
 
-        # 3. Non-Labour Operating Expenses from expenses table
         non_labour_opex_df = range_exp[
             (range_exp["Category"] != "Labour Charges") & 
             ((range_exp.get("Expense_Type") == "OPEX") | (range_exp["Category"].isin(["Leakage Expense", "Logistics & Transport", "Rent & Utilities", "Maintenance & Repairs", "Permits & Compliance", "Miscellaneous Expense"])))
         ] if not range_exp.empty else pd.DataFrame()
         other_opex_total = float(non_labour_opex_df["Amount"].sum()) if not non_labour_opex_df.empty else 0.0
 
-        # Total OPEX Incurred = Accrued Labour + Non-Labour OPEX
         total_incurred_opex = tot_labour_incurred + other_opex_total
 
-        # CAPEX from expenses
         capex_total = float(range_exp[range_exp["Expense_Type"] == "CAPEX"]["Amount"].sum()) if not range_exp.empty and "Expense_Type" in range_exp.columns else 0.0
         if capex_total == 0.0 and not range_exp.empty:
             capex_cats = ["Initial Investment", "Initial Set-up Expense"]
