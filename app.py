@@ -8,12 +8,8 @@ Kulfi Ops - multi-user data entry app for the kulfi cart business.
 - Stock Removed (Wastage / Return / Tasting log) integrated into Available Freezer Stock calculations.
 - Freezer Analysis variance computed against calculated stock as of the physical audit date.
 - Remodeled Expenses & Payments (Bills vs. Cash Outflows with tranches & P&L summaries).
-- Staff & Payroll Module:
-    * KYC profile management & versioned compensation plans.
-    * Attendance & Leave Management (Record, View, Edit past leave entries).
-    * Apportioned fixed salary (calculated at Rs 600/day worked).
-    * Monthly settlement integrating days worked, leave days, commissions, allowances, food/tea, and advances.
-    * Day-wise staff ledger displaying Staff Name along with Operated Cart for reassignment tracking.
+- Automatic creation of Labour Charges expenses & cash payments on Daily Entry advance/food cash.
+- Staff & Payroll Module (KYC profile, leaves, compensation plans, and payments-backed settlement).
 - Dashboard with COGS So Far (All-Time) & Outstanding Freezer Stock Valuation.
 - Freezer Stock, Freezer Analysis, Dashboard, and Expenses powered 100% by Supabase PostgreSQL.
 """
@@ -500,6 +496,8 @@ def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map,
                 }
             )
             daily_id = res.scalar()
+            
+            # 1. Update items
             s.execute(text("DELETE FROM daily_cart_items WHERE daily_entry_id = :id;"), {"id": daily_id})
             for code in FLAVOR_CODES:
                 s.execute(
@@ -513,6 +511,93 @@ def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map,
                         "sold": int(sold_map[code]), "close": int(closing_map[code])
                     }
                 )
+
+            # 2. Sync auto-created Labour Charges expenses & payments for staff advance & food/tea
+            # First, clean up any previous auto-created expenses linked to this daily entry
+            s.execute(text("DELETE FROM expenses WHERE remarks LIKE :tag;"), {"tag": f"[Auto: Daily Entry #{daily_id}]%"})
+
+            # Auto-create expense & payment for Staff Advance
+            if float(staff_advance) > 0 and staff_name:
+                res_adv = s.execute(
+                    text("""
+                    INSERT INTO expenses (
+                        expense_date, expense_type, category, sub_category, description,
+                        total_amount, attributed_to, vendor_name, staff_name, status, recorded_by, remarks
+                    ) VALUES (
+                        :ed, 'OPEX', 'Labour Charges', 'Staff Advance', :desc,
+                        :amt, :attr, :vendor, :staff, 'Paid', 'Daily Entry Auto', :rem
+                    ) RETURNING id;
+                    """),
+                    {
+                        "ed": entry_date,
+                        "desc": f"Daily Cart Cash Advance - {staff_name} ({cart_name})",
+                        "amt": float(staff_advance),
+                        "attr": cart_name,
+                        "vendor": staff_name,
+                        "staff": staff_name,
+                        "rem": f"[Auto: Daily Entry #{daily_id}] Staff Advance"
+                    }
+                )
+                exp_adv_id = res_adv.scalar()
+                s.execute(
+                    text("""
+                    INSERT INTO expense_payments (
+                        expense_id, payment_date, amount_paid, payment_mode, ref_no, paid_to, paid_by, notes
+                    ) VALUES (
+                        :eid, :pdate, :pamt, 'Cash', :pref, :pto, 'Cart Cash', :notes
+                    );
+                    """),
+                    {
+                        "eid": exp_adv_id,
+                        "pdate": entry_date,
+                        "pamt": float(staff_advance),
+                        "pref": f"CART-ADV-{entry_date.strftime('%Y%m%d')}",
+                        "pto": staff_name,
+                        "notes": f"Cash advance disbursed from daily sales collection at {cart_name}"
+                    }
+                )
+
+            # Auto-create expense & payment for Food & Tea Cash
+            if float(food_tea_cash) > 0 and staff_name:
+                res_food = s.execute(
+                    text("""
+                    INSERT INTO expenses (
+                        expense_date, expense_type, category, sub_category, description,
+                        total_amount, attributed_to, vendor_name, staff_name, status, recorded_by, remarks
+                    ) VALUES (
+                        :ed, 'OPEX', 'Labour Charges', 'Food & Tea', :desc,
+                        :amt, :attr, :vendor, :staff, 'Paid', 'Daily Entry Auto', :rem
+                    ) RETURNING id;
+                    """),
+                    {
+                        "ed": entry_date,
+                        "desc": f"Daily Food & Tea Allowance - {staff_name} ({cart_name})",
+                        "amt": float(food_tea_cash),
+                        "attr": cart_name,
+                        "vendor": staff_name,
+                        "staff": staff_name,
+                        "rem": f"[Auto: Daily Entry #{daily_id}] Food & Tea Cash"
+                    }
+                )
+                exp_food_id = res_food.scalar()
+                s.execute(
+                    text("""
+                    INSERT INTO expense_payments (
+                        expense_id, payment_date, amount_paid, payment_mode, ref_no, paid_to, paid_by, notes
+                    ) VALUES (
+                        :eid, :pdate, :pamt, 'Cash', :pref, :pto, 'Cart Cash', :notes
+                    );
+                    """),
+                    {
+                        "eid": exp_food_id,
+                        "pdate": entry_date,
+                        "pamt": float(food_tea_cash),
+                        "pref": f"CART-FOOD-{entry_date.strftime('%Y%m%d')}",
+                        "pto": staff_name,
+                        "notes": f"Daily food and tea cash allowance disbursed from cart collection at {cart_name}"
+                    }
+                )
+
             s.commit()
 
     try:
@@ -734,8 +819,10 @@ def load_db_payments_df():
         p.paid_by,
         p.notes,
         e.category,
+        e.sub_category,
         e.description AS expense_desc,
-        e.total_amount AS expense_total
+        e.total_amount AS expense_total,
+        e.staff_name
     FROM expense_payments p
     JOIN expenses e ON p.expense_id = e.id
     ORDER BY p.payment_date DESC, p.id DESC;
@@ -1004,7 +1091,7 @@ if page == "Daily Entry":
         m4.metric("Total Sold", f"{tot_sold} units")
 
         if any(s < 0 for s in sold_map.values()):
-            st.error("Today's sales works out negative for at least one flavour - fix closing count before saving.")
+            st.error("Today's sales works out negative for at least one flavour - closing count is higher than opening + added.")
 
         calculated_mrp_total = float(sum(sold_map[code] * FLAVOR_MAP[code]["mrp"] for code in FLAVOR_CODES))
 
@@ -3219,7 +3306,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
     # 4. MONTHLY DUES & SETTLEMENT ENGINE
     # ------------------------------------------------------------------
     elif staff_tab_sel == "💵 Monthly Dues & Settlement":
-        st.write("Calculate monthly dues with fixed salary apportioned at **Rs 600/day worked**, commissions (15% > Rs 3,000), daily food/tea allowances, leave deductions, and cash advances:")
+        st.write("Calculate monthly dues with fixed salary apportioned at **Rs 600/day worked**, commissions (15% > Rs 3,000), daily food/tea allowances, and deductions backed by the Payments table:")
 
         now = date.today()
         m_col1, m_col2 = st.columns(2)
@@ -3238,7 +3325,10 @@ elif page == "Staff & Payroll" and user_role == "admin":
 
         daily_month_df = pd.DataFrame()
         att_month_df = pd.DataFrame()
+        staff_payments_df = pd.DataFrame()
+
         if db_conn is not None:
+            # Shifts worked
             query_month = """
             SELECT entry_date, cart_name, staff_name, total_collection, staff_advance, food_tea_cash
             FROM daily_cart_entries
@@ -3246,6 +3336,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
             """
             daily_month_df = db_conn.query(query_month, params={"sdate": m_start_dt, "edate": m_end_dt}, ttl="0s")
 
+            # Leaves logged
             query_att_m = """
             SELECT a.staff_id, s.name AS staff_name, a.attendance_date, a.status, a.leave_type, a.reason
             FROM staff_attendance a
@@ -3254,11 +3345,38 @@ elif page == "Staff & Payroll" and user_role == "admin":
             """
             att_month_df = db_conn.query(query_att_m, params={"sdate": m_start_dt, "edate": m_end_dt}, ttl="0s")
 
+            # Actual Labour Payments / Deductions from expense_payments table
+            query_labour_payments = """
+            SELECT 
+                p.id AS payment_id,
+                p.expense_id,
+                p.payment_date,
+                p.amount_paid,
+                p.payment_mode,
+                p.ref_no,
+                p.paid_to,
+                p.notes,
+                e.category,
+                e.sub_category,
+                e.description,
+                e.staff_name,
+                e.attributed_to
+            FROM expense_payments p
+            JOIN expenses e ON p.expense_id = e.id
+            WHERE e.category = 'Labour Charges'
+              AND e.staff_name IS NOT NULL
+              AND e.staff_name != ''
+              AND p.payment_date >= :sdate
+              AND p.payment_date <= :edate;
+            """
+            staff_payments_df = db_conn.query(query_labour_payments, params={"sdate": m_start_dt, "edate": m_end_dt}, ttl="0s")
+
         if staff_df.empty:
             st.info("No staff records found.")
         else:
             settlement_summary_rows = []
             detailed_staff_logs = {}
+            detailed_staff_payments = {}
 
             for _, s_row in staff_df.iterrows():
                 st_name = str(s_row["name"]).strip()
@@ -3272,12 +3390,11 @@ elif page == "Staff & Payroll" and user_role == "admin":
 
                 st_shifts = daily_month_df[daily_month_df["staff_name"] == st_name].copy() if not daily_month_df.empty else pd.DataFrame()
                 st_leaves = att_month_df[att_month_df["staff_name"] == st_name].copy() if not att_month_df.empty else pd.DataFrame()
+                st_payments = staff_payments_df[staff_payments_df["staff_name"] == st_name].copy() if not staff_payments_df.empty else pd.DataFrame()
 
                 total_sales_done = 0.0
                 total_comm_earned = 0.0
                 total_allow_entitled = 0.0
-                total_food_withdrawn = 0.0
-                total_advance_taken = 0.0
                 weekdays_worked = 0
                 sundays_worked = 0
 
@@ -3300,15 +3417,11 @@ elif page == "Staff & Payroll" and user_role == "admin":
                             day_allow = allow_wd
 
                         s_col = float(_num(shift["total_collection"]))
-                        s_adv = float(_num(shift["staff_advance"]))
-                        s_food = float(_num(shift["food_tea_cash"]))
                         day_comm = max(0.0, s_col - comm_thresh) * (comm_pct / 100.0)
 
                         total_sales_done += s_col
                         total_comm_earned += day_comm
                         total_allow_entitled += day_allow
-                        total_food_withdrawn += s_food
-                        total_advance_taken += s_adv
 
                         staff_shift_records.append({
                             "Date": s_dt.strftime("%d %b %Y"),
@@ -3320,9 +3433,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                             "Salary Apportioned (₹)": daily_rate,
                             "Commission (₹)": day_comm,
                             "Allowance Entitled (₹)": day_allow,
-                            "Food / Tea Taken (₹)": s_food,
-                            "Advance Taken (₹)": s_adv,
-                            "Net Daily Balance (₹)": daily_rate + day_comm + day_allow - s_food - s_adv
+                            "Total Entitled (₹)": daily_rate + day_comm + day_allow
                         })
 
                 paid_leave_cnt = 0
@@ -3349,16 +3460,16 @@ elif page == "Staff & Payroll" and user_role == "admin":
                             "Salary Apportioned (₹)": day_sal,
                             "Commission (₹)": 0.0,
                             "Allowance Entitled (₹)": 0.0,
-                            "Food / Tea Taken (₹)": 0.0,
-                            "Advance Taken (₹)": 0.0,
-                            "Net Daily Balance (₹)": day_sal
+                            "Total Entitled (₹)": day_sal
                         })
+
+                # Deductions taken directly from expense_payments for this staff
+                total_payments_disbursed = float(st_payments["amount_paid"].sum()) if not st_payments.empty else 0.0
 
                 days_worked = weekdays_worked + sundays_worked
                 apportioned_base_salary = (days_worked + paid_leave_cnt) * daily_rate
                 gross_earnings = apportioned_base_salary + total_comm_earned + total_allow_entitled
-                total_deductions = total_food_withdrawn + total_advance_taken
-                net_payable_due = gross_earnings - total_deductions
+                net_payable_due = gross_earnings - total_payments_disbursed
 
                 settlement_summary_rows.append({
                     "Staff Name": st_name,
@@ -3370,9 +3481,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                     "Commission Earned (₹)": total_comm_earned,
                     "Allowances Entitled (₹)": total_allow_entitled,
                     "Gross Payable (₹)": gross_earnings,
-                    "Food / Tea Taken (₹)": total_food_withdrawn,
-                    "Advances Taken (₹)": total_advance_taken,
-                    "Total Deductions (₹)": total_deductions,
+                    "Total Paid / Deductions (₹)": total_payments_disbursed,
                     "Net Amount Due (₹)": net_payable_due
                 })
 
@@ -3383,17 +3492,19 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 else:
                     detailed_staff_logs[st_name] = pd.DataFrame()
 
+                detailed_staff_payments[st_name] = st_payments
+
             settlement_df = pd.DataFrame(settlement_summary_rows)
 
             tot_gross = float(settlement_df["Gross Payable (₹)"].sum())
-            tot_ded = float(settlement_df["Total Deductions (₹)"].sum())
+            tot_ded = float(settlement_df["Total Paid / Deductions (₹)"].sum())
             tot_net = float(settlement_df["Net Amount Due (₹)"].sum())
             tot_comm = float(settlement_df["Commission Earned (₹)"].sum())
 
             kpi1, kpi2, kpi3, kpi4 = st.columns(4)
             kpi1.metric("Total Gross Entitled", f"₹{tot_gross:,.2f}")
             kpi2.metric("Total Commissions", f"₹{tot_comm:,.2f}")
-            kpi3.metric("Total Deductions Taken", f"-₹{tot_ded:,.2f}")
+            kpi3.metric("Total Payments Disbursed", f"-₹{tot_ded:,.2f}", "From Payments Table")
             kpi4.metric("Net Total Payable", f"₹{tot_net:,.2f}")
 
             st.markdown("---")
@@ -3409,36 +3520,54 @@ elif page == "Staff & Payroll" and user_role == "admin":
                     "Commission Earned (₹)": st.column_config.NumberColumn(format="₹%.2f"),
                     "Allowances Entitled (₹)": st.column_config.NumberColumn(format="₹%.2f"),
                     "Gross Payable (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                    "Food / Tea Taken (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                    "Advances Taken (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                    "Total Deductions (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                    "Total Paid / Deductions (₹)": st.column_config.NumberColumn(format="₹%.2f"),
                     "Net Amount Due (₹)": st.column_config.NumberColumn(format="₹%.2f"),
                 }
             )
 
             st.markdown("---")
-            st.markdown("#### Detailed Day-wise Shift & Attendance Ledger (With Cart & Staff Name)")
-
-            sel_staff_drill = st.selectbox("Select Staff Member for Detailed Day-Wise Breakdown", staff_df["name"].tolist(), key="drill_staff_sel")
+            sel_staff_drill = st.selectbox("Select Staff Member for Detailed Inspection", staff_df["name"].tolist(), key="drill_staff_sel")
+            
             target_staff_log = detailed_staff_logs.get(sel_staff_drill, pd.DataFrame())
+            target_staff_pay = detailed_staff_payments.get(sel_staff_drill, pd.DataFrame())
 
-            if target_staff_log.empty:
-                st.info(f"No shifts or leave records logged for {sel_staff_drill} in {sel_month_name} {sel_year}.")
-            else:
-                st.dataframe(
-                    target_staff_log,
-                    hide_index=True,
-                    use_container_width=True,
-                    column_config={
-                        "Daily Sales (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                        "Salary Apportioned (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                        "Commission (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                        "Allowance Entitled (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                        "Food / Tea Taken (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                        "Advance Taken (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                        "Net Daily Balance (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                    }
-                )
+            tab_drill1, tab_drill2 = st.tabs(["📋 Day-Wise Shifts & Attendance", "💳 Labour Payments & Deductions Disbursed"])
+
+            with tab_drill1:
+                st.write(f"Itemized daily shifts and attendance records for **{sel_staff_drill}**:")
+                if target_staff_log.empty:
+                    st.info(f"No shifts or leave records logged for {sel_staff_drill} in {sel_month_name} {sel_year}.")
+                else:
+                    st.dataframe(
+                        target_staff_log,
+                        hide_index=True,
+                        use_container_width=True,
+                        column_config={
+                            "Daily Sales (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                            "Salary Apportioned (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                            "Commission (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                            "Allowance Entitled (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                            "Total Entitled (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                        }
+                    )
+
+            with tab_drill2:
+                st.write(f"Actual disbursements and deductions recorded in `expense_payments` for **{sel_staff_drill}**:")
+                if target_staff_pay.empty:
+                    st.info(f"No disbursements / payments recorded for {sel_staff_drill} in {sel_month_name} {sel_year}.")
+                else:
+                    disp_sp = target_staff_pay.copy()
+                    disp_sp["payment_date"] = pd.to_datetime(disp_sp["payment_date"]).dt.strftime("%d %b %Y")
+                    st.dataframe(
+                        disp_sp[["payment_id", "payment_date", "sub_category", "description", "amount_paid", "payment_mode", "ref_no", "notes"]].rename(columns={
+                            "payment_id": "Payment ID", "payment_date": "Date", "sub_category": "Type",
+                            "description": "Description", "amount_paid": "Amount Paid (₹)", "payment_mode": "Mode",
+                            "ref_no": "Ref / UTR", "notes": "Notes"
+                        }),
+                        hide_index=True,
+                        use_container_width=True,
+                        column_config={"Amount Paid (₹)": st.column_config.NumberColumn(format="₹%.2f")}
+                    )
 
 # ======================================================================
 # PAGE 8: DASHBOARD (100% Supabase PostgreSQL Powered)
@@ -3565,6 +3694,7 @@ elif page == "Dashboard" and user_role == "admin":
         total_exp_all = range_exp["Amount"].sum() if not range_exp.empty else 0.0
         cogs_in_range = range_exp[range_exp["Category"] == "Cost of Goods"]["Amount"].sum() if not range_exp.empty else 0.0
 
+        # Metric Banner for Reports
         mc1, mc2, mc3, mc4, mc5 = st.columns(5)
         mc1.metric("Revenue in range", f"₹{total_rev:,.0f}")
         mc2.metric("Units sold in range", f"{total_units}")
@@ -3572,6 +3702,7 @@ elif page == "Dashboard" and user_role == "admin":
         mc4.metric("COGS So Far (All-Time)", f"₹{total_cogs_all_time:,.0f}")
         mc5.metric("Freezer Stock Value", f"₹{total_freezer_val:,.0f}")
 
+        # Cart-wise comparison
         st.markdown('<div id="cart-wise-comparison"></div>', unsafe_allow_html=True)
         st.markdown("### Cart-wise comparison")
         if not range_df.empty:
@@ -3587,6 +3718,7 @@ elif page == "Dashboard" and user_role == "admin":
         else:
             st.caption("No sales in this date range.")
 
+        # Cart-wise average sales by day of week
         st.markdown('<div id="cart-wise-day-of-week"></div>', unsafe_allow_html=True)
         st.markdown("### Cart-wise average sales by day of the week")
         if not range_df.empty:
@@ -3616,6 +3748,7 @@ elif page == "Dashboard" and user_role == "admin":
         else:
             st.caption("No sales in this date range.")
 
+        # Flavour-wise performance
         st.markdown('<div id="flavour-wise-performance"></div>', unsafe_allow_html=True)
         st.markdown("### Flavour-wise performance")
         flavor_range_df = load_db_flavor_sales(start_date=range_start, end_date=range_end)
@@ -3626,6 +3759,7 @@ elif page == "Dashboard" and user_role == "admin":
         else:
             st.caption("No sales in this date range.")
 
+        # Profit & Loss summary
         st.markdown('<div id="profit-loss-summary"></div>', unsafe_allow_html=True)
         st.markdown("### Profit & loss summary")
         cogs = cogs_in_range
@@ -3647,6 +3781,7 @@ elif page == "Dashboard" and user_role == "admin":
         pc1.metric("Net profit", f"₹{net_profit:,.0f}")
         pc2.metric("Margin", f"{(net_profit / total_rev * 100) if total_rev else 0:.1f}%")
 
+        # Expense breakdown
         st.markdown('<div id="expense-breakdown"></div>', unsafe_allow_html=True)
         st.markdown("### Expense breakdown by category")
         if not range_exp.empty:
@@ -3661,6 +3796,7 @@ elif page == "Dashboard" and user_role == "admin":
         else:
             st.caption("No expenses logged in this date range.")
 
+        # Cash vs PhonePe vs Advance vs Food/Tea
         st.markdown('<div id="cash-vs-phonepe"></div>', unsafe_allow_html=True)
         st.markdown("### Cash vs PhonePe / UPI vs Advance vs Food/Tea")
         if not range_df.empty:
@@ -3683,6 +3819,7 @@ elif page == "Dashboard" and user_role == "admin":
         else:
             st.caption("No collections in this date range.")
 
+        # Sales table
         st.markdown('<div id="sales-in-range"></div>', unsafe_allow_html=True)
         st.markdown("### Sales in this range")
         if not range_df.empty:
