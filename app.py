@@ -10,7 +10,11 @@ Kulfi Ops - multi-user data entry app for the kulfi cart business.
 - Remodeled Expenses & Payments (Bills vs. Cash Outflows with tranches & P&L summaries).
 - Automatic creation of Labour Charges expenses & cash payments on Daily Entry advance/food cash.
 - Staff & Payroll Module (KYC profile, leaves, compensation plans, and payments-backed settlement).
-- Remodeled Daily Entry Screen with customized submission success notification format.
+- Remodeled Daily Entry Screen:
+    * 3-Cart Home Screen buttons for quick cart selection (Admin & Data Entry).
+    * Side-by-side 2-column layout (Left: Sales & Closing / Right: Today's Restock & Opening).
+    * Pre-populates today's restock values from DB if already saved, allowing edits.
+    * Customized success modal notification format upon submission, returning to cart selector.
 - Dashboard with COGS So Far (All-Time), exact COGS in range, and accrual-based net margin tracking.
 - Freezer Stock, Freezer Analysis, Dashboard, and Expenses powered 100% by Supabase PostgreSQL.
 """
@@ -682,12 +686,18 @@ def sync_today_restock_entry(today_date, cart_name, staff_name, today_opening_ma
                     s.execute(
                         text("""
                         INSERT INTO daily_cart_items (daily_entry_id, flavor_code, opening_units, added_units, sold_units, closing_units)
-                        VALUES (:eid, :code, :open, 0, 0, :open)
+                        VALUES (:eid, :code, :open, :add, 0, :open)
                         ON CONFLICT (daily_entry_id, flavor_code) DO UPDATE
                         SET opening_units = EXCLUDED.opening_units,
-                            sold_units = GREATEST(0, EXCLUDED.opening_units + daily_cart_items.added_units - daily_cart_items.closing_units);
+                            added_units = EXCLUDED.added_units,
+                            sold_units = GREATEST(0, EXCLUDED.opening_units + EXCLUDED.added_units - daily_cart_items.closing_units);
                         """),
-                        {"eid": today_id, "code": code, "open": int(today_opening_map[code])}
+                        {
+                            "eid": today_id, 
+                            "code": code, 
+                            "open": int(today_opening_map[code]),
+                            "add": int(today_added_map.get(code, 0))
+                        }
                     )
             else:
                 res_ins = s.execute(
@@ -703,9 +713,14 @@ def sync_today_restock_entry(today_date, cart_name, staff_name, today_opening_ma
                     s.execute(
                         text("""
                         INSERT INTO daily_cart_items (daily_entry_id, flavor_code, opening_units, added_units, sold_units, closing_units)
-                        VALUES (:eid, :code, :open, 0, 0, :open);
+                        VALUES (:eid, :code, :open, :add, 0, :open);
                         """),
-                        {"eid": today_id, "code": code, "open": int(today_opening_map[code])}
+                        {
+                            "eid": today_id, 
+                            "code": code, 
+                            "open": int(today_opening_map[code]),
+                            "add": int(today_added_map.get(code, 0))
+                        }
                     )
             s.commit()
 
@@ -721,12 +736,13 @@ def sync_today_restock_entry(today_date, cart_name, staff_name, today_opening_ma
 
         date_cart_id = f"{today_str}||{cart_name}"
         today_open_list = [int(today_opening_map[code]) for code in FLAVOR_CODES]
+        today_add_list = [int(today_added_map[code]) for code in FLAVOR_CODES]
         zero_flavors = [0 for _ in FLAVOR_CODES]
         
         sheet_row_today = (
             [today_str, cart_name, CITY, date_cart_id]
             + today_open_list
-            + zero_flavors
+            + today_add_list
             + zero_flavors
             + today_open_list
             + [0.0, 0.0, 0.0, "", str(staff_name), 0.0, 0.0]
@@ -1195,292 +1211,333 @@ with st.sidebar:
 st.title(f"🍦 Kulfi Ops — {page}")
 
 # ======================================================================
-# PAGE 1: DAILY ENTRY (Side-by-Side Dual Boxes + Compact Fields)
+# PAGE 1: DAILY ENTRY (3-Cart Home Screen & Dual-Box Cart Form)
 # ======================================================================
 if page == "Daily Entry":
-    st.subheader("Cart Restock & Daily Sales Entry")
+    if "active_daily_cart" not in st.session_state:
+        st.session_state["active_daily_cart"] = None
 
-    try:
-        daily_entries = list_daily_entries_with_prefill()
-    except Exception as e:
-        daily_entries = []
-        st.warning(f"Could not load entries from database ({e}).")
+    # Home Screen: Display 3 Carts as Buttons
+    if not st.session_state["active_daily_cart"]:
+        st.subheader("Select Cart for Daily Entry")
+        st.caption("Click on a cart below to record sales or restock inventory:")
 
-    if user_role == "entry" and daily_entries:
-        today_val = date.today()
-        allowed_dates = {
-            today_val - timedelta(days=1),
-            today_val - timedelta(days=2),
-            today_val - timedelta(days=3),
-        }
-        daily_entries = [e for e in daily_entries if e["date"].date() in allowed_dates]
-
-    if not daily_entries:
-        st.info("No entries found in database for the active period.")
+        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+        c_btn1, c_btn2, c_btn3 = st.columns(3, gap="medium")
+        for i, cart_name in enumerate(CARTS):
+            col = [c_btn1, c_btn2, c_btn3][i]
+            with col:
+                if st.button(f"🛒 {cart_name}", use_container_width=True, type="primary"):
+                    st.session_state["active_daily_cart"] = cart_name
+                    st.rerun()
     else:
-        top_c1, top_c2 = st.columns([1.3, 1])
+        cart_name = st.session_state["active_daily_cart"]
+        
+        if st.button("← Back to Cart Selection", use_container_width=False):
+            st.session_state["active_daily_cart"] = None
+            st.rerun()
 
-        labels = [f"{e['date'].strftime('%d %b %Y')} — {e['cart']}" for e in daily_entries]
-        with top_c1:
-            sel = st.selectbox("Select cart & date entry to update sales", labels, key="daily_update_select")
-        loaded = daily_entries[labels.index(sel)]
-        entry_id = loaded["db_id"]
-        entry_date = loaded["date"].date()
-        cart_name = loaded["cart"]
-        today_val = date.today()
+        st.subheader(f"Cart Restock & Daily Sales — {cart_name}")
 
-        data_key_suffix = f"_{entry_id}"
+        try:
+            all_entries = list_daily_entries_with_prefill()
+            cart_entries = [e for e in all_entries if e["cart"] == cart_name]
+        except Exception as e:
+            cart_entries = []
+            st.warning(f"Could not load entries from database ({e}).")
 
-        k_tot = f"daily_total{data_key_suffix}"
-        k_ph = f"daily_phonepe{data_key_suffix}"
-        k_cs = f"daily_cash{data_key_suffix}"
-        k_adv = f"daily_adv{data_key_suffix}"
-        k_food = f"daily_food{data_key_suffix}"
-        k_staff = f"daily_staff{data_key_suffix}"
-        k_prev_calc = f"daily_prev_calc{data_key_suffix}"
+        if user_role == "entry" and cart_entries:
+            today_val = date.today()
+            allowed_dates = {
+                today_val - timedelta(days=1),
+                today_val - timedelta(days=2),
+                today_val - timedelta(days=3),
+            }
+            cart_entries = [e for e in cart_entries if e["date"].date() in allowed_dates]
 
-        staff_options = load_active_staff_list()
-        default_staff_name = loaded.get("staff_name", "")
-        if default_staff_name and default_staff_name not in staff_options:
-            staff_options.append(default_staff_name)
+        if not cart_entries:
+            st.info(f"No entries found for {cart_name}.")
+        else:
+            top_c1, top_c2 = st.columns([1.3, 1])
 
-        default_staff_idx = staff_options.index(default_staff_name) if default_staff_name in staff_options else 0
-        with top_c2:
-            staff_name = st.selectbox("Cart staff assigned", staff_options, index=default_staff_idx, key=k_staff)
+            labels = [f"{e['date'].strftime('%d %b %Y')}" for e in cart_entries]
+            with top_c1:
+                sel_date_label = st.selectbox("Select entry date to update sales", labels, key=f"date_sel_{cart_name}")
+            loaded = cart_entries[labels.index(sel_date_label)]
+            entry_id = loaded["db_id"]
+            entry_date = loaded["date"].date()
+            today_val = date.today()
 
-        # --------------------------------------------------------------
-        # SIDE-BY-SIDE DUAL COLUMN LAYOUT
-        # --------------------------------------------------------------
-        col_box_left, col_box_right = st.columns(2, gap="medium")
+            data_key_suffix = f"_{entry_id}"
 
-        # --------------------------------------------------------------
-        # LEFT COLUMN: SALES & CLOSING ENTRY FOR PREVIOUS/SELECTED DAY
-        # --------------------------------------------------------------
-        added_map = {}
-        closing_map = {}
-        sold_map = {}
-        opening_map = {code: loaded["by_code"][code]["opening"] for code in FLAVOR_CODES}
+            k_tot = f"daily_total{data_key_suffix}"
+            k_ph = f"daily_phonepe{data_key_suffix}"
+            k_cs = f"daily_cash{data_key_suffix}"
+            k_adv = f"daily_adv{data_key_suffix}"
+            k_food = f"daily_food{data_key_suffix}"
+            k_staff = f"daily_staff{data_key_suffix}"
+            k_prev_calc = f"daily_prev_calc{data_key_suffix}"
 
-        with col_box_left:
-            st.markdown(
-                f"""
-                <div class="header-box-sales">
-                    <span>📅 1. Sales & Closing Entry — {entry_date.strftime('%a, %d %b %Y')}</span>
-                    <span><b>{cart_name}</b></span>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+            staff_options = load_active_staff_list()
+            default_staff_name = loaded.get("staff_name", "")
+            if default_staff_name and default_staff_name not in staff_options:
+                staff_options.append(default_staff_name)
 
-            with st.container(border=True):
-                st.caption(f"Record **closing counts** and daytime stock additions for **{entry_date.strftime('%d %b %Y')}**:")
+            default_staff_idx = staff_options.index(default_staff_name) if default_staff_name in staff_options else 0
+            with top_c2:
+                staff_name = st.selectbox("Cart staff assigned", staff_options, index=default_staff_idx, key=k_staff)
 
-                for code in FLAVOR_CODES:
-                    f_info = FLAVOR_MAP[code]
-                    k_add = f"add_{entry_id}_{code}"
-                    k_cls = f"cls_{entry_id}_{code}"
+            # Fetch existing today's restock from database if already present
+            existing_today_added = {}
+            if db_conn is not None:
+                try:
+                    t_res = db_conn.query("""
+                        SELECT i.flavor_code, i.added_units
+                        FROM daily_cart_entries e
+                        JOIN daily_cart_items i ON e.id = i.daily_entry_id
+                        WHERE e.entry_date = :tdt AND e.cart_name = :cart;
+                    """, params={"tdt": today_val, "cart": cart_name}, ttl="0s")
+                    if not t_res.empty:
+                        existing_today_added = dict(zip(t_res["flavor_code"], t_res["added_units"]))
+                except Exception:
+                    pass
 
-                    if k_add not in st.session_state:
-                        st.session_state[k_add] = loaded["by_code"][code]["added"]
-                    if k_cls not in st.session_state:
-                        st.session_state[k_cls] = loaded["by_code"][code]["closing"]
+            # --------------------------------------------------------------
+            # SIDE-BY-SIDE DUAL COLUMN LAYOUT
+            # --------------------------------------------------------------
+            col_box_left, col_box_right = st.columns(2, gap="medium")
 
-                    cur_open = opening_map[code]
-                    cur_add = _int_num(st.session_state[k_add])
-                    cur_cls = _int_num(st.session_state[k_cls])
-                    cur_sold = cur_open + cur_add - cur_cls
+            # --------------------------------------------------------------
+            # LEFT COLUMN: SALES & CLOSING ENTRY FOR PREVIOUS/SELECTED DAY
+            # --------------------------------------------------------------
+            added_map = {}
+            closing_map = {}
+            sold_map = {}
+            opening_map = {code: loaded["by_code"][code]["opening"] for code in FLAVOR_CODES}
 
-                    added_map[code] = cur_add
-                    closing_map[code] = cur_cls
-                    sold_map[code] = cur_sold
+            with col_box_left:
+                st.markdown(
+                    f"""
+                    <div class="header-box-sales">
+                        <span>📅 1. Sales & Closing Entry — {entry_date.strftime('%a, %d %b %Y')}</span>
+                        <span><b>{cart_name}</b></span>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
 
-                    st.markdown(
-                        f"""
-                        <div class="flavor-entry-row">
-                            <div class="flavor-title-bar">
-                                <span class="flavor-name">{f_info['name']} (₹{f_info['mrp']:.0f})</span>
-                                <div>
-                                    <span class="badge-open">Opening: {cur_open}</span>
-                                    <span class="badge-sold">Sold: {cur_sold}</span>
-                                </div>
-                            </div>
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
+                with st.container(border=True):
+                    st.caption(f"Record **closing counts** and daytime stock additions for **{entry_date.strftime('%d %b %Y')}**:")
 
-                    col_a, col_b = st.columns(2)
-                    with col_a:
-                        st.number_input("+ Added during day", min_value=0, step=1, format="%d", key=k_add)
-                    with col_b:
-                        st.number_input("Closing count", min_value=0, step=1, format="%d", key=k_cls)
+                    for code in FLAVOR_CODES:
+                        f_info = FLAVOR_MAP[code]
+                        k_add = f"add_{entry_id}_{code}"
+                        k_cls = f"cls_{entry_id}_{code}"
 
-                tot_open = sum(opening_map.values())
-                tot_add = sum(added_map.values())
-                tot_close = sum(closing_map.values())
-                tot_sold = sum(sold_map.values())
+                        if k_add not in st.session_state:
+                            st.session_state[k_add] = loaded["by_code"][code]["added"]
+                        if k_cls not in st.session_state:
+                            st.session_state[k_cls] = loaded["by_code"][code]["closing"]
 
-                m1, m2, m3, m4 = st.columns(4)
-                m1.metric("Opening", f"{tot_open} pcs")
-                m2.metric("Added", f"{tot_add} pcs")
-                m3.metric("Closing", f"{tot_close} pcs")
-                m4.metric("Total Sold", f"{tot_sold} pcs")
+                        cur_open = opening_map[code]
+                        cur_add = _int_num(st.session_state[k_add])
+                        cur_cls = _int_num(st.session_state[k_cls])
+                        cur_sold = cur_open + cur_add - cur_cls
 
-                if any(s < 0 for s in sold_map.values()):
-                    st.error(f"Sales negative for at least one flavour on {entry_date.strftime('%d %b %Y')} - check closing count.")
+                        added_map[code] = cur_add
+                        closing_map[code] = cur_cls
+                        sold_map[code] = cur_sold
 
-                calculated_mrp_total = float(sum(sold_map[code] * FLAVOR_MAP[code]["mrp"] for code in FLAVOR_CODES))
-
-                if k_tot not in st.session_state or st.session_state.get(k_prev_calc) != calculated_mrp_total:
-                    default_tot = loaded["total"] if (loaded["total"] > 0 and not loaded.get("is_prefill", False)) else calculated_mrp_total
-                    st.session_state[k_tot] = f"{default_tot:.2f}"
-                    st.session_state[k_prev_calc] = calculated_mrp_total
-
-                if k_ph not in st.session_state:
-                    st.session_state[k_ph] = f"{loaded['phonepe']:.2f}"
-
-                if k_adv not in st.session_state:
-                    st.session_state[k_adv] = f"{loaded['staff_advance']:.2f}" if "staff_advance" in loaded else "0.00"
-
-                if k_food not in st.session_state:
-                    st.session_state[k_food] = f"{loaded['food_tea_cash']:.2f}" if "food_tea_cash" in loaded else "0.00"
-
-                if k_cs not in st.session_state:
-                    st.session_state[k_cs] = f"{loaded['cash']:.2f}"
-
-                st.markdown("---")
-                st.write(f"**Cash, UPI & Advance Collection ({entry_date.strftime('%d %b')})**")
-
-                c3, c4 = st.columns(2)
-                with c3:
-                    total_collection_str = st.text_input("Total collection (₹)", key=k_tot)
-                    staff_advance_str = st.text_input("Advance to staff (₹)", key=k_adv)
-                    food_tea_str = st.text_input("Cash Food / Tea (₹)", key=k_food)
-                with c4:
-                    phonepe_str = st.text_input("PhonePe / UPI (₹)", key=k_ph)
-                    cash_str = st.text_input("Cash Collected (₹)", key=k_cs)
-
-                total_collection_val = _num(total_collection_str)
-                phonepe_val = _num(phonepe_str)
-                staff_advance_val = _num(staff_advance_str)
-                food_tea_val = _num(food_tea_str)
-                cash_val = _num(cash_str)
-
-                cash_leakage = total_collection_val - phonepe_val - staff_advance_val - food_tea_val - cash_val
-                has_leakage = cash_leakage > 0.001
-
-                if has_leakage:
-                    st.markdown(
-                        f"<div style='margin-top:2px;'><label style='font-size:11px; font-weight:700;'>Cash Leakage:</label> "
-                        f"<b style='color:#C41C1C; font-size:14px;'>₹{cash_leakage:,.2f}</b></div>"
-                        '<p style="color:#C41C1C; font-weight:bold; font-size:11.5px; margin: 2px 0 !important;">'
-                        '⚠️ Cash leakage detected - enter reason in remarks'
-                        '</p>',
-                        unsafe_allow_html=True
-                    )
-                else:
-                    st.markdown(
-                        f"<div style='margin-top:2px;'><label style='font-size:11px; font-weight:700;'>Cash Leakage:</label> "
-                        f"<b style='color:#2A1B10; font-size:13px;'>₹{cash_leakage:,.2f}</b></div>",
-                        unsafe_allow_html=True
-                    )
-
-                remarks = st.text_input("Remarks", value=loaded["remarks"], key=f"daily_remarks{data_key_suffix}", placeholder="Enter remarks (mandatory if cash leakage)...")
-
-        # --------------------------------------------------------------
-        # RIGHT COLUMN: TODAY'S RESTOCK & OPENING BALANCE PREPARATION
-        # --------------------------------------------------------------
-        today_added_map = {}
-        today_opening_map = {}
-
-        with col_box_right:
-            st.markdown(
-                f"""
-                <div class="header-box-restock">
-                    <span>🚀 2. Today's Restock & Opening — {today_val.strftime('%a, %d %b %Y')}</span>
-                    <span><b>{cart_name}</b></span>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-
-            with st.container(border=True):
-                st.caption(f"Enter **stock added for today ({today_val.strftime('%d %b')})**. Today's opening updates dynamically:")
-
-                for code in FLAVOR_CODES:
-                    f_info = FLAVOR_MAP[code]
-                    k_today_add = f"today_add_{cart_name}_{code}"
-                    prev_close_count = closing_map.get(code, 0)
-
-                    c_flv_l, c_flv_r = st.columns([1.1, 0.9])
-                    with c_flv_l:
-                        today_add_input = st.number_input(
-                            f"+ Restock: {f_info['name']} (₹{f_info['mrp']:.0f})",
-                            min_value=0,
-                            value=0,
-                            step=1,
-                            format="%d",
-                            key=k_today_add
-                        )
-                    
-                    today_added_map[code] = int(today_add_input)
-                    calc_today_open = prev_close_count + int(today_add_input)
-                    today_opening_map[code] = calc_today_open
-
-                    with c_flv_r:
-                        st.markdown("<div style='height: 18px;'></div>", unsafe_allow_html=True)
                         st.markdown(
                             f"""
-                            <div style="text-align: right; margin-bottom: 6px;">
-                                <span class="badge-today-open">Opening: <b>{calc_today_open} pcs</b></span>
+                            <div class="flavor-entry-row">
+                                <div class="flavor-title-bar">
+                                    <span class="flavor-name">{f_info['name']} (₹{f_info['mrp']:.0f})</span>
+                                    <div>
+                                        <span class="badge-open">Opening: {cur_open}</span>
+                                        <span class="badge-sold">Sold: {cur_sold}</span>
+                                    </div>
+                                </div>
                             </div>
                             """,
                             unsafe_allow_html=True
                         )
 
-                tot_today_added = sum(today_added_map.values())
-                tot_today_open = sum(today_opening_map.values())
+                        col_a, col_b = st.columns(2)
+                        with col_a:
+                            st.number_input("+ Added during day", min_value=0, step=1, format="%d", key=k_add)
+                        with col_b:
+                            st.number_input("Closing count", min_value=0, step=1, format="%d", key=k_cls)
 
-                st.markdown("---")
-                tm1, tm2 = st.columns(2)
-                tm1.metric("Stock Added for Today", f"{tot_today_added} pcs")
-                tm2.metric("Today's Total Opening Balance", f"{tot_today_open} pcs")
+                    tot_open = sum(opening_map.values())
+                    tot_add = sum(added_map.values())
+                    tot_close = sum(closing_map.values())
+                    tot_sold = sum(sold_map.values())
 
-        # --------------------------------------------------------------
-        # FULL-WIDTH SUBMIT ACTION (WITH CUSTOM SUCCESS MODAL TEXT)
-        # --------------------------------------------------------------
-        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-        if st.button("💾 Submit Daily Sales & Today's Restock Entry", type="primary", use_container_width=True):
-            if any(s < 0 for s in sold_map.values()):
-                st.error("Sales works out negative for at least one flavour on previous day - fix closing count before saving.")
-            elif has_leakage and not remarks.strip():
-                st.error("Remarks is mandatory when there is a cash leakage. Please enter a reason.")
-            else:
-                try:
-                    selected_staff = "" if staff_name == "Select Staff" else staff_name
-                    
-                    # 1. Sync Left Box: Previous / Selected Day Entry
-                    sync_daily_entry(
-                        entry_date, cart_name, added_map, closing_map, opening_map, sold_map, 
-                        total_collection_val, phonepe_val, cash_val, remarks, selected_staff, staff_advance_val, food_tea_val
-                    )
+                    m1, m2, m3, m4 = st.columns(4)
+                    m1.metric("Opening", f"{tot_open} pcs")
+                    m2.metric("Added", f"{tot_add} pcs")
+                    m3.metric("Closing", f"{tot_close} pcs")
+                    m4.metric("Total Sold", f"{tot_sold} pcs")
 
-                    # 2. Sync Right Box: Today's Restock & Opening Balance Entry
-                    sync_today_restock_entry(
-                        today_val, cart_name, selected_staff, today_opening_map, today_added_map
-                    )
+                    if any(s < 0 for s in sold_map.values()):
+                        st.error(f"Sales negative for at least one flavour on {entry_date.strftime('%d %b %Y')} - check closing count.")
 
-                    st.cache_resource.clear()
-                    
-                    # Formatted success notification matching requested layout
-                    success_msg = (
-                        f"Record Saved successfully:\n\n"
-                        f"{entry_date.strftime('%d %b %Y')} : Total sold units {tot_sold} units\n\n"
-                        f"{today_val.strftime('%d %b %Y')}: Opening balance after restock {tot_today_open} units"
-                    )
-                    show_success_modal(success_msg)
-                except Exception as e:
-                    st.error(f"Could not save entries - {e}")
+                    calculated_mrp_total = float(sum(sold_map[code] * FLAVOR_MAP[code]["mrp"] for code in FLAVOR_CODES))
+
+                    if k_tot not in st.session_state or st.session_state.get(k_prev_calc) != calculated_mrp_total:
+                        default_tot = loaded["total"] if (loaded["total"] > 0 and not loaded.get("is_prefill", False)) else calculated_mrp_total
+                        st.session_state[k_tot] = f"{default_tot:.2f}"
+                        st.session_state[k_prev_calc] = calculated_mrp_total
+
+                    if k_ph not in st.session_state:
+                        st.session_state[k_ph] = f"{loaded['phonepe']:.2f}"
+
+                    if k_adv not in st.session_state:
+                        st.session_state[k_adv] = f"{loaded['staff_advance']:.2f}" if "staff_advance" in loaded else "0.00"
+
+                    if k_food not in st.session_state:
+                        st.session_state[k_food] = f"{loaded['food_tea_cash']:.2f}" if "food_tea_cash" in loaded else "0.00"
+
+                    if k_cs not in st.session_state:
+                        st.session_state[k_cs] = f"{loaded['cash']:.2f}"
+
+                    st.markdown("---")
+                    st.write(f"**Cash, UPI & Advance Collection ({entry_date.strftime('%d %b')})**")
+
+                    c3, c4 = st.columns(2)
+                    with c3:
+                        total_collection_str = st.text_input("Total collection (₹)", key=k_tot)
+                        staff_advance_str = st.text_input("Advance to staff (₹)", key=k_adv)
+                        food_tea_str = st.text_input("Cash Food / Tea (₹)", key=k_food)
+                    with c4:
+                        phonepe_str = st.text_input("PhonePe / UPI (₹)", key=k_ph)
+                        cash_str = st.text_input("Cash Collected (₹)", key=k_cs)
+
+                    total_collection_val = _num(total_collection_str)
+                    phonepe_val = _num(phonepe_str)
+                    staff_advance_val = _num(staff_advance_str)
+                    food_tea_val = _num(food_tea_str)
+                    cash_val = _num(cash_str)
+
+                    cash_leakage = total_collection_val - phonepe_val - staff_advance_val - food_tea_val - cash_val
+                    has_leakage = cash_leakage > 0.001
+
+                    if has_leakage:
+                        st.markdown(
+                            f"<div style='margin-top:2px;'><label style='font-size:11px; font-weight:700;'>Cash Leakage:</label> "
+                            f"<b style='color:#C41C1C; font-size:14px;'>₹{cash_leakage:,.2f}</b></div>"
+                            '<p style="color:#C41C1C; font-weight:bold; font-size:11.5px; margin: 2px 0 !important;">'
+                            '⚠️ Cash leakage detected - enter reason in remarks'
+                            '</p>',
+                            unsafe_allow_html=True
+                        )
+                    else:
+                        st.markdown(
+                            f"<div style='margin-top:2px;'><label style='font-size:11px; font-weight:700;'>Cash Leakage:</label> "
+                            f"<b style='color:#2A1B10; font-size:13px;'>₹{cash_leakage:,.2f}</b></div>",
+                            unsafe_allow_html=True
+                        )
+
+                    remarks = st.text_input("Remarks", value=loaded["remarks"], key=f"daily_remarks{data_key_suffix}", placeholder="Enter remarks (mandatory if cash leakage)...")
+
+            # --------------------------------------------------------------
+            # RIGHT COLUMN: TODAY'S RESTOCK & OPENING BALANCE PREPARATION
+            # --------------------------------------------------------------
+            today_added_map = {}
+            today_opening_map = {}
+
+            with col_box_right:
+                st.markdown(
+                    f"""
+                    <div class="header-box-restock">
+                        <span>🚀 2. Today's Restock & Opening — {today_val.strftime('%a, %d %b %Y')}</span>
+                        <span><b>{cart_name}</b></span>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+                with st.container(border=True):
+                    st.caption(f"Enter **stock added for today ({today_val.strftime('%d %b')})**. Pre-loaded from DB if available:")
+
+                    for code in FLAVOR_CODES:
+                        f_info = FLAVOR_MAP[code]
+                        k_today_add = f"today_add_{cart_name}_{code}"
+                        prev_close_count = closing_map.get(code, 0)
+                        default_added_val = int(existing_today_added.get(code, 0))
+
+                        c_flv_l, c_flv_r = st.columns([1.1, 0.9])
+                        with c_flv_l:
+                            today_add_input = st.number_input(
+                                f"+ Restock: {f_info['name']} (₹{f_info['mrp']:.0f})",
+                                min_value=0,
+                                value=default_added_val,
+                                step=1,
+                                format="%d",
+                                key=k_today_add
+                            )
+                        
+                        today_added_map[code] = int(today_add_input)
+                        calc_today_open = prev_close_count + int(today_add_input)
+                        today_opening_map[code] = calc_today_open
+
+                        with c_flv_r:
+                            st.markdown("<div style='height: 18px;'></div>", unsafe_allow_html=True)
+                            st.markdown(
+                                f"""
+                                <div style="text-align: right; margin-bottom: 6px;">
+                                    <span class="badge-today-open">Opening: <b>{calc_today_open} pcs</b></span>
+                                </div>
+                                """,
+                                unsafe_allow_html=True
+                            )
+
+                    tot_today_added = sum(today_added_map.values())
+                    tot_today_open = sum(today_opening_map.values())
+
+                    st.markdown("---")
+                    tm1, tm2 = st.columns(2)
+                    tm1.metric("Stock Added for Today", f"{tot_today_added} pcs")
+                    tm2.metric("Today's Total Opening Balance", f"{tot_today_open} pcs")
+
+            # --------------------------------------------------------------
+            # FULL-WIDTH SUBMIT ACTION (WITH REQUESTED POPUP TEXT FORMAT)
+            # --------------------------------------------------------------
+            st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+            if st.button("💾 Submit Daily Sales & Today's Restock Entry", type="primary", use_container_width=True):
+                if any(s < 0 for s in sold_map.values()):
+                    st.error("Sales works out negative for at least one flavour on previous day - fix closing count before saving.")
+                elif has_leakage and not remarks.strip():
+                    st.error("Remarks is mandatory when there is a cash leakage. Please enter a reason.")
+                else:
+                    try:
+                        selected_staff = "" if staff_name == "Select Staff" else staff_name
+                        
+                        # 1. Sync Left Box: Previous / Selected Day Entry
+                        sync_daily_entry(
+                            entry_date, cart_name, added_map, closing_map, opening_map, sold_map, 
+                            total_collection_val, phonepe_val, cash_val, remarks, selected_staff, staff_advance_val, food_tea_val
+                        )
+
+                        # 2. Sync Right Box: Today's Restock & Opening Balance Entry
+                        sync_today_restock_entry(
+                            today_val, cart_name, selected_staff, today_opening_map, today_added_map
+                        )
+
+                        st.cache_resource.clear()
+                        
+                        # Reset active cart so it redirects back to the 3-cart home screen upon OK
+                        st.session_state["active_daily_cart"] = None
+
+                        success_msg = (
+                            f"Record Saved successfully:\n\n"
+                            f"{entry_date.strftime('%d %b %Y')} : Total sold units {tot_sold} units\n\n"
+                            f"{today_val.strftime('%d %b %Y')} : Opening balance after restock {tot_today_open} units"
+                        )
+                        show_success_modal(success_msg)
+                    except Exception as e:
+                        st.error(f"Could not save entries - {e}")
 
 # ======================================================================
 # PAGE 2: PURCHASE ORDERS (Estimator, Dynamic Discount & Order Editing)
@@ -2315,7 +2372,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
         if not rec_query_df.empty:
             rec_display = []
             for _, r in rec_query_df.iterrows():
-                items_dict = {itm['code']: itm['rec'] for itm in r['items']} if r['items'] else {}
+                items_dict = {itm['code']: itm['rec'] for r in r['items']} if r['items'] else {}
                 row_data = {
                     "Receipt #": f"#{r['Receipt #']}",
                     "Received Date": pd.to_datetime(r['Received Date']).strftime("%d %b %Y"),
@@ -4206,107 +4263,4 @@ elif page == "Dashboard" and user_role == "admin":
                 st.markdown("#### Comparative Cart Revenue")
                 st.bar_chart(cart_grp.set_index("Cart")["Revenue (₹)"])
         else:
-            st.caption("No cart sales in this date range.")
-
-        # ==============================================================
-        # GROUP 3: DAY-WISE & TIMING ANALYSIS
-        # ==============================================================
-        st.markdown("---")
-        st.markdown("### 3. Day-Wise & Timing Patterns")
-
-        if not range_df.empty:
-            day_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-            dow_df = range_df[range_df["Sold_Total"] > 0].copy()
-            dow_df["Day"] = dow_df["Date"].dt.day_name()
-
-            if not dow_df.empty:
-                dw1, dw2 = st.columns(2)
-
-                with dw1:
-                    st.write("**Average Units Sold per Day of Week**")
-                    units_pivot = dow_df.pivot_table(
-                        index="Cart", columns="Day", values="Sold_Total", aggfunc="mean", fill_value=0, margins=True, margins_name="All Carts"
-                    )
-                    day_cols = [d for d in day_order if d in units_pivot.columns] + ["All Carts"]
-                    units_pivot = units_pivot.reindex(columns=day_cols)
-                    st.dataframe(units_pivot.round(0).astype(int), use_container_width=True)
-
-                with dw2:
-                    st.write("**Average Revenue (₹) per Day of Week**")
-                    rev_pivot = dow_df.pivot_table(
-                        index="Cart", columns="Day", values="Total_Collection", aggfunc="mean", fill_value=0, margins=True, margins_name="All Carts"
-                    )
-                    rev_pivot = rev_pivot.reindex(columns=day_cols)
-                    st.dataframe(rev_pivot.round(0).astype(int), use_container_width=True)
-            else:
-                st.caption("No active selling days found in this range.")
-
-            st.markdown("#### Itemized Daily Cart Sales Log")
-            display_cols = ["Date", "Cart", "Sold_Total", "Total_Collection", "PhonePe", "Cash", "Staff_Name", "Staff_Advance", "Food_Tea_Cash", "Remarks"]
-            sales_table = range_df.sort_values(["Date", "Cart"])[display_cols].rename(
-                columns={
-                    "Sold_Total": "Units Sold", 
-                    "Total_Collection": "Revenue (₹)",
-                    "PhonePe": "PhonePe (₹)",
-                    "Cash": "Cash (₹)",
-                    "Staff_Name": "Staff Name",
-                    "Staff_Advance": "Staff Advance (₹)",
-                    "Food_Tea_Cash": "Food / Tea (₹)",
-                }
-            )
-            sales_table["Units Sold"] = sales_table["Units Sold"].apply(lambda x: int(round(x)))
-            sales_table["Date"] = sales_table["Date"].dt.strftime("%d %b %Y")
-            st.dataframe(
-                sales_table, 
-                hide_index=True, 
-                use_container_width=True,
-                column_config={
-                    "Revenue (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                    "PhonePe (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                    "Cash (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                    "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                    "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                }
-            )
-        else:
-            st.caption("No sales data recorded in this period.")
-
-    # ------------------------------------------------------------------
-    # CURRENT INVENTORY STATUS
-    # ------------------------------------------------------------------
-    if not daily_df.empty:
-        st.markdown("---")
-        st.markdown('<div id="inventory-status"></div>', unsafe_allow_html=True)
-        st.markdown("## Current Live Inventory Status")
-
-        inv_c1, inv_c2, inv_c3 = st.columns(3)
-        cart_stock_tot = int(round(daily_df.sort_values('Date').groupby('Cart').tail(1)['Closing_Total'].sum()))
-        inv_c1.metric("Stock Across Carts", f"{cart_stock_tot} units")
-        inv_c2.metric("Units in Freezer", f"{total_freezer_units} units")
-        inv_c3.metric("Freezer Stock Valuation (Cost)", f"₹{total_freezer_val:,.2f}")
-
-        try:
-            if not freezer_df.empty:
-                st.markdown("**Freezer stock breakdown & cost valuation**")
-                disp_freezer = freezer_df.rename(columns={
-                    "cost_price": "Unit Cost (₹)",
-                    "Stock_Value": "Stock Value (₹)"
-                })[["Flavour", "Units in freezer", "Unit Cost (₹)", "Stock Value (₹)"]]
-                
-                st.dataframe(
-                    disp_freezer, 
-                    hide_index=True, 
-                    use_container_width=True,
-                    column_config={
-                        "Unit Cost (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                        "Stock Value (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                    }
-                )
-        except Exception as e:
-            st.caption(f"Could not compute freezer stock from DB ({e}).")
-
-        st.markdown("**Latest stock per cart**")
-        latest_per_cart = daily_df.sort_values("Date").groupby("Cart").tail(1)[["Cart", "Date", "Closing_Total"]].copy()
-        latest_per_cart["Closing_Total"] = latest_per_cart["Closing_Total"].apply(lambda x: int(round(x)))
-        latest_per_cart["Date"] = latest_per_cart["Date"].dt.strftime("%d %b %Y")
-        st.dataframe(latest_per_cart, hide_index=True, use_container_width=True)
+            st.caption("No cart sales in thisSorry, something went wrong. Please try your request again.
