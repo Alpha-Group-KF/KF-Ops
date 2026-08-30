@@ -14,7 +14,7 @@ Kulfi Ops - multi-user data entry app for the kulfi cart business.
     * 3-Cart Home Screen buttons for quick cart selection (Admin & Data Entry).
     * Side-by-side 2-column layout with clear button navigation to return to cart selection.
     * Today's Restock updates the `added_units` field in the database.
-    * Today's DB opening units stored as previous day's closing balance, while displaying live calculated `opening + restock today` on the screen.
+    * Today's DB opening units stored as previous day's closing balance, while displaying live calculated `Opening + Restock` under each flavor.
 - Dashboard with COGS So Far (All-Time), exact COGS in range, and accrual-based net margin tracking.
 - Freezer Stock, Freezer Analysis, Dashboard, and Expenses powered 100% by Supabase PostgreSQL.
 """
@@ -1484,10 +1484,10 @@ if page == "Daily Entry":
                         
                         today_added_map[code] = int(today_add_input)
                         
-                        # Requirement: Database opening = previous day's closing
+                        # Database opening = previous day's closing
                         today_db_opening_map[code] = prev_close_count
                         
-                        # On screen = opening + restock today
+                        # On screen display = opening + restock today
                         calc_today_open_display = prev_close_count + int(today_add_input)
                         today_opening_map[code] = calc_today_open_display
 
@@ -1496,7 +1496,7 @@ if page == "Daily Entry":
                             st.markdown(
                                 f"""
                                 <div style="text-align: right; margin-bottom: 6px;">
-                                    <span class="badge-today-open">Opening: <b>{calc_today_open_display} pcs</b></span>
+                                    <span class="badge-today-open">Opening + Restock: <b>{calc_today_open_display} pcs</b></span>
                                 </div>
                                 """,
                                 unsafe_allow_html=True
@@ -1530,7 +1530,6 @@ if page == "Daily Entry":
                         )
 
                         # 2. Sync Right Box: Today's Restock & Opening Balance Entry
-                        # DB gets previous day closing as opening, and restock as added_units
                         sync_today_restock_entry(
                             today_val, cart_name, selected_staff, today_db_opening_map, today_added_map
                         )
@@ -3144,7 +3143,7 @@ elif page == "Expenses" and user_role == "admin":
                 rpt_end = st.date_input("To Date", value=max_exp_d, min_value=min_exp_d, max_value=max_exp_d, key="exp_rpt_end")
 
             if rpt_start > rpt_end:
-                st.error("'From' date must be before 'To' date.")
+                st.error("'From' date is after 'To' date.")
                 rpt_start, rpt_end = rpt_end, rpt_start
 
             f_exp = expenses_summary_df[
