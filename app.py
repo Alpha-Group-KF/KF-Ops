@@ -12,9 +12,9 @@ Kulfi Ops - multi-user data entry app for the kulfi cart business.
 - Staff & Payroll Module (KYC profile, leaves, compensation plans, and payments-backed settlement).
 - Remodeled Daily Entry Screen:
     * 3-Cart Home Screen buttons for quick cart selection (Admin & Data Entry).
-    * Side-by-side 2-column layout (Left: Sales & Closing / Right: Today's Restock & Opening).
-    * Pre-populates today's restock values from DB if already saved, allowing edits.
-    * Customized success modal notification format upon submission, returning to cart selector.
+    * Side-by-side 2-column layout with clear button navigation to return to cart selection.
+    * Today's Restock updates the `added_units` field in the database.
+    * Today's DB opening units stored as previous day's closing balance, while displaying live calculated `opening + restock today` on the screen.
 - Dashboard with COGS So Far (All-Time), exact COGS in range, and accrual-based net margin tracking.
 - Freezer Stock, Freezer Analysis, Dashboard, and Expenses powered 100% by Supabase PostgreSQL.
 """
@@ -663,10 +663,11 @@ def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map,
         st.warning(f"Saved to database, but Google Sheets sync encountered an issue: {e}")
 
 
-def sync_today_restock_entry(today_date, cart_name, staff_name, today_opening_map, today_added_map):
+def sync_today_restock_entry(today_date, cart_name, staff_name, today_prev_closing_map, today_added_map):
     """
-    Inserts or updates today's entry with:
-    Opening Units = Previous Day Closing + Today's Added Stock
+    Persists today's entry where:
+    - opening_units = previous day's closing balance
+    - added_units = restock quantity entered for today
     """
     if db_conn is not None:
         with db_conn.session as s:
@@ -695,7 +696,7 @@ def sync_today_restock_entry(today_date, cart_name, staff_name, today_opening_ma
                         {
                             "eid": today_id, 
                             "code": code, 
-                            "open": int(today_opening_map[code]),
+                            "open": int(today_prev_closing_map[code]),
                             "add": int(today_added_map.get(code, 0))
                         }
                     )
@@ -718,7 +719,7 @@ def sync_today_restock_entry(today_date, cart_name, staff_name, today_opening_ma
                         {
                             "eid": today_id, 
                             "code": code, 
-                            "open": int(today_opening_map[code]),
+                            "open": int(today_prev_closing_map[code]),
                             "add": int(today_added_map.get(code, 0))
                         }
                     )
@@ -735,7 +736,7 @@ def sync_today_restock_entry(today_date, cart_name, staff_name, today_opening_ma
                 break
 
         date_cart_id = f"{today_str}||{cart_name}"
-        today_open_list = [int(today_opening_map[code]) for code in FLAVOR_CODES]
+        today_open_list = [int(today_prev_closing_map[code]) for code in FLAVOR_CODES]
         today_add_list = [int(today_added_map[code]) for code in FLAVOR_CODES]
         zero_flavors = [0 for _ in FLAVOR_CODES]
         
@@ -1233,10 +1234,12 @@ if page == "Daily Entry":
     else:
         cart_name = st.session_state["active_daily_cart"]
         
-        if st.button("← Back to Cart Selection", use_container_width=False):
+        # Clearly visible button at the top to go back to cart selection
+        if st.button("⬅ Back to Cart Selection", type="secondary", use_container_width=False):
             st.session_state["active_daily_cart"] = None
             st.rerun()
 
+        st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
         st.subheader(f"Cart Restock & Daily Sales — {cart_name}")
 
         try:
@@ -1446,6 +1449,7 @@ if page == "Daily Entry":
             # --------------------------------------------------------------
             today_added_map = {}
             today_opening_map = {}
+            today_db_opening_map = {}
 
             with col_box_right:
                 st.markdown(
@@ -1479,30 +1483,35 @@ if page == "Daily Entry":
                             )
                         
                         today_added_map[code] = int(today_add_input)
-                        calc_today_open = prev_close_count + int(today_add_input)
-                        today_opening_map[code] = calc_today_open
+                        
+                        # Requirement: Database opening = previous day's closing
+                        today_db_opening_map[code] = prev_close_count
+                        
+                        # On screen = opening + restock today
+                        calc_today_open_display = prev_close_count + int(today_add_input)
+                        today_opening_map[code] = calc_today_open_display
 
                         with c_flv_r:
                             st.markdown("<div style='height: 18px;'></div>", unsafe_allow_html=True)
                             st.markdown(
                                 f"""
                                 <div style="text-align: right; margin-bottom: 6px;">
-                                    <span class="badge-today-open">Opening: <b>{calc_today_open} pcs</b></span>
+                                    <span class="badge-today-open">Opening: <b>{calc_today_open_display} pcs</b></span>
                                 </div>
                                 """,
                                 unsafe_allow_html=True
                             )
 
                     tot_today_added = sum(today_added_map.values())
-                    tot_today_open = sum(today_opening_map.values())
+                    tot_today_open_display = sum(today_opening_map.values())
 
                     st.markdown("---")
                     tm1, tm2 = st.columns(2)
                     tm1.metric("Stock Added for Today", f"{tot_today_added} pcs")
-                    tm2.metric("Today's Total Opening Balance", f"{tot_today_open} pcs")
+                    tm2.metric("Today's Total Opening (Display)", f"{tot_today_open_display} pcs")
 
             # --------------------------------------------------------------
-            # FULL-WIDTH SUBMIT ACTION (WITH REQUESTED POPUP TEXT FORMAT)
+            # FULL-WIDTH SUBMIT ACTION
             # --------------------------------------------------------------
             st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
             if st.button("💾 Submit Daily Sales & Today's Restock Entry", type="primary", use_container_width=True):
@@ -1521,8 +1530,9 @@ if page == "Daily Entry":
                         )
 
                         # 2. Sync Right Box: Today's Restock & Opening Balance Entry
+                        # DB gets previous day closing as opening, and restock as added_units
                         sync_today_restock_entry(
-                            today_val, cart_name, selected_staff, today_opening_map, today_added_map
+                            today_val, cart_name, selected_staff, today_db_opening_map, today_added_map
                         )
 
                         st.cache_resource.clear()
@@ -1533,7 +1543,7 @@ if page == "Daily Entry":
                         success_msg = (
                             f"Record Saved successfully:\n\n"
                             f"{entry_date.strftime('%d %b %Y')} : Total sold units {tot_sold} units\n\n"
-                            f"{today_val.strftime('%d %b %Y')} : Opening balance after restock {tot_today_open} units"
+                            f"{today_val.strftime('%d %b %Y')} : Opening balance after restock {tot_today_open_display} units"
                         )
                         show_success_modal(success_msg)
                     except Exception as e:
