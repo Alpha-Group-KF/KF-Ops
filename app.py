@@ -8,19 +8,15 @@ Kulfi Ops - multi-user data entry app for the kulfi cart business.
 - Stock Removed (Wastage / Return / Tasting log) integrated into Available Freezer Stock calculations.
 - Freezer Analysis variance computed against calculated stock as of the physical audit date.
 - Remodeled Expenses & Payments (Bills vs. Cash Outflows with tranches & P&L summaries).
-- Automatic creation of Labour Charges expenses & cash payments on Daily Entry advance/food cash.
-- Staff & Payroll Module (KYC profile, leaves, compensation plans, and payments-backed settlement).
+- Automatic creation of Labour Charges expenses & cash payments on Daily Entry advance/food cash[cite: 4].
+- Staff & Payroll Module (KYC profile, leaves, compensation plans, and payments-backed settlement)[cite: 4].
 - Remodeled Daily Entry Screen:
-    * Box 1: Bordered rectangle for Previous Day Sales, Closing, Cash, and Staff collections.
-    * Box 2: Bordered rectangle for Today's Stock Addition with live non-editable calculated Opening Balance.
-    * Automatic insertion/update of today's opening entries on submission.
-- Dashboard:
-    * Retained Top Quick-View (Last 3 Days & 14-Day Revenue Bar Chart).
-    * Reorganized Reports with RCM & Financials upfront, grouped Cart-wise and Day-wise analysis.
-    * COGS exactly matching sold goods in the period (Units Sold x Cost Price).
-    * True Accrual Net Profit Margin accounting for Paid + Incurred-yet-to-be-paid Staff Labour.
-    * CAPEX, OPEX, and COGS financial distribution graphs.
-    * Default report date range set to the 1st of the current month to today.
+    * Side-by-side 2-column layout (Left: Sales & Closing / Right: Today's Restock & Opening).
+    * Compact input fields and flavor cards for zero-scroll visibility.
+    * High-contrast, easily readable section headers with distinct highlight colors.
+    * Live calculated, non-editable today's opening balance per flavor.
+    * Single submission simultaneously persisting previous sales & today's restock.
+- Dashboard with COGS So Far (All-Time), exact COGS in range, and accrual-based net margin tracking.
 - Freezer Stock, Freezer Analysis, Dashboard, and Expenses powered 100% by Supabase PostgreSQL.
 """
 
@@ -45,8 +41,8 @@ st.html("""
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 .block-container {
-    padding-top: 1rem !important;
-    padding-bottom: 1.5rem !important;
+    padding-top: 0.8rem !important;
+    padding-bottom: 1.2rem !important;
     margin-top: 0 !important;
     max-width: 100% !important;
 }
@@ -56,8 +52,8 @@ header[data-testid="stHeader"] {
 }
 html, body, [class*="css"] { font-family: 'Manrope', sans-serif; }
 h1, h2, h3 { font-family: 'Fraunces', serif !important; color: #8A5E17 !important; letter-spacing: -0.01em; }
-h1 { font-size: 1.5rem !important; margin-top: 0 !important; }
-h2 { font-size: 1.25rem !important; }
+h1 { font-size: 1.45rem !important; margin-top: 0 !important; }
+h2 { font-size: 1.2rem !important; }
 h3 { font-size: 1.05rem !important; }
 p, span, label, .stMarkdown { color: #2A1B10; }
 
@@ -70,123 +66,128 @@ input[type=number]::-webkit-outer-spin-button {
 input[type=number] { -moz-appearance: textfield !important; }
 div[data-testid="stNumberInput"] button { display: none !important; }
 
-/* Box Cards */
-.entry-section-box {
-    background: #FFFDF9;
-    border: 2px solid #E3CBA0;
-    border-radius: 12px;
-    padding: 14px 16px;
-    margin-bottom: 18px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-}
-.entry-section-header {
-    background: #70440E;
-    color: #FFFFFF !important;
-    padding: 6px 12px;
+/* High-Contrast Section Headers */
+.header-box-sales {
+    background: #FFF2DC;
+    color: #4A2206 !important;
+    border: 1.5px solid #DEB887;
     border-radius: 8px;
+    padding: 7px 12px;
     font-weight: 800;
-    font-size: 14px;
-    margin-bottom: 12px;
+    font-size: 13px;
+    margin-bottom: 8px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
 }
 
-/* Mobile Flavor Card Grid */
+.header-box-restock {
+    background: #EAF4EC;
+    color: #124A1D !important;
+    border: 1.5px solid #A8D5AF;
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-weight: 800;
+    font-size: 13px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+
+/* Compact Flavor Card Grid */
 .flavor-entry-row {
     background: #FFFFFF;
-    border: 1.5px solid #E3CBA0;
-    border-radius: 10px;
-    padding: 8px 10px;
-    margin-bottom: 8px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    border: 1.2px solid #E6D4B5;
+    border-radius: 8px;
+    padding: 5px 8px;
+    margin-bottom: 5px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
 }
 .flavor-title-bar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
 }
 .flavor-name {
     font-weight: 800;
-    font-size: 13.5px;
+    font-size: 12.5px;
     color: #4A2418;
 }
 .badge-open {
-    background: #EFE4CF;
+    background: #F4E8D3;
     color: #5A3E1B;
     font-weight: 700;
-    font-size: 11.5px;
-    padding: 2px 7px;
-    border-radius: 10px;
+    font-size: 11px;
+    padding: 1px 6px;
+    border-radius: 6px;
 }
 .badge-sold {
     background: #FCE8E2;
     color: #C43D17;
     font-weight: 800;
-    font-size: 11.5px;
-    padding: 2px 7px;
-    border-radius: 10px;
+    font-size: 11px;
+    padding: 1px 6px;
+    border-radius: 6px;
 }
 .badge-today-open {
-    background: #E4F3E8;
+    background: #E8F5E9;
     color: #19692C;
     font-weight: 800;
-    font-size: 12px;
-    padding: 3px 9px;
-    border-radius: 10px;
-    border: 1px solid #B8E2C0;
+    font-size: 11.5px;
+    padding: 2px 7px;
+    border-radius: 6px;
+    border: 1px solid #C8E6C9;
+    display: inline-block;
 }
 
-/* Inputs */
+/* Compact Inputs */
 .stTextInput div[data-baseweb="input"], .stNumberInput div[data-baseweb="input"] {
-    min-height: 32px !important;
-    height: 32px !important;
-    border-radius: 8px !important;
+    min-height: 28px !important;
+    height: 28px !important;
+    border-radius: 6px !important;
 }
 .stTextInput input, .stNumberInput input {
-    padding: 3px 8px !important;
-    font-size: 13px !important;
+    padding: 2px 6px !important;
+    font-size: 12px !important;
     text-align: left !important;
     font-weight: 600 !important;
 }
 .stNumberInput label, .stTextInput label {
-    font-size: 11px !important;
+    font-size: 10.5px !important;
     font-weight: 700 !important;
-    margin-bottom: 2px !important;
+    margin-bottom: 1px !important;
     text-align: left !important;
 }
 
 section[data-testid="stSidebar"] { 
-    font-size: 15px !important; 
+    font-size: 14px !important; 
     border-right: 1px solid #E3CBA0; 
 }
 section[data-testid="stSidebar"] h2 { 
-    font-size: 20px !important; 
+    font-size: 18px !important; 
     color: #8A5E17 !important; 
 }
 section[data-testid="stSidebar"] .stRadio > div { 
-    gap: 4px; 
+    gap: 3px; 
 }
 section[data-testid="stSidebar"] .stRadio label {
     background: #FFFBF2;
     border: 1px solid #E3CBA0;
-    border-radius: 8px;
-    padding: 6px 10px !important;
+    border-radius: 6px;
+    padding: 5px 8px !important;
     margin-bottom: 2px;
-    transition: background .15s ease, border-color .15s ease;
-}
-section[data-testid="stSidebar"] .stRadio label:hover { 
-    background: #F0D9A6; 
-    border-color: #E8542A; 
 }
 
 /* Buttons */
 .stButton button, [data-testid="stFormSubmitButton"] button, [data-testid="baseButton-primary"] {
-    border-radius: 8px !important;
+    border-radius: 6px !important;
     font-weight: 700 !important;
     border: none !important;
-    padding: 0.4rem 0.8rem !important;
+    padding: 0.35rem 0.75rem !important;
 }
 .stButton button[kind="primary"], [data-testid="stFormSubmitButton"] button[kind="primary"] {
     background: #E8542A !important;
@@ -200,25 +201,25 @@ section[data-testid="stSidebar"] .stRadio label:hover {
 div[data-testid="stMetric"] {
     background: #FFFBF2;
     border: 1px solid #E3CBA0;
-    border-radius: 10px;
-    padding: 6px 12px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    border-radius: 8px;
+    padding: 4px 8px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
 }
 div[data-testid="stMetricLabel"] { 
     font-weight: 700; 
-    font-size: 12px !important; 
+    font-size: 11px !important; 
     color: #7A5A34; 
 }
 div[data-testid="stMetricValue"] { 
     font-family: 'Fraunces', serif; 
-    font-size: 1.2rem !important; 
+    font-size: 1.05rem !important; 
     color: #4A2418; 
 }
 
 /* Tables */
 div[data-testid="stDataFrame"], div[data-testid="stDataEditor"] {
-    border-radius: 10px;
-    border: 2px solid #8A5E17 !important;
+    border-radius: 8px;
+    border: 1.5px solid #8A5E17 !important;
     overflow: hidden;
 }
 div[data-testid="stDataFrame"] th, div[data-testid="stDataEditor"] th {
@@ -226,26 +227,26 @@ div[data-testid="stDataFrame"] th, div[data-testid="stDataEditor"] th {
     color: #FFFFFF !important;
     background-color: #70440E !important;
     text-align: center !important;
-    font-size: 13px !important;
+    font-size: 12px !important;
 }
 div[data-testid="stDataFrame"] td, div[data-testid="stDataEditor"] td {
     text-align: center !important;
-    font-size: 12.5px !important;
+    font-size: 11.5px !important;
 }
-hr { border-color: #E3CBA0 !important; margin: 0.4rem 0 !important; }
+hr { border-color: #E3CBA0 !important; margin: 0.35rem 0 !important; }
 </style>
 """)
 
 # ----------------------------------------------------------------------
 # CONFIG & CANONICAL MAPPINGS
 # ----------------------------------------------------------------------
-CARTS = ["HOSUR CART 01", "HOSUR CART 02", "HOSUR CART 03"]
-CITY = "HOSUR"
+CARTS = ["HOSUR CART 01", "HOSUR CART 02", "HOSUR CART 03"][cite: 3]
+CITY = "HOSUR"[cite: 3]
 
-PAYMENT_STATUSES = ["Pending", "Partial", "Complete"]
-PO_STATUSES = ["Placed", "Pending", "In Transit", "Completed", "Cancelled"]
+PAYMENT_STATUSES = ["Pending", "Partial", "Complete"][cite: 3]
+PO_STATUSES = ["Placed", "Pending", "In Transit", "Completed", "Cancelled"][cite: 3]
 
-EXPENSE_TYPES = ["OPEX", "COGS", "CAPEX"]
+EXPENSE_TYPES = ["OPEX", "COGS", "CAPEX"][cite: 3]
 EXPENSE_CATEGORIES = [
     "Cost of Goods",
     "Labour Charges",
@@ -257,17 +258,17 @@ EXPENSE_CATEGORIES = [
     "Initial Set-up Expense",
     "Initial Investment",
     "Miscellaneous Expense",
-]
-ATTRIBUTED_OPTIONS = ["Central / Freezer"] + CARTS
-EXPENSE_STATUSES = ["Pending", "Partially Paid", "Paid", "Cancelled"]
-PAYMENT_MODES = ["UPI / Bank Transfer", "Cash"]
-STAFF_STATUSES = ["active", "inactive", "on_leave"]
-LEAVE_STATUS_OPTIONS = ["Leave", "Sick Leave", "Casual Leave", "Absent"]
-LEAVE_TYPE_OPTIONS = ["Unpaid", "Paid"]
+][cite: 3]
+ATTRIBUTED_OPTIONS = ["Central / Freezer"] + CARTS[cite: 3]
+EXPENSE_STATUSES = ["Pending", "Partially Paid", "Paid", "Cancelled"][cite: 3]
+PAYMENT_MODES = ["UPI / Bank Transfer", "Cash"][cite: 3]
+STAFF_STATUSES = ["active", "inactive", "on_leave"][cite: 3]
+LEAVE_STATUS_OPTIONS = ["Leave", "Sick Leave", "Casual Leave", "Absent"][cite: 3]
+LEAVE_TYPE_OPTIONS = ["Unpaid", "Paid"][cite: 3]
 
-DAILY_HEADER_ROWS = 2
-DAILY_TOTAL_COLS = 47
-SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+DAILY_HEADER_ROWS = 2[cite: 3]
+DAILY_TOTAL_COLS = 47[cite: 3]
+SCOPES = ["https://www.googleapis.com/auth/spreadsheets"][cite: 3]
 
 DEFAULT_FLAVORS = [
     ("ML", "Malai", 40.0, 22.0, "ml_units"),
@@ -279,40 +280,40 @@ DEFAULT_FLAVORS = [
     ("SG", "Shahi Gulab", 50.0, 27.5, "sg_units"),
     ("CH", "Chocolate", 50.0, 27.5, "ch_units"),
     ("RA", "Roasted Almond", 60.0, 33.0, "ra_units"),
-]
-FLAVOR_CODES = [f[0] for f in DEFAULT_FLAVORS]
-N_FLAVORS = len(FLAVOR_CODES)
+][cite: 3]
+FLAVOR_CODES = [f[0] for f in DEFAULT_FLAVORS][cite: 3]
+N_FLAVORS = len(FLAVOR_CODES)[cite: 3]
 
 
 def _num(x):
     if x is None or pd.isna(x):
         return 0.0
     if isinstance(x, (int, float)):
-        return float(x)
-    s = str(x).strip().replace(",", "").replace("₹", "").replace("Rs.", "").replace("Rs", "")
-    neg = s.startswith("(") and s.endswith(")")
+        return float(x)[cite: 3]
+    s = str(x).strip().replace(",", "").replace("₹", "").replace("Rs.", "").replace("Rs", "")[cite: 3]
+    neg = s.startswith("(") and s.endswith(")")[cite: 3]
     if neg:
-        s = s[1:-1]
+        s = s[1:-1][cite: 3]
     try:
-        return -float(s) if neg else float(s)
+        return -float(s) if neg else float(s)[cite: 3]
     except ValueError:
-        return 0.0
+        return 0.0[cite: 3]
 
 
 def _int_num(x):
-    return int(round(_num(x)))
+    return int(round(_num(x)))[cite: 3]
 
 
 def _pad(row, n):
-    return row + [""] * (n - len(row)) if len(row) < n else row
+    return row + [""] * (n - len(row)) if len(row) < n else row[cite: 3]
 
 
 def _col_letter(n):
-    letters = ""
+    letters = ""[cite: 3]
     while n > 0:
-        n, rem = divmod(n - 1, 26)
-        letters = chr(65 + rem) + letters
-    return letters
+        n, rem = divmod(n - 1, 26)[cite: 3]
+        letters = chr(65 + rem) + letters[cite: 3]
+    return letters[cite: 3]
 
 
 # ----------------------------------------------------------------------
@@ -322,23 +323,23 @@ def _col_letter(n):
 def get_client():
     creds = Credentials.from_service_account_info(
         st.secrets["gcp_service_account"], scopes=SCOPES
-    )
-    return gspread.authorize(creds)
+    )[cite: 3]
+    return gspread.authorize(creds)[cite: 3]
 
 
 @st.cache_resource
 def get_workbook():
-    return get_client().open_by_key(st.secrets["sheet_id"])
+    return get_client().open_by_key(st.secrets["sheet_id"])[cite: 3]
 
 
 def get_ws(tab_name):
-    return get_workbook().worksheet(tab_name)
+    return get_workbook().worksheet(tab_name)[cite: 3]
 
 
 def _update_sheet_row(tab_name, row_number, values):
-    ws = get_ws(tab_name)
-    end_col = _col_letter(len(values))
-    ws.update(range_name=f"A{row_number}:{end_col}{row_number}", values=[values], value_input_option="USER_ENTERED")
+    ws = get_ws(tab_name)[cite: 3]
+    end_col = _col_letter(len(values))[cite: 3]
+    ws.update(range_name=f"A{row_number}:{end_col}{row_number}", values=[values], value_input_option="USER_ENTERED")[cite: 3]
 
 
 try:
@@ -347,11 +348,11 @@ except Exception:
     db_conn = None
 
 
-@st.dialog("Notification")
+@st.dialog("Notification")[cite: 3]
 def show_success_modal(message):
-    st.success(message)
-    if st.button("OK", type="primary", use_container_width=True):
-        st.rerun()
+    st.success(message)[cite: 3]
+    if st.button("OK", type="primary", use_container_width=True):[cite: 3]
+        st.rerun()[cite: 3]
 
 
 # ----------------------------------------------------------------------
@@ -361,7 +362,7 @@ def get_flavor_meta_by_code():
     meta = {
         code: {"name": name, "mrp": float(mrp), "cost_price": float(cost), "audit_col": acol}
         for code, name, mrp, cost, acol in DEFAULT_FLAVORS
-    }
+    }[cite: 3]
     if db_conn is not None:
         try:
             df = db_conn.query("SELECT code, name, mrp, cost_price FROM flavors;", ttl="1m")
@@ -373,10 +374,10 @@ def get_flavor_meta_by_code():
                     meta[code]["cost_price"] = float(r["cost_price"])
         except Exception:
             pass
-    return meta
+    return meta[cite: 3]
 
 
-FLAVOR_MAP = get_flavor_meta_by_code()
+FLAVOR_MAP = get_flavor_meta_by_code()[cite: 3]
 
 
 def load_active_staff_list():
@@ -387,7 +388,7 @@ def load_active_staff_list():
                 return ["Select Staff"] + df["name"].tolist()
         except Exception:
             pass
-    return ["Select Staff"]
+    return ["Select Staff"][cite: 3]
 
 
 # ----------------------------------------------------------------------
@@ -424,7 +425,7 @@ def get_latest_cart_closing_state(cart_name, before_date):
 
 
 def list_daily_entries_with_prefill():
-    entries = []
+    entries = [][cite: 3]
     if db_conn is not None:
         query = """
         SELECT 
@@ -480,23 +481,23 @@ def list_daily_entries_with_prefill():
                     "is_prefill": False
                 })
 
-    yesterday = date.today() - timedelta(days=1)
+    yesterday = date.today() - timedelta(days=1)[cite: 3]
     existing_yesterday_carts = {
         e["cart"] for e in entries if e["date"].date() == yesterday
-    }
+    }[cite: 3]
 
-    for cart in CARTS:
-        if cart not in existing_yesterday_carts:
-            prev_closings, prev_staff = get_latest_cart_closing_state(cart, yesterday)
-            by_code = {}
-            for code in FLAVOR_CODES:
-                prev_close = prev_closings.get(code, 0)
+    for cart in CARTS:[cite: 3]
+        if cart not in existing_yesterday_carts:[cite: 3]
+            prev_closings, prev_staff = get_latest_cart_closing_state(cart, yesterday)[cite: 3]
+            by_code = {}[cite: 3]
+            for code in FLAVOR_CODES:[cite: 3]
+                prev_close = prev_closings.get(code, 0)[cite: 3]
                 by_code[code] = {
                     "opening": prev_close,
                     "added": 0,
                     "closing": prev_close,
                     "sold": 0,
-                }
+                }[cite: 3]
 
             entries.append({
                 "db_id": f"prefill_{cart}_{yesterday.strftime('%Y%m%d')}",
@@ -511,10 +512,10 @@ def list_daily_entries_with_prefill():
                 "staff_advance": 0.0,
                 "food_tea_cash": 0.0,
                 "is_prefill": True
-            })
+            })[cite: 3]
 
-    entries.sort(key=lambda x: (x["date"], x["cart"]), reverse=True)
-    return entries
+    entries.sort(key=lambda x: (x["date"], x["cart"]), reverse=True)[cite: 3]
+    return entries[cite: 3]
 
 
 def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map, sold_map, total, phonepe, cash, remarks, staff_name="", staff_advance=0.0, food_tea_cash=0.0):
@@ -552,6 +553,7 @@ def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map,
                     }
                 )
 
+            # Sync auto-created Labour Charges expenses & payments for staff advance & food/tea
             s.execute(text("DELETE FROM expenses WHERE remarks LIKE :tag;"), {"tag": f"[Auto: Daily Entry #{daily_id}]%"})
 
             if float(staff_advance) > 0 and staff_name:
@@ -637,16 +639,16 @@ def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map,
             s.commit()
 
     try:
-        ws = get_ws("Daily Data As Shared")
-        all_vals = ws.get_all_values()
-        target_row = None
-        date_str = entry_date.strftime("%Y-%m-%d")
-        for idx, r in enumerate(all_vals[DAILY_HEADER_ROWS:]):
-            if len(r) >= 2 and r[0].strip() == date_str and r[1].strip() == cart_name:
-                target_row = DAILY_HEADER_ROWS + idx + 1
-                break
+        ws = get_ws("Daily Data As Shared")[cite: 3]
+        all_vals = ws.get_all_values()[cite: 3]
+        target_row = None[cite: 3]
+        date_str = entry_date.strftime("%Y-%m-%d")[cite: 3]
+        for idx, r in enumerate(all_vals[DAILY_HEADER_ROWS:]):[cite: 3]
+            if len(r) >= 2 and r[0].strip() == date_str and r[1].strip() == cart_name:[cite: 3]
+                target_row = DAILY_HEADER_ROWS + idx + 1[cite: 3]
+                break[cite: 3]
 
-        date_cart_id = f"{date_str}||{cart_name}"
+        date_cart_id = f"{date_str}||{cart_name}"[cite: 3]
         sheet_row = (
             [date_str, cart_name, CITY, date_cart_id]
             + [int(opening_map[code]) for code in FLAVOR_CODES]
@@ -654,13 +656,13 @@ def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map,
             + [int(sold_map[code]) for code in FLAVOR_CODES]
             + [int(closing_map[code]) for code in FLAVOR_CODES]
             + [float(total), float(phonepe), float(cash), str(remarks), str(staff_name), float(staff_advance), float(food_tea_cash)]
-        )
-        if target_row:
-            _update_sheet_row("Daily Data As Shared", target_row, sheet_row)
+        )[cite: 3]
+        if target_row:[cite: 3]
+            _update_sheet_row("Daily Data As Shared", target_row, sheet_row)[cite: 3]
         else:
-            ws.append_row(sheet_row, value_input_option="USER_ENTERED")
+            ws.append_row(sheet_row, value_input_option="USER_ENTERED")[cite: 3]
     except Exception as e:
-        st.warning(f"Saved to database, but Google Sheets sync encountered an issue: {e}")
+        st.warning(f"Saved to database, but Google Sheets sync encountered an issue: {e}")[cite: 3]
 
 
 def sync_today_restock_entry(today_date, cart_name, staff_name, today_opening_map, today_added_map):
@@ -746,7 +748,7 @@ def sync_today_restock_entry(today_date, cart_name, staff_name, today_opening_ma
 
 def load_db_daily_df():
     if db_conn is None:
-        return pd.DataFrame()
+        return pd.DataFrame()[cite: 3]
     query = """
     SELECT 
         e.entry_date AS "Date",
@@ -773,7 +775,7 @@ def load_db_daily_df():
 
 def load_db_flavor_sales(start_date=None, end_date=None):
     if db_conn is None:
-        return pd.DataFrame()
+        return pd.DataFrame()[cite: 3]
     where_clauses = []
     params = {}
     if start_date:
@@ -804,7 +806,7 @@ def load_db_flavor_sales(start_date=None, end_date=None):
 
 def load_db_expenses_list():
     if db_conn is None:
-        return []
+        return [][cite: 3]
     query = """
     SELECT 
         id,
@@ -824,17 +826,17 @@ def load_db_expenses_list():
     try:
         df = db_conn.query(query, ttl="0s")
         if df.empty:
-            return []
+            return [][cite: 3]
         df["Date"] = pd.to_datetime(df["Date"])
         df["Amount"] = df["Amount"].astype(float)
         return df.to_dict("records")
     except Exception:
-        return []
+        return [][cite: 3]
 
 
 def get_db_stock_removed_map():
     if db_conn is None:
-        return {code: 0 for code in FLAVOR_CODES}
+        return {code: 0 for code in FLAVOR_CODES}[cite: 3]
     try:
         df = db_conn.query("""
             SELECT 
@@ -851,21 +853,21 @@ def get_db_stock_removed_map():
         """, ttl="0s")
         if not df.empty:
             r = df.iloc[0]
-            return {code: int(r.get(FLAVOR_MAP[code]["audit_col"], 0)) for code in FLAVOR_CODES}
+            return {code: int(r.get(FLAVOR_MAP[code]["audit_col"], 0)) for code in FLAVOR_CODES}[cite: 3]
     except Exception:
         pass
-    return {code: 0 for code in FLAVOR_CODES}
+    return {code: 0 for code in FLAVOR_CODES}[cite: 3]
 
 
 def get_db_freezer_stock():
     if db_conn is None:
-        return pd.DataFrame()
+        return pd.DataFrame()[cite: 3]
     try:
         recv_df = db_conn.query("SELECT flavor_code, COALESCE(SUM(received_units), 0) AS total_recv FROM stock_received_items GROUP BY flavor_code;", ttl="0s")
-        rec_map = dict(zip(recv_df["flavor_code"], recv_df["total_recv"])) if not recv_df.empty else {}
+        rec_map = dict(zip(recv_df["flavor_code"], recv_df["total_recv"])) if not recv_df.empty else {}[cite: 3]
 
         added_df = db_conn.query("SELECT flavor_code, COALESCE(SUM(added_units), 0) AS total_added FROM daily_cart_items GROUP BY flavor_code;", ttl="0s")
-        added_map = dict(zip(added_df["flavor_code"], added_df["total_added"])) if not added_df.empty else {}
+        added_map = dict(zip(added_df["flavor_code"], added_df["total_added"])) if not added_df.empty else {}[cite: 3]
 
         rem_map = get_db_stock_removed_map()
 
@@ -886,7 +888,7 @@ def get_db_freezer_stock():
             })
         return pd.DataFrame(rows).sort_values(by=["mrp", "Flavour"], ascending=[True, True])
     except Exception:
-        return pd.DataFrame()
+        return pd.DataFrame()[cite: 3]
 
 
 # ----------------------------------------------------------------------
@@ -894,7 +896,7 @@ def get_db_freezer_stock():
 # ----------------------------------------------------------------------
 def load_db_expenses_summary_df():
     if db_conn is None:
-        return pd.DataFrame()
+        return pd.DataFrame()[cite: 3]
     query = """
     SELECT 
         e.id,
@@ -921,12 +923,12 @@ def load_db_expenses_summary_df():
     try:
         return db_conn.query(query, ttl="0s")
     except Exception:
-        return pd.DataFrame()
+        return pd.DataFrame()[cite: 3]
 
 
 def load_db_payments_df():
     if db_conn is None:
-        return pd.DataFrame()
+        return pd.DataFrame()[cite: 3]
     query = """
     SELECT 
         p.id,
@@ -950,7 +952,7 @@ def load_db_payments_df():
     try:
         return db_conn.query(query, ttl="0s")
     except Exception:
-        return pd.DataFrame()
+        return pd.DataFrame()[cite: 3]
 
 
 # ----------------------------------------------------------------------
@@ -958,7 +960,7 @@ def load_db_payments_df():
 # ----------------------------------------------------------------------
 def load_full_staff_df():
     if db_conn is None:
-        return pd.DataFrame()
+        return pd.DataFrame()[cite: 3]
     query = """
     SELECT 
         s.id, s.name, s.status, s.phone_number, s.emergency_contact_name, s.emergency_contact_phone,
@@ -978,12 +980,12 @@ def load_full_staff_df():
     try:
         return db_conn.query(query, ttl="0s")
     except Exception:
-        return pd.DataFrame()
+        return pd.DataFrame()[cite: 3]
 
 
 def load_staff_compensation_history(staff_id):
     if db_conn is None:
-        return pd.DataFrame()
+        return pd.DataFrame()[cite: 3]
     query = """
     SELECT id, staff_id, effective_from, effective_to, monthly_fixed_salary,
            commission_threshold_daily, commission_percentage, allowance_weekday, allowance_sunday, created_at
@@ -994,12 +996,12 @@ def load_staff_compensation_history(staff_id):
     try:
         return db_conn.query(query, params={"sid": staff_id}, ttl="0s")
     except Exception:
-        return pd.DataFrame()
+        return pd.DataFrame()[cite: 3]
 
 
 def load_staff_attendance_df(start_date=None, end_date=None):
     if db_conn is None:
-        return pd.DataFrame()
+        return pd.DataFrame()[cite: 3]
     where_clauses = []
     params = {}
     if start_date:
@@ -1021,7 +1023,7 @@ def load_staff_attendance_df(start_date=None, end_date=None):
     try:
         return db_conn.query(query, params=params, ttl="0s")
     except Exception:
-        return pd.DataFrame()
+        return pd.DataFrame()[cite: 3]
 
 
 def calculate_incurred_labour_for_range(start_date, end_date):
@@ -1129,78 +1131,78 @@ def calculate_incurred_labour_for_range(start_date, end_date):
 # AUTHENTICATION
 # ----------------------------------------------------------------------
 def check_login():
-    if st.session_state.get("authenticated", False):
-        return True
+    if st.session_state.get("authenticated", False):[cite: 3]
+        return True[cite: 3]
 
-    _, col_form, _ = st.columns([1, 1.2, 1])
+    _, col_form, _ = st.columns([1, 1.2, 1])[cite: 3]
 
-    with col_form:
+    with col_form:[cite: 3]
         try:
-            st.image("assets/logo.png", width=220)
+            st.image("assets/logo.png", width=220)[cite: 3]
         except Exception:
-            st.title("🍦 Kulfi Ops")
+            st.title("🍦 Kulfi Ops")[cite: 3]
 
-        st.subheader("Sign in")
-        with st.form("login_form"):
-            username = st.text_input("Username")
-            password = st.text_input("Password", type="password")
-            submitted = st.form_submit_button("Sign in", type="primary", use_container_width=True)
+        st.subheader("Sign in")[cite: 3]
+        with st.form("login_form"):[cite: 3]
+            username = st.text_input("Username")[cite: 3]
+            password = st.text_input("Password", type="password")[cite: 3]
+            submitted = st.form_submit_button("Sign in", type="primary", use_container_width=True)[cite: 3]
 
-        if submitted:
-            user_clean = str(username).strip()
-            pass_clean = str(password).strip()
+        if submitted:[cite: 3]
+            user_clean = str(username).strip()[cite: 3]
+            pass_clean = str(password).strip()[cite: 3]
 
-            admin_user = str(st.secrets.get("app_username", "admin")).strip()
-            admin_pass = str(st.secrets.get("app_password", "")).strip()
+            admin_user = str(st.secrets.get("app_username", "admin")).strip()[cite: 3]
+            admin_pass = str(st.secrets.get("app_password", "")).strip()[cite: 3]
 
-            entry_user = str(st.secrets.get("entry_username", "entry")).strip()
-            entry_pass = str(st.secrets.get("entry_password", "")).strip()
+            entry_user = str(st.secrets.get("entry_username", "entry")).strip()[cite: 3]
+            entry_pass = str(st.secrets.get("entry_password", "")).strip()[cite: 3]
 
-            if admin_pass and hmac.compare_digest(user_clean, admin_user) and hmac.compare_digest(pass_clean, admin_pass):
-                st.session_state["authenticated"] = True
-                st.session_state["user_role"] = "admin"
-                st.rerun()
-            elif entry_pass and hmac.compare_digest(user_clean, entry_user) and hmac.compare_digest(pass_clean, entry_pass):
-                st.session_state["authenticated"] = True
-                st.session_state["user_role"] = "entry"
-                st.rerun()
+            if admin_pass and hmac.compare_digest(user_clean, admin_user) and hmac.compare_digest(pass_clean, admin_pass):[cite: 3]
+                st.session_state["authenticated"] = True[cite: 3]
+                st.session_state["user_role"] = "admin"[cite: 3]
+                st.rerun()[cite: 3]
+            elif entry_pass and hmac.compare_digest(user_clean, entry_user) and hmac.compare_digest(pass_clean, entry_pass):[cite: 3]
+                st.session_state["authenticated"] = True[cite: 3]
+                st.session_state["user_role"] = "entry"[cite: 3]
+                st.rerun()[cite: 3]
             else:
-                st.error("Incorrect username or password — try again.")
+                st.error("Incorrect username or password — try again.")[cite: 3]
 
-    return False
+    return False[cite: 3]
 
 
-if not check_login():
-    st.stop()
+if not check_login():[cite: 3]
+    st.stop()[cite: 3]
 
 # ----------------------------------------------------------------------
 # NAVIGATION
 # ----------------------------------------------------------------------
-user_role = st.session_state.get("user_role", "admin")
+user_role = st.session_state.get("user_role", "admin")[cite: 3]
 
-with st.sidebar:
+with st.sidebar:[cite: 3]
     try:
-        st.image("assets/logo.png", use_container_width=True)
+        st.image("assets/logo.png", use_container_width=True)[cite: 3]
     except Exception:
-        st.markdown("## 🍦 Kulfi Ops")
+        st.markdown("## 🍦 Kulfi Ops")[cite: 3]
 
-    if user_role == "admin":
-        nav_options = ["Dashboard", "Daily Entry", "Purchase Orders", "Freezer Stock", "Freezer Analysis", "Stock Removed", "Expenses", "Staff & Payroll"]
-        page = st.radio("Go to", nav_options, label_visibility="collapsed")
+    if user_role == "admin":[cite: 3]
+        nav_options = ["Dashboard", "Daily Entry", "Purchase Orders", "Freezer Stock", "Freezer Analysis", "Stock Removed", "Expenses", "Staff & Payroll"][cite: 3]
+        page = st.radio("Go to", nav_options, label_visibility="collapsed")[cite: 3]
     else:
-        page = "Daily Entry"
-        st.info("Logged in as Data Entry Staff")
+        page = "Daily Entry"[cite: 3]
+        st.info("Logged in as Data Entry Staff")[cite: 3]
 
-    st.markdown("---")
-    if st.button("Log out", use_container_width=True):
-        st.session_state["authenticated"] = False
-        st.session_state["user_role"] = None
-        st.rerun()
+    st.markdown("---")[cite: 3]
+    if st.button("Log out", use_container_width=True):[cite: 3]
+        st.session_state["authenticated"] = False[cite: 3]
+        st.session_state["user_role"] = None[cite: 3]
+        st.rerun()[cite: 3]
 
-st.title(f"🍦 Kulfi Ops — {page}")
+st.title(f"🍦 Kulfi Ops — {page}")[cite: 3]
 
 # ======================================================================
-# PAGE 1: DAILY ENTRY (Dual Rectangle Bordered Boxes for Entry & Restock)
+# PAGE 1: DAILY ENTRY (Side-by-Side Dual Boxes + Compact Fields)
 # ======================================================================
 if page == "Daily Entry":
     st.subheader("Cart Restock & Daily Sales Entry")
@@ -1223,7 +1225,7 @@ if page == "Daily Entry":
     if not daily_entries:
         st.info("No entries found in database for the active period.")
     else:
-        top_c1, top_c2 = st.columns([1.4, 1])
+        top_c1, top_c2 = st.columns([1.3, 1])
 
         labels = [f"{e['date'].strftime('%d %b %Y')} — {e['cart']}" for e in daily_entries]
         with top_c1:
@@ -1254,206 +1256,207 @@ if page == "Daily Entry":
             staff_name = st.selectbox("Cart staff assigned", staff_options, index=default_staff_idx, key=k_staff)
 
         # --------------------------------------------------------------
-        # BOX 1: PREVIOUS / SELECTED DAY ENTRY (SALES & CASH RECONCILIATION)
+        # SIDE-BY-SIDE DUAL COLUMN LAYOUT
         # --------------------------------------------------------------
-        st.markdown(
-            f"""
-            <div class="entry-section-box">
-                <div class="entry-section-header">
-                    <span>📅 1. Sales & Closing Entry — For {entry_date.strftime('%A, %d %b %Y')}</span>
-                    <span>Cart: {cart_name}</span>
+        col_box_left, col_box_right = st.columns(2, gap="medium")
+
+        # --------------------------------------------------------------
+        # LEFT COLUMN: SALES & CLOSING ENTRY FOR PREVIOUS/SELECTED DAY
+        # --------------------------------------------------------------
+        added_map = {}
+        closing_map = {}
+        sold_map = {}
+        opening_map = {code: loaded["by_code"][code]["opening"] for code in FLAVOR_CODES}
+
+        with col_box_left:
+            st.markdown(
+                f"""
+                <div class="header-box-sales">
+                    <span>📅 1. Sales & Closing Entry — {entry_date.strftime('%a, %d %b %Y')}</span>
+                    <span><b>{cart_name}</b></span>
                 </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+                """,
+                unsafe_allow_html=True
+            )
 
-        with st.container(border=True):
-            st.write(f"Record **closing counts observed** and stock added during shifts on **{entry_date.strftime('%d %b %Y')}**:")
+            with st.container(border=True):
+                st.caption(f"Record **closing counts** and daytime stock additions for **{entry_date.strftime('%d %b %Y')}**:")
 
-            added_map = {}
-            closing_map = {}
-            sold_map = {}
-            opening_map = {code: loaded["by_code"][code]["opening"] for code in FLAVOR_CODES}
+                for code in FLAVOR_CODES:
+                    f_info = FLAVOR_MAP[code]
+                    k_add = f"add_{entry_id}_{code}"
+                    k_cls = f"cls_{entry_id}_{code}"
 
-            for code in FLAVOR_CODES:
-                f_info = FLAVOR_MAP[code]
-                k_add = f"add_{entry_id}_{code}"
-                k_cls = f"cls_{entry_id}_{code}"
+                    if k_add not in st.session_state:
+                        st.session_state[k_add] = loaded["by_code"][code]["added"]
+                    if k_cls not in st.session_state:
+                        st.session_state[k_cls] = loaded["by_code"][code]["closing"]
 
-                if k_add not in st.session_state:
-                    st.session_state[k_add] = loaded["by_code"][code]["added"]
-                if k_cls not in st.session_state:
-                    st.session_state[k_cls] = loaded["by_code"][code]["closing"]
+                    cur_open = opening_map[code]
+                    cur_add = _int_num(st.session_state[k_add])
+                    cur_cls = _int_num(st.session_state[k_cls])
+                    cur_sold = cur_open + cur_add - cur_cls
 
-                cur_open = opening_map[code]
-                cur_add = _int_num(st.session_state[k_add])
-                cur_cls = _int_num(st.session_state[k_cls])
-                cur_sold = cur_open + cur_add - cur_cls
-
-                added_map[code] = cur_add
-                closing_map[code] = cur_cls
-                sold_map[code] = cur_sold
-
-                st.markdown(
-                    f"""
-                    <div class="flavor-entry-row">
-                        <div class="flavor-title-bar">
-                            <span class="flavor-name">{f_info['name']} (₹{f_info['mrp']:.0f})</span>
-                            <div>
-                                <span class="badge-open">Opening: {cur_open}</span>
-                                <span class="badge-sold">Sold: {cur_sold}</span>
-                            </div>
-                        </div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-
-                col_a, col_b = st.columns(2)
-                with col_a:
-                    st.number_input("+ Added Stock during day", min_value=0, step=1, format="%d", key=k_add)
-                with col_b:
-                    st.number_input("Closing Count Observed", min_value=0, step=1, format="%d", key=k_cls)
-
-            tot_open = sum(opening_map.values())
-            tot_add = sum(added_map.values())
-            tot_close = sum(closing_map.values())
-            tot_sold = sum(sold_map.values())
-
-            m1, m2, m3, m4 = st.columns(4)
-            m1.metric("Opening Balance", f"{tot_open} units")
-            m2.metric("Stock Added", f"{tot_add} units")
-            m3.metric("Closing Balance", f"{tot_close} units")
-            m4.metric("Total Sold", f"{tot_sold} units")
-
-            if any(s < 0 for s in sold_map.values()):
-                st.error(f"Sales works out negative for at least one flavour on {entry_date.strftime('%d %b %Y')} - closing count exceeds opening + added.")
-
-            calculated_mrp_total = float(sum(sold_map[code] * FLAVOR_MAP[code]["mrp"] for code in FLAVOR_CODES))
-
-            if k_tot not in st.session_state or st.session_state.get(k_prev_calc) != calculated_mrp_total:
-                default_tot = loaded["total"] if (loaded["total"] > 0 and not loaded.get("is_prefill", False)) else calculated_mrp_total
-                st.session_state[k_tot] = f"{default_tot:.2f}"
-                st.session_state[k_prev_calc] = calculated_mrp_total
-
-            if k_ph not in st.session_state:
-                st.session_state[k_ph] = f"{loaded['phonepe']:.2f}"
-
-            if k_adv not in st.session_state:
-                st.session_state[k_adv] = f"{loaded['staff_advance']:.2f}" if "staff_advance" in loaded else "0.00"
-
-            if k_food not in st.session_state:
-                st.session_state[k_food] = f"{loaded['food_tea_cash']:.2f}" if "food_tea_cash" in loaded else "0.00"
-
-            if k_cs not in st.session_state:
-                st.session_state[k_cs] = f"{loaded['cash']:.2f}"
-
-            st.markdown("---")
-            st.write(f"**Cash, UPI & Advance Collection for {entry_date.strftime('%d %b %Y')}**")
-
-            c3, c4 = st.columns(2)
-            with c3:
-                total_collection_str = st.text_input("Total collection (₹)", key=k_tot)
-                staff_advance_str = st.text_input("Advance to staff (₹)", key=k_adv)
-                food_tea_str = st.text_input("Cash paid for Food / Tea (₹)", key=k_food)
-            with c4:
-                phonepe_str = st.text_input("PhonePe / UPI (₹)", key=k_ph)
-                cash_str = st.text_input("Cash Collected (₹)", key=k_cs)
-
-            total_collection_val = _num(total_collection_str)
-            phonepe_val = _num(phonepe_str)
-            staff_advance_val = _num(staff_advance_str)
-            food_tea_val = _num(food_tea_str)
-            cash_val = _num(cash_str)
-
-            cash_leakage = total_collection_val - phonepe_val - staff_advance_val - food_tea_val - cash_val
-            has_leakage = cash_leakage > 0.001
-
-            if has_leakage:
-                st.markdown(
-                    f"<div style='margin-top:2px;'><label style='font-size:12px; font-weight:700;'>Cash Leakage:</label> "
-                    f"<b style='color:#C41C1C; font-size:16px;'>₹{cash_leakage:,.2f}</b></div>"
-                    '<p style="color:#C41C1C; font-weight:bold; font-size:13px; margin: 4px 0 !important;">'
-                    '⚠️ There is a cash leakage - please correct or enter reason in remarks field'
-                    '</p>',
-                    unsafe_allow_html=True
-                )
-            else:
-                st.markdown(
-                    f"<div style='margin-top:2px;'><label style='font-size:12px; font-weight:700;'>Cash Leakage:</label> "
-                    f"<b style='color:#2A1B10; font-size:14px;'>₹{cash_leakage:,.2f}</b></div>",
-                    unsafe_allow_html=True
-                )
-
-            remarks = st.text_input("Remarks", value=loaded["remarks"], key=f"daily_remarks{data_key_suffix}", placeholder="Enter remarks (mandatory if cash leakage)...")
-
-        # --------------------------------------------------------------
-        # BOX 2: TODAY'S STOCK ADDITION & OPENING PREPARATION
-        # --------------------------------------------------------------
-        st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
-        st.markdown(
-            f"""
-            <div class="entry-section-box">
-                <div class="entry-section-header" style="background:#8A5E17;">
-                    <span>🚀 2. Today's Stock Addition & Opening Balance — For {today_val.strftime('%A, %d %b %Y')}</span>
-                    <span>Cart: {cart_name}</span>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-        today_added_map = {}
-        today_opening_map = {}
-
-        with st.container(border=True):
-            st.write(f"Enter **stock added for today's sale ({today_val.strftime('%d %b %Y')})**. Today's opening balance updates dynamically:")
-
-            col_grid1, col_grid2 = st.columns(2)
-
-            for idx, code in enumerate(FLAVOR_CODES):
-                f_info = FLAVOR_MAP[code]
-                target_col = col_grid1 if idx % 2 == 0 else col_grid2
-                k_today_add = f"today_add_{cart_name}_{code}"
-
-                prev_close_count = closing_map.get(code, 0)
-                
-                with target_col:
-                    today_add_input = st.number_input(
-                        f"Stock Added: {f_info['name']} (₹{f_info['mrp']:.0f})",
-                        min_value=0,
-                        value=0,
-                        step=1,
-                        format="%d",
-                        key=k_today_add
-                    )
-                    today_added_map[code] = int(today_add_input)
-                    calc_today_open = prev_close_count + int(today_add_input)
-                    today_opening_map[code] = calc_today_open
+                    added_map[code] = cur_add
+                    closing_map[code] = cur_cls
+                    sold_map[code] = cur_sold
 
                     st.markdown(
                         f"""
-                        <div style="margin-top:-6px; margin-bottom:10px;">
-                            <span class="badge-today-open">Today's Opening: <b>{calc_today_open} units</b> (Prev Close: {prev_close_count} + Added: {today_add_input})</span>
+                        <div class="flavor-entry-row">
+                            <div class="flavor-title-bar">
+                                <span class="flavor-name">{f_info['name']} (₹{f_info['mrp']:.0f})</span>
+                                <div>
+                                    <span class="badge-open">Opening: {cur_open}</span>
+                                    <span class="badge-sold">Sold: {cur_sold}</span>
+                                </div>
+                            </div>
                         </div>
                         """,
                         unsafe_allow_html=True
                     )
 
-            tot_today_added = sum(today_added_map.values())
-            tot_today_open = sum(today_opening_map.values())
+                    col_a, col_b = st.columns(2)
+                    with col_a:
+                        st.number_input("+ Added during day", min_value=0, step=1, format="%d", key=k_add)
+                    with col_b:
+                        st.number_input("Closing count", min_value=0, step=1, format="%d", key=k_cls)
 
-            st.markdown("---")
-            tm1, tm2, tm3 = st.columns(3)
-            tm1.metric("Previous Closing Across Flavours", f"{tot_close} units")
-            tm2.metric("Total Added for Today's Sale", f"{tot_today_added} units")
-            tm3.metric("Total Today's Calculated Opening", f"{tot_today_open} units")
+                tot_open = sum(opening_map.values())
+                tot_add = sum(added_map.values())
+                tot_close = sum(closing_map.values())
+                tot_sold = sum(sold_map.values())
+
+                m1, m2, m3, m4 = st.columns(4)
+                m1.metric("Opening", f"{tot_open} pcs")
+                m2.metric("Added", f"{tot_add} pcs")
+                m3.metric("Closing", f"{tot_close} pcs")
+                m4.metric("Total Sold", f"{tot_sold} pcs")
+
+                if any(s < 0 for s in sold_map.values()):
+                    st.error(f"Sales negative for at least one flavour on {entry_date.strftime('%d %b %Y')} - check closing count.")
+
+                calculated_mrp_total = float(sum(sold_map[code] * FLAVOR_MAP[code]["mrp"] for code in FLAVOR_CODES))
+
+                if k_tot not in st.session_state or st.session_state.get(k_prev_calc) != calculated_mrp_total:
+                    default_tot = loaded["total"] if (loaded["total"] > 0 and not loaded.get("is_prefill", False)) else calculated_mrp_total
+                    st.session_state[k_tot] = f"{default_tot:.2f}"
+                    st.session_state[k_prev_calc] = calculated_mrp_total
+
+                if k_ph not in st.session_state:
+                    st.session_state[k_ph] = f"{loaded['phonepe']:.2f}"
+
+                if k_adv not in st.session_state:
+                    st.session_state[k_adv] = f"{loaded['staff_advance']:.2f}" if "staff_advance" in loaded else "0.00"
+
+                if k_food not in st.session_state:
+                    st.session_state[k_food] = f"{loaded['food_tea_cash']:.2f}" if "food_tea_cash" in loaded else "0.00"
+
+                if k_cs not in st.session_state:
+                    st.session_state[k_cs] = f"{loaded['cash']:.2f}"
+
+                st.markdown("---")
+                st.write(f"**Cash, UPI & Advance Collection ({entry_date.strftime('%d %b')})**")
+
+                c3, c4 = st.columns(2)
+                with c3:
+                    total_collection_str = st.text_input("Total collection (₹)", key=k_tot)
+                    staff_advance_str = st.text_input("Advance to staff (₹)", key=k_adv)
+                    food_tea_str = st.text_input("Cash Food / Tea (₹)", key=k_food)
+                with c4:
+                    phonepe_str = st.text_input("PhonePe / UPI (₹)", key=k_ph)
+                    cash_str = st.text_input("Cash Collected (₹)", key=k_cs)
+
+                total_collection_val = _num(total_collection_str)
+                phonepe_val = _num(phonepe_str)
+                staff_advance_val = _num(staff_advance_str)
+                food_tea_val = _num(food_tea_str)
+                cash_val = _num(cash_str)
+
+                cash_leakage = total_collection_val - phonepe_val - staff_advance_val - food_tea_val - cash_val
+                has_leakage = cash_leakage > 0.001
+
+                if has_leakage:
+                    st.markdown(
+                        f"<div style='margin-top:2px;'><label style='font-size:11px; font-weight:700;'>Cash Leakage:</label> "
+                        f"<b style='color:#C41C1C; font-size:14px;'>₹{cash_leakage:,.2f}</b></div>"
+                        '<p style="color:#C41C1C; font-weight:bold; font-size:11.5px; margin: 2px 0 !important;">'
+                        '⚠️ Cash leakage detected - enter reason in remarks'
+                        '</p>',
+                        unsafe_allow_html=True
+                    )
+                else:
+                    st.markdown(
+                        f"<div style='margin-top:2px;'><label style='font-size:11px; font-weight:700;'>Cash Leakage:</label> "
+                        f"<b style='color:#2A1B10; font-size:13px;'>₹{cash_leakage:,.2f}</b></div>",
+                        unsafe_allow_html=True
+                    )
+
+                remarks = st.text_input("Remarks", value=loaded["remarks"], key=f"daily_remarks{data_key_suffix}", placeholder="Enter remarks (mandatory if cash leakage)...")
 
         # --------------------------------------------------------------
-        # SUBMIT ACTION (SAVES PREVIOUS DAY + TODAY'S OPENING ENTRY)
+        # RIGHT COLUMN: TODAY'S RESTOCK & OPENING BALANCE PREPARATION
         # --------------------------------------------------------------
-        st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+        today_added_map = {}
+        today_opening_map = {}
+
+        with col_box_right:
+            st.markdown(
+                f"""
+                <div class="header-box-restock">
+                    <span>🚀 2. Today's Restock & Opening — {today_val.strftime('%a, %d %b %Y')}</span>
+                    <span><b>{cart_name}</b></span>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+            with st.container(border=True):
+                st.caption(f"Enter **stock added for today ({today_val.strftime('%d %b')})**. Today's opening updates dynamically:")
+
+                for code in FLAVOR_CODES:
+                    f_info = FLAVOR_MAP[code]
+                    k_today_add = f"today_add_{cart_name}_{code}"
+                    prev_close_count = closing_map.get(code, 0)
+
+                    c_flv_l, c_flv_r = st.columns([1.1, 0.9])
+                    with c_flv_l:
+                        today_add_input = st.number_input(
+                            f"+ Restock: {f_info['name']} (₹{f_info['mrp']:.0f})",
+                            min_value=0,
+                            value=0,
+                            step=1,
+                            format="%d",
+                            key=k_today_add
+                        )
+                    
+                    today_added_map[code] = int(today_add_input)
+                    calc_today_open = prev_close_count + int(today_add_input)
+                    today_opening_map[code] = calc_today_open
+
+                    with c_flv_r:
+                        st.markdown("<div style='height: 18px;'></div>", unsafe_allow_html=True)
+                        st.markdown(
+                            f"""
+                            <div style="text-align: right; margin-bottom: 6px;">
+                                <span class="badge-today-open">Opening: <b>{calc_today_open} pcs</b></span>
+                            </div>
+                            """,
+                            unsafe_allow_html=True
+                        )
+
+                tot_today_added = sum(today_added_map.values())
+                tot_today_open = sum(today_opening_map.values())
+
+                st.markdown("---")
+                tm1, tm2 = st.columns(2)
+                tm1.metric("Stock Added for Today", f"{tot_today_added} pcs")
+                tm2.metric("Today's Total Opening Balance", f"{tot_today_open} pcs")
+
+        # --------------------------------------------------------------
+        # FULL-WIDTH SUBMIT ACTION
+        # --------------------------------------------------------------
+        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
         if st.button("💾 Submit Daily Sales & Today's Restock Entry", type="primary", use_container_width=True):
             if any(s < 0 for s in sold_map.values()):
                 st.error("Sales works out negative for at least one flavour on previous day - fix closing count before saving.")
@@ -1463,13 +1466,13 @@ if page == "Daily Entry":
                 try:
                     selected_staff = "" if staff_name == "Select Staff" else staff_name
                     
-                    # 1. Sync Box 1: Selected / Previous Day Entry
+                    # 1. Sync Left Box: Previous / Selected Day Entry
                     sync_daily_entry(
                         entry_date, cart_name, added_map, closing_map, opening_map, sold_map, 
                         total_collection_val, phonepe_val, cash_val, remarks, selected_staff, staff_advance_val, food_tea_val
                     )
 
-                    # 2. Sync Box 2: Today's Restock & Opening Balance Entry
+                    # 2. Sync Right Box: Today's Restock & Opening Balance Entry
                     sync_today_restock_entry(
                         today_val, cart_name, selected_staff, today_opening_map, today_added_map
                     )
