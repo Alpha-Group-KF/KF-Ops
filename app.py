@@ -10,12 +10,7 @@ Kulfi Ops - multi-user data entry app for the kulfi cart business.
 - Remodeled Expenses & Payments (Bills vs. Cash Outflows with tranches & P&L summaries).
 - Automatic creation of Labour Charges expenses & cash payments on Daily Entry advance/food cash.
 - Staff & Payroll Module (KYC profile, leaves, compensation plans, and payments-backed settlement).
-- Remodeled Daily Entry Screen:
-    * Side-by-side 2-column layout (Left: Sales & Closing / Right: Today's Restock & Opening).
-    * Compact input fields and flavor cards for zero-scroll visibility.
-    * High-contrast, easily readable section headers with distinct highlight colors.
-    * Live calculated, non-editable today's opening balance per flavor.
-    * Single submission simultaneously persisting previous sales & today's restock.
+- Remodeled Daily Entry Screen with customized submission success notification format.
 - Dashboard with COGS So Far (All-Time), exact COGS in range, and accrual-based net margin tracking.
 - Freezer Stock, Freezer Analysis, Dashboard, and Expenses powered 100% by Supabase PostgreSQL.
 """
@@ -1452,7 +1447,7 @@ if page == "Daily Entry":
                 tm2.metric("Today's Total Opening Balance", f"{tot_today_open} pcs")
 
         # --------------------------------------------------------------
-        # FULL-WIDTH SUBMIT ACTION
+        # FULL-WIDTH SUBMIT ACTION (WITH CUSTOM SUCCESS MODAL TEXT)
         # --------------------------------------------------------------
         st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
         if st.button("💾 Submit Daily Sales & Today's Restock Entry", type="primary", use_container_width=True):
@@ -1476,11 +1471,14 @@ if page == "Daily Entry":
                     )
 
                     st.cache_resource.clear()
-                    show_success_modal(
-                        f"Saved successfully to Database & Sheets!\n\n"
-                        f"• Updated sales for {cart_name} on {entry_date.strftime('%d %b %Y')} (Total Sold: {tot_sold} units).\n"
-                        f"• Created/Updated opening balance for {today_val.strftime('%d %b %Y')} (Total Opening: {tot_today_open} units)."
+                    
+                    # Formatted success notification matching requested layout
+                    success_msg = (
+                        f"Record Saved successfully:\n\n"
+                        f"{entry_date.strftime('%d %b %Y')} : Total sold units {tot_sold} units\n\n"
+                        f"{today_val.strftime('%d %b %Y')}: Opening balance after restock {tot_today_open} units"
                     )
+                    show_success_modal(success_msg)
                 except Exception as e:
                     st.error(f"Could not save entries - {e}")
 
