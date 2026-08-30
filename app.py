@@ -10,12 +10,9 @@ Kulfi Ops - multi-user data entry app for the kulfi cart business.
 - Remodeled Expenses & Payments (Bills vs. Cash Outflows with tranches & P&L summaries).
 - Automatic creation of Labour Charges expenses & cash payments on Daily Entry advance/food cash.
 - Staff & Payroll Module (KYC profile, leaves, compensation plans, and payments-backed settlement).
-- Remodeled Daily Entry Screen:
-    * 3-Cart Home Screen buttons for quick cart selection (Admin & Data Entry).
-    * Prominent primary button for "Back to Cart Selection".
-    * Side-by-side 2-column layout with individual bordered cards per flavor on the restock side.
-    * Today's Restock updates `added_units` in the DB.
-    * Database opening units stored as previous day's closing balance, displaying live `Opening + Restock` on screen.
+- Remodeled Login & Navigation:
+    * Case-insensitive login verification for both admin and data entry users.
+    * Data entry role bypasses the sidebar entirely, routing straight to the 3-cart home screen with an easily visible top logout button.
 - Dashboard with COGS So Far (All-Time), exact COGS in range, and accrual-based net margin tracking.
 - Freezer Stock, Freezer Analysis, Dashboard, and Expenses powered 100% by Supabase PostgreSQL.
 """
@@ -1160,13 +1157,13 @@ def check_login():
             submitted = st.form_submit_button("Sign in", type="primary", use_container_width=True)
 
         if submitted:
-            user_clean = str(username).strip()
+            user_clean = str(username).strip().lower()
             pass_clean = str(password).strip()
 
-            admin_user = str(st.secrets.get("app_username", "admin")).strip()
+            admin_user = str(st.secrets.get("app_username", "admin")).strip().lower()
             admin_pass = str(st.secrets.get("app_password", "")).strip()
 
-            entry_user = str(st.secrets.get("entry_username", "entry")).strip()
+            entry_user = str(st.secrets.get("entry_username", "entry")).strip().lower()
             entry_pass = str(st.secrets.get("entry_password", "")).strip()
 
             if admin_pass and hmac.compare_digest(user_clean, admin_user) and hmac.compare_digest(pass_clean, admin_pass):
@@ -1187,30 +1184,41 @@ if not check_login():
     st.stop()
 
 # ----------------------------------------------------------------------
-# NAVIGATION
+# NAVIGATION & ROLE CONFIG
 # ----------------------------------------------------------------------
 user_role = st.session_state.get("user_role", "admin")
 
-with st.sidebar:
-    try:
-        st.image("assets/logo.png", use_container_width=True)
-    except Exception:
-        st.markdown("## 🍦 Kulfi Ops")
+if user_role == "entry":
+    # Data entry user: no sidebar, straight to daily entry / cart selection
+    page = "Daily Entry"
+    
+    # Easily visible logout button at the top header area
+    top_nav_c1, top_nav_c2 = st.columns([6, 1])
+    with top_nav_c1:
+        st.title("🍦 Kulfi Ops — Daily Entry")
+    with top_nav_c2:
+        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+        if st.button("🚪 Log out", type="secondary", use_container_width=True):
+            st.session_state["authenticated"] = False
+            st.session_state["user_role"] = None
+            st.rerun()
+else:
+    with st.sidebar:
+        try:
+            st.image("assets/logo.png", use_container_width=True)
+        except Exception:
+            st.markdown("## 🍦 Kulfi Ops")
 
-    if user_role == "admin":
         nav_options = ["Dashboard", "Daily Entry", "Purchase Orders", "Freezer Stock", "Freezer Analysis", "Stock Removed", "Expenses", "Staff & Payroll"]
         page = st.radio("Go to", nav_options, label_visibility="collapsed")
-    else:
-        page = "Daily Entry"
-        st.info("Logged in as Data Entry Staff")
 
-    st.markdown("---")
-    if st.button("Log out", use_container_width=True):
-        st.session_state["authenticated"] = False
-        st.session_state["user_role"] = None
-        st.rerun()
+        st.markdown("---")
+        if st.button("Log out", use_container_width=True):
+            st.session_state["authenticated"] = False
+            st.session_state["user_role"] = None
+            st.rerun()
 
-st.title(f"🍦 Kulfi Ops — {page}")
+    st.title(f"🍦 Kulfi Ops — {page}")
 
 # ======================================================================
 # PAGE 1: DAILY ENTRY (3-Cart Home Screen & Dual-Box Cart Form)
@@ -3156,7 +3164,7 @@ elif page == "Expenses" and user_role == "admin":
                 rpt_end = st.date_input("To Date", value=max_exp_d, min_value=min_exp_d, max_value=max_exp_d, key="exp_rpt_end")
 
             if rpt_start > rpt_end:
-                st.error("'From' date must be before 'To' date.")
+                st.error("'From' date is before 'To' date.")
                 rpt_start, rpt_end = rpt_end, rpt_start
 
             f_exp = expenses_summary_df[
