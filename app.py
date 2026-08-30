@@ -12,10 +12,10 @@ Kulfi Ops - multi-user data entry app for the kulfi cart business.
 - Staff & Payroll Module (KYC profile, leaves, compensation plans, and payments-backed settlement).
 - Remodeled Daily Entry Screen:
     * 3-Cart Home Screen buttons for quick cart selection (Admin & Data Entry).
-    * Prominent solid-colored primary button for "Back to Cart Selection" with bold, high-contrast text.
-    * Side-by-side 2-column layout (Left: Sales & Closing / Right: Today's Restock & Opening).
-    * Pre-populates today's restock values from DB if already saved, allowing edits.
-    * Customized success modal notification format upon submission, returning to cart selector.
+    * Prominent primary button for "Back to Cart Selection".
+    * Side-by-side 2-column layout with individual bordered cards per flavor on the restock side.
+    * Today's Restock updates `added_units` in the DB.
+    * Database opening units stored as previous day's closing balance, displaying live `Opening + Restock` on screen.
 - Dashboard with COGS So Far (All-Time), exact COGS in range, and accrual-based net margin tracking.
 - Freezer Stock, Freezer Analysis, Dashboard, and Expenses powered 100% by Supabase PostgreSQL.
 """
@@ -1472,36 +1472,48 @@ if page == "Daily Entry":
                         prev_close_count = closing_map.get(code, 0)
                         default_added_val = int(existing_today_added.get(code, 0))
 
-                        c_flv_l, c_flv_r = st.columns([1.1, 0.9])
-                        with c_flv_l:
-                            today_add_input = st.number_input(
-                                f"+ Restock: {f_info['name']} (₹{f_info['mrp']:.0f})",
-                                min_value=0,
-                                value=default_added_val,
-                                step=1,
-                                format="%d",
-                                key=k_today_add
-                            )
-                        
-                        today_added_map[code] = int(today_add_input)
-                        
-                        # Database opening = previous day's closing
-                        today_db_opening_map[code] = prev_close_count
-                        
-                        # On screen display = opening + restock today
-                        calc_today_open_display = prev_close_count + int(today_add_input)
-                        today_opening_map[code] = calc_today_open_display
-
-                        with c_flv_r:
-                            st.markdown("<div style='height: 18px;'></div>", unsafe_allow_html=True)
+                        # Wrapped inside an individual bordered container per flavor
+                        with st.container(border=True):
                             st.markdown(
                                 f"""
-                                <div style="text-align: right; margin-bottom: 6px;">
-                                    <span class="badge-today-open">Opening + Restock: <b>{calc_today_open_display} pcs</b></span>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                                    <span style="font-weight: 800; font-size: 12.5px; color: #124A1D;">{f_info['name']} (₹{f_info['mrp']:.0f})</span>
+                                    <span class="badge-open">Opening: {prev_close_count} pcs</span>
                                 </div>
                                 """,
                                 unsafe_allow_html=True
                             )
+
+                            c_flv_l, c_flv_r = st.columns([1.1, 0.9])
+                            with c_flv_l:
+                                today_add_input = st.number_input(
+                                    "+ Restock",
+                                    min_value=0,
+                                    value=default_added_val,
+                                    step=1,
+                                    format="%d",
+                                    key=k_today_add
+                                )
+                            
+                            today_added_map[code] = int(today_add_input)
+                            
+                            # Database opening = previous day's closing
+                            today_db_opening_map[code] = prev_close_count
+                            
+                            # On screen display = opening + restock today
+                            calc_today_open_display = prev_close_count + int(today_add_input)
+                            today_opening_map[code] = calc_today_open_display
+
+                            with c_flv_r:
+                                st.markdown("<div style='height: 18px;'></div>", unsafe_allow_html=True)
+                                st.markdown(
+                                    f"""
+                                    <div style="text-align: right; margin-bottom: 2px;">
+                                        <span class="badge-today-open">Opening + Restock: <b>{calc_today_open_display} pcs</b></span>
+                                    </div>
+                                    """,
+                                    unsafe_allow_html=True
+                                )
 
                     tot_today_added = sum(today_added_map.values())
                     tot_today_open_display = sum(today_opening_map.values())
@@ -3317,7 +3329,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                                 {
                                     "name": new_s_name.strip(), "status": new_s_status, "phone": new_s_phone.strip(),
                                     "emg_n": new_s_emg_name.strip(), "emg_p": new_s_emg_phone.strip(),
-                                    "dob": new_s_dob, "pob": new_s_pob.strip(), "pan": new_s_pan.strip().upper(),
+                                    "dob": new_s_doj, "pob": new_s_pob.strip(), "pan": new_s_pan.strip().upper(),
                                     "aadhaar": new_s_aadhaar.strip(), "caddr": new_s_cur_addr.strip(),
                                     "paddr": new_s_perm_addr.strip(), "doj": new_s_doj, "notes": new_s_notes.strip()
                                 }
