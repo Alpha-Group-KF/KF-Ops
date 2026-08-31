@@ -13,6 +13,7 @@ Kulfi Ops - multi-user data entry app for the kulfi cart business.
 - Remodeled Login & Navigation:
     * Case-insensitive login verification for both admin and data entry users.
     * Data entry role bypasses the sidebar entirely, routing straight to the 3-cart home screen with an easily visible top logout button.
+    * Today's restock updates database closing units as `opening_units + added_units`.
 - Dashboard with COGS So Far (All-Time), exact COGS in range, and accrual-based net margin tracking.
 - Freezer Stock, Freezer Analysis, Dashboard, and Expenses powered 100% by Supabase PostgreSQL.
 """
@@ -666,6 +667,7 @@ def sync_today_restock_entry(today_date, cart_name, staff_name, today_prev_closi
     Persists today's entry where:
     - opening_units = previous day's closing balance
     - added_units = restock quantity entered for today
+    - closing_units = opening_units + added_units (Requirement 1)
     """
     if db_conn is not None:
         with db_conn.session as s:
@@ -682,20 +684,25 @@ def sync_today_restock_entry(today_date, cart_name, staff_name, today_prev_closi
                         {"st": staff_name, "id": today_id}
                     )
                 for code in FLAVOR_CODES:
+                    open_u = int(today_prev_closing_map[code])
+                    add_u = int(today_added_map.get(code, 0))
+                    close_u = open_u + add_u
                     s.execute(
                         text("""
                         INSERT INTO daily_cart_items (daily_entry_id, flavor_code, opening_units, added_units, sold_units, closing_units)
-                        VALUES (:eid, :code, :open, :add, 0, :open)
+                        VALUES (:eid, :code, :open, :add, 0, :close)
                         ON CONFLICT (daily_entry_id, flavor_code) DO UPDATE
                         SET opening_units = EXCLUDED.opening_units,
                             added_units = EXCLUDED.added_units,
-                            sold_units = GREATEST(0, EXCLUDED.opening_units + EXCLUDED.added_units - daily_cart_items.closing_units);
+                            closing_units = EXCLUDED.closing_units,
+                            sold_units = GREATEST(0, EXCLUDED.opening_units + EXCLUDED.added_units - EXCLUDED.closing_units);
                         """),
                         {
                             "eid": today_id, 
                             "code": code, 
-                            "open": int(today_prev_closing_map[code]),
-                            "add": int(today_added_map.get(code, 0))
+                            "open": open_u,
+                            "add": add_u,
+                            "close": close_u
                         }
                     )
             else:
@@ -709,16 +716,20 @@ def sync_today_restock_entry(today_date, cart_name, staff_name, today_prev_closi
                 )
                 today_id = res_ins.scalar()
                 for code in FLAVOR_CODES:
+                    open_u = int(today_prev_closing_map[code])
+                    add_u = int(today_added_map.get(code, 0))
+                    close_u = open_u + add_u
                     s.execute(
                         text("""
                         INSERT INTO daily_cart_items (daily_entry_id, flavor_code, opening_units, added_units, sold_units, closing_units)
-                        VALUES (:eid, :code, :open, :add, 0, :open);
+                        VALUES (:eid, :code, :open, :add, 0, :close);
                         """),
                         {
                             "eid": today_id, 
                             "code": code, 
-                            "open": int(today_prev_closing_map[code]),
-                            "add": int(today_added_map.get(code, 0))
+                            "open": open_u,
+                            "add": add_u,
+                            "close": close_u
                         }
                     )
             s.commit()
@@ -736,6 +747,7 @@ def sync_today_restock_entry(today_date, cart_name, staff_name, today_prev_closi
         date_cart_id = f"{today_str}||{cart_name}"
         today_open_list = [int(today_prev_closing_map[code]) for code in FLAVOR_CODES]
         today_add_list = [int(today_added_map[code]) for code in FLAVOR_CODES]
+        today_close_list = [int(today_prev_closing_map[code]) + int(today_added_map[code]) for code in FLAVOR_CODES]
         zero_flavors = [0 for _ in FLAVOR_CODES]
         
         sheet_row_today = (
@@ -743,7 +755,7 @@ def sync_today_restock_entry(today_date, cart_name, staff_name, today_prev_closi
             + today_open_list
             + today_add_list
             + zero_flavors
-            + today_open_list
+            + today_close_list
             + [0.0, 0.0, 0.0, "", str(staff_name), 0.0, 0.0]
         )
         if target_row:
@@ -1550,7 +1562,7 @@ if page == "Daily Entry":
                             total_collection_val, phonepe_val, cash_val, remarks, selected_staff, staff_advance_val, food_tea_val
                         )
 
-                        # 2. Sync Right Box: Today's Restock & Opening Balance Entry (added_units updated)
+                        # 2. Sync Right Box: Today's Restock & Opening Balance Entry (closing units updated as opening + added)
                         sync_today_restock_entry(
                             today_val, cart_name, selected_staff, today_db_opening_map, today_added_map
                         )
