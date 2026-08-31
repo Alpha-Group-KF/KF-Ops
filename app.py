@@ -3498,7 +3498,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
             kpi3.metric("Total Payments Disbursed", f"-₹{tot_ded:,.2f}", "From Payments Table")
             kpi4.metric("Net Total Payable", f"₹{tot_net:,.2f}")
 
-	    st.markdown("---")
+            st.markdown("---")
             st.markdown("#### Staff Settlement Summary Table")
 
             st.dataframe(
