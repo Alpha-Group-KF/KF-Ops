@@ -710,17 +710,21 @@ def calculate_incurred_labour_for_range(start_date, end_date):
     entries_df = db_conn.query("SELECT entry_date, cart_name, staff_name, total_collection, staff_advance, food_tea_cash FROM daily_cart_entries WHERE entry_date >= :sdate AND entry_date <= :edate AND staff_name IS NOT NULL AND staff_name != '' AND staff_name != 'Select Staff';", params={"sdate": start_date, "edate": end_date}, ttl="0s")
     att_df = db_conn.query("SELECT a.staff_id, s.name AS staff_name, a.attendance_date, a.status, a.leave_type FROM staff_attendance a JOIN staff s ON a.staff_id = s.id WHERE a.attendance_date >= :sdate AND a.attendance_date <= :edate;", params={"sdate": start_date, "edate": end_date}, ttl="0s")
     pay_df = db_conn.query("SELECT p.amount_paid, e.staff_name FROM expense_payments p JOIN expenses e ON p.expense_id = e.id WHERE e.category = 'Labour Charges' AND p.payment_date >= :sdate AND p.payment_date <= :edate;", params={"sdate": start_date, "edate": end_date}, ttl="0s")
+    
     total_labour_incurred, total_labour_paid, breakdown_by_staff, daily_rate = 0.0, 0.0, {}, 600.0
     for _, s_row in staff_df.iterrows():
         st_name = str(s_row["name"]).strip()
+        doj = s_row.get("date_of_joining")
         monthly_sal = float(_num(s_row.get("monthly_fixed_salary")) or 18000.0)
         comm_thresh = float(_num(s_row.get("commission_threshold_daily")) or 3000.0)
         comm_pct = float(_num(s_row.get("commission_percentage")) or 15.0)
         allow_wd = float(_num(s_row.get("allowance_weekday")) or 210.0)
         allow_sun = float(_num(s_row.get("allowance_sunday")) or 250.0)
+        
         st_shifts = entries_df[entries_df["staff_name"] == st_name] if not entries_df.empty else pd.DataFrame()
         st_leaves = att_df[att_df["staff_name"] == st_name] if not att_df.empty else pd.DataFrame()
         st_pay = pay_df[pay_df["staff_name"] == st_name] if not pay_df.empty else pd.DataFrame()
+        
         shift_sal, shift_comm, shift_allow, days_worked, detailed_ledger = 0.0, 0.0, 0.0, 0, []
         if not st_shifts.empty:
             for _, sh in st_shifts.iterrows():
@@ -733,18 +737,29 @@ def calculate_incurred_labour_for_range(start_date, end_date):
                 shift_comm += day_comm
                 shift_allow += day_allow
                 detailed_ledger.append({"date": s_dt, "type": "Worked Day", "cart": sh["cart_name"], "collection": s_col, "fixed_salary": daily_rate, "commission": day_comm, "allowance": day_allow})
+        
         paid_leaves_cnt = 0
         if not st_leaves.empty:
             paid_leaves_cnt = len(st_leaves[st_leaves["leave_type"] == "Paid"])
             shift_sal += (paid_leaves_cnt * daily_rate)
             for _, l_row in st_leaves[st_leaves["leave_type"] == "Paid"].iterrows():
                 detailed_ledger.append({"date": pd.to_datetime(l_row["attendance_date"]).date(), "type": "Paid Leave", "cart": "—", "collection": 0.0, "fixed_salary": daily_rate, "commission": 0.0, "allowance": 0.0})
+        
+        # Order the detailed ledger table below by date ascending[cite: 1]
+        detailed_ledger.sort(key=lambda x: x["date"])
+        
         staff_incurred = shift_sal + shift_comm + shift_allow
         staff_paid = float(st_pay["amount_paid"].sum()) if not st_pay.empty else 0.0
         staff_due = staff_incurred - staff_paid
         total_labour_incurred += staff_incurred
         total_labour_paid += staff_paid
-        breakdown_by_staff[st_name] = {"monthly_fixed_salary": monthly_sal, "days_worked": days_worked, "paid_leaves": paid_leaves_cnt, "salary": shift_sal, "commissions": shift_comm, "allowances": shift_allow, "incurred": staff_incurred, "paid": staff_paid, "due": staff_due, "detailed_ledger": detailed_ledger}
+        
+        breakdown_by_staff[st_name] = {
+            "monthly_fixed_salary": monthly_sal, "days_worked": days_worked, "paid_leaves": paid_leaves_cnt, 
+            "salary": shift_sal, "commissions": shift_comm, "allowances": shift_allow, "incurred": staff_incurred, 
+            "paid": staff_paid, "due": staff_due, "detailed_ledger": detailed_ledger, "doj": doj
+        }
+        
     return total_labour_incurred, total_labour_paid, total_labour_incurred - total_labour_paid, breakdown_by_staff
 
 def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
@@ -754,6 +769,7 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
     story, styles = [], getSampleStyleSheet()
     title_style = ParagraphStyle('TitleStyle', parent=styles['Heading1'], fontName='Helvetica-Bold', fontSize=16, textColor=colors.HexColor('#8A5E17'), alignment=1)
     sub_style = ParagraphStyle('SubStyle', parent=styles['Normal'], fontName='Helvetica', fontSize=10, textColor=colors.HexColor('#2A1B10'), alignment=1)
+    
     logo_path = "assets/logo.png"
     if os.path.exists(logo_path):
         try:
@@ -762,21 +778,30 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
         except Exception:
             header_table = Table([[Paragraph("<b>Kulfi Factory</b>", title_style), Paragraph("<b>Kulfi Factory - Hosur Franchise</b><br/>Staff Salary Payslip", title_style)]], colWidths=[80, 450])
     else: header_table = Table([[Paragraph("<b>Kulfi Factory</b>", title_style), Paragraph("<b>Kulfi Factory - Hosur Franchise</b><br/>Staff Salary Payslip", title_style)]], colWidths=[80, 450])
+    
     header_table.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'MIDDLE'), ('ALIGN', (1,0), (1,0), 'CENTER')]))
     story.append(header_table); story.append(Spacer(1, 10))
-    story.append(Paragraph(f"<b>Staff Member:</b> {staff_name} &nbsp;|&nbsp; <b>Period:</b> {start_date.strftime('%d %b %Y')} to {end_date.strftime('%d %b %Y')}", sub_style))
+    
+    # Extract DOJ and format month[cite: 1]
+    doj_val = data_dict.get('doj')
+    doj_str = pd.to_datetime(doj_val).strftime('%d %b %Y') if pd.notna(doj_val) and str(doj_val).strip() else "N/A"
+    month_str = start_date.strftime('%B %Y')
+    
+    story.append(Paragraph(f"<b>Staff Member:</b> {staff_name} &nbsp;|&nbsp; <b>Date of Joining:</b> {doj_str} &nbsp;|&nbsp; <b>Payslip for the month:</b> {month_str}", sub_style))
     story.append(Spacer(1, 12))
+    
     summary_data = [
-        ["Salary Component", "Basis / Calculation Details", "Amount (₹)"],
-        ["Monthly Fixed Salary", "Standard Monthly Base Plan", f"₹{data_dict['monthly_fixed_salary']:,.2f}"],
+        ["Salary Component", "Basis / Calculation Details", "Amount (Rs.)"],
+        ["Monthly Fixed Salary", "Standard Monthly Base Plan", f"Rs. {data_dict['monthly_fixed_salary']:,.2f}"],
         ["Total Days Worked", f"{data_dict['days_worked']} days worked + {data_dict['paid_leaves']} paid leaves", f"{data_dict['days_worked'] + data_dict['paid_leaves']} days"],
-        ["Pro-rata Fixed Salary", f"({data_dict['days_worked']} + {data_dict['paid_leaves']}) days @ ₹600/day", f"₹{data_dict['salary']:,.2f}"],
-        ["Sales Commissions", "15% on daily collections exceeding threshold", f"₹{data_dict['commissions']:,.2f}"],
-        ["Food & Tea Allowances", "Entitled weekday & Sunday daily allowances", f"₹{data_dict['allowances']:,.2f}"],
-        ["Gross Payable Earnings", "Total entitled earnings for the period", f"₹{data_dict['incurred']:,.2f}"],
-        ["Already Paid / Disbursed", "Cash advances & direct payments recorded", f"-₹{data_dict['paid']:,.2f}"],
-        ["Net Balance Payable Now", "Final cash settlement due", f"₹{data_dict['due']:,.2f}"]
+        ["Pro-rata Fixed Salary", f"({data_dict['days_worked']} + {data_dict['paid_leaves']}) days @ Rs. 600/day", f"Rs. {data_dict['salary']:,.2f}"],
+        ["Sales Commissions", "15% on daily collections exceeding threshold", f"Rs. {data_dict['commissions']:,.2f}"],
+        ["Food & Tea Allowances", "Entitled weekday & Sunday daily allowances", f"Rs. {data_dict['allowances']:,.2f}"],
+        ["Gross Payable Earnings", "Total entitled earnings for the period", f"Rs. {data_dict['incurred']:,.2f}"],
+        ["Already Paid / Disbursed", "Cash advances & direct payments recorded", f"-Rs. {data_dict['paid']:,.2f}"],
+        ["Net Balance Payable Now", "Final cash settlement due", f"Rs. {data_dict['due']:,.2f}"]
     ]
+    
     t_summary = Table(summary_data, colWidths=[150, 250, 100])
     t_summary.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#70440E')), ('TEXTCOLOR', (0,0), (-1,0), colors.white), ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'), ('FONTSIZE', (0,0), (-1,0), 9.5),
@@ -784,21 +809,25 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
         ('VALIGN', (0,0), (-1,-1), 'MIDDLE'), ('FONTNAME', (0,1), (-1,-2), 'Helvetica'), ('FONTSIZE', (0,1), (-1,-1), 9), ('TOPPADDING', (0,1), (-1,-1), 4), ('BOTTOMPADDING', (0,1), (-1,-1), 4)
     ]))
     story.append(t_summary); story.append(Spacer(1, 15))
+    
     story.append(Paragraph("<b>Detailed Commission & Allowance Entitlement Ledger</b>", ParagraphStyle('SubHeader', fontName='Helvetica-Bold', fontSize=11, textColor=colors.HexColor('#8A5E17')))); story.append(Spacer(1, 6))
-    ledger_rows = [["Date", "Type", "Cart", "Collection (₹)", "Salary (₹)", "Commission (₹)", "Allowance (₹)"]]
+    
+    ledger_rows = [["Date", "Type", "Cart", "Collection (Rs.)", "Salary (Rs.)", "Commission (Rs.)", "Allowance (Rs.)"]]
     for item in data_dict.get("detailed_ledger", []):
         ledger_rows.append([
             item["date"].strftime("%d %b %Y"), item["type"], item["cart"],
-            f"₹{item['collection']:,.2f}" if item['collection'] > 0 else "—", f"₹{item['fixed_salary']:,.2f}",
-            f"₹{item['commission']:,.2f}" if item['commission'] > 0 else "—", f"₹{item['allowance']:,.2f}" if item['allowance'] > 0 else "—"
+            f"Rs. {item['collection']:,.2f}" if item['collection'] > 0 else "—", f"Rs. {item['fixed_salary']:,.2f}",
+            f"Rs. {item['commission']:,.2f}" if item['commission'] > 0 else "—", f"Rs. {item['allowance']:,.2f}" if item['allowance'] > 0 else "—"
         ])
     if len(ledger_rows) == 1: ledger_rows.append(["No records", "—", "—", "—", "—", "—", "—"])
+    
     t_ledger = Table(ledger_rows, colWidths=[70, 80, 100, 75, 65, 60, 50])
     t_ledger.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#124A1D')), ('TEXTCOLOR', (0,0), (-1,0), colors.white), ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'), ('FONTSIZE', (0,0), (-1,0), 8.5),
         ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#A8D5AF')), ('ALIGN', (3,0), (-1,-1), 'RIGHT'), ('VALIGN', (0,0), (-1,-1), 'MIDDLE'), ('FONTNAME', (0,1), (-1,-1), 'Helvetica'),
         ('FONTSIZE', (0,1), (-1,-1), 8), ('TOPPADDING', (0,0), (-1,-1), 3), ('BOTTOMPADDING', (0,0), (-1,-1), 3)
     ]))
+    
     story.append(t_ledger); story.append(Spacer(1, 15))
     story.append(Paragraph("<i>This is a computer-generated payslip for Kulfi Factory - Hosur Franchise.</i>", ParagraphStyle('Footer', fontName='Helvetica-Oblique', fontSize=8, textColor=colors.gray, alignment=1)))
     doc.build(story); buffer.seek(0); return buffer.getvalue()
@@ -1038,11 +1067,16 @@ elif page == "Payslip Generator" and user_role == "admin":
             _, _, _, breakdown_dict = calculate_incurred_labour_for_range(payslip_start, payslip_end)
             staff_data = breakdown_dict.get(sel_staff_payslip, {
                 "monthly_fixed_salary": 18000.0, "days_worked": 0, "paid_leaves": 0, "salary": 0.0,
-                "commissions": 0.0, "allowances": 0.0, "incurred": 0.0, "paid": 0.0, "due": 0.0, "detailed_ledger": []
+                "commissions": 0.0, "allowances": 0.0, "incurred": 0.0, "paid": 0.0, "due": 0.0, "detailed_ledger": [], "doj": None
             })
+
+            doj_val = staff_data.get('doj')
+            doj_str = pd.to_datetime(doj_val).strftime('%d %b %Y') if pd.notna(doj_val) and str(doj_val).strip() else "N/A"
+            month_str = payslip_start.strftime('%B %Y')
 
             st.markdown("---")
             st.markdown(f"#### Salary Statement Summary — {sel_staff_payslip}")
+            st.markdown(f"**Date of Joining:** {doj_str} &nbsp;|&nbsp; **Payslip for the month:** {month_str}")
             
             summary_table_data = [
                 ["Salary Component", "Basis / Calculation Details", "Amount (₹)"],
@@ -1057,11 +1091,18 @@ elif page == "Payslip Generator" and user_role == "admin":
             ]
             
             summary_df = pd.DataFrame(summary_table_data[1:], columns=summary_table_data[0])
-            st.dataframe(summary_df, hide_index=True, use_container_width=True, column_config={"Amount (₹)": st.column_config.TextColumn()})
+            
+            # Apply styling to bold the gross and net payable rows for screen view[cite: 1]
+            def style_bold_rows(row):
+                if row["Salary Component"] in ["Gross Payable Earnings", "Net Balance Payable Now"]:
+                    return ["font-weight: bold;"] * len(row)
+                return [""] * len(row)
+                
+            st.dataframe(summary_df.style.apply(style_bold_rows, axis=1), hide_index=True, use_container_width=True)
 
             st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
             st.markdown(f"#### Detailed Commission & Allowance Entitlement Ledger")
-            st.caption(f"Itemized daily breakdown from {payslip_start.strftime('%d %b %Y')} to {payslip_end.strftime('%d %b %Y')}:")
+            st.caption(f"Payslip for the month: {month_str} (Itemized daily breakdown)")
 
             ledger_list = staff_data.get("detailed_ledger", [])
             if ledger_list:
@@ -1085,7 +1126,7 @@ elif page == "Payslip Generator" and user_role == "admin":
                     st.download_button(
                         label="📥 Download Official Payslip as PDF",
                         data=pdf_bytes,
-                        file_name=f"Payslip_{sel_staff_payslip.replace(' ', '_')}_{payslip_start.strftime('%Y%m%d')}_to_{payslip_end.strftime('%Y%m%d')}.pdf",
+                        file_name=f"Payslip_{sel_staff_payslip.replace(' ', '_')}_{month_str.replace(' ', '_')}.pdf",
                         mime="application/pdf", type="primary", use_container_width=True
                     )
             else:
