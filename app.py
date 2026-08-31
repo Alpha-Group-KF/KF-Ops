@@ -10,10 +10,10 @@ Kulfi Ops - multi-user data entry app for the kulfi cart business.
 - Remodeled Expenses & Payments (Bills vs. Cash Outflows with tranches & P&L summaries).
 - Automatic creation of Labour Charges expenses & cash payments on Daily Entry advance/food cash.
 - Staff & Payroll Module (KYC profile, leaves, compensation plans, and payments-backed settlement).
-- Remodeled Login, Navigation & Daily Entry:
-    * Case-insensitive login verification for both admin and data entry users.
-    * Data entry role bypasses the sidebar entirely, routing straight to the 3-cart home screen with an easily visible top logout button.
-    * Today's restock updates database closing units as `opening_units + added_units` via explicit check-and-update logic.
+- Payslip Generator Screen & PDF Download:
+    * Selectable date range and staff member.
+    * Detailed breakdown of days worked, fixed salary apportionment, commissions, allowances, paid amounts, and net payable.
+    * Professional on-screen HTML/CSS preview and downloadable PDF generation via ReportLab.
 - Dashboard with COGS So Far (All-Time), exact COGS in range, and accrual-based net margin tracking.
 - Freezer Stock, Freezer Analysis, Dashboard, and Expenses powered 100% by Supabase PostgreSQL.
 """
@@ -26,8 +26,19 @@ import pandas as pd
 import hmac
 import re
 import calendar
+import io
 from datetime import date, datetime, timedelta
 from sqlalchemy import text
+
+# Try importing reportlab for PDF generation
+try:
+    from reportlab.lib.pagesizes import letter
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib import colors
+    REPORTLAB_AVAILABLE = True
+except ImportError:
+    REPORTLAB_AVAILABLE = False
 
 st.set_page_config(page_title="Kulfi Ops", page_icon="🍦", layout="wide")
 
@@ -664,10 +675,10 @@ def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map,
 
 def sync_today_restock_entry(today_date, cart_name, staff_name, today_prev_closing_map, today_added_map):
     """
-    Persists today's entry where:
+    Persists today's restock entry where:
     - opening_units = previous day's closing balance
     - added_units = restock quantity entered for today
-    - closing_units = opening_units + added_units (Requirement 1)
+    - closing_units = opening_units + added_units (Requirement 2b)
     Updates existing record if present instead of throwing constraint conflicts.
     """
     if db_conn is not None:
@@ -1153,6 +1164,62 @@ def calculate_incurred_labour_for_range(start_date, end_date):
 
 
 # ----------------------------------------------------------------------
+# PDF GENERATION HELPER
+# ----------------------------------------------------------------------
+def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
+    if not REPORTLAB_AVAILABLE:
+        return None
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
+    story = []
+    styles = getSampleStyleSheet()
+    
+    title_style = ParagraphStyle('TitleStyle', parent=styles['Heading1'], fontName='Helvetica-Bold', fontSize=18, textColor=colors.HexColor('#8A5E17'), alignment=1)
+    sub_style = ParagraphStyle('SubStyle', parent=styles['Normal'], fontName='Helvetica', fontSize=11, textColor=colors.HexColor('#2A1B10'), alignment=1)
+    
+    story.append(Paragraph("Kulfi Factory - Hosur Franchise", title_style))
+    story.append(Paragraph(f"Payslip for <b>{staff_name}</b> ({start_date.strftime('%d %b %Y')} to {end_date.strftime('%d %b %Y')})", sub_style))
+    story.append(Spacer(1, 15))
+    
+    table_data = [
+        ["Component", "Details / Calculation", "Amount (₹)"],
+        ["Days Worked", f"{data_dict['days_worked']} shifts (+ {data_dict['paid_leaves']} paid leaves)", "—"],
+        ["Fixed Salary", f"{data_dict['days_worked'] + data_dict['paid_leaves']} days @ ₹600/day", f"₹{data_dict['salary']:,.2f}"],
+        ["Sales Commission", "15% on sales exceeding daily threshold", f"₹{data_dict['commissions']:,.2f}"],
+        ["Food & Tea Allowances", "Entitled weekday & Sunday allowances", f"₹{data_dict['allowances']:,.2f}"],
+        ["Gross Payable Earnings", "Total earned in period", f"₹{data_dict['incurred']:,.2f}"],
+        ["Already Paid / Disbursed", "Disbursements & cash advances", f"-₹{data_dict['paid']:,.2f}"],
+        ["Net Payable Balance Due", "Final settlement due now", f"₹{data_dict['due']:,.2f}"]
+    ]
+    
+    t = Table(table_data, colWidths=[140, 260, 100])
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#70440E')),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0,0), (-1,0), 10),
+        ('BOTTOMPADDING', (0,0), (-1,0), 6),
+        ('BACKGROUND', (0,-1), (-1,-1), colors.HexColor('#FFF2DC')),
+        ('FONTNAME', (0,-1), (-1,-1), 'Helvetica-Bold'),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#E3CBA0')),
+        ('ALIGN', (2,0), (2,-1), 'RIGHT'),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('FONTNAME', (0,1), (-1,-2), 'Helvetica'),
+        ('FONTSIZE', (0,1), (-1,-1), 9),
+        ('TOPPADDING', (0,1), (-1,-1), 5),
+        ('BOTTOMPADDING', (0,1), (-1,-1), 5),
+    ]))
+    
+    story.append(t)
+    story.append(Spacer(1, 20))
+    story.append(Paragraph("<i>This is a computer-generated payslip for Kulfi Factory - Hosur Franchise.</i>", ParagraphStyle('Footer', parent=styles['Italic'], fontSize=8, textColor=colors.gray, alignment=1)))
+    
+    doc.build(story)
+    buffer.seek(0)
+    return buffer.getvalue()
+
+
+# ----------------------------------------------------------------------
 # AUTHENTICATION
 # ----------------------------------------------------------------------
 def check_login():
@@ -1226,7 +1293,7 @@ else:
         except Exception:
             st.markdown("## 🍦 Kulfi Ops")
 
-        nav_options = ["Dashboard", "Daily Entry", "Purchase Orders", "Freezer Stock", "Freezer Analysis", "Stock Removed", "Expenses", "Staff & Payroll"]
+        nav_options = ["Dashboard", "Daily Entry", "Purchase Orders", "Freezer Stock", "Freezer Analysis", "Stock Removed", "Expenses", "Staff & Payroll", "Payslip Generator"]
         page = st.radio("Go to", nav_options, label_visibility="collapsed")
 
         st.markdown("---")
@@ -1567,7 +1634,7 @@ if page == "Daily Entry":
                             total_collection_val, phonepe_val, cash_val, remarks, selected_staff, staff_advance_val, food_tea_val
                         )
 
-                        # 2. Sync Right Box: Today's Restock & Opening Balance Entry (closing units updated as opening + added)
+                        # 2. Sync Right Box: Today's Restock & Opening Balance Entry (closing units = opening + added for restock)
                         sync_today_restock_entry(
                             today_val, cart_name, selected_staff, today_db_opening_map, today_added_map
                         )
@@ -1585,6 +1652,69 @@ if page == "Daily Entry":
                         show_success_modal(success_msg)
                     except Exception as e:
                         st.error(f"Could not save entries - {e}")
+
+# ======================================================================
+# PAGE 9: PAYSLIP GENERATOR
+# ======================================================================
+elif page == "Payslip Generator" and user_role == "admin":
+    st.subheader("Staff Payslip Generator")
+    st.caption("Generate, view, and download individual staff payslips with complete salary breakdowns over any date range.")
+
+    staff_df = load_full_staff_df()
+    if staff_df.empty:
+        st.info("No staff records found in the database.")
+    else:
+        pc1, pc2, pc3 = st.columns([1.2, 1, 1])
+        with pc1:
+            sel_staff_payslip = st.selectbox("Select Staff Member", staff_df["name"].tolist(), key="payslip_staff_sel")
+        with pc2:
+            payslip_start = st.date_input("Start Date", value=date.today().replace(day=1), key="payslip_start_dt")
+        with pc3:
+            payslip_end = st.date_input("End Date", value=date.today(), key="payslip_end_dt")
+
+        if payslip_start > payslip_end:
+            st.error("Start date must be before or equal to end date.")
+        else:
+            _, _, _, breakdown_dict = calculate_incurred_labour_for_range(payslip_start, payslip_end)
+            staff_data = breakdown_dict.get(sel_staff_payslip, {
+                "days_worked": 0, "paid_leaves": 0, "salary": 0.0,
+                "commissions": 0.0, "allowances": 0.0, "incurred": 0.0, "paid": 0.0, "due": 0.0
+            })
+
+            st.markdown("---")
+            # On-screen Preview Card
+            with st.container(border=True):
+                st.markdown(f"### 🍦 Kulfi Factory - Hosur Franchise")
+                st.markdown(f"**Payslip for:** {sel_staff_payslip} &nbsp;|&nbsp; **Period:** {payslip_start.strftime('%d %b %Y')} to {payslip_end.strftime('%d %b %Y')}")
+                st.markdown("---")
+
+                p_col_l, p_col_r = st.columns(2)
+                with p_col_l:
+                    st.metric("Days Worked (Shifts)", f"{staff_data['days_worked']} shifts")
+                    st.metric("Paid Leaves Logged", f"{staff_data['paid_leaves']} days")
+                    st.metric("Fixed Salary Apportioned", f"₹{staff_data['salary']:,.2f}")
+                    st.metric("Sales Commissions", f"₹{staff_data['commissions']:,.2f}")
+                with p_col_r:
+                    st.metric("Food & Tea Allowances", f"₹{staff_data['allowances']:,.2f}")
+                    st.metric("Gross Payable Earnings", f"₹{staff_data['incurred']:,.2f}")
+                    st.metric("Already Paid / Disbursed", f"-₹{staff_data['paid']:,.2f}")
+                    st.metric("Net Balance Payable Now", f"₹{staff_data['due']:,.2f}")
+
+            st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+
+            if REPORTLAB_AVAILABLE:
+                pdf_bytes = generate_payslip_pdf(sel_staff_payslip, payslip_start, payslip_end, staff_data)
+                if pdf_bytes:
+                    st.download_button(
+                        label="📥 Download Payslip as PDF",
+                        data=pdf_bytes,
+                        file_name=f"Payslip_{sel_staff_payslip.replace(' ', '_')}_{payslip_start.strftime('%Y%m%d')}_to_{payslip_end.strftime('%Y%m%d')}.pdf",
+                        mime="application/pdf",
+                        type="primary",
+                        use_container_width=True
+                    )
+            else:
+                st.warning("`reportlab` library is not installed in the Python environment, so direct PDF binary download is disabled. You can print/save this page as PDF using your browser (Ctrl+P / Cmd+P).")
 
 # ======================================================================
 # PAGE 2: PURCHASE ORDERS (Estimator, Dynamic Discount & Order Editing)
@@ -3181,7 +3311,7 @@ elif page == "Expenses" and user_role == "admin":
                 rpt_end = st.date_input("To Date", value=max_exp_d, min_value=min_exp_d, max_value=max_exp_d, key="exp_rpt_end")
 
             if rpt_start > rpt_end:
-                st.error("'From' date is before 'To' date.")
+                st.error("'From' date must be before 'To' date.")
                 rpt_start, rpt_end = rpt_end, rpt_start
 
             f_exp = expenses_summary_df[
@@ -4306,111 +4436,4 @@ elif page == "Dashboard" and user_role == "admin":
                     }
                 )
 
-            with cart_col2:
-                st.markdown("#### Comparative Cart Revenue")
-                st.bar_chart(cart_grp.set_index("Cart")["Revenue (₹)"])
-        else:
-            st.caption("No cart sales in this date range.")
-
-        # ==============================================================
-        # GROUP 3: DAY-WISE & TIMING ANALYSIS
-        # ==============================================================
-        st.markdown("---")
-        st.markdown("### 3. Day-Wise & Timing Patterns")
-
-        if not range_df.empty:
-            day_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-            dow_df = range_df[range_df["Sold_Total"] > 0].copy()
-            dow_df["Day"] = dow_df["Date"].dt.day_name()
-
-            if not dow_df.empty:
-                dw1, dw2 = st.columns(2)
-
-                with dw1:
-                    st.write("**Average Units Sold per Day of Week**")
-                    units_pivot = dow_df.pivot_table(
-                        index="Cart", columns="Day", values="Sold_Total", aggfunc="mean", fill_value=0, margins=True, margins_name="All Carts"
-                    )
-                    day_cols = [d for d in day_order if d in units_pivot.columns] + ["All Carts"]
-                    units_pivot = units_pivot.reindex(columns=day_cols)
-                    st.dataframe(units_pivot.round(0).astype(int), use_container_width=True)
-
-                with dw2:
-                    st.write("**Average Revenue (₹) per Day of Week**")
-                    rev_pivot = dow_df.pivot_table(
-                        index="Cart", columns="Day", values="Total_Collection", aggfunc="mean", fill_value=0, margins=True, margins_name="All Carts"
-                    )
-                    rev_pivot = rev_pivot.reindex(columns=day_cols)
-                    st.dataframe(rev_pivot.round(0).astype(int), use_container_width=True)
-            else:
-                st.caption("No active selling days found in this range.")
-
-            st.markdown("#### Itemized Daily Cart Sales Log")
-            display_cols = ["Date", "Cart", "Sold_Total", "Total_Collection", "PhonePe", "Cash", "Staff_Name", "Staff_Advance", "Food_Tea_Cash", "Remarks"]
-            sales_table = range_df.sort_values(["Date", "Cart"])[display_cols].rename(
-                columns={
-                    "Sold_Total": "Units Sold", 
-                    "Total_Collection": "Revenue (₹)",
-                    "PhonePe": "PhonePe (₹)",
-                    "Cash": "Cash (₹)",
-                    "Staff_Name": "Staff Name",
-                    "Staff_Advance": "Staff Advance (₹)",
-                    "Food_Tea_Cash": "Food / Tea (₹)",
-                }
-            )
-            sales_table["Units Sold"] = sales_table["Units Sold"].apply(lambda x: int(round(x)))
-            sales_table["Date"] = sales_table["Date"].dt.strftime("%d %b %Y")
-            st.dataframe(
-                sales_table, 
-                hide_index=True, 
-                use_container_width=True,
-                column_config={
-                    "Revenue (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                    "PhonePe (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                    "Cash (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                    "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                    "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                }
-            )
-        else:
-            st.caption("No sales data recorded in this period.")
-
-    # ------------------------------------------------------------------
-    # CURRENT INVENTORY STATUS
-    # ------------------------------------------------------------------
-    if not daily_df.empty:
-        st.markdown("---")
-        st.markdown('<div id="inventory-status"></div>', unsafe_allow_html=True)
-        st.markdown("## Current Live Inventory Status")
-
-        inv_c1, inv_c2, inv_c3 = st.columns(3)
-        cart_stock_tot = int(round(daily_df.sort_values('Date').groupby('Cart').tail(1)['Closing_Total'].sum()))
-        inv_c1.metric("Stock Across Carts", f"{cart_stock_tot} units")
-        inv_c2.metric("Units in Freezer", f"{total_freezer_units} units")
-        inv_c3.metric("Freezer Stock Valuation (Cost)", f"₹{total_freezer_val:,.2f}")
-
-        try:
-            if not freezer_df.empty:
-                st.markdown("**Freezer stock breakdown & cost valuation**")
-                disp_freezer = freezer_df.rename(columns={
-                    "cost_price": "Unit Cost (₹)",
-                    "Stock_Value": "Stock Value (₹)"
-                })[["Flavour", "Units in freezer", "Unit Cost (₹)", "Stock Value (₹)"]]
-                
-                st.dataframe(
-                    disp_freezer, 
-                    hide_index=True, 
-                    use_container_width=True,
-                    column_config={
-                        "Unit Cost (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                        "Stock Value (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                    }
-                )
-        except Exception as e:
-            st.caption(f"Could not compute freezer stock from DB ({e}).")
-
-        st.markdown("**Latest stock per cart**")
-        latest_per_cart = daily_df.sort_values("Date").groupby("Cart").tail(1)[["Cart", "Date", "Closing_Total"]].copy()
-        latest_per_cart["Closing_Total"] = latest_per_cart["Closing_Total"].apply(lambda x: int(round(x)))
-        latest_per_cart["Date"] = latest_per_cart["Date"].dt.strftime("%d %b %Y")
-        st.dataframe(latest_per_cart, hide_index=True, use_container_width=True)
+            with cart_colSorry, something went wrong. Please try your request again.
