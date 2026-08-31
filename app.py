@@ -10,11 +10,11 @@ Kulfi Ops - multi-user data entry app for the kulfi cart business.
 - Remodeled Expenses & Payments (Bills vs. Cash Outflows with tranches & P&L summaries).
 - Automatic creation of Labour Charges expenses & cash payments on Daily Entry advance/food cash.
 - Staff & Payroll Module (KYC profile, leaves, compensation plans, and payments-backed settlement).
-- Remodeled Payslip Generator Screen & PDF Download:
-    * Selectable date range and staff member.
-    * Displays Monthly Fixed Salary and Pro-rata Fixed Salary.
-    * Comprehensive salary breakdown table and detailed daily commission/allowance ledger table.
-    * Professional PDF generation featuring the Kulfi Factory logo at the top left.
+- Remodeled Login, Navigation & Daily Entry:
+    * Case-insensitive login verification for both admin and data entry users.
+    * Data entry role bypasses the sidebar entirely, routing straight to the 3-cart home screen with an easily visible top logout button.
+    * Today's restock updates database closing units as `opening_units + added_units` via explicit check-and-update logic.
+- Payslip Generator Screen & PDF Download with professional formatting and logo integration.
 - Dashboard with COGS So Far (All-Time), exact COGS in range, and accrual-based net margin tracking.
 - Freezer Stock, Freezer Analysis, Dashboard, and Expenses powered 100% by Supabase PostgreSQL.
 """
@@ -1203,19 +1203,16 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
     title_style = ParagraphStyle('TitleStyle', parent=styles['Heading1'], fontName='Helvetica-Bold', fontSize=16, textColor=colors.HexColor('#8A5E17'), alignment=1)
     sub_style = ParagraphStyle('SubStyle', parent=styles['Normal'], fontName='Helvetica', fontSize=10, textColor=colors.HexColor('#2A1B10'), alignment=1)
     
-    # Header Table with Logo at Top Left
     logo_path = "assets/logo.png"
-    header_elements = []
     if os.path.exists(logo_path):
         try:
-            img = RLImage(logo_path, width=60, height=60)
-            header_elements.append([img, Paragraph("<b>Kulfi Factory - Hosur Franchise</b>", title_style)])
+            img = RLImage(logo_path, width=50, height=50)
+            header_table = Table([[img, Paragraph("<b>Kulfi Factory - Hosur Franchise</b><br/>Staff Salary Payslip", title_style)]], colWidths=[60, 470])
         except Exception:
-            header_elements.append(["", Paragraph("<b>Kulfi Factory - Hosur Franchise</b>", title_style)])
+            header_table = Table([[Paragraph("<b>Kulfi Factory</b>", title_style), Paragraph("<b>Kulfi Factory - Hosur Franchise</b><br/>Staff Salary Payslip", title_style)]], colWidths=[80, 450])
     else:
-        header_elements.append(["", Paragraph("<b>Kulfi Factory - Hosur Franchise</b>", title_style)])
-    
-    header_table = Table([[Paragraph("<b>Kulfi Factory</b>", ParagraphStyle('LogoTxt', fontName='Helvetica-Bold', fontSize=12, textColor=colors.HexColor('#8A5E17'))), Paragraph("<b>Kulfi Factory - Hosur Franchise</b><br/>Staff Salary Payslip", title_style)]], colWidths=[80, 450])
+        header_table = Table([[Paragraph("<b>Kulfi Factory</b>", title_style), Paragraph("<b>Kulfi Factory - Hosur Franchise</b><br/>Staff Salary Payslip", title_style)]], colWidths=[80, 450])
+        
     header_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
         ('ALIGN', (1,0), (1,0), 'CENTER'),
@@ -1226,16 +1223,16 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
     story.append(Paragraph(f"<b>Staff Member:</b> {staff_name} &nbsp;|&nbsp; <b>Period:</b> {start_date.strftime('%d %b %Y')} to {end_date.strftime('%d %b %Y')}", sub_style))
     story.append(Spacer(1, 12))
     
-    # Summary Table of Components
+    # Summary Table of Components (Removing shifts term)
     summary_data = [
-        ["Salary Component", "Basis / Calculation", "Amount (₹)"],
-        ["Monthly Fixed Salary", "Standard Monthly Plan", f"₹{data_dict['monthly_fixed_salary']:,.2f}"],
+        ["Salary Component", "Basis / Calculation Details", "Amount (₹)"],
+        ["Monthly Fixed Salary", "Standard Monthly Base Plan", f"₹{data_dict['monthly_fixed_salary']:,.2f}"],
         ["Days Worked", f"{data_dict['days_worked']} days worked + {data_dict['paid_leaves']} paid leaves", f"{data_dict['days_worked'] + data_dict['paid_leaves']} days"],
         ["Pro-rata Fixed Salary", f"({data_dict['days_worked']} + {data_dict['paid_leaves']}) days @ ₹600/day", f"₹{data_dict['salary']:,.2f}"],
-        ["Sales Commissions", "15% on sales exceeding daily threshold", f"₹{data_dict['commissions']:,.2f}"],
-        ["Food & Tea Allowances", "Entitled weekday & Sunday allowances", f"₹{data_dict['allowances']:,.2f}"],
-        ["Gross Payable Earnings", "Total entitled earnings", f"₹{data_dict['incurred']:,.2f}"],
-        ["Already Paid / Disbursed", "Cash advances & direct payments", f"-₹{data_dict['paid']:,.2f}"],
+        ["Sales Commissions", "15% on daily collections exceeding threshold", f"₹{data_dict['commissions']:,.2f}"],
+        ["Food & Tea Allowances", "Entitled weekday & Sunday daily allowances", f"₹{data_dict['allowances']:,.2f}"],
+        ["Gross Payable Earnings", "Total entitled earnings for the period", f"₹{data_dict['incurred']:,.2f}"],
+        ["Already Paid / Disbursed", "Cash advances & direct payments recorded", f"-₹{data_dict['paid']:,.2f}"],
         ["Net Balance Payable Now", "Final cash settlement due", f"₹{data_dict['due']:,.2f}"]
     ]
     
@@ -1768,7 +1765,7 @@ elif page == "Payslip Generator" and user_role == "admin":
 
             st.markdown("---")
             
-            # Requirement 3: Structured Summary Table of Salary Components
+            # Requirement 2 & 3: Structured Summary Table with Monthly & Pro-rata Fixed Salary
             st.markdown(f"#### Salary Statement Summary — {sel_staff_payslip}")
             
             summary_table_data = [
@@ -4546,4 +4543,90 @@ elif page == "Dashboard" and user_role == "admin":
                     hide_index=True, 
                     use_container_width=True,
                     column_config={
-                        "Revenue (₹)": st.column_config.NumberColumn(format="I'm having a hard time fulfilling your request. Can I help you with something else instead?
+                        "Revenue (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                        "Cash (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                        "PhonePe (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                        "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                        "Food/Tea Cash (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                    }
+                )
+
+            with cart_col2:
+                st.markdown("#### Comparative Cart Revenue")
+                st.bar_chart(cart_grp.set_index("Cart")["Revenue (₹)"])
+        else:
+            st.caption("No cart sales in this date range.")
+
+        # ==============================================================
+        # GROUP 3: DAY-WISE & TIMING ANALYSIS
+        # ==============================================================
+        st.markdown("---")
+        st.markdown("### 3. Day-Wise & Timing Patterns")
+
+        if not range_df.empty:
+            day_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+            dow_df = range_df[range_df["Sold_Total"] > 0].copy()
+            dow_df["Day"] = dow_df["Date"].dt.day_name()
+
+            if not dow_df.empty:
+                dw1, dw2 = st.columns(2)
+
+                with dw1:
+                    st.write("**Average Units Sold per Day of Week**")
+                    units_pivot = dow_df.pivot_table(
+                        index="Cart", columns="Day", values="Sold_Total", aggfunc="mean", fill_value=0, margins=True, margins_name="All Carts"
+                    )
+                    day_cols = [d for d in day_order if d in units_pivot.columns] + ["All Carts"]
+                    units_pivot = units_pivot.reindex(columns=day_cols)
+                    st.dataframe(units_pivot.round(0).astype(int), use_container_width=True)
+
+                with dw2:
+                    st.write("**Average Revenue (₹) per Day of Week**")
+                    rev_pivot = dow_df.pivot_table(
+                        index="Cart", columns="Day", values="Total_Collection", aggfunc="mean", fill_value=0, margins=True, margins_name="All Carts"
+                    )
+                    rev_pivot = rev_pivot.reindex(columns=day_cols)
+                    st.dataframe(rev_pivot.round(0).astype(int), use_container_width=True)
+            else:
+                st.caption("No active selling days found in this range.")
+
+            st.markdown("#### Itemized Daily Cart Sales Log")
+            display_cols = ["Date", "Cart", "Sold_Total", "Total_Collection", "PhonePe", "Cash", "Staff_Name", "Staff_Advance", "Food_Tea_Cash", "Remarks"]
+            sales_table = range_df.sort_values(["Date", "Cart"])[display_cols].rename(
+                columns={
+                    "Sold_Total": "Units Sold", 
+                    "Total_Collection": "Revenue (₹)",
+                    "PhonePe": "PhonePe (₹)",
+                    "Cash": "Cash (₹)",
+                    "Staff_Name": "Staff Name",
+                    "Staff_Advance": "Staff Advance (₹)",
+                    "Food_Tea_Cash": "Food / Tea (₹)",
+                }
+            )
+            sales_table["Units Sold"] = sales_table["Units Sold"].apply(lambda x: int(round(x)))
+            sales_table["Date"] = sales_table["Date"].dt.strftime("%d %b %Y")
+            st.dataframe(
+                sales_table, 
+                hide_index=True, 
+                use_container_width=True,
+                column_config={
+                    "Revenue (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                    "PhonePe (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                    "Cash (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                    "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                    "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                }
+            )
+        else:
+            st.caption("No sales data recorded in this period.")
+
+    # ------------------------------------------------------------------
+    # CURRENT INVENTORY STATUS
+    # ------------------------------------------------------------------
+    if not daily_df.empty:
+        st.markdown("---")
+        st.markdown('<div id="inventory-status"></div>', unsafe_allow_html=True)
+        st.markdown("## Current Live Inventory Status")
+
+        inv_c1, inv_c2, inv_c3 = st.columns(3)
+        cart_stock_tot = int(round(daily_df.sort_values('Date').groupby('Cart').tail(Sorry, something went wrong. Please try your request again.
