@@ -810,11 +810,10 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
     ]))
     story.append(t_summary); story.append(Spacer(1, 15))
     
-    # Left-aligned header with line below
     story.append(Paragraph("<b>Detailed Commission & Allowance Entitlement Ledger</b>", ParagraphStyle('SubHeader', fontName='Helvetica-Bold', fontSize=11, textColor=colors.HexColor('#8A5E17'), alignment=0)))
     story.append(Spacer(1, 4))
     
-    line_t = Table([['']], colWidths=[500])
+    line_t = Table([['']], colWidths=[525])
     line_t.setStyle(TableStyle([('LINEABOVE', (0,0), (-1,-1), 0.75, colors.HexColor('#8A5E17'))]))
     line_t.hAlign = 'LEFT'
     story.append(line_t)
@@ -829,7 +828,8 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
         ])
     if len(ledger_rows) == 1: ledger_rows.append(["No records", "—", "—", "—", "—", "—", "—"])
     
-    t_ledger = Table(ledger_rows, colWidths=[70, 80, 100, 75, 65, 60, 50])
+    # FIX: Adjusted colWidths to provide more room for headers ending in "(Rs.)"
+    t_ledger = Table(ledger_rows, colWidths=[60, 65, 85, 75, 70, 85, 85])
     t_ledger.hAlign = 'LEFT'
     t_ledger.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#124A1D')), ('TEXTCOLOR', (0,0), (-1,0), colors.white), ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'), ('FONTSIZE', (0,0), (-1,0), 8.5),
