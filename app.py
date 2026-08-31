@@ -13,7 +13,7 @@ Kulfi Ops - multi-user data entry app for the kulfi cart business.
 - Payslip Generator Screen & PDF Download:
     * Selectable date range and staff member.
     * Detailed breakdown of days worked, fixed salary apportionment, commissions, allowances, paid amounts, and net payable.
-    * Professional on-screen HTML/CSS preview and downloadable PDF generation via ReportLab.
+    * Professional on-screen preview and downloadable PDF generation via ReportLab.
 - Dashboard with COGS So Far (All-Time), exact COGS in range, and accrual-based net margin tracking.
 - Freezer Stock, Freezer Analysis, Dashboard, and Expenses powered 100% by Supabase PostgreSQL.
 """
@@ -678,7 +678,7 @@ def sync_today_restock_entry(today_date, cart_name, staff_name, today_prev_closi
     Persists today's restock entry where:
     - opening_units = previous day's closing balance
     - added_units = restock quantity entered for today
-    - closing_units = opening_units + added_units (Requirement 2b)
+    - closing_units = opening_units + added_units (Requirement 1 & 2)
     Updates existing record if present instead of throwing constraint conflicts.
     """
     if db_conn is not None:
@@ -1273,10 +1273,8 @@ if not check_login():
 user_role = st.session_state.get("user_role", "admin")
 
 if user_role == "entry":
-    # Data entry user: no sidebar, straight to daily entry / cart selection
     page = "Daily Entry"
     
-    # Easily visible logout button at the top header area
     top_nav_c1, top_nav_c2 = st.columns([6, 1])
     with top_nav_c1:
         st.title("🍦 Kulfi Ops — Daily Entry")
@@ -1327,7 +1325,6 @@ if page == "Daily Entry":
     else:
         cart_name = st.session_state["active_daily_cart"]
         
-        # Clearly visible primary button at the top to go back to cart selection
         if st.button("⬅ Back to Cart Selection", type="primary", use_container_width=False):
             st.session_state["active_daily_cart"] = None
             st.rerun()
@@ -1634,7 +1631,7 @@ if page == "Daily Entry":
                             total_collection_val, phonepe_val, cash_val, remarks, selected_staff, staff_advance_val, food_tea_val
                         )
 
-                        # 2. Sync Right Box: Today's Restock & Opening Balance Entry (closing units = opening + added for restock)
+                        # 2. Sync Right Box: Today's Restock & Opening Balance Entry (closing units = opening + added)
                         sync_today_restock_entry(
                             today_val, cart_name, selected_staff, today_db_opening_map, today_added_map
                         )
@@ -4436,4 +4433,84 @@ elif page == "Dashboard" and user_role == "admin":
                     }
                 )
 
-            with cart_colSorry, something went wrong. Please try your request again.
+            with cart_col2:
+                st.markdown("#### Comparative Cart Revenue")
+                st.bar_chart(cart_grp.set_index("Cart")["Revenue (₹)"])
+        else:
+            st.caption("No cart sales in this date range.")
+
+        # ==============================================================
+        # GROUP 3: DAY-WISE & TIMING ANALYSIS
+        # ==============================================================
+        st.markdown("---")
+        st.markdown("### 3. Day-Wise & Timing Patterns")
+
+        if not range_df.empty:
+            day_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+            dow_df = range_df[range_df["Sold_Total"] > 0].copy()
+            dow_df["Day"] = dow_df["Date"].dt.day_name()
+
+            if not dow_df.empty:
+                dw1, dw2 = st.columns(2)
+
+                with dw1:
+                    st.write("**Average Units Sold per Day of Week**")
+                    units_pivot = dow_df.pivot_table(
+                        index="Cart", columns="Day", values="Sold_Total", aggfunc="mean", fill_value=0, margins=True, margins_name="All Carts"
+                    )
+                    day_cols = [d for d in day_order if d in units_pivot.columns] + ["All Carts"]
+                    units_pivot = units_pivot.reindex(columns=day_cols)
+                    st.dataframe(units_pivot.round(0).astype(int), use_container_width=True)
+
+                with dw2:
+                    st.write("**Average Revenue (₹) per Day of Week**")
+                    rev_pivot = dow_df.pivot_table(
+                        index="Cart", columns="Day", values="Total_Collection", aggfunc="mean", fill_value=0, margins=True, margins_name="All Carts"
+                    )
+                    rev_pivot = rev_pivot.reindex(columns=day_cols)
+                    st.dataframe(rev_pivot.round(0).astype(int), use_container_width=True)
+            else:
+                st.caption("No active selling days found in this range.")
+
+            st.markdown("#### Itemized Daily Cart Sales Log")
+            display_cols = ["Date", "Cart", "Sold_Total", "Total_Collection", "PhonePe", "Cash", "Staff_Name", "Staff_Advance", "Food_Tea_Cash", "Remarks"]
+            sales_table = range_df.sort_values(["Date", "Cart"])[display_cols].rename(
+                columns={
+                    "Sold_Total": "Units Sold", 
+                    "Total_Collection": "Revenue (₹)",
+                    "PhonePe": "PhonePe (₹)",
+                    "Cash": "Cash (₹)",
+                    "Staff_Name": "Staff Name",
+                    "Staff_Advance": "Staff Advance (₹)",
+                    "Food_Tea_Cash": "Food / Tea (₹)",
+                }
+            )
+            sales_table["Units Sold"] = sales_table["Units Sold"].apply(lambda x: int(round(x)))
+            sales_table["Date"] = sales_table["Date"].dt.strftime("%d %b %Y")
+            st.dataframe(
+                sales_table, 
+                hide_index=True, 
+                use_container_width=True,
+                column_config={
+                    "Revenue (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                    "PhonePe (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                    "Cash (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                    "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                    "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                }
+            )
+        else:
+            st.caption("No sales data recorded in this period.")
+
+    # ------------------------------------------------------------------
+    # CURRENT INVENTORY STATUS
+    # ------------------------------------------------------------------
+    if not daily_df.empty:
+        st.markdown("---")
+        st.markdown('<div id="inventory-status"></div>', unsafe_allow_html=True)
+        st.markdown("## Current Live Inventory Status")
+
+        inv_c1, inv_c2, inv_c3 = st.columns(3)
+        cart_stock_tot = int(round(daily_df.sort_values('Date').groupby('Cart').tail(1)['Closing_Total'].sum()))
+        inv_c1.metric("Stock Across Carts", f"{cart_stock_tot} units")
+        inv_c2.metric("Units in Freezer", f"{total_freezer_unitsI encountered an error doing what you asked. Could you try again?
