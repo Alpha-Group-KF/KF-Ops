@@ -1052,7 +1052,7 @@ elif page == "Payslip Generator" and user_role == "admin":
         if os.path.exists("assets/logo.png"): st.image("assets/logo.png", width=90)
     with p_h_col2:
         st.subheader("Staff Payslip Generator & Detailed Ledger")
-        st.caption("Kulfi Factory - Hosur Franchise | Generate professional salary statements and PDF downloads.")
+        st.caption("Kulfi Factory - Hosur Franchise")
 
     staff_df = load_full_staff_df()
     if staff_df.empty: st.info("No staff records found in the database.")
