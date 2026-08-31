@@ -756,7 +756,11 @@ def calculate_incurred_labour_for_range(start_date, end_date):
             paid_leaves_cnt = len(paid_leaves_df)
             shift_sal += (paid_leaves_cnt * daily_rate)
             for _, l_row in paid_leaves_df.iterrows():
-                detailed_ledger.append({"date": pd.to_datetime(l_row["attendance_date"]).date(), "type": "Paid Leave", "cart": "—", "collection": 0.0, "fixed_salary": daily_rate, "commission": 0.0, "allowance": 0.0})
+                l_dt = pd.to_datetime(l_row["attendance_date"]).date()
+                # Apply Sunday or Weekday allowance based on the leave date
+                day_allow = allow_sun if (l_dt.weekday() == 6) else allow_wd
+                shift_allow += day_allow
+                detailed_ledger.append({"date": l_dt, "type": "Paid Leave", "cart": "—", "collection": 0.0, "fixed_salary": daily_rate, "commission": 0.0, "allowance": day_allow})
         
         detailed_ledger.sort(key=lambda x: x["date"])
         
