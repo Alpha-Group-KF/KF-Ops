@@ -10,10 +10,10 @@ Kulfi Ops - multi-user data entry app for the kulfi cart business.
 - Remodeled Expenses & Payments (Bills vs. Cash Outflows with tranches & P&L summaries).
 - Automatic creation of Labour Charges expenses & cash payments on Daily Entry advance/food cash.
 - Staff & Payroll Module (KYC profile, leaves, compensation plans, and payments-backed settlement).
-- Remodeled Login & Navigation:
+- Remodeled Login, Navigation & Daily Entry:
     * Case-insensitive login verification for both admin and data entry users.
     * Data entry role bypasses the sidebar entirely, routing straight to the 3-cart home screen with an easily visible top logout button.
-    * Today's restock updates database closing units as `opening_units + added_units`.
+    * Today's restock updates database closing units as `opening_units + added_units` via explicit check-and-update logic.
 - Dashboard with COGS So Far (All-Time), exact COGS in range, and accrual-based net margin tracking.
 - Freezer Stock, Freezer Analysis, Dashboard, and Expenses powered 100% by Supabase PostgreSQL.
 """
@@ -668,6 +668,7 @@ def sync_today_restock_entry(today_date, cart_name, staff_name, today_prev_closi
     - opening_units = previous day's closing balance
     - added_units = restock quantity entered for today
     - closing_units = opening_units + added_units (Requirement 1)
+    Updates existing record if present instead of throwing constraint conflicts.
     """
     if db_conn is not None:
         with db_conn.session as s:
@@ -683,28 +684,6 @@ def sync_today_restock_entry(today_date, cart_name, staff_name, today_prev_closi
                         text("UPDATE daily_cart_entries SET staff_name = COALESCE(NULLIF(:st, ''), staff_name) WHERE id = :id;"),
                         {"st": staff_name, "id": today_id}
                     )
-                for code in FLAVOR_CODES:
-                    open_u = int(today_prev_closing_map[code])
-                    add_u = int(today_added_map.get(code, 0))
-                    close_u = open_u + add_u
-                    s.execute(
-                        text("""
-                        INSERT INTO daily_cart_items (daily_entry_id, flavor_code, opening_units, added_units, sold_units, closing_units)
-                        VALUES (:eid, :code, :open, :add, 0, :close)
-                        ON CONFLICT (daily_entry_id, flavor_code) DO UPDATE
-                        SET opening_units = EXCLUDED.opening_units,
-                            added_units = EXCLUDED.added_units,
-                            closing_units = EXCLUDED.closing_units,
-                            sold_units = GREATEST(0, EXCLUDED.opening_units + EXCLUDED.added_units - EXCLUDED.closing_units);
-                        """),
-                        {
-                            "eid": today_id, 
-                            "code": code, 
-                            "open": open_u,
-                            "add": add_u,
-                            "close": close_u
-                        }
-                    )
             else:
                 res_ins = s.execute(
                     text("""
@@ -715,18 +694,44 @@ def sync_today_restock_entry(today_date, cart_name, staff_name, today_prev_closi
                     {"dt": today_date, "cart": cart_name, "city": CITY, "st": staff_name}
                 )
                 today_id = res_ins.scalar()
-                for code in FLAVOR_CODES:
-                    open_u = int(today_prev_closing_map[code])
-                    add_u = int(today_added_map.get(code, 0))
-                    close_u = open_u + add_u
+
+            for code in FLAVOR_CODES:
+                open_u = int(today_prev_closing_map[code])
+                add_u = int(today_added_map.get(code, 0))
+                close_u = open_u + add_u  # Closing units = opening + added for today's restock
+                
+                item_res = s.execute(
+                    text("SELECT id FROM daily_cart_items WHERE daily_entry_id = :eid AND flavor_code = :code;"),
+                    {"eid": today_id, "code": code}
+                ).fetchone()
+                
+                if item_res:
+                    s.execute(
+                        text("""
+                        UPDATE daily_cart_items
+                        SET opening_units = :open,
+                            added_units = :add,
+                            closing_units = :close,
+                            sold_units = GREATEST(0, :open + :add - :close)
+                        WHERE daily_entry_id = :eid AND flavor_code = :code;
+                        """),
+                        {
+                            "eid": today_id,
+                            "code": code,
+                            "open": open_u,
+                            "add": add_u,
+                            "close": close_u
+                        }
+                    )
+                else:
                     s.execute(
                         text("""
                         INSERT INTO daily_cart_items (daily_entry_id, flavor_code, opening_units, added_units, sold_units, closing_units)
                         VALUES (:eid, :code, :open, :add, 0, :close);
                         """),
                         {
-                            "eid": today_id, 
-                            "code": code, 
+                            "eid": today_id,
+                            "code": code,
                             "open": open_u,
                             "add": add_u,
                             "close": close_u
