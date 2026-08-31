@@ -3457,12 +3457,17 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 gross_earnings = apportioned_base_salary + total_comm_earned + total_allow_entitled
                 net_payable_due = gross_earnings - total_payments_disbursed
 
+ # Dynamically retrieve the calculated daily rate from the breakdown dict
+                staff_calc_data = breakdown_dict.get(st_name, {})
+                dynamic_daily_rate = staff_calc_data.get("daily_rate", 600.0)
+
                 settlement_summary_rows.append({
                     "Staff Name": st_name,
                     "Status": s_row["status"],
                     "Days Worked": f"{days_worked} ({weekdays_worked}W / {sundays_worked}S)",
                     "Leaves Logged": f"{len(st_leaves)} ({paid_leave_cnt}P / {unpaid_leave_cnt}U)",
                     "Apportioned Salary (₹)": apportioned_base_salary,
+                    "Daily Rate Used (₹)": f"₹{dynamic_daily_rate:.0f}/day", # Added to show dynamic rate
                     "Total Sales (₹)": total_sales_done,
                     "Commission Earned (₹)": total_comm_earned,
                     "Allowances Entitled (₹)": total_allow_entitled,
@@ -3493,8 +3498,8 @@ elif page == "Staff & Payroll" and user_role == "admin":
             kpi3.metric("Total Payments Disbursed", f"-₹{tot_ded:,.2f}", "From Payments Table")
             kpi4.metric("Net Total Payable", f"₹{tot_net:,.2f}")
 
-            st.markdown("---")
-            st.markdown("#### Staff Settlement Summary Table &nbsp; *(Salary Apportioned @ ₹600/day)*")
+	    st.markdown("---")
+            st.markdown("#### Staff Settlement Summary Table")
 
             st.dataframe(
                 settlement_df,
