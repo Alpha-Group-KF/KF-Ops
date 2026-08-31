@@ -726,10 +726,21 @@ def calculate_incurred_labour_for_range(start_date, end_date):
         st_pay = pay_df[pay_df["staff_name"] == st_name] if not pay_df.empty else pd.DataFrame()
         
         shift_sal, shift_comm, shift_allow, days_worked, detailed_ledger = 0.0, 0.0, 0.0, 0, []
+        
+        # 1. Identify all leave dates to prevent double-counting
+        leave_dates = set()
+        if not st_leaves.empty:
+            for _, l_row in st_leaves.iterrows():
+                leave_dates.add(pd.to_datetime(l_row["attendance_date"]).date())
+
+        # 2. Process shifts (ignore if a leave exists on that date)
         if not st_shifts.empty:
             for _, sh in st_shifts.iterrows():
-                days_worked += 1
                 s_dt = pd.to_datetime(sh["entry_date"]).date()
+                if s_dt in leave_dates:
+                    continue  # Skip this shift; staff was officially on leave
+                
+                days_worked += 1
                 day_allow = allow_sun if (s_dt.weekday() == 6) else allow_wd
                 s_col = float(_num(sh["total_collection"]))
                 day_comm = max(0.0, s_col - comm_thresh) * (comm_pct / 100.0)
@@ -738,11 +749,13 @@ def calculate_incurred_labour_for_range(start_date, end_date):
                 shift_allow += day_allow
                 detailed_ledger.append({"date": s_dt, "type": "Worked Day", "cart": sh["cart_name"], "collection": s_col, "fixed_salary": daily_rate, "commission": day_comm, "allowance": day_allow})
         
+        # 3. Process Paid Leaves
         paid_leaves_cnt = 0
         if not st_leaves.empty:
-            paid_leaves_cnt = len(st_leaves[st_leaves["leave_type"] == "Paid"])
+            paid_leaves_df = st_leaves[st_leaves["leave_type"] == "Paid"]
+            paid_leaves_cnt = len(paid_leaves_df)
             shift_sal += (paid_leaves_cnt * daily_rate)
-            for _, l_row in st_leaves[st_leaves["leave_type"] == "Paid"].iterrows():
+            for _, l_row in paid_leaves_df.iterrows():
                 detailed_ledger.append({"date": pd.to_datetime(l_row["attendance_date"]).date(), "type": "Paid Leave", "cart": "—", "collection": 0.0, "fixed_salary": daily_rate, "commission": 0.0, "allowance": 0.0})
         
         detailed_ledger.sort(key=lambda x: x["date"])
