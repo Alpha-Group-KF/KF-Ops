@@ -10,10 +10,11 @@ Kulfi Ops - multi-user data entry app for the kulfi cart business.
 - Remodeled Expenses & Payments (Bills vs. Cash Outflows with tranches & P&L summaries).
 - Automatic creation of Labour Charges expenses & cash payments on Daily Entry advance/food cash.
 - Staff & Payroll Module (KYC profile, leaves, compensation plans, and payments-backed settlement).
-- Payslip Generator Screen & PDF Download:
-    * Selectable date range and staff member.
-    * Detailed breakdown of days worked, fixed salary apportionment, commissions, allowances, paid amounts, and net payable.
-    * Professional on-screen preview and downloadable PDF generation via ReportLab.
+- Remodeled Login, Navigation & Daily Entry:
+    * Case-insensitive login verification for both admin and data entry users.
+    * Data entry role bypasses the sidebar entirely, routing straight to the 3-cart home screen with an easily visible top logout button.
+    * Today's restock updates database closing units as `opening_units + added_units` via explicit check-and-update logic.
+- Payslip Generator Screen & PDF Download with professional formatting.
 - Dashboard with COGS So Far (All-Time), exact COGS in range, and accrual-based net margin tracking.
 - Freezer Stock, Freezer Analysis, Dashboard, and Expenses powered 100% by Supabase PostgreSQL.
 """
@@ -4513,4 +4514,31 @@ elif page == "Dashboard" and user_role == "admin":
         inv_c1, inv_c2, inv_c3 = st.columns(3)
         cart_stock_tot = int(round(daily_df.sort_values('Date').groupby('Cart').tail(1)['Closing_Total'].sum()))
         inv_c1.metric("Stock Across Carts", f"{cart_stock_tot} units")
-        inv_c2.metric("Units in Freezer", f"{total_freezer_unitsI encountered an error doing what you asked. Could you try again?
+        inv_c2.metric("Units in Freezer", f"{total_freezer_units} units")
+        inv_c3.metric("Freezer Stock Valuation (Cost)", f"₹{total_freezer_val:,.2f}")
+
+        try:
+            if not freezer_df.empty:
+                st.markdown("**Freezer stock breakdown & cost valuation**")
+                disp_freezer = freezer_df.rename(columns={
+                    "cost_price": "Unit Cost (₹)",
+                    "Stock_Value": "Stock Value (₹)"
+                })[["Flavour", "Units in freezer", "Unit Cost (₹)", "Stock Value (₹)"]]
+                
+                st.dataframe(
+                    disp_freezer, 
+                    hide_index=True, 
+                    use_container_width=True,
+                    column_config={
+                        "Unit Cost (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                        "Stock Value (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                    }
+                )
+        except Exception as e:
+            st.caption(f"Could not compute freezer stock from DB ({e}).")
+
+        st.markdown("**Latest stock per cart**")
+        latest_per_cart = daily_df.sort_values("Date").groupby("Cart").tail(1)[["Cart", "Date", "Closing_Total"]].copy()
+        latest_per_cart["Closing_Total"] = latest_per_cart["Closing_Total"].apply(lambda x: int(round(x)))
+        latest_per_cart["Date"] = latest_per_cart["Date"].dt.strftime("%d %b %Y")
+        st.dataframe(latest_per_cart, hide_index=True, use_container_width=True)
