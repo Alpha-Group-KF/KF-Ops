@@ -3365,15 +3365,18 @@ elif page == "Staff & Payroll" and user_role == "admin":
             detailed_staff_logs = {}
             detailed_staff_payments = {}
 
+
             for _, s_row in staff_df.iterrows():
                 st_name = str(s_row["name"]).strip()
                 st_id = int(s_row["id"])
 
+                monthly_sal = float(_num(s_row.get("monthly_fixed_salary")) or 18000.0)
+                daily_rate = monthly_sal / 30.0
                 comm_thresh = float(_num(s_row.get("commission_threshold_daily")) or 3000.0)
                 comm_pct = float(_num(s_row.get("commission_percentage")) or 15.0)
                 allow_wd = float(_num(s_row.get("allowance_weekday")) or 210.0)
                 allow_sun = float(_num(s_row.get("allowance_sunday")) or 250.0)
-                daily_rate = 600.0
+
 
                 st_shifts = daily_month_df[daily_month_df["staff_name"] == st_name].copy() if not daily_month_df.empty else pd.DataFrame()
                 st_leaves = att_month_df[att_month_df["staff_name"] == st_name].copy() if not att_month_df.empty else pd.DataFrame()
@@ -3457,17 +3460,13 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 gross_earnings = apportioned_base_salary + total_comm_earned + total_allow_entitled
                 net_payable_due = gross_earnings - total_payments_disbursed
 
- # Dynamically retrieve the calculated daily rate from the breakdown dict
-                staff_calc_data = breakdown_dict.get(st_name, {})
-                dynamic_daily_rate = staff_calc_data.get("daily_rate", 600.0)
-
                 settlement_summary_rows.append({
                     "Staff Name": st_name,
                     "Status": s_row["status"],
                     "Days Worked": f"{days_worked} ({weekdays_worked}W / {sundays_worked}S)",
                     "Leaves Logged": f"{len(st_leaves)} ({paid_leave_cnt}P / {unpaid_leave_cnt}U)",
                     "Apportioned Salary (₹)": apportioned_base_salary,
-                    "Daily Rate Used (₹)": f"₹{dynamic_daily_rate:.0f}/day", # Added to show dynamic rate
+                    "Daily Rate Used (₹)": f"₹{daily_rate:.0f}/day",
                     "Total Sales (₹)": total_sales_done,
                     "Commission Earned (₹)": total_comm_earned,
                     "Allowances Entitled (₹)": total_allow_entitled,
