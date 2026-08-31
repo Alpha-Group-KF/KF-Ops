@@ -745,7 +745,6 @@ def calculate_incurred_labour_for_range(start_date, end_date):
             for _, l_row in st_leaves[st_leaves["leave_type"] == "Paid"].iterrows():
                 detailed_ledger.append({"date": pd.to_datetime(l_row["attendance_date"]).date(), "type": "Paid Leave", "cart": "—", "collection": 0.0, "fixed_salary": daily_rate, "commission": 0.0, "allowance": 0.0})
         
-        # Order the detailed ledger table below by date ascending[cite: 1]
         detailed_ledger.sort(key=lambda x: x["date"])
         
         staff_incurred = shift_sal + shift_comm + shift_allow
@@ -780,9 +779,9 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
     else: header_table = Table([[Paragraph("<b>Kulfi Factory</b>", title_style), Paragraph("<b>Kulfi Factory - Hosur Franchise</b><br/>Staff Salary Payslip", title_style)]], colWidths=[80, 450])
     
     header_table.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'MIDDLE'), ('ALIGN', (1,0), (1,0), 'CENTER')]))
+    header_table.hAlign = 'LEFT'
     story.append(header_table); story.append(Spacer(1, 10))
     
-    # Extract DOJ and format month[cite: 1]
     doj_val = data_dict.get('doj')
     doj_str = pd.to_datetime(doj_val).strftime('%d %b %Y') if pd.notna(doj_val) and str(doj_val).strip() else "N/A"
     month_str = start_date.strftime('%B %Y')
@@ -803,6 +802,7 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
     ]
     
     t_summary = Table(summary_data, colWidths=[150, 250, 100])
+    t_summary.hAlign = 'LEFT'
     t_summary.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#70440E')), ('TEXTCOLOR', (0,0), (-1,0), colors.white), ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'), ('FONTSIZE', (0,0), (-1,0), 9.5),
         ('BACKGROUND', (0,-1), (-1,-1), colors.HexColor('#FFF2DC')), ('FONTNAME', (0,-1), (-1,-1), 'Helvetica-Bold'), ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#E3CBA0')), ('ALIGN', (2,0), (2,-1), 'RIGHT'),
@@ -810,7 +810,15 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
     ]))
     story.append(t_summary); story.append(Spacer(1, 15))
     
-    story.append(Paragraph("<b>Detailed Commission & Allowance Entitlement Ledger</b>", ParagraphStyle('SubHeader', fontName='Helvetica-Bold', fontSize=11, textColor=colors.HexColor('#8A5E17')))); story.append(Spacer(1, 6))
+    # Left-aligned header with line below
+    story.append(Paragraph("<b>Detailed Commission & Allowance Entitlement Ledger</b>", ParagraphStyle('SubHeader', fontName='Helvetica-Bold', fontSize=11, textColor=colors.HexColor('#8A5E17'), alignment=0)))
+    story.append(Spacer(1, 4))
+    
+    line_t = Table([['']], colWidths=[500])
+    line_t.setStyle(TableStyle([('LINEABOVE', (0,0), (-1,-1), 0.75, colors.HexColor('#8A5E17'))]))
+    line_t.hAlign = 'LEFT'
+    story.append(line_t)
+    story.append(Spacer(1, 6))
     
     ledger_rows = [["Date", "Type", "Cart", "Collection (Rs.)", "Salary (Rs.)", "Commission (Rs.)", "Allowance (Rs.)"]]
     for item in data_dict.get("detailed_ledger", []):
@@ -822,6 +830,7 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
     if len(ledger_rows) == 1: ledger_rows.append(["No records", "—", "—", "—", "—", "—", "—"])
     
     t_ledger = Table(ledger_rows, colWidths=[70, 80, 100, 75, 65, 60, 50])
+    t_ledger.hAlign = 'LEFT'
     t_ledger.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#124A1D')), ('TEXTCOLOR', (0,0), (-1,0), colors.white), ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'), ('FONTSIZE', (0,0), (-1,0), 8.5),
         ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#A8D5AF')), ('ALIGN', (3,0), (-1,-1), 'RIGHT'), ('VALIGN', (0,0), (-1,-1), 'MIDDLE'), ('FONTNAME', (0,1), (-1,-1), 'Helvetica'),
@@ -1092,7 +1101,7 @@ elif page == "Payslip Generator" and user_role == "admin":
             
             summary_df = pd.DataFrame(summary_table_data[1:], columns=summary_table_data[0])
             
-            # Apply styling to bold the gross and net payable rows for screen view[cite: 1]
+            # Apply styling to bold the gross and net payable rows for screen view
             def style_bold_rows(row):
                 if row["Salary Component"] in ["Gross Payable Earnings", "Net Balance Payable Now"]:
                     return ["font-weight: bold;"] * len(row)
