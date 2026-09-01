@@ -708,12 +708,16 @@ def calculate_incurred_labour_for_range(start_date, end_date):
     staff_df = load_full_staff_df()
     if staff_df.empty: return 0.0, 0.0, 0.0, {}
     
-    # Notice we don't need advance or food cash from daily_cart_entries anymore
     entries_df = db_conn.query("SELECT entry_date, cart_name, staff_name, total_collection FROM daily_cart_entries WHERE entry_date >= :sdate AND entry_date <= :edate AND staff_name IS NOT NULL AND staff_name != '' AND staff_name != 'Select Staff';", params={"sdate": start_date, "edate": end_date}, ttl="0s")
     att_df = db_conn.query("SELECT a.staff_id, s.name AS staff_name, a.attendance_date, a.status, a.leave_type FROM staff_attendance a JOIN staff s ON a.staff_id = s.id WHERE a.attendance_date >= :sdate AND a.attendance_date <= :edate;", params={"sdate": start_date, "edate": end_date}, ttl="0s")
     
-    # Updated query to pull the exact payment date and sub_category (Advance vs Food & Tea) directly from the payments table
-    pay_df = db_conn.query("SELECT p.amount_paid, p.payment_date, e.staff_name, e.sub_category FROM expense_payments p JOIN expenses e ON p.expense_id = e.id WHERE e.category = 'Labour Charges' AND p.payment_date >= :sdate AND p.payment_date <= :edate;", params={"sdate": start_date, "edate": end_date}, ttl="0s")
+    # Updated query to pull notes and description for smarter mapping
+    pay_df = db_conn.query("""
+        SELECT p.amount_paid, p.payment_date, p.notes, e.staff_name, e.sub_category, e.description 
+        FROM expense_payments p 
+        JOIN expenses e ON p.expense_id = e.id 
+        WHERE e.category = 'Labour Charges' AND p.payment_date >= :sdate AND p.payment_date <= :edate;
+    """, params={"sdate": start_date, "edate": end_date}, ttl="0s")
     
     total_labour_incurred, total_labour_paid, breakdown_by_staff = 0.0, 0.0, {}
     
@@ -758,10 +762,17 @@ def calculate_incurred_labour_for_range(start_date, end_date):
                 if p_dt not in payment_map:
                     payment_map[p_dt] = {"advance": 0.0, "food": 0.0}
                 
-                subcat = str(p_row.get("sub_category") or "")
+                subcat = str(p_row.get("sub_category") or "").lower()
+                desc = str(p_row.get("description") or "").lower()
+                notes = str(p_row.get("notes") or "").lower()
                 amt = float(_num(p_row["amount_paid"]))
                 
-                if "Food" in subcat or "Tea" in subcat:
+                # Smart matcher: routes to "Allow. Taken" if these words appear anywhere
+                is_food = any(k in subcat for k in ['food', 'tea', 'allow']) or \
+                          any(k in desc for k in ['food', 'tea', 'allow']) or \
+                          any(k in notes for k in ['food', 'tea', 'allow'])
+                
+                if is_food:
                     payment_map[p_dt]["food"] += amt
                 else:
                     payment_map[p_dt]["advance"] += amt
@@ -848,6 +859,20 @@ def calculate_incurred_labour_for_range(start_date, end_date):
                 })
         
         detailed_ledger.sort(key=lambda x: x["date"])
+        
+        staff_incurred = shift_sal + shift_comm + shift_allow
+        staff_paid = float(st_pay["amount_paid"].sum()) if not st_pay.empty else 0.0
+        staff_due = staff_incurred - staff_paid
+        total_labour_incurred += staff_incurred
+        total_labour_paid += staff_paid
+        
+        breakdown_by_staff[st_name] = {
+            "monthly_fixed_salary": monthly_sal, "daily_rate": daily_rate, "days_worked": days_worked, "paid_leaves": paid_leaves_cnt, 
+            "salary": shift_sal, "commissions": shift_comm, "allowances": shift_allow, "incurred": staff_incurred, 
+            "paid": staff_paid, "due": staff_due, "detailed_ledger": detailed_ledger, "doj": doj
+        }
+        
+    return total_labour_incurred, total_labour_paid, total_labour_incurred - total_labour_paid, breakdown_by_staff
         
         staff_incurred = shift_sal + shift_comm + shift_allow
         staff_paid = float(st_pay["amount_paid"].sum()) if not st_pay.empty else 0.0
