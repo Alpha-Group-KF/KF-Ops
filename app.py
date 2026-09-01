@@ -604,7 +604,7 @@ def load_db_payments_df():
 def load_full_staff_df():
     if db_conn is None: return pd.DataFrame()
     query = """
-    SELECT s.id, s.name, s.status, s.phone_number, s.emergency_contact_name, s.emergency_contact_phone, s.date_of_birth, s.place_of_birth, s.pan_number, s.aadhaar_number, s.current_address, s.permanent_address, s.date_of_joining, s.date_of_leaving, s.notes, c.monthly_fixed_salary, c.commission_threshold_daily, c.commission_percentage, c.allowance_weekday, c.allowance_sunday
+    SELECT s.id, s.name, s.full_name, s.status, s.phone_number, s.emergency_contact_name, s.emergency_contact_phone, s.date_of_birth, s.pan_number, s.aadhaar_number, s.current_address, s.permanent_address, s.date_of_joining, s.date_of_leaving, s.notes, c.monthly_fixed_salary, c.commission_threshold_daily, c.commission_percentage, c.allowance_weekday, c.allowance_sunday
     FROM staff s LEFT JOIN LATERAL (SELECT * FROM staff_compensation_plans WHERE staff_id = s.id ORDER BY effective_from DESC, id DESC LIMIT 1) c ON true ORDER BY s.status ASC, s.name ASC;
     """
     try: return db_conn.query(query, ttl="0s")
@@ -1932,19 +1932,21 @@ elif page == "Staff & Payroll" and user_role == "admin":
             with st.form("new_staff_form"):
                 sc1, sc2, sc3 = st.columns(3)
                 with sc1:
-                    new_s_name = st.text_input("Full Name *", placeholder="e.g. Ramesh Kumar", key="add_s_name")
+                    new_s_name = st.text_input("Display Name (App) *", placeholder="e.g. Ramesh", key="add_s_name")
                 with sc2:
-                    new_s_phone = st.text_input("Mobile Number", placeholder="e.g. 9876543210", key="add_s_phone")
+                    new_s_fullname = st.text_input("Full Legal Name", placeholder="e.g. Ramesh Kumar", key="add_s_fname")
                 with sc3:
-                    new_s_status = st.selectbox("Status", STAFF_STATUSES, index=0, key="add_s_status")
+                    new_s_phone = st.text_input("Mobile Number", placeholder="e.g. 9876543210", key="add_s_phone")
 
-                sc4, sc5, sc6 = st.columns(3)
+                sc4, sc5, sc6, sc_dol = st.columns(4)
                 with sc4:
-                    new_s_doj = st.date_input("Date of Joining", value=date.today(), key="add_s_doj")
+                    new_s_status = st.selectbox("Status", STAFF_STATUSES, index=0, key="add_s_status")
                 with sc5:
-                    new_s_dob = st.date_input("Date of Birth", value=date(1995, 1, 1), key="add_s_dob")
+                    new_s_doj = st.date_input("Date of Joining", value=date.today(), key="add_s_doj")
                 with sc6:
-                    new_s_pob = st.text_input("Place of Birth", placeholder="e.g. Hosur, Tamil Nadu", key="add_s_pob")
+                    new_s_dob = st.date_input("Date of Birth", value=date(1995, 1, 1), key="add_s_dob")
+                with sc_dol:
+                    new_s_dol = st.date_input("Date of Leaving", value=None, key="add_s_dol")
 
                 sc7, sc8 = st.columns(2)
                 with sc7:
@@ -1985,31 +1987,29 @@ elif page == "Staff & Payroll" and user_role == "admin":
 
             if submit_staff:
                 if not new_s_name.strip():
-                    st.error("Staff Name is mandatory.")
+                    st.error("Display Name is mandatory.")
                 else:
                     try:
                         with db_conn.session as s:
                             res = s.execute(
                                 text("""
                                 INSERT INTO staff (
-                                    name, status, phone_number, emergency_contact_name, emergency_contact_phone,
-                                    date_of_birth, place_of_birth, pan_number, aadhaar_number, current_address,
-                                    permanent_address, date_of_joining, notes
+                                    name, full_name, status, phone_number, emergency_contact_name, emergency_contact_phone,
+                                    date_of_birth, pan_number, aadhaar_number, current_address,
+                                    permanent_address, date_of_joining, date_of_leaving, notes
                                 ) VALUES (
-                                    :name, :status, :phone, :emg_n, :emg_p,
-                                    :dob, :pob, :pan, :aadhaar, :caddr,
-                                    :paddr, :doj, :notes
+                                    :name, :full_name, :status, :phone, :emg_n, :emg_p,
+                                    :dob, :pan, :aadhaar, :caddr,
+                                    :paddr, :doj, :dol, :notes
                                 ) RETURNING id;
                                 """),
                                 {
-                                    "name": new_s_name.strip(), "status": new_s_status, 
+                                    "name": new_s_name.strip(), "full_name": new_s_fullname.strip(), "status": new_s_status, 
                                     "phone": re.sub(r'[^\d+]', '', new_s_phone),
-                                    "emg_n": new_s_emg_name.strip(), 
-                                    "emg_p": re.sub(r'[^\d+]', '', new_s_emg_phone),
-                                    "dob": new_s_dob, "pob": new_s_pob.strip(), "pan": new_s_pan.strip().upper(),
-                                    "aadhaar": re.sub(r'\D', '', new_s_aadhaar),
+                                    "emg_n": new_s_emg_name.strip(), "emg_p": re.sub(r'[^\d+]', '', new_s_emg_phone),
+                                    "dob": new_s_dob, "pan": new_s_pan.strip().upper(), "aadhaar": re.sub(r'\D', '', new_s_aadhaar),
                                     "caddr": new_s_cur_addr.strip(), "paddr": new_s_perm_addr.strip(), 
-                                    "doj": new_s_doj, "notes": new_s_notes.strip()
+                                    "doj": new_s_doj, "dol": new_s_dol, "notes": new_s_notes.strip()
                                 }
                             )
                             new_sid = res.scalar()
@@ -2031,6 +2031,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                                 }
                             )
                             s.commit()
+                        st.cache_data.clear()
                         show_success_modal(f"Staff member '{new_s_name}' registered successfully with ID #{new_sid}!")
                     except Exception as e:
                         st.error(f"Could not register staff: {e}")
@@ -2064,17 +2065,20 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 s_row = staff_df[staff_df["name"] == sel_inspect].iloc[0]
 
                 k1, k2, k3 = st.columns(3)
+                k1.write(f"**Full Legal Name:** {s_row.get('full_name') or '—'}")
                 k1.write(f"**Date of Birth:** {pd.to_datetime(s_row['date_of_birth']).strftime('%d %b %Y') if pd.notna(s_row['date_of_birth']) else '—'}")
-                k1.write(f"**Place of Birth:** {s_row['place_of_birth'] or '—'}")
+                
                 k2.write(f"**PAN Number:** {s_row['pan_number'] or '—'}")
                 k2.write(f"**Aadhaar Number:** {s_row['aadhaar_number'] or '—'}")
+                
                 k3.write(f"**Emergency Contact:** {s_row['emergency_contact_name'] or '—'} ({s_row['emergency_contact_phone'] or '—'})")
-                k3.write(f"**Current Status:** `{s_row['status']}`")
+                k3.write(f"**Date of Leaving:** {pd.to_datetime(s_row['date_of_leaving']).strftime('%d %b %Y') if pd.notna(s_row['date_of_leaving']) else '—'}")
 
                 st.write(f"**Current Address:** {s_row['current_address'] or '—'}")
                 st.write(f"**Permanent Address:** {s_row['permanent_address'] or '—'}")
                 if s_row.get("notes"):
                     st.caption(f"Remarks: {s_row['notes']}")
+
 
         elif st_mode == "Edit Staff Profile & KYC":
             if staff_df.empty:
@@ -2088,22 +2092,25 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 with st.form("edit_staff_form"):
                     ec1, ec2, ec3 = st.columns(3)
                     with ec1:
-                        e_name = st.text_input("Full Name *", value=str(s_edit["name"]), key=f"e_name_{s_id}")
+                        e_name = st.text_input("Display Name (App) *", value=str(s_edit["name"]), key=f"e_name_{s_id}")
                     with ec2:
-                        e_phone = st.text_input("Mobile Number", value=str(s_edit.get("phone_number") or ""), key=f"e_phone_{s_id}")
+                        e_fullname = st.text_input("Full Legal Name", value=str(s_edit.get("full_name") or ""), key=f"e_fname_{s_id}")
                     with ec3:
+                        e_phone = st.text_input("Mobile Number", value=str(s_edit.get("phone_number") or ""), key=f"e_phone_{s_id}")
+
+                    ec4, ec5, ec6, ec_dol = st.columns(4)
+                    with ec4:
                         stat_idx = STAFF_STATUSES.index(s_edit["status"]) if s_edit["status"] in STAFF_STATUSES else 0
                         e_status = st.selectbox("Status", STAFF_STATUSES, index=stat_idx, key=f"e_status_{s_id}")
-
-                    ec4, ec5, ec6 = st.columns(3)
-                    with ec4:
+                    with ec5:
                         doj_val = pd.to_datetime(s_edit["date_of_joining"]).date() if pd.notna(s_edit["date_of_joining"]) else date.today()
                         e_doj = st.date_input("Date of Joining", value=doj_val, key=f"e_doj_{s_id}")
-                    with ec5:
+                    with ec6:
                         dob_val = pd.to_datetime(s_edit["date_of_birth"]).date() if pd.notna(s_edit["date_of_birth"]) else date(1995, 1, 1)
                         e_dob = st.date_input("Date of Birth", value=dob_val, key=f"e_dob_{s_id}")
-                    with ec6:
-                        e_pob = st.text_input("Place of Birth", value=str(s_edit.get("place_of_birth") or ""), key=f"e_pob_{s_id}")
+                    with ec_dol:
+                        dol_val = pd.to_datetime(s_edit["date_of_leaving"]).date() if pd.notna(s_edit["date_of_leaving"]) else None
+                        e_dol = st.date_input("Date of Leaving", value=dol_val, key=f"e_dol_{s_id}")
 
                     ec7, ec8 = st.columns(2)
                     with ec7:
@@ -2129,32 +2136,31 @@ elif page == "Staff & Payroll" and user_role == "admin":
 
                 if save_edit_staff:
                     if not e_name.strip():
-                        st.error("Name cannot be blank.")
+                        st.error("Display Name cannot be blank.")
                     else:
                         try:
                             with db_conn.session as s:
                                 s.execute(
                                     text("""
                                     UPDATE staff
-                                    SET name = :name, status = :status, phone_number = :phone,
+                                    SET name = :name, full_name = :full_name, status = :status, phone_number = :phone,
                                         emergency_contact_name = :emg_n, emergency_contact_phone = :emg_p,
-                                        date_of_birth = :dob, place_of_birth = :pob, pan_number = :pan,
+                                        date_of_birth = :dob, pan_number = :pan,
                                         aadhaar_number = :aadhaar, current_address = :caddr, permanent_address = :paddr,
-                                        date_of_joining = :doj, notes = :notes, updated_at = NOW()
+                                        date_of_joining = :doj, date_of_leaving = :dol, notes = :notes, updated_at = NOW()
                                     WHERE id = :id;
                                     """),
                                     {
-                                        "name": e_name.strip(), "status": e_status, 
+                                        "name": e_name.strip(), "full_name": e_fullname.strip(), "status": e_status, 
                                         "phone": re.sub(r'[^\d+]', '', e_phone),
-                                        "emg_n": e_emg_n.strip(), 
-                                        "emg_p": re.sub(r'[^\d+]', '', e_emg_p), 
-                                        "dob": e_dob, "pob": e_pob.strip(), "pan": e_pan.strip().upper(), 
-                                        "aadhaar": re.sub(r'\D', '', e_aadhaar),
-                                        "caddr": e_caddr.strip(), "paddr": e_paddr.strip(), "doj": e_doj,
+                                        "emg_n": e_emg_n.strip(), "emg_p": re.sub(r'[^\d+]', '', e_emg_p), 
+                                        "dob": e_dob, "pan": e_pan.strip().upper(), "aadhaar": re.sub(r'\D', '', e_aadhaar),
+                                        "caddr": e_caddr.strip(), "paddr": e_paddr.strip(), "doj": e_doj, "dol": e_dol,
                                         "notes": e_notes.strip(), "id": s_id
                                     }
                                 )
                                 s.commit()
+                            st.cache_data.clear()
                             show_success_modal(f"Staff profile for '{e_name}' updated successfully!")
                         except Exception as e:
                             st.error(f"Could not update staff profile: {e}")
