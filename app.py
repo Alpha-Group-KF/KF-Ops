@@ -1049,7 +1049,7 @@ if page == "Daily Entry":
             with col_box_right:
                 st.markdown(f"<div class='header-box-restock'><span>🚀 2. Today's Restock & Opening — {today_val.strftime('%a, %d %b %Y')}</span><span><b>{cart_name}</b></span></div>", unsafe_allow_html=True)
                 with st.container(border=True):
-                    st.caption(f"Enter **stock added for today ({today_val.strftime('%d %b')})**. Pre-loaded from DB if available:")
+                    st.caption(f"Enter **stock added for today ({today_val.strftime('%d %b')})**.")
                     for code in FLAVOR_CODES:
                         f_info = FLAVOR_MAP[code]
                         k_today_add = f"today_add_{cart_name}_{code}"
