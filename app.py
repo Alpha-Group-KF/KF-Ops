@@ -1954,9 +1954,9 @@ elif page == "Staff & Payroll" and user_role == "admin":
 
                 sc9, sc10 = st.columns(2)
                 with sc9:
-                    new_s_cur_addr = st.text_area("Current Residential Address", rows=2)
+                    new_s_cur_addr = st.text_area("Current Residential Address", height=68)
                 with sc10:
-                    new_s_perm_addr = st.text_area("Permanent Address", rows=2)
+                    new_s_perm_addr = st.text_area("Permanent Address", height=68)
 
                 sc11, sc12 = st.columns(2)
                 with sc11:
@@ -2110,9 +2110,9 @@ elif page == "Staff & Payroll" and user_role == "admin":
 
                     ec9, ec10 = st.columns(2)
                     with ec9:
-                        e_caddr = st.text_area("Current Address", value=str(s_edit.get("current_address") or ""), rows=2)
+                        e_caddr = st.text_area("Current Address", value=str(s_edit.get("current_address") or ""), height=68)
                     with ec10:
-                        e_paddr = st.text_area("Permanent Address", value=str(s_edit.get("permanent_address") or ""), rows=2)
+                        e_paddr = st.text_area("Permanent Address", value=str(s_edit.get("permanent_address") or ""), height=68)
 
                     ec11, ec12 = st.columns(2)
                     with ec11:
