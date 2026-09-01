@@ -2002,11 +2002,14 @@ elif page == "Staff & Payroll" and user_role == "admin":
                                 ) RETURNING id;
                                 """),
                                 {
-                                    "name": new_s_name.strip(), "status": new_s_status, "phone": new_s_phone.strip(),
-                                    "emg_n": new_s_emg_name.strip(), "emg_p": new_s_emg_phone.strip(),
+                                    "name": new_s_name.strip(), "status": new_s_status, 
+                                    "phone": re.sub(r'[^\d+]', '', new_s_phone),
+                                    "emg_n": new_s_emg_name.strip(), 
+                                    "emg_p": re.sub(r'[^\d+]', '', new_s_emg_phone),
                                     "dob": new_s_dob, "pob": new_s_pob.strip(), "pan": new_s_pan.strip().upper(),
-                                    "aadhaar": new_s_aadhaar.strip(), "caddr": new_s_cur_addr.strip(),
-                                    "paddr": new_s_perm_addr.strip(), "doj": new_s_doj, "notes": new_s_notes.strip()
+                                    "aadhaar": re.sub(r'\D', '', new_s_aadhaar),
+                                    "caddr": new_s_cur_addr.strip(), "paddr": new_s_perm_addr.strip(), 
+                                    "doj": new_s_doj, "notes": new_s_notes.strip()
                                 }
                             )
                             new_sid = res.scalar()
@@ -2141,9 +2144,12 @@ elif page == "Staff & Payroll" and user_role == "admin":
                                     WHERE id = :id;
                                     """),
                                     {
-                                        "name": e_name.strip(), "status": e_status, "phone": e_phone.strip(),
-                                        "emg_n": e_emg_n.strip(), "emg_p": e_emg_p.strip(), "dob": e_dob,
-                                        "pob": e_pob.strip(), "pan": e_pan.strip().upper(), "aadhaar": e_aadhaar.strip(),
+                                        "name": e_name.strip(), "status": e_status, 
+                                        "phone": re.sub(r'[^\d+]', '', e_phone),
+                                        "emg_n": e_emg_n.strip(), 
+                                        "emg_p": re.sub(r'[^\d+]', '', e_emg_p), 
+                                        "dob": e_dob, "pob": e_pob.strip(), "pan": e_pan.strip().upper(), 
+                                        "aadhaar": re.sub(r'\D', '', e_aadhaar),
                                         "caddr": e_caddr.strip(), "paddr": e_paddr.strip(), "doj": e_doj,
                                         "notes": e_notes.strip(), "id": s_id
                                     }
