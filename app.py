@@ -889,7 +889,7 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
     story.append(line_t)
     story.append(Spacer(1, 6))
     
-    ledger_rows = [["Date", "Type", "Cart", "Sales", "Salary", "Comm.", "Allow.", "Adv. Taken", "Food Taken"]]
+    ledger_rows = [["Date", "Type", "Cart", "Sales", "Salary", "Comm.", "Allow.", "Adv. Taken", "Allow. Taken"]]
     for item in data_dict.get("detailed_ledger", []):
         ledger_rows.append([
             item["date"].strftime("%d %b %Y"), item["type"], item["cart"],
@@ -902,7 +902,8 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
         ])
     if len(ledger_rows) == 1: ledger_rows.append(["No records", "—", "—", "—", "—", "—", "—", "—", "—"])
     
-    t_ledger = Table(ledger_rows, colWidths=[55, 70, 70, 50, 45, 45, 45, 60, 60])
+    # Adjusted colWidths to give the 'Cart' column significantly more space (100)
+    t_ledger = Table(ledger_rows, colWidths=[55, 65, 100, 45, 45, 45, 45, 60, 60])
     t_ledger.hAlign = 'LEFT'
     t_ledger.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#124A1D')), ('TEXTCOLOR', (0,0), (-1,0), colors.white), ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'), ('FONTSIZE', (0,0), (-1,0), 8.5),
@@ -1197,8 +1198,17 @@ elif page == "Payslip Generator" and user_role == "admin":
                 ledger_df["Commission (₹)"] = ledger_df["commission"].apply(lambda v: f"₹{v:,.2f}" if v > 0 else "—")
                 ledger_df["Allowance (₹)"] = ledger_df["allowance"].apply(lambda v: f"₹{v:,.2f}" if v > 0 else "—")
                 ledger_df["Advance Taken (₹)"] = ledger_df["advance_taken"].apply(lambda v: f"₹{v:,.2f}" if v > 0 else "—")
-                ledger_df["Food/Tea Taken (₹)"] = ledger_df["food_taken"].apply(lambda v: f"₹{v:,.2f}" if v > 0 else "—")
-                st.dataframe(ledger_df[["Date", "Type", "Cart", "Collection (₹)", "Salary (₹)", "Commission (₹)", "Allowance (₹)", "Advance Taken (₹)", "Food/Tea Taken (₹)"]], hide_index=True, use_container_width=True)
+                ledger_df["Allow. Taken (₹)"] = ledger_df["food_taken"].apply(lambda v: f"₹{v:,.2f}" if v > 0 else "—")
+                
+                # Added column config to force 'Cart' to render wider on screen
+                st.dataframe(
+                    ledger_df[["Date", "Type", "Cart", "Collection (₹)", "Salary (₹)", "Commission (₹)", "Allowance (₹)", "Advance Taken (₹)", "Allow. Taken (₹)"]], 
+                    hide_index=True, 
+                    use_container_width=True,
+                    column_config={
+                        "Cart": st.column_config.TextColumn(width="medium")
+                    }
+                )
             else:
                 st.info("No active days or leave records found within the selected date range.")
 
