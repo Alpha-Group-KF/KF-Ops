@@ -711,11 +711,13 @@ def calculate_incurred_labour_for_range(start_date, end_date):
     att_df = db_conn.query("SELECT a.staff_id, s.name AS staff_name, a.attendance_date, a.status, a.leave_type FROM staff_attendance a JOIN staff s ON a.staff_id = s.id WHERE a.attendance_date >= :sdate AND a.attendance_date <= :edate;", params={"sdate": start_date, "edate": end_date}, ttl="0s")
     pay_df = db_conn.query("SELECT p.amount_paid, e.staff_name FROM expense_payments p JOIN expenses e ON p.expense_id = e.id WHERE e.category = 'Labour Charges' AND p.payment_date >= :sdate AND p.payment_date <= :edate;", params={"sdate": start_date, "edate": end_date}, ttl="0s")
     
-    total_labour_incurred, total_labour_paid, breakdown_by_staff, daily_rate = 0.0, 0.0, {}, 600.0
+    total_labour_incurred, total_labour_paid, breakdown_by_staff = 0.0, 0.0, {}
+    
     for _, s_row in staff_df.iterrows():
         st_name = str(s_row["name"]).strip()
         doj = s_row.get("date_of_joining")
         monthly_sal = float(_num(s_row.get("monthly_fixed_salary")) or 18000.0)
+        daily_rate = monthly_sal / 30.0
         comm_thresh = float(_num(s_row.get("commission_threshold_daily")) or 3000.0)
         comm_pct = float(_num(s_row.get("commission_percentage")) or 15.0)
         allow_wd = float(_num(s_row.get("allowance_weekday")) or 210.0)
@@ -727,40 +729,91 @@ def calculate_incurred_labour_for_range(start_date, end_date):
         
         shift_sal, shift_comm, shift_allow, days_worked, detailed_ledger = 0.0, 0.0, 0.0, 0, []
         
-        # 1. Identify all leave dates to prevent double-counting
-        leave_dates = set()
+        leave_map = {}
         if not st_leaves.empty:
             for _, l_row in st_leaves.iterrows():
-                leave_dates.add(pd.to_datetime(l_row["attendance_date"]).date())
+                l_dt = pd.to_datetime(l_row["attendance_date"]).date()
+                leave_map[l_dt] = str(l_row.get("leave_type", "Unpaid"))
 
-        # 2. Process shifts (ignore if a leave exists on that date)
+        shift_map = {}
         if not st_shifts.empty:
             for _, sh in st_shifts.iterrows():
                 s_dt = pd.to_datetime(sh["entry_date"]).date()
-                if s_dt in leave_dates:
-                    continue  # Skip this shift; staff was officially on leave
-                
-                days_worked += 1
-                day_allow = allow_sun if (s_dt.weekday() == 6) else allow_wd
-                s_col = float(_num(sh["total_collection"]))
-                day_comm = max(0.0, s_col - comm_thresh) * (comm_pct / 100.0)
-                shift_sal += daily_rate
-                shift_comm += day_comm
-                shift_allow += day_allow
-                detailed_ledger.append({"date": s_dt, "type": "Worked Day", "cart": sh["cart_name"], "collection": s_col, "fixed_salary": daily_rate, "commission": day_comm, "allowance": day_allow})
-        
-        # 3. Process Paid Leaves
+                if s_dt not in shift_map:
+                    shift_map[s_dt] = []
+                shift_map[s_dt].append({
+                    "cart": sh["cart_name"],
+                    "collection": float(_num(sh["total_collection"])),
+                    "advance": float(_num(sh.get("staff_advance", 0))),
+                    "food_tea": float(_num(sh.get("food_tea_cash", 0)))
+                })
+
+        all_dates = set(leave_map.keys()).union(set(shift_map.keys()))
         paid_leaves_cnt = 0
-        if not st_leaves.empty:
-            paid_leaves_df = st_leaves[st_leaves["leave_type"] == "Paid"]
-            paid_leaves_cnt = len(paid_leaves_df)
-            shift_sal += (paid_leaves_cnt * daily_rate)
-            for _, l_row in paid_leaves_df.iterrows():
-                l_dt = pd.to_datetime(l_row["attendance_date"]).date()
-                # Apply Sunday or Weekday allowance based on the leave date
-                day_allow = allow_sun if (l_dt.weekday() == 6) else allow_wd
-                shift_allow += day_allow
-                detailed_ledger.append({"date": l_dt, "type": "Paid Leave", "cart": "—", "collection": 0.0, "fixed_salary": daily_rate, "commission": 0.0, "allowance": day_allow})
+
+        for d in sorted(all_dates):
+            is_leave = d in leave_map
+            leave_type = leave_map.get(d)
+            day_allow_rate = allow_sun if (d.weekday() == 6) else allow_wd
+            
+            if is_leave:
+                if leave_type == "Paid":
+                    paid_leaves_cnt += 1
+                    shift_sal += daily_rate
+                    shift_allow += day_allow_rate
+                    detailed_ledger.append({
+                        "date": d, "type": "Paid Leave", "cart": "—", 
+                        "collection": 0.0, "fixed_salary": daily_rate, 
+                        "commission": 0.0, "allowance": day_allow_rate,
+                        "advance_taken": 0.0, "food_taken": 0.0
+                    })
+                else:
+                    detailed_ledger.append({
+                        "date": d, "type": "Unpaid Leave", "cart": "—", 
+                        "collection": 0.0, "fixed_salary": 0.0, 
+                        "commission": 0.0, "allowance": 0.0,
+                        "advance_taken": 0.0, "food_taken": 0.0
+                    })
+                
+                if d in shift_map:
+                    for cart_shift in shift_map[d]:
+                        s_col = cart_shift["collection"]
+                        adv_taken = cart_shift["advance"]
+                        food_taken = cart_shift["food_tea"]
+                        day_comm = max(0.0, s_col - comm_thresh) * (comm_pct / 100.0)
+                        shift_comm += day_comm
+                        detailed_ledger.append({
+                            "date": d, "type": "Sales on Leave Day", "cart": cart_shift["cart"], 
+                            "collection": s_col, "fixed_salary": 0.0, 
+                            "commission": day_comm, "allowance": 0.0,
+                            "advance_taken": adv_taken, "food_taken": food_taken
+                        })
+            else:
+                days_worked += 1
+                shift_sal += daily_rate
+                shift_allow += day_allow_rate
+                
+                for idx, cart_shift in enumerate(shift_map[d]):
+                    s_col = cart_shift["collection"]
+                    adv_taken = cart_shift["advance"]
+                    food_taken = cart_shift["food_tea"]
+                    day_comm = max(0.0, s_col - comm_thresh) * (comm_pct / 100.0)
+                    shift_comm += day_comm
+                    
+                    if idx == 0:
+                        detailed_ledger.append({
+                            "date": d, "type": "Worked Day", "cart": cart_shift["cart"], 
+                            "collection": s_col, "fixed_salary": daily_rate, 
+                            "commission": day_comm, "allowance": day_allow_rate,
+                            "advance_taken": adv_taken, "food_taken": food_taken
+                        })
+                    else:
+                        detailed_ledger.append({
+                            "date": d, "type": "Extra Cart Shift", "cart": cart_shift["cart"], 
+                            "collection": s_col, "fixed_salary": 0.0, 
+                            "commission": day_comm, "allowance": 0.0,
+                            "advance_taken": adv_taken, "food_taken": food_taken
+                        })
         
         detailed_ledger.sort(key=lambda x: x["date"])
         
@@ -771,7 +824,7 @@ def calculate_incurred_labour_for_range(start_date, end_date):
         total_labour_paid += staff_paid
         
         breakdown_by_staff[st_name] = {
-            "monthly_fixed_salary": monthly_sal, "days_worked": days_worked, "paid_leaves": paid_leaves_cnt, 
+            "monthly_fixed_salary": monthly_sal, "daily_rate": daily_rate, "days_worked": days_worked, "paid_leaves": paid_leaves_cnt, 
             "salary": shift_sal, "commissions": shift_comm, "allowances": shift_allow, "incurred": staff_incurred, 
             "paid": staff_paid, "due": staff_due, "detailed_ledger": detailed_ledger, "doj": doj
         }
@@ -810,7 +863,7 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
         ["Salary Component", "Basis / Calculation Details", "Amount (Rs.)"],
         ["Monthly Fixed Salary", "Standard Monthly Base Plan", f"Rs. {data_dict['monthly_fixed_salary']:,.2f}"],
         ["Total Days Worked", f"{data_dict['days_worked']} days worked + {data_dict['paid_leaves']} paid leaves", f"{data_dict['days_worked'] + data_dict['paid_leaves']} days"],
-        ["Pro-rata Fixed Salary", f"({data_dict['days_worked']} + {data_dict['paid_leaves']}) days @ Rs. 600/day", f"Rs. {data_dict['salary']:,.2f}"],
+        ["Pro-rata Fixed Salary", f"({data_dict['days_worked']} + {data_dict['paid_leaves']}) days @ Rs. {data_dict.get('daily_rate', 600):.0f}/day", f"Rs. {data_dict['salary']:,.2f}"],
         ["Sales Commissions", "15% on daily collections exceeding threshold", f"Rs. {data_dict['commissions']:,.2f}"],
         ["Food & Tea Allowances", "Entitled weekday & Sunday daily allowances", f"Rs. {data_dict['allowances']:,.2f}"],
         ["Gross Payable Earnings", "Total entitled earnings for the period", f"Rs. {data_dict['incurred']:,.2f}"],
@@ -836,17 +889,20 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
     story.append(line_t)
     story.append(Spacer(1, 6))
     
-    ledger_rows = [["Date", "Type", "Cart", "Collection (Rs.)", "Salary (Rs.)", "Commission (Rs.)", "Allowance (Rs.)"]]
+    ledger_rows = [["Date", "Type", "Cart", "Sales", "Salary", "Comm.", "Allow.", "Adv. Taken", "Food Taken"]]
     for item in data_dict.get("detailed_ledger", []):
         ledger_rows.append([
             item["date"].strftime("%d %b %Y"), item["type"], item["cart"],
-            f"Rs. {item['collection']:,.2f}" if item['collection'] > 0 else "—", f"Rs. {item['fixed_salary']:,.2f}",
-            f"Rs. {item['commission']:,.2f}" if item['commission'] > 0 else "—", f"Rs. {item['allowance']:,.2f}" if item['allowance'] > 0 else "—"
+            f"{item['collection']:,.0f}" if item['collection'] > 0 else "—",
+            f"{item['fixed_salary']:,.0f}",
+            f"{item['commission']:,.0f}" if item['commission'] > 0 else "—",
+            f"{item['allowance']:,.0f}" if item['allowance'] > 0 else "—",
+            f"{item['advance_taken']:,.0f}" if item.get('advance_taken', 0) > 0 else "—",
+            f"{item['food_taken']:,.0f}" if item.get('food_taken', 0) > 0 else "—"
         ])
-    if len(ledger_rows) == 1: ledger_rows.append(["No records", "—", "—", "—", "—", "—", "—"])
+    if len(ledger_rows) == 1: ledger_rows.append(["No records", "—", "—", "—", "—", "—", "—", "—", "—"])
     
-    # FIX: Adjusted colWidths to provide more room for headers ending in "(Rs.)"
-    t_ledger = Table(ledger_rows, colWidths=[60, 65, 85, 75, 70, 85, 85])
+    t_ledger = Table(ledger_rows, colWidths=[55, 70, 70, 50, 45, 45, 45, 60, 60])
     t_ledger.hAlign = 'LEFT'
     t_ledger.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#124A1D')), ('TEXTCOLOR', (0,0), (-1,0), colors.white), ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'), ('FONTSIZE', (0,0), (-1,0), 8.5),
@@ -1140,7 +1196,9 @@ elif page == "Payslip Generator" and user_role == "admin":
                 ledger_df["Salary (₹)"] = ledger_df["fixed_salary"].apply(lambda v: f"₹{v:,.2f}")
                 ledger_df["Commission (₹)"] = ledger_df["commission"].apply(lambda v: f"₹{v:,.2f}" if v > 0 else "—")
                 ledger_df["Allowance (₹)"] = ledger_df["allowance"].apply(lambda v: f"₹{v:,.2f}" if v > 0 else "—")
-                st.dataframe(ledger_df[["Date", "Type", "Cart", "Collection (₹)", "Salary (₹)", "Commission (₹)", "Allowance (₹)"]], hide_index=True, use_container_width=True)
+                ledger_df["Advance Taken (₹)"] = ledger_df["advance_taken"].apply(lambda v: f"₹{v:,.2f}" if v > 0 else "—")
+                ledger_df["Food/Tea Taken (₹)"] = ledger_df["food_taken"].apply(lambda v: f"₹{v:,.2f}" if v > 0 else "—")
+                st.dataframe(ledger_df[["Date", "Type", "Cart", "Collection (₹)", "Salary (₹)", "Commission (₹)", "Allowance (₹)", "Advance Taken (₹)", "Food/Tea Taken (₹)"]], hide_index=True, use_container_width=True)
             else:
                 st.info("No active days or leave records found within the selected date range.")
 
