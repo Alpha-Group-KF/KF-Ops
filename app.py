@@ -2004,7 +2004,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                                 {
                                     "name": new_s_name.strip(), "status": new_s_status, "phone": new_s_phone.strip(),
                                     "emg_n": new_s_emg_name.strip(), "emg_p": new_s_emg_phone.strip(),
-                                    "dob": new_s_doj, "pob": new_s_pob.strip(), "pan": new_s_pan.strip().upper(),
+                                    "dob": new_s_dob, "pob": new_s_pob.strip(), "pan": new_s_pan.strip().upper(),
                                     "aadhaar": new_s_aadhaar.strip(), "caddr": new_s_cur_addr.strip(),
                                     "paddr": new_s_perm_addr.strip(), "doj": new_s_doj, "notes": new_s_notes.strip()
                                 }
@@ -2028,6 +2028,8 @@ elif page == "Staff & Payroll" and user_role == "admin":
                                 }
                             )
                             s.commit()
+                        
+                        st.cache_data.clear() # Instantly clears the cache to force a fresh pull from the DB
                         show_success_modal(f"Staff member '{new_s_name}' registered successfully with ID #{new_sid}!")
                     except Exception as e:
                         st.error(f"Could not register staff: {e}")
@@ -2149,6 +2151,8 @@ elif page == "Staff & Payroll" and user_role == "admin":
                                     }
                                 )
                                 s.commit()
+                            
+                            st.cache_data.clear() # Instantly clears the cache to force a fresh pull from the DB
                             show_success_modal(f"Staff profile for '{e_name}' updated successfully!")
                         except Exception as e:
                             st.error(f"Could not update staff profile: {e}")
