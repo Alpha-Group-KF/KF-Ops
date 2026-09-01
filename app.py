@@ -1,28 +1,21 @@
 """
 Kulfi Ops - multi-user data entry app for the kulfi cart business.
-- Mobile-friendly data entry with dual-write (Google Sheets + Supabase PostgreSQL).
+- Mobile-friendly data entry with single-source PostgreSQL backend.
 - Auto-prefill for yesterday (today - 1) from previous day's closing balances.
 - Zero daily sales allowed (e.g. cart closed or no sales made).
-- Purchase Order Estimator & Management with editable overall discount and net payable recalculation.
-- Stock Received with editable overall discount (defaulted to 2%) and net cost calculation.
-- Stock Removed (Wastage / Return / Tasting log) integrated into Available Freezer Stock calculations.
-- Freezer Analysis variance computed against calculated stock as of the physical audit date.
-- Remodeled Expenses & Payments (Bills vs. Cash Outflows with tranches & P&L summaries).
-- Automatic creation of Labour Charges expenses & cash payments on Daily Entry advance/food cash.
-- Staff & Payroll Module (KYC profile, leaves, compensation plans, and payments-backed settlement).
-- Remodeled Login, Navigation & Daily Entry:
-    * Case-insensitive login verification for both admin and data entry users.
-    * Data entry role bypasses the sidebar entirely, routing straight to the 3-cart home screen with an easily visible top logout button.
-    * Today's restock updates database closing units as `opening_units + added_units` via explicit check-and-update logic.
-- Payslip Generator Screen & PDF Download with professional formatting and logo integration.
-- Dashboard with COGS So Far (All-Time), exact COGS in range, and accrual-based net margin tracking.
-- Freezer Stock, Freezer Analysis, Dashboard, and Expenses powered 100% by Supabase PostgreSQL.
+- Purchase Order Estimator & Management with editable overall discount.
+- Stock Received with editable overall discount and net cost calculation.
+- Stock Removed (Wastage / Return) integrated into Available Freezer Stock.
+- Freezer Analysis variance computed against physical audit date.
+- Remodeled Expenses & Payments (Bills vs. Cash Outflows).
+- Automatic creation of Labour Charges expenses on Daily Entry advance/food cash.
+- Staff & Payroll Module (KYC, leaves, compensation plans, and settlement).
+- Payslip Generator Screen & PDF Download with itemized deductions.
+- Dashboard with COGS, net margin tracking, and inventory status.
 """
 
 import streamlit as st
 import altair as alt
-import gspread
-from google.oauth2.service_account import Credentials
 import pandas as pd
 import hmac
 import re
@@ -277,10 +270,6 @@ STAFF_STATUSES = ["active", "inactive", "on_leave"]
 LEAVE_STATUS_OPTIONS = ["Leave", "Sick Leave", "Casual Leave", "Absent"]
 LEAVE_TYPE_OPTIONS = ["Unpaid", "Paid"]
 
-DAILY_HEADER_ROWS = 2
-DAILY_TOTAL_COLS = 47
-SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
-
 DEFAULT_FLAVORS = [
     ("ML", "Malai", 40.0, 22.0, "ml_units"),
     ("MM", "Mini Malai", 30.0, 18.0, "mm_units"),
@@ -307,38 +296,9 @@ def _num(x):
 def _int_num(x):
     return int(round(_num(x)))
 
-def _pad(row, n):
-    return row + [""] * (n - len(row)) if len(row) < n else row
-
-def _col_letter(n):
-    letters = ""
-    while n > 0:
-        n, rem = divmod(n - 1, 26)
-        letters = chr(65 + rem) + letters
-    return letters
-
 # ----------------------------------------------------------------------
-# CONNECTIONS (Google Sheets & Supabase PostgreSQL)
+# DATABASE CONNECTION
 # ----------------------------------------------------------------------
-@st.cache_resource
-def get_client():
-    creds = Credentials.from_service_account_info(
-        st.secrets["gcp_service_account"], scopes=SCOPES
-    )
-    return gspread.authorize(creds)
-
-@st.cache_resource
-def get_workbook():
-    return get_client().open_by_key(st.secrets["sheet_id"])
-
-def get_ws(tab_name):
-    return get_workbook().worksheet(tab_name)
-
-def _update_sheet_row(tab_name, row_number, values):
-    ws = get_ws(tab_name)
-    end_col = _col_letter(len(values))
-    ws.update(range_name=f"A{row_number}:{end_col}{row_number}", values=[values], value_input_option="USER_ENTERED")
-
 try:
     db_conn = st.connection("postgresql", type="sql")
 except Exception:
@@ -398,7 +358,7 @@ def get_latest_cart_closing_state(cart_name, before_date):
             r = df.iloc[0]
             staff = str(r["staff_name"]) if pd.notna(r["staff_name"]) else ""
             items = r["items"] if isinstance(r["items"], list) else []
-            closings = {itm["code"]: int(itm["close"] or 0) for itm in items if isinstance(itm, dict) and "code" in itm}
+            closings = {str(itm.get("code")).strip(): int(itm.get("close") or 0) for itm in items if isinstance(itm, dict) and itm.get("code")}
             return closings, staff
     except Exception:
         pass
@@ -418,7 +378,10 @@ def list_daily_entries_with_prefill():
         df = db_conn.query(query, ttl="0s")
         if not df.empty:
             for _, r in df.iterrows():
-                items_by_code = {itm["code"]: itm for itm in r["items"] if isinstance(itm, dict) and "code" in itm} if (r["items"] and isinstance(r["items"], list)) else {}
+                # Strictly map items by explicitly matching the flavor code to avoid any ordering issues
+                raw_items = r.get("items") or []
+                items_by_code = {str(itm.get("code")).strip(): itm for itm in raw_items if isinstance(itm, dict) and itm.get("code")}
+                
                 entries.append({
                     "db_id": r["db_id"], "date": pd.to_datetime(r["entry_date"]), "cart": str(r["cart_name"]).strip(),
                     "by_code": {code: {"opening": int(items_by_code.get(code, {}).get("open") or 0), "added": int(items_by_code.get(code, {}).get("add") or 0), "sold": int(items_by_code.get(code, {}).get("sold") or 0), "closing": int(items_by_code.get(code, {}).get("close") or 0)} for code in FLAVOR_CODES},
@@ -503,25 +466,6 @@ def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map,
                 )
             s.commit()
 
-    try:
-        ws = get_ws("Daily Data As Shared")
-        all_vals = ws.get_all_values()
-        target_row = None
-        date_str = entry_date.strftime("%Y-%m-%d")
-        for idx, r in enumerate(all_vals[DAILY_HEADER_ROWS:]):
-            if len(r) >= 2 and r[0].strip() == date_str and r[1].strip() == cart_name:
-                target_row = DAILY_HEADER_ROWS + idx + 1
-                break
-        date_cart_id = f"{date_str}||{cart_name}"
-        sheet_row = (
-            [date_str, cart_name, CITY, date_cart_id] + [int(opening_map[code]) for code in FLAVOR_CODES] + [int(added_map[code]) for code in FLAVOR_CODES] + [int(sold_map[code]) for code in FLAVOR_CODES] + [int(closing_map[code]) for code in FLAVOR_CODES]
-            + [float(total), float(phonepe), float(cash), str(remarks), str(staff_name), float(staff_advance), float(food_tea_cash)]
-        )
-        if target_row: _update_sheet_row("Daily Data As Shared", target_row, sheet_row)
-        else: ws.append_row(sheet_row, value_input_option="USER_ENTERED")
-    except Exception as e:
-        st.warning(f"Saved to database, but Google Sheets sync encountered an issue: {e}")
-
 def sync_today_restock_entry(today_date, cart_name, staff_name, today_prev_closing_map, today_added_map):
     """
     Persists today's restock entry where:
@@ -579,29 +523,6 @@ def sync_today_restock_entry(today_date, cart_name, staff_name, today_prev_closi
                         {"eid": today_id, "code": code, "open": open_u, "add": add_u, "close": close_u}
                     )
             s.commit()
-
-    try:
-        ws = get_ws("Daily Data As Shared")
-        all_vals = ws.get_all_values()
-        today_str = today_date.strftime("%Y-%m-%d")
-        target_row = None
-        for idx, r in enumerate(all_vals[DAILY_HEADER_ROWS:]):
-            if len(r) >= 2 and r[0].strip() == today_str and r[1].strip() == cart_name:
-                target_row = DAILY_HEADER_ROWS + idx + 1
-                break
-
-        date_cart_id = f"{today_str}||{cart_name}"
-        today_open_list = [int(today_prev_closing_map[code]) for code in FLAVOR_CODES]
-        today_add_list = [int(today_added_map[code]) for code in FLAVOR_CODES]
-        today_close_list = [int(today_prev_closing_map[code]) + int(today_added_map[code]) for code in FLAVOR_CODES]
-        zero_flavors = [0 for _ in FLAVOR_CODES]
-        
-        sheet_row_today = ([today_str, cart_name, CITY, date_cart_id] + today_open_list + today_add_list + zero_flavors + today_close_list + [0.0, 0.0, 0.0, "", str(staff_name), 0.0, 0.0])
-        if target_row: _update_sheet_row("Daily Data As Shared", target_row, sheet_row_today)
-        else: ws.append_row(sheet_row_today, value_input_option="USER_ENTERED")
-    except Exception:
-        pass
-
 
 def load_db_daily_df():
     if db_conn is None: return pd.DataFrame()
@@ -945,7 +866,6 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
         ])
     if len(ledger_rows) == 1: ledger_rows.append(["No records", "—", "—", "—", "—", "—", "—", "—", "—"])
     
-    # Adjusted colWidths to give the 'Cart' column significantly more space (100)
     t_ledger = Table(ledger_rows, colWidths=[55, 65, 100, 45, 45, 45, 45, 60, 60])
     t_ledger.hAlign = 'LEFT'
     t_ledger.setStyle(TableStyle([
@@ -1208,7 +1128,7 @@ elif page == "Payslip Generator" and user_role == "admin":
                 ["Salary Component", "Basis / Calculation Details", "Amount (₹)"],
                 ["Monthly Fixed Salary", "Standard Monthly Base Plan", f"₹{staff_data['monthly_fixed_salary']:,.2f}"],
                 ["Total Days Worked", f"{staff_data['days_worked']} days worked + {staff_data['paid_leaves']} paid leaves", f"{staff_data['days_worked'] + staff_data['paid_leaves']} days"],
-                ["Pro-rata Fixed Salary", f"({staff_data['days_worked']} + {staff_data['paid_leaves']}) days @ ₹600/day", f"₹{staff_data['salary']:,.2f}"],
+                ["Pro-rata Fixed Salary", f"({data_dict['days_worked']} + {data_dict['paid_leaves']}) days @ ₹{data_dict.get('daily_rate', 600):.0f}/day", f"₹{staff_data['salary']:,.2f}"],
                 ["Sales Commissions", "15% on daily collections exceeding threshold", f"₹{staff_data['commissions']:,.2f}"],
                 ["Food & Tea Allowances", "Entitled weekday & Sunday daily allowances", f"₹{staff_data['allowances']:,.2f}"],
                 ["Gross Payable Earnings", "Total entitled earnings for the period", f"₹{staff_data['incurred']:,.2f}"],
@@ -3780,80 +3700,4 @@ elif page == "Dashboard" and user_role == "admin":
             cost_chart = alt.Chart(cost_dist_df).mark_bar().encode(x=alt.X("Cost Bucket:N", title="", sort=None, axis=alt.Axis(labelAngle=-15)), y=alt.Y("Amount (₹):Q", title="Amount (₹)"), color=alt.Color("Cost Bucket:N", scale=alt.Scale(domain=["COGS (Goods Sold)", "Operating Expenses (OPEX)", "Capital Expenditure (CAPEX)"], range=["#C43D17", "#8A5E17", "#4A2418"]), legend=None), tooltip=[alt.Tooltip("Cost Bucket:N", title="Type"), alt.Tooltip("Amount (₹):Q", format=",.2f", title="Amount")]).properties(height=240)
             st.altair_chart(cost_chart, use_container_width=True)
 
-        rcm_sub1, rcm_sub2 = st.columns([1, 1.2])
-        with rcm_sub1:
-            st.markdown("#### Collections & Cash Breakdown")
-            if not range_df.empty:
-                total_cash, total_phonepe, total_advance, total_food = range_df["Cash"].sum(), range_df["PhonePe"].sum(), range_df["Staff_Advance"].sum() if "Staff_Advance" in range_df.columns else 0.0, range_df["Food_Tea_Cash"].sum() if "Food_Tea_Cash" in range_df.columns else 0.0
-                c_k1, c_k2 = st.columns(2)
-                c_k1.metric("Cash Collected", f"₹{total_cash:,.0f}"); c_k1.metric("Staff Advances", f"₹{total_advance:,.0f}"); c_k2.metric("PhonePe / UPI", f"₹{total_phonepe:,.0f}"); c_k2.metric("Food / Tea Cash", f"₹{total_food:,.0f}")
-                split_df = pd.DataFrame({"Mode": ["Cash", "PhonePe / UPI", "Staff Advance", "Food / Tea"], "Amount (₹)": [total_cash, total_phonepe, total_advance, total_food]})
-                st.bar_chart(split_df.set_index("Mode")["Amount (₹)"])
-            else: st.caption("No collection data in this period.")
-
-        with rcm_sub2:
-            st.markdown("#### Flavour-Wise Revenue & Margin Performance")
-            if not flavor_range_df.empty and flavor_range_df["Units sold"].sum() > 0:
-                disp_flv = flavor_range_df.copy()
-                disp_flv["Gross Margin (₹)"] = disp_flv["Est. revenue (₹)"] - disp_flv["COGS (₹)"]
-                disp_flv["Margin %"] = (disp_flv["Gross Margin (₹)"] / disp_flv["Est. revenue (₹)"]) * 100
-                st.dataframe(disp_flv[["Flavour", "Units sold", "Est. revenue (₹)", "COGS (₹)", "Gross Margin (₹)", "Margin %"]], hide_index=True, use_container_width=True, column_config={"Est. revenue (₹)": st.column_config.NumberColumn(format="₹%.2f"), "COGS (₹)": st.column_config.NumberColumn(format="₹%.2f"), "Gross Margin (₹)": st.column_config.NumberColumn(format="₹%.2f"), "Margin %": st.column_config.NumberColumn(format="%.1f%%")})
-                st.bar_chart(flavor_range_df.set_index("Flavour")["Units sold"])
-            else: st.caption("No flavor sales recorded in this date range.")
-
-        st.markdown("#### Incurred Operating Expense Breakdown by Category")
-        exp_cat_list = []
-        if tot_labour_incurred > 0: exp_cat_list.append({"Category": "Labour Charges (Incurred)", "Amount (₹)": tot_labour_incurred})
-        if not non_labour_opex_df.empty:
-            for cat, amt in non_labour_opex_df.groupby("Category")["Amount"].sum().items(): exp_cat_list.append({"Category": cat, "Amount (₹)": float(amt)})
-        if exp_cat_list:
-            exp_cat_df = pd.DataFrame(exp_cat_list).sort_values(by="Amount (₹)", ascending=False)
-            st.dataframe(exp_cat_df, hide_index=True, use_container_width=True, column_config={"Amount (₹)": st.column_config.NumberColumn(format="₹%.2f")})
-            st.bar_chart(exp_cat_df.set_index("Category")["Amount (₹)"])
-        else: st.caption("No operating expenses incurred in this date range.")
-
-        st.markdown("---"); st.markdown("### 2. Cart-Wise Operations & Comparative Analysis")
-        if not range_df.empty:
-            cart_col1, cart_col2 = st.columns(2)
-            with cart_col1:
-                st.markdown("#### Revenue & Volume per Cart")
-                cart_grp = range_df.groupby("Cart").agg(**{"Revenue (₹)": ("Total_Collection", "sum"), "Units Sold": ("Sold_Total", "sum"), "Cash (₹)": ("Cash", "sum"), "PhonePe (₹)": ("PhonePe", "sum"), "Staff Advance (₹)": ("Staff_Advance", "sum"), "Food/Tea Cash (₹)": ("Food_Tea_Cash", "sum")}).reset_index().sort_values("Revenue (₹)", ascending=False)
-                cart_grp["Units Sold"] = cart_grp["Units Sold"].apply(lambda x: int(round(x)))
-                st.dataframe(cart_grp, hide_index=True, use_container_width=True, column_config={"Revenue (₹)": st.column_config.NumberColumn(format="₹%.2f"), "Cash (₹)": st.column_config.NumberColumn(format="₹%.2f"), "PhonePe (₹)": st.column_config.NumberColumn(format="₹%.2f"), "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%.2f"), "Food/Tea Cash (₹)": st.column_config.NumberColumn(format="₹%.2f")})
-            with cart_col2: st.markdown("#### Comparative Cart Revenue"); st.bar_chart(cart_grp.set_index("Cart")["Revenue (₹)"])
-        else: st.caption("No cart sales in this date range.")
-
-        st.markdown("---"); st.markdown("### 3. Day-Wise & Timing Patterns")
-        if not range_df.empty:
-            day_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-            dow_df = range_df[range_df["Sold_Total"] > 0].copy(); dow_df["Day"] = dow_df["Date"].dt.day_name()
-            if not dow_df.empty:
-                dw1, dw2 = st.columns(2)
-                with dw1: st.write("**Average Units Sold per Day of Week**"); units_pivot = dow_df.pivot_table(index="Cart", columns="Day", values="Sold_Total", aggfunc="mean", fill_value=0, margins=True, margins_name="All Carts"); day_cols = [d for d in day_order if d in units_pivot.columns] + ["All Carts"]; units_pivot = units_pivot.reindex(columns=day_cols); st.dataframe(units_pivot.round(0).astype(int), use_container_width=True)
-                with dw2: st.write("**Average Revenue (₹) per Day of Week**"); rev_pivot = dow_df.pivot_table(index="Cart", columns="Day", values="Total_Collection", aggfunc="mean", fill_value=0, margins=True, margins_name="All Carts"); rev_pivot = rev_pivot.reindex(columns=day_cols); st.dataframe(rev_pivot.round(0).astype(int), use_container_width=True)
-            else: st.caption("No active selling days found in this range.")
-
-            st.markdown("#### Itemized Daily Cart Sales Log")
-            display_cols = ["Date", "Cart", "Sold_Total", "Total_Collection", "PhonePe", "Cash", "Staff_Name", "Staff_Advance", "Food_Tea_Cash", "Remarks"]
-            sales_table = range_df.sort_values(["Date", "Cart"])[display_cols].rename(columns={"Sold_Total": "Units Sold", "Total_Collection": "Revenue (₹)", "PhonePe": "PhonePe (₹)", "Cash": "Cash (₹)", "Staff_Name": "Staff Name", "Staff_Advance": "Staff Advance (₹)", "Food_Tea_Cash": "Food / Tea (₹)"})
-            sales_table["Units Sold"] = sales_table["Units Sold"].apply(lambda x: int(round(x))); sales_table["Date"] = sales_table["Date"].dt.strftime("%d %b %Y")
-            st.dataframe(sales_table, hide_index=True, use_container_width=True, column_config={"Revenue (₹)": st.column_config.NumberColumn(format="₹%.2f"), "PhonePe (₹)": st.column_config.NumberColumn(format="₹%.2f"), "Cash (₹)": st.column_config.NumberColumn(format="₹%.2f"), "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%.2f"), "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%.2f")})
-        else: st.caption("No sales data recorded in this period.")
-
-    if not daily_df.empty:
-        st.markdown("---"); st.markdown('<div id="inventory-status"></div>', unsafe_allow_html=True); st.markdown("## Current Live Inventory Status")
-        inv_c1, inv_c2, inv_c3 = st.columns(3)
-        cart_stock_tot = int(round(daily_df.sort_values('Date').groupby('Cart').tail(1)['Closing_Total'].sum()))
-        inv_c1.metric("Stock Across Carts", f"{cart_stock_tot} units"); inv_c2.metric("Units in Freezer", f"{total_freezer_units} units"); inv_c3.metric("Freezer Stock Valuation (Cost)", f"₹{total_freezer_val:,.2f}")
-
-        try:
-            if not freezer_df.empty:
-                st.markdown("**Freezer stock breakdown & cost valuation**")
-                disp_freezer = freezer_df.rename(columns={"cost_price": "Unit Cost (₹)", "Stock_Value": "Stock Value (₹)"})[["Flavour", "Units in freezer", "Unit Cost (₹)", "Stock Value (₹)"]]
-                st.dataframe(disp_freezer, hide_index=True, use_container_width=True, column_config={"Unit Cost (₹)": st.column_config.NumberColumn(format="₹%.2f"), "Stock Value (₹)": st.column_config.NumberColumn(format="₹%.2f")})
-        except Exception as e: st.caption(f"Could not compute freezer stock from DB ({e}).")
-
-        st.markdown("**Latest stock per cart**")
-        latest_per_cart = daily_df.sort_values("Date").groupby("Cart").tail(1)[["Cart", "Date", "Closing_Total"]].copy()
-        latest_per_cart["Closing_Total"] = latest_per_cart["Closing_Total"].apply(lambda x: int(round(x))); latest_per_cart["Date"] = latest_per_cart["Date"].dt.strftime("%d %b %Y")
-        st.dataframe(latest_per_cart, hide_index=True, use_container_width=True)
+        rcm_sub1,Sorry, something went wrong. Please try your request again.
