@@ -873,20 +873,6 @@ def calculate_incurred_labour_for_range(start_date, end_date):
         }
         
     return total_labour_incurred, total_labour_paid, total_labour_incurred - total_labour_paid, breakdown_by_staff
-        
-        staff_incurred = shift_sal + shift_comm + shift_allow
-        staff_paid = float(st_pay["amount_paid"].sum()) if not st_pay.empty else 0.0
-        staff_due = staff_incurred - staff_paid
-        total_labour_incurred += staff_incurred
-        total_labour_paid += staff_paid
-        
-        breakdown_by_staff[st_name] = {
-            "monthly_fixed_salary": monthly_sal, "daily_rate": daily_rate, "days_worked": days_worked, "paid_leaves": paid_leaves_cnt, 
-            "salary": shift_sal, "commissions": shift_comm, "allowances": shift_allow, "incurred": staff_incurred, 
-            "paid": staff_paid, "due": staff_due, "detailed_ledger": detailed_ledger, "doj": doj
-        }
-        
-    return total_labour_incurred, total_labour_paid, total_labour_incurred - total_labour_paid, breakdown_by_staff
 
 def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
     if not REPORTLAB_AVAILABLE: return None
