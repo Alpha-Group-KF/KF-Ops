@@ -1932,54 +1932,54 @@ elif page == "Staff & Payroll" and user_role == "admin":
             with st.form("new_staff_form"):
                 sc1, sc2, sc3 = st.columns(3)
                 with sc1:
-                    new_s_name = st.text_input("Full Name *", placeholder="e.g. Ramesh Kumar")
+                    new_s_name = st.text_input("Full Name *", placeholder="e.g. Ramesh Kumar", key="add_s_name")
                 with sc2:
-                    new_s_phone = st.text_input("Mobile Number", placeholder="e.g. 9876543210")
+                    new_s_phone = st.text_input("Mobile Number", placeholder="e.g. 9876543210", key="add_s_phone")
                 with sc3:
-                    new_s_status = st.selectbox("Status", STAFF_STATUSES, index=0)
+                    new_s_status = st.selectbox("Status", STAFF_STATUSES, index=0, key="add_s_status")
 
                 sc4, sc5, sc6 = st.columns(3)
                 with sc4:
-                    new_s_doj = st.date_input("Date of Joining", value=date.today())
+                    new_s_doj = st.date_input("Date of Joining", value=date.today(), key="add_s_doj")
                 with sc5:
-                    new_s_dob = st.date_input("Date of Birth", value=date(1995, 1, 1))
+                    new_s_dob = st.date_input("Date of Birth", value=date(1995, 1, 1), key="add_s_dob")
                 with sc6:
-                    new_s_pob = st.text_input("Place of Birth", placeholder="e.g. Hosur, Tamil Nadu")
+                    new_s_pob = st.text_input("Place of Birth", placeholder="e.g. Hosur, Tamil Nadu", key="add_s_pob")
 
                 sc7, sc8 = st.columns(2)
                 with sc7:
-                    new_s_pan = st.text_input("PAN Number", placeholder="e.g. ABCDE1234F")
+                    new_s_pan = st.text_input("PAN Number", placeholder="e.g. ABCDE1234F", key="add_s_pan")
                 with sc8:
-                    new_s_aadhaar = st.text_input("Aadhaar Number", placeholder="12-digit Aadhaar")
+                    new_s_aadhaar = st.text_input("Aadhaar Number", placeholder="12-digit Aadhaar", key="add_s_aadhaar")
 
                 sc9, sc10 = st.columns(2)
                 with sc9:
-                    new_s_cur_addr = st.text_area("Current Residential Address", height=68)
+                    new_s_cur_addr = st.text_area("Current Residential Address", height=68, key="add_s_caddr")
                 with sc10:
-                    new_s_perm_addr = st.text_area("Permanent Address", height=68)
+                    new_s_perm_addr = st.text_area("Permanent Address", height=68, key="add_s_paddr")
 
                 sc11, sc12 = st.columns(2)
                 with sc11:
-                    new_s_emg_name = st.text_input("Emergency Contact Person", placeholder="e.g. Brother / Father")
+                    new_s_emg_name = st.text_input("Emergency Contact Person", placeholder="e.g. Brother / Father", key="add_s_emgn")
                 with sc12:
-                    new_s_emg_phone = st.text_input("Emergency Contact Number", placeholder="e.g. 9123456789")
+                    new_s_emg_phone = st.text_input("Emergency Contact Number", placeholder="e.g. 9123456789", key="add_s_emgp")
 
                 st.markdown("#### Starting Compensation Package")
                 cp1, cp2, cp3 = st.columns(3)
                 with cp1:
-                    new_s_salary = st.number_input("Monthly Fixed Salary (₹)", min_value=0.0, value=18000.0, step=500.0)
+                    new_s_salary = st.number_input("Monthly Fixed Salary (₹)", min_value=0.0, value=18000.0, step=500.0, key="add_s_sal")
                 with cp2:
-                    new_s_thresh = st.number_input("Daily Sales Threshold for Commission (₹)", min_value=0.0, value=3000.0, step=100.0)
+                    new_s_thresh = st.number_input("Daily Sales Threshold for Commission (₹)", min_value=0.0, value=3000.0, step=100.0, key="add_s_thresh")
                 with cp3:
-                    new_s_comm_pct = st.number_input("Commission Percentage (%)", min_value=0.0, max_value=100.0, value=15.0, step=0.5)
+                    new_s_comm_pct = st.number_input("Commission Percentage (%)", min_value=0.0, max_value=100.0, value=15.0, step=0.5, key="add_s_comm")
 
                 cp4, cp5 = st.columns(2)
                 with cp4:
-                    new_s_allow_wd = st.number_input("Food & Tea Allowance: Mon to Sat (₹/day)", min_value=0.0, value=210.0, step=10.0)
+                    new_s_allow_wd = st.number_input("Food & Tea Allowance: Mon to Sat (₹/day)", min_value=0.0, value=210.0, step=10.0, key="add_s_awd")
                 with cp5:
-                    new_s_allow_sun = st.number_input("Food & Tea Allowance: Sunday (₹/day)", min_value=0.0, value=250.0, step=10.0)
+                    new_s_allow_sun = st.number_input("Food & Tea Allowance: Sunday (₹/day)", min_value=0.0, value=250.0, step=10.0, key="add_s_asun")
 
-                new_s_notes = st.text_input("Notes / Background Remarks (Optional)")
+                new_s_notes = st.text_input("Notes / Background Remarks (Optional)", key="add_s_notes")
 
                 submit_staff = st.form_submit_button("👤 Register Staff Member", type="primary", use_container_width=True)
 
@@ -2028,8 +2028,6 @@ elif page == "Staff & Payroll" and user_role == "admin":
                                 }
                             )
                             s.commit()
-                        
-                        st.cache_data.clear() # Instantly clears the cache to force a fresh pull from the DB
                         show_success_modal(f"Staff member '{new_s_name}' registered successfully with ID #{new_sid}!")
                     except Exception as e:
                         st.error(f"Could not register staff: {e}")
@@ -2087,42 +2085,42 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 with st.form("edit_staff_form"):
                     ec1, ec2, ec3 = st.columns(3)
                     with ec1:
-                        e_name = st.text_input("Full Name *", value=str(s_edit["name"]))
+                        e_name = st.text_input("Full Name *", value=str(s_edit["name"]), key=f"e_name_{s_id}")
                     with ec2:
-                        e_phone = st.text_input("Mobile Number", value=str(s_edit.get("phone_number") or ""))
+                        e_phone = st.text_input("Mobile Number", value=str(s_edit.get("phone_number") or ""), key=f"e_phone_{s_id}")
                     with ec3:
                         stat_idx = STAFF_STATUSES.index(s_edit["status"]) if s_edit["status"] in STAFF_STATUSES else 0
-                        e_status = st.selectbox("Status", STAFF_STATUSES, index=stat_idx)
+                        e_status = st.selectbox("Status", STAFF_STATUSES, index=stat_idx, key=f"e_status_{s_id}")
 
                     ec4, ec5, ec6 = st.columns(3)
                     with ec4:
                         doj_val = pd.to_datetime(s_edit["date_of_joining"]).date() if pd.notna(s_edit["date_of_joining"]) else date.today()
-                        e_doj = st.date_input("Date of Joining", value=doj_val)
+                        e_doj = st.date_input("Date of Joining", value=doj_val, key=f"e_doj_{s_id}")
                     with ec5:
                         dob_val = pd.to_datetime(s_edit["date_of_birth"]).date() if pd.notna(s_edit["date_of_birth"]) else date(1995, 1, 1)
-                        e_dob = st.date_input("Date of Birth", value=dob_val)
+                        e_dob = st.date_input("Date of Birth", value=dob_val, key=f"e_dob_{s_id}")
                     with ec6:
-                        e_pob = st.text_input("Place of Birth", value=str(s_edit.get("place_of_birth") or ""))
+                        e_pob = st.text_input("Place of Birth", value=str(s_edit.get("place_of_birth") or ""), key=f"e_pob_{s_id}")
 
                     ec7, ec8 = st.columns(2)
                     with ec7:
-                        e_pan = st.text_input("PAN Number", value=str(s_edit.get("pan_number") or ""))
+                        e_pan = st.text_input("PAN Number", value=str(s_edit.get("pan_number") or ""), key=f"e_pan_{s_id}")
                     with ec8:
-                        e_aadhaar = st.text_input("Aadhaar Number", value=str(s_edit.get("aadhaar_number") or ""))
+                        e_aadhaar = st.text_input("Aadhaar Number", value=str(s_edit.get("aadhaar_number") or ""), key=f"e_aadhaar_{s_id}")
 
                     ec9, ec10 = st.columns(2)
                     with ec9:
-                        e_caddr = st.text_area("Current Address", value=str(s_edit.get("current_address") or ""), height=68)
+                        e_caddr = st.text_area("Current Address", value=str(s_edit.get("current_address") or ""), height=68, key=f"e_caddr_{s_id}")
                     with ec10:
-                        e_paddr = st.text_area("Permanent Address", value=str(s_edit.get("permanent_address") or ""), height=68)
+                        e_paddr = st.text_area("Permanent Address", value=str(s_edit.get("permanent_address") or ""), height=68, key=f"e_paddr_{s_id}")
 
                     ec11, ec12 = st.columns(2)
                     with ec11:
-                        e_emg_n = st.text_input("Emergency Contact Name", value=str(s_edit.get("emergency_contact_name") or ""))
+                        e_emg_n = st.text_input("Emergency Contact Name", value=str(s_edit.get("emergency_contact_name") or ""), key=f"e_emgn_{s_id}")
                     with ec12:
-                        e_emg_p = st.text_input("Emergency Contact Phone", value=str(s_edit.get("emergency_contact_phone") or ""))
+                        e_emg_p = st.text_input("Emergency Contact Phone", value=str(s_edit.get("emergency_contact_phone") or ""), key=f"e_emgp_{s_id}")
 
-                    e_notes = st.text_input("Notes", value=str(s_edit.get("notes") or ""))
+                    e_notes = st.text_input("Notes", value=str(s_edit.get("notes") or ""), key=f"e_notes_{s_id}")
 
                     save_edit_staff = st.form_submit_button("💾 Save Profile Changes", type="primary", use_container_width=True)
 
@@ -2151,8 +2149,6 @@ elif page == "Staff & Payroll" and user_role == "admin":
                                     }
                                 )
                                 s.commit()
-                            
-                            st.cache_data.clear() # Instantly clears the cache to force a fresh pull from the DB
                             show_success_modal(f"Staff profile for '{e_name}' updated successfully!")
                         except Exception as e:
                             st.error(f"Could not update staff profile: {e}")
