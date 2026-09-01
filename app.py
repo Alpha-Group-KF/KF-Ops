@@ -707,9 +707,13 @@ def calculate_incurred_labour_for_range(start_date, end_date):
     if db_conn is None: return 0.0, 0.0, 0.0, {}
     staff_df = load_full_staff_df()
     if staff_df.empty: return 0.0, 0.0, 0.0, {}
-    entries_df = db_conn.query("SELECT entry_date, cart_name, staff_name, total_collection, staff_advance, food_tea_cash FROM daily_cart_entries WHERE entry_date >= :sdate AND entry_date <= :edate AND staff_name IS NOT NULL AND staff_name != '' AND staff_name != 'Select Staff';", params={"sdate": start_date, "edate": end_date}, ttl="0s")
+    
+    # Notice we don't need advance or food cash from daily_cart_entries anymore
+    entries_df = db_conn.query("SELECT entry_date, cart_name, staff_name, total_collection FROM daily_cart_entries WHERE entry_date >= :sdate AND entry_date <= :edate AND staff_name IS NOT NULL AND staff_name != '' AND staff_name != 'Select Staff';", params={"sdate": start_date, "edate": end_date}, ttl="0s")
     att_df = db_conn.query("SELECT a.staff_id, s.name AS staff_name, a.attendance_date, a.status, a.leave_type FROM staff_attendance a JOIN staff s ON a.staff_id = s.id WHERE a.attendance_date >= :sdate AND a.attendance_date <= :edate;", params={"sdate": start_date, "edate": end_date}, ttl="0s")
-    pay_df = db_conn.query("SELECT p.amount_paid, e.staff_name FROM expense_payments p JOIN expenses e ON p.expense_id = e.id WHERE e.category = 'Labour Charges' AND p.payment_date >= :sdate AND p.payment_date <= :edate;", params={"sdate": start_date, "edate": end_date}, ttl="0s")
+    
+    # Updated query to pull the exact payment date and sub_category (Advance vs Food & Tea) directly from the payments table
+    pay_df = db_conn.query("SELECT p.amount_paid, p.payment_date, e.staff_name, e.sub_category FROM expense_payments p JOIN expenses e ON p.expense_id = e.id WHERE e.category = 'Labour Charges' AND p.payment_date >= :sdate AND p.payment_date <= :edate;", params={"sdate": start_date, "edate": end_date}, ttl="0s")
     
     total_labour_incurred, total_labour_paid, breakdown_by_staff = 0.0, 0.0, {}
     
@@ -743,18 +747,37 @@ def calculate_incurred_labour_for_range(start_date, end_date):
                     shift_map[s_dt] = []
                 shift_map[s_dt].append({
                     "cart": sh["cart_name"],
-                    "collection": float(_num(sh["total_collection"])),
-                    "advance": float(_num(sh.get("staff_advance", 0))),
-                    "food_tea": float(_num(sh.get("food_tea_cash", 0)))
+                    "collection": float(_num(sh["total_collection"]))
                 })
+                
+        # Consolidate all manual and automatic payments strictly by calendar date
+        payment_map = {}
+        if not st_pay.empty:
+            for _, p_row in st_pay.iterrows():
+                p_dt = pd.to_datetime(p_row["payment_date"]).date()
+                if p_dt not in payment_map:
+                    payment_map[p_dt] = {"advance": 0.0, "food": 0.0}
+                
+                subcat = str(p_row.get("sub_category") or "")
+                amt = float(_num(p_row["amount_paid"]))
+                
+                if "Food" in subcat or "Tea" in subcat:
+                    payment_map[p_dt]["food"] += amt
+                else:
+                    payment_map[p_dt]["advance"] += amt
 
-        all_dates = set(leave_map.keys()).union(set(shift_map.keys()))
+        # Create a superset of all active dates for this staff member
+        all_dates = set(leave_map.keys()).union(set(shift_map.keys())).union(set(payment_map.keys()))
         paid_leaves_cnt = 0
 
         for d in sorted(all_dates):
             is_leave = d in leave_map
             leave_type = leave_map.get(d)
             day_allow_rate = allow_sun if (d.weekday() == 6) else allow_wd
+            
+            day_adv = payment_map.get(d, {}).get("advance", 0.0)
+            day_food = payment_map.get(d, {}).get("food", 0.0)
+            payment_attached = False
             
             if is_leave:
                 if leave_type == "Paid":
@@ -765,38 +788,38 @@ def calculate_incurred_labour_for_range(start_date, end_date):
                         "date": d, "type": "Paid Leave", "cart": "—", 
                         "collection": 0.0, "fixed_salary": daily_rate, 
                         "commission": 0.0, "allowance": day_allow_rate,
-                        "advance_taken": 0.0, "food_taken": 0.0
+                        "advance_taken": day_adv, "food_taken": day_food
                     })
+                    payment_attached = True
                 else:
                     detailed_ledger.append({
                         "date": d, "type": "Unpaid Leave", "cart": "—", 
                         "collection": 0.0, "fixed_salary": 0.0, 
                         "commission": 0.0, "allowance": 0.0,
-                        "advance_taken": 0.0, "food_taken": 0.0
+                        "advance_taken": day_adv, "food_taken": day_food
                     })
+                    payment_attached = True
                 
                 if d in shift_map:
                     for cart_shift in shift_map[d]:
                         s_col = cart_shift["collection"]
-                        adv_taken = cart_shift["advance"]
-                        food_taken = cart_shift["food_tea"]
                         day_comm = max(0.0, s_col - comm_thresh) * (comm_pct / 100.0)
                         shift_comm += day_comm
                         detailed_ledger.append({
                             "date": d, "type": "Sales on Leave Day", "cart": cart_shift["cart"], 
                             "collection": s_col, "fixed_salary": 0.0, 
                             "commission": day_comm, "allowance": 0.0,
-                            "advance_taken": adv_taken, "food_taken": food_taken
+                            "advance_taken": 0.0 if payment_attached else day_adv, 
+                            "food_taken": 0.0 if payment_attached else day_food
                         })
-            else:
+                        payment_attached = True
+            elif d in shift_map:
                 days_worked += 1
                 shift_sal += daily_rate
                 shift_allow += day_allow_rate
                 
                 for idx, cart_shift in enumerate(shift_map[d]):
                     s_col = cart_shift["collection"]
-                    adv_taken = cart_shift["advance"]
-                    food_taken = cart_shift["food_tea"]
                     day_comm = max(0.0, s_col - comm_thresh) * (comm_pct / 100.0)
                     shift_comm += day_comm
                     
@@ -805,15 +828,24 @@ def calculate_incurred_labour_for_range(start_date, end_date):
                             "date": d, "type": "Worked Day", "cart": cart_shift["cart"], 
                             "collection": s_col, "fixed_salary": daily_rate, 
                             "commission": day_comm, "allowance": day_allow_rate,
-                            "advance_taken": adv_taken, "food_taken": food_taken
+                            "advance_taken": day_adv, "food_taken": day_food
                         })
+                        payment_attached = True
                     else:
                         detailed_ledger.append({
                             "date": d, "type": "Extra Cart Shift", "cart": cart_shift["cart"], 
                             "collection": s_col, "fixed_salary": 0.0, 
                             "commission": day_comm, "allowance": 0.0,
-                            "advance_taken": adv_taken, "food_taken": food_taken
+                            "advance_taken": 0.0, "food_taken": 0.0
                         })
+            else:
+                # If there's no leave and no shift, but there IS a manual payment record
+                detailed_ledger.append({
+                    "date": d, "type": "Payment Recorded", "cart": "—", 
+                    "collection": 0.0, "fixed_salary": 0.0, 
+                    "commission": 0.0, "allowance": 0.0,
+                    "advance_taken": day_adv, "food_taken": day_food
+                })
         
         detailed_ledger.sort(key=lambda x: x["date"])
         
