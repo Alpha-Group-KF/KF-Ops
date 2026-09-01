@@ -712,9 +712,9 @@ def calculate_incurred_labour_for_range(start_date, end_date):
     att_df = db_conn.query("SELECT a.staff_id, s.name AS staff_name, a.attendance_date, a.status, a.leave_type FROM staff_attendance a JOIN staff s ON a.staff_id = s.id WHERE a.attendance_date >= :sdate AND a.attendance_date <= :edate;", params={"sdate": start_date, "edate": end_date}, ttl="0s")
     pay_df = db_conn.query("SELECT p.amount_paid, e.staff_name FROM expense_payments p JOIN expenses e ON p.expense_id = e.id WHERE e.category = 'Labour Charges' AND p.payment_date >= :sdate AND p.payment_date <= :edate;", params={"sdate": start_date, "edate": end_date}, ttl="0s")
     
-    # NEW: Pull all Advances and Food/Tea allowances directly from the 'expenses' table 
+    # Strictly pull Advances and Food/Tea allowances from the expenses table by sub_category
     exp_ledger_df = db_conn.query("""
-        SELECT expense_date, staff_name, sub_category, total_amount, description 
+        SELECT expense_date, staff_name, sub_category, total_amount 
         FROM expenses 
         WHERE category = 'Labour Charges' 
           AND status = 'Paid'
@@ -758,7 +758,7 @@ def calculate_incurred_labour_for_range(start_date, end_date):
                     "collection": float(_num(sh["total_collection"]))
                 })
                 
-        # Consolidate all taken amounts (both automatic and manual) by calendar date
+        # Consolidate taken amounts strictly driven by the Expenses table's sub_category
         exp_map = {}
         if not st_exp.empty:
             for _, e_row in st_exp.iterrows():
@@ -766,14 +766,13 @@ def calculate_incurred_labour_for_range(start_date, end_date):
                 if e_dt not in exp_map:
                     exp_map[e_dt] = {"advance": 0.0, "food": 0.0}
                 
-                subcat = str(e_row.get("sub_category") or "").lower()
-                desc = str(e_row.get("description") or "").lower()
+                subcat = str(e_row.get("sub_category") or "").strip().lower()
                 amt = float(_num(e_row["total_amount"]))
                 
-                # Route to 'Allow. Taken' if food/tea keywords are present, otherwise log as 'Advance'
-                if 'food' in subcat or 'tea' in subcat or 'allow' in subcat or 'food' in desc:
+                # Routes matching values directly to their respective columns
+                if 'food' in subcat or 'tea' in subcat or 'allow' in subcat:
                     exp_map[e_dt]["food"] += amt
-                else:
+                elif 'advance' in subcat:
                     exp_map[e_dt]["advance"] += amt
 
         # Create a superset of all active dates for this staff member
@@ -851,7 +850,7 @@ def calculate_incurred_labour_for_range(start_date, end_date):
                             "advance_taken": 0.0, "food_taken": 0.0
                         })
             else:
-                # Log any standalone manual disbursements created via the Expenses UI
+                # Logs any standalone disbursement created in the Expenses UI where sub_category was applied
                 detailed_ledger.append({
                     "date": d, "type": "Expense Recorded", "cart": "—", 
                     "collection": 0.0, "fixed_salary": 0.0, 
