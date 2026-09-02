@@ -2744,21 +2744,21 @@ elif page == "Dashboard" and user_role == "admin":
         trend_agg["Gross Cash"] = trend_agg["Total_Collection"] - trend_agg["PhonePe"]
         trend_melt = trend_agg.melt(id_vars=["Day"], value_vars=["PhonePe", "Gross Cash"], var_name="Mode", value_name="Amount")
         
-        # Updated color scheme to match the pie charts (Teal & Terracotta)
         trend_chart = alt.Chart(trend_melt).mark_bar(width=16).encode(
             x=alt.X("Day:T", title="", axis=alt.Axis(format="%d %b", labelAngle=-45)),
             y=alt.Y("Amount:Q", title="Revenue (₹)"),
             color=alt.Color(
                 "Mode:N", 
                 scale=alt.Scale(domain=["Gross Cash", "PhonePe"], range=["#2A9D8F", "#E76F51"]),
-                legend=alt.Legend(title="", orient="top-right")
+                # Force legend completely outside the chart grid
+                legend=alt.Legend(title="", orient="bottom", direction="horizontal") 
             ),
             tooltip=[
                 alt.Tooltip("Day:T", title="Date", format="%d %b %Y"), 
                 alt.Tooltip("Mode:N", title="Mode"), 
-                alt.Tooltip("Amount:Q", title="Amount (₹)", format=",.0f") # Fixed currency format crash
+                alt.Tooltip("Amount:Q", title="Amount (₹)", format=",.0f") 
             ]
-        ).properties(height=200)
+        ).properties(height=260) # Increased height slightly to accommodate the bottom legend
         
         st.altair_chart(trend_chart, use_container_width=True)
     else: 
