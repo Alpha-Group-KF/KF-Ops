@@ -2858,7 +2858,7 @@ elif page == "Dashboard" and user_role == "admin":
             pie1_df = pd.DataFrame({"Category": ["Gross Cash", "PhonePe"], "Amount (₹)": [gross_cash, total_phonepe]})
             pie1 = alt.Chart(pie1_df).mark_arc(innerRadius=0).encode(
                 theta=alt.Theta(field="Amount (₹)", type="quantitative"),
-                color=alt.Color(field="Category", type="nominal", scale=alt.Scale(range=["#8A5E17", "#E8542A"])),
+                color=alt.Color(field="Category", type="nominal", scale=alt.Scale(range=["#2A9D8F", "#E76F51"])), # Teal and Terracotta
                 tooltip=["Category", alt.Tooltip("Amount (₹):Q", format=",.2f")]
             ).properties(height=250)
 
@@ -2869,7 +2869,7 @@ elif page == "Dashboard" and user_role == "admin":
             })
             pie2 = alt.Chart(pie2_df).mark_arc(innerRadius=0).encode(
                 theta=alt.Theta(field="Amount (₹)", type="quantitative"),
-                color=alt.Color(field="Category", type="nominal", scale=alt.Scale(scheme="dark2")),
+                color=alt.Color(field="Category", type="nominal", scale=alt.Scale(range=["#E76F51", "#2A9D8F", "#E9C46A", "#F4A261"])), # Vibrant contrasting palette
                 tooltip=["Category", alt.Tooltip("Amount (₹):Q", format=",.2f")]
             ).properties(height=250)
             
@@ -2896,7 +2896,7 @@ elif page == "Dashboard" and user_role == "admin":
             # Replaced Bar Chart with 2D Pie Chart
             exp_pie = alt.Chart(exp_cat_df).mark_arc(innerRadius=40).encode(
                 theta=alt.Theta(field="Amount (₹)", type="quantitative"),
-                color=alt.Color(field="Category", type="nominal"),
+                color=alt.Color(field="Category", type="nominal", scale=alt.Scale(scheme="tableau10")), # Professional standard multi-color palette
                 tooltip=["Category", alt.Tooltip("Amount (₹):Q", format=",.2f")]
             ).properties(height=300)
             st.altair_chart(exp_pie, use_container_width=True)
