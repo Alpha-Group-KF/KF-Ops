@@ -210,27 +210,30 @@ div[data-testid="stMetric"] {
     box-shadow: 0 1px 2px rgba(0,0,0,0.03);
     height: 100%;
 }
-/* Aggressively target the inner paragraph tag to prevent ellipsis cutoffs */
-div[data-testid="stMetricLabel"] {
-    height: auto !important;
-    min-height: 28px;
-}
-div[data-testid="stMetricLabel"] > div,
-div[data-testid="stMetricLabel"] p { 
+/* Aggressively target all nested elements to prevent truncation */
+div[data-testid="stMetricLabel"], 
+div[data-testid="stMetricLabel"] > div, 
+div[data-testid="stMetricLabel"] label,
+div[data-testid="stMetricLabel"] p, 
+div[data-testid="stMetricLabel"] span { 
     font-weight: 700 !important; 
     font-size: 11px !important; 
     color: #7A5A34 !important; 
-    white-space: pre-wrap !important; 
-    word-break: break-word !important;
-    overflow: visible !important;
-    text-overflow: clip !important;
+    white-space: normal !important; 
+    word-wrap: break-word !important; 
+    overflow: visible !important; 
+    text-overflow: clip !important; 
     line-height: 1.3 !important;
+}
+div[data-testid="stMetricLabel"] {
+    height: auto !important;
+    min-height: 28px;
 }
 div[data-testid="stMetricValue"] { 
     font-family: 'Fraunces', serif; 
     font-size: 1.1rem !important; 
     color: #4A2418; 
-    margin-top: 4px;
+    margin-top: 6px;
 }
 
 /* Tables */
@@ -2860,7 +2863,7 @@ elif page == "Dashboard" and user_role == "admin":
         st.markdown("#### Revenue in Range - Breakdown")
         if not range_df.empty:
             total_phonepe = float(range_df["PhonePe"].sum())
-            gross_cash = max(0.0, float(total_rev - total_phonepe)) # Prevent negative values
+            gross_cash = max(0.0, float(total_rev - total_phonepe))
             
             # Calculate Paid Allowances from the expenses table safely
             adv_paid = 0.0
@@ -2874,16 +2877,16 @@ elif page == "Dashboard" and user_role == "admin":
                     adv_paid = float(paid_exp[adv_mask]["Amount"].sum())
                     food_paid = float(paid_exp[food_mask]["Amount"].sum())
 
-            net_cash = max(0.0, float(gross_cash - adv_paid - food_paid)) # Prevent negative values causing blank pie charts
+            net_cash = max(0.0, float(gross_cash - adv_paid - food_paid))
 
             # Pie Chart 1: Gross Cash vs PhonePe
             pie1_df = pd.DataFrame({"Category": ["Gross Cash", "PhonePe"], "Amount": [gross_cash, total_phonepe]})
             pie1_df = pie1_df[pie1_df["Amount"] > 0] 
             
             pie1 = alt.Chart(pie1_df).mark_arc(innerRadius=40).encode(
-                theta="Amount:Q",
+                theta=alt.Theta("Amount:Q"),
                 color=alt.Color("Category:N", scale=alt.Scale(domain=["Gross Cash", "PhonePe"], range=["#2A9D8F", "#E76F51"])),
-                tooltip=[alt.Tooltip("Category:N"), alt.Tooltip("Amount:Q", format="₹%,.2f")]
+                tooltip=[alt.Tooltip("Category:N", title="Category"), alt.Tooltip("Amount:Q", format=",.2f", title="Amount (₹)")]
             ).properties(height=250)
 
             # Pie Chart 2: PhonePe, Net Cash, Staff Advance, Food/Tea
@@ -2894,9 +2897,9 @@ elif page == "Dashboard" and user_role == "admin":
             pie2_df = pie2_df[pie2_df["Amount"] > 0] 
             
             pie2 = alt.Chart(pie2_df).mark_arc(innerRadius=40).encode(
-                theta="Amount:Q",
+                theta=alt.Theta("Amount:Q"),
                 color=alt.Color("Category:N", scale=alt.Scale(domain=["PhonePe", "Net Cash (In Hand)", "Staff Advance", "Food / Tea"], range=["#E76F51", "#2A9D8F", "#E9C46A", "#F4A261"])),
-                tooltip=[alt.Tooltip("Category:N"), alt.Tooltip("Amount:Q", format="₹%,.2f")]
+                tooltip=[alt.Tooltip("Category:N", title="Category"), alt.Tooltip("Amount:Q", format=",.2f", title="Amount (₹)")]
             ).properties(height=250)
             
             c_p1, c_p2 = st.columns(2)
@@ -2922,9 +2925,9 @@ elif page == "Dashboard" and user_role == "admin":
             exp_cat_df = exp_cat_df[exp_cat_df["Amount"] > 0]
             
             exp_pie = alt.Chart(exp_cat_df).mark_arc(innerRadius=40).encode(
-                theta="Amount:Q",
+                theta=alt.Theta("Amount:Q"),
                 color=alt.Color("Category:N", scale=alt.Scale(scheme="tableau10")),
-                tooltip=[alt.Tooltip("Category:N"), alt.Tooltip("Amount:Q", format="₹%,.2f")]
+                tooltip=[alt.Tooltip("Category:N", title="Category"), alt.Tooltip("Amount:Q", format=",.2f", title="Amount (₹)")]
             ).properties(height=300)
             st.altair_chart(exp_pie, use_container_width=True)
         else: 
