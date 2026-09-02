@@ -1186,7 +1186,59 @@ elif page == "Payslip Generator" and user_role == "admin":
                     )
             else:
                 st.warning("`reportlab` library is not installed in the Python environment for binary PDF downloads.")
+# ======================================================================
+# PAGE: LIVE CART TRACKING (Admin View)
+# ======================================================================
+elif page == "Live Cart Tracking" and user_role == "admin":
+    st.subheader("Live Cart Operations Tracker")
+    st.caption("Monitor real-time sales pouring in from the mobile cart apps.")
 
+    # Auto-refresh the page every 30 seconds for live updates (optional but helpful)
+    if st.button("🔄 Manual Refresh Live Data"):
+        st.rerun()
+    
+    st.markdown("---")
+
+    active_shifts_df = db_conn.query("""
+        SELECT s.id, s.cart_name, s.staff_name, s.started_at, s.status,
+               COALESCE(SUM(t.total_amount), 0) AS gross_sales,
+               COALESCE(SUM(t.cash_amount), 0) AS total_cash,
+               COALESCE(SUM(t.phonepe_amount), 0) AS total_phonepe,
+               COUNT(t.id) AS transaction_count
+        FROM live_cart_shifts s
+        LEFT JOIN live_cart_transactions t ON s.id = t.shift_id
+        WHERE s.shift_date = CURRENT_DATE
+        GROUP BY s.id ORDER BY s.started_at DESC;
+    """, ttl="0s")
+
+    if active_shifts_df.empty:
+        st.info("No active shifts or live carts operating today yet.")
+    else:
+        for _, shift in active_shifts_df.iterrows():
+            with st.container(border=True):
+                status_color = "🟢" if shift["status"] == "Active" else "🔴"
+                st.markdown(f"#### {status_color} {shift['cart_name']} &nbsp;|&nbsp; Staff: {shift['staff_name']} &nbsp;|&nbsp; Status: {shift['status']}")
+                
+                c1, c2, c3, c4 = st.columns(4)
+                c1.metric("Gross Live Sales", f"₹{float(shift['gross_sales']):,.2f}")
+                c2.metric("Total PhonePe", f"₹{float(shift['total_phonepe']):,.2f}")
+                c3.metric("Total Cash", f"₹{float(shift['total_cash']):,.2f}")
+                c4.metric("Transactions Today", int(shift["transaction_count"]))
+
+                # Fetch live item breakdown for this shift
+                items_df = db_conn.query("""
+                    SELECT f.name AS flavor_name, SUM(i.quantity) as qty_sold, SUM(i.subtotal) as rev
+                    FROM live_transaction_items i
+                    JOIN live_cart_transactions t ON i.transaction_id = t.id
+                    JOIN flavors f ON i.flavor_code = f.code
+                    WHERE t.shift_id = :sid
+                    GROUP BY f.name ORDER BY qty_sold DESC;
+                """, params={"sid": int(shift["id"])}, ttl="0s")
+
+                if not items_df.empty:
+                    with st.expander("View Flavour Breakdown"):
+                        st.dataframe(items_df.rename(columns={"flavor_name": "Flavour", "qty_sold": "Units Sold", "rev": "Revenue (₹)"}), hide_index=True, use_container_width=True)
+                        
 elif page == "Purchase Orders" and user_role == "admin":
     st.subheader("Purchase Order Estimator & Order Management")
     st.caption("Plan order quantities, apply overall discounts, calculate net payable cost, and manage orders.")
