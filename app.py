@@ -543,7 +543,7 @@ def load_db_flavor_sales(start_date=None, end_date=None):
 def load_db_expenses_list():
     if db_conn is None: return []
     query = """
-    SELECT id, expense_date AS "Date", description AS "Description", total_amount AS "Amount", category AS "Category", expense_type AS "Expense_Type", attributed_to AS "Attributed_To", vendor_name AS "Vendor", staff_name AS "Staff_Name", status AS "Status", remarks AS "Remarks"
+    SELECT id, expense_date AS "Date", description AS "Description", total_amount AS "Amount", category AS "Category", sub_category AS "Sub_Category", expense_type AS "Expense_Type", attributed_to AS "Attributed_To", vendor_name AS "Vendor", staff_name AS "Staff_Name", status AS "Status", remarks AS "Remarks"
     FROM expenses ORDER BY expense_date DESC, id DESC;
     """
     try:
