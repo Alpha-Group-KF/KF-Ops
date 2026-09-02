@@ -206,18 +206,28 @@ div[data-testid="stMetric"] {
     background: #FFFBF2;
     border: 1px solid #E3CBA0;
     border-radius: 8px;
-    padding: 4px 8px;
+    padding: 6px 10px; /* Slightly increased box padding */
     box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    height: 100%; /* Ensures all cards in a row stretch evenly */
 }
 div[data-testid="stMetricLabel"] { 
     font-weight: 700; 
-    font-size: 11px !important; 
+    font-size: 10.5px !important; /* Slightly decreased font size */
     color: #7A5A34; 
+    white-space: normal !important; /* Forces text to wrap instead of cutting off */
+    line-height: 1.3 !important;
+    height: auto !important;
+    min-height: 28px; /* Ensures alignment even if some wrap and others don't */
+}
+div[data-testid="stMetricLabel"] > div {
+    white-space: normal !important;
+    overflow: visible !important;
 }
 div[data-testid="stMetricValue"] { 
     font-family: 'Fraunces', serif; 
     font-size: 1.05rem !important; 
     color: #4A2418; 
+    margin-top: 4px;
 }
 
 /* Tables */
@@ -2848,29 +2858,56 @@ elif page == "Dashboard" and user_role == "admin":
             total_phonepe = range_df["PhonePe"].sum()
             gross_cash = total_rev - total_phonepe
             
-            # Calculate Paid Allowances from the expenses table
-            paid_exp = range_exp[range_exp["Status"] == "Paid"] if not range_exp.empty else pd.DataFrame()
-            adv_paid = paid_exp[paid_exp["Sub_Category"] == "Staff Advance"]["Amount"].sum() if not paid_exp.empty else 0.0
-            food_paid = paid_exp[paid_exp["Sub_Category"] == "Food & Tea"]["Amount"].sum() if not paid_exp.empty else 0.0
+            # Calculate Paid Allowances from the expenses table safely and robustly
+            adv_paid = 0.0
+            food_paid = 0.0
+            
+            if not range_exp.empty and "Status" in range_exp.columns and "Sub_Category" in range_exp.columns:
+                # Filter to only Paid expenses
+                paid_exp = range_exp[range_exp["Status"].astype(str).str.strip().str.lower() == "paid"]
+                
+                if not paid_exp.empty:
+                    # Use str.contains to robustly catch variations in Sub_Category naming
+                    adv_mask = paid_exp["Sub_Category"].astype(str).str.contains("Advance", case=False, na=False)
+                    food_mask = paid_exp["Sub_Category"].astype(str).str.contains("Food|Tea", case=False, na=False)
+                    
+                    adv_paid = paid_exp[adv_mask]["Amount"].sum()
+                    food_paid = paid_exp[food_mask]["Amount"].sum()
+
             net_cash = gross_cash - adv_paid - food_paid
 
             # Pie Chart 1: Gross Cash vs PhonePe
             pie1_df = pd.DataFrame({"Category": ["Gross Cash", "PhonePe"], "Amount (₹)": [gross_cash, total_phonepe]})
+            pie1_df = pie1_df[pie1_df["Amount (₹)"] > 0] # Clean up zeros
+            
             pie1 = alt.Chart(pie1_df).mark_arc(innerRadius=0).encode(
                 theta=alt.Theta(field="Amount (₹)", type="quantitative"),
-                color=alt.Color(field="Category", type="nominal", scale=alt.Scale(range=["#2A9D8F", "#E76F51"])), # Teal and Terracotta
-                tooltip=["Category", alt.Tooltip("Amount (₹):Q", format=",.2f")]
+                color=alt.Color(
+                    field="Category", 
+                    type="nominal", 
+                    scale=alt.Scale(domain=["Gross Cash", "PhonePe"], range=["#2A9D8F", "#E76F51"])
+                ),
+                tooltip=["Category", alt.Tooltip("Amount (₹):Q", format="₹%,.2f")]
             ).properties(height=250)
 
             # Pie Chart 2: PhonePe, Net Cash, Staff Advance, Food/Tea
             pie2_df = pd.DataFrame({
-                "Category": ["PhonePe", "Net Cash", "Staff Advance", "Food / Tea"], 
+                "Category": ["PhonePe", "Net Cash (In Hand)", "Staff Advance", "Food / Tea"], 
                 "Amount (₹)": [total_phonepe, net_cash, adv_paid, food_paid]
             })
+            pie2_df = pie2_df[pie2_df["Amount (₹)"] > 0] # Clean up zeros
+            
             pie2 = alt.Chart(pie2_df).mark_arc(innerRadius=0).encode(
                 theta=alt.Theta(field="Amount (₹)", type="quantitative"),
-                color=alt.Color(field="Category", type="nominal", scale=alt.Scale(range=["#E76F51", "#2A9D8F", "#E9C46A", "#F4A261"])), # Vibrant contrasting palette
-                tooltip=["Category", alt.Tooltip("Amount (₹):Q", format=",.2f")]
+                color=alt.Color(
+                    field="Category", 
+                    type="nominal", 
+                    scale=alt.Scale(
+                        domain=["PhonePe", "Net Cash (In Hand)", "Staff Advance", "Food / Tea"], 
+                        range=["#E76F51", "#2A9D8F", "#E9C46A", "#F4A261"]
+                    )
+                ),
+                tooltip=["Category", alt.Tooltip("Amount (₹):Q", format="₹%,.2f")]
             ).properties(height=250)
             
             c_p1, c_p2 = st.columns(2)
