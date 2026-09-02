@@ -2810,7 +2810,7 @@ elif page == "Dashboard" and user_role == "admin":
             st.markdown("#### Cost Distribution: COGS, OPEX & CAPEX")
             cost_dist_df = pd.DataFrame({"Cost Bucket": ["COGS (Goods Sold)", "Operating Expenses (OPEX)", "Capital Expenditure (CAPEX)"], "Amount (₹)": [exact_cogs_sold, total_incurred_opex, capex_total]})
             cost_chart = alt.Chart(cost_dist_df).mark_bar(width=28).encode(x=alt.X("Cost Bucket:N", title="", sort=None, axis=alt.Axis(labelAngle=-15)), y=alt.Y("Amount (₹):Q", title="Amount (₹)"), color=alt.Color("Cost Bucket:N", scale=alt.Scale(domain=["COGS (Goods Sold)", "Operating Expenses (OPEX)", "Capital Expenditure (CAPEX)"], range=["#C43D17", "#8A5E17", "#4A2418"]), legend=None), tooltip=[alt.Tooltip("Cost Bucket:N", title="Type"), alt.Tooltip("Amount (₹):Q", format=",.2f", title="Amount")]).properties(height=200)
-            st.altair_chart(cost_chart, use_center_width=True, use_container_width=True)
+            st.altair_chart(cost_chart, use_container_width=True)
 
         st.markdown("#### Collections & Cash Breakdown")
         if not range_df.empty:
