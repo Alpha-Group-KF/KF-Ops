@@ -1155,7 +1155,7 @@ elif page == "Payslip Generator" and user_role == "admin":
                 st.warning("`reportlab` library is not installed in the Python environment for binary PDF downloads.")
 
 # ======================================================================
-# PAGE: LIVE CART TRACKING (Admin View)
+# PAGE: LIVE CART Tracking (Admin View)
 # ======================================================================
 elif page == "Live Cart Tracking" and user_role == "admin":
     st.subheader("Live Cart Operations Tracker")
@@ -2847,18 +2847,33 @@ elif page == "Dashboard" and user_role == "admin":
             st.caption("No operating expenses incurred in this date range.")
 
         st.markdown("---")
-        st.markdown("### 2. Cart-Wise Operations & Comparative Analysis")
+        st.markdown("### 2. Comparative Cart Revenue")
         if not range_df.empty:
-            cart_col1, cart_col2 = st.columns(2)
-            with cart_col1:
-                st.markdown("#### Revenue & Volume per Cart")
-                cart_grp = range_df.groupby("Cart").agg(**{"Revenue (₹)": ("Total_Collection", "sum"), "Units Sold": ("Sold_Total", "sum"), "Cash (₹)": ("Cash", "sum"), "PhonePe (₹)": ("PhonePe", "sum"), "Staff Advance (₹)": ("Staff_Advance", "sum"), "Food/Tea Cash (₹)": ("Food_Tea_Cash", "sum")}).reset_index().sort_values("Revenue (₹)", ascending=False)
-                cart_grp["Units Sold"] = cart_grp["Units Sold"].apply(lambda x: int(round(x)))
-                st.dataframe(cart_grp, hide_index=True, use_container_width=True, height=220, column_config={"Cart": st.column_config.TextColumn(width="large"), "Revenue (₹)": st.column_config.NumberColumn(format="₹%.2f"), "Cash (₹)": st.column_config.NumberColumn(format="₹%.2f"), "PhonePe (₹)": st.column_config.NumberColumn(format="₹%.2f"), "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%.2f"), "Food/Tea Cash (₹)": st.column_config.NumberColumn(format="₹%.2f")})
-            with cart_col2: 
-                st.markdown("#### Comparative Cart Revenue")
-                cart_chart = alt.Chart(cart_grp).mark_bar(width=28, color="#E8542A").encode(x=alt.X("Cart:N", title=""), y=alt.Y("Revenue (₹):Q", title="Revenue (₹)"), tooltip=["Cart", alt.Tooltip("Revenue (₹):Q", format=",.2f")]).properties(height=180)
-                st.altair_chart(cart_chart, use_container_width=True)
+            cart_grp = range_df.groupby("Cart")["Total_Collection"].sum().reset_index().rename(columns={"Total_Collection": "Revenue (₹)"}).sort_values("Revenue (₹)", ascending=False)
+            
+            cart_chart = alt.Chart(cart_grp).mark_bar(
+                color="#E8542A", 
+                cornerRadiusTopLeft=4, 
+                cornerRadiusTopRight=4,
+                size=65
+            ).encode(
+                x=alt.X("Cart:N", title="", sort="-y", axis=alt.Axis(labelAngle=0, labelFontSize=13, labelPadding=10)), 
+                y=alt.Y("Revenue (₹):Q", title="Total Revenue (₹)", axis=alt.Axis(grid=True, gridColor="#F0E5D1")), 
+                tooltip=["Cart", alt.Tooltip("Revenue (₹):Q", format=",.2f")]
+            ).properties(height=300)
+            
+            text_labels = cart_chart.mark_text(
+                align='center',
+                baseline='bottom',
+                dy=-8,
+                color="#4A2418",
+                fontWeight=700,
+                fontSize=14
+            ).encode(
+                text=alt.Text('Revenue (₹):Q', format="₹,.0f")
+            )
+            
+            st.altair_chart(cart_chart + text_labels, use_container_width=True)
         else: 
             st.caption("No cart sales in this date range.")
 
