@@ -378,7 +378,6 @@ def list_daily_entries_with_prefill():
         df = db_conn.query(query, ttl="0s")
         if not df.empty:
             for _, r in df.iterrows():
-                # Strictly map items by explicitly matching the flavor code to avoid any ordering issues
                 raw_items = r.get("items") or []
                 items_by_code = {str(itm.get("code")).strip(): itm for itm in raw_items if isinstance(itm, dict) and itm.get("code")}
                 
@@ -467,13 +466,6 @@ def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map,
             s.commit()
 
 def sync_today_restock_entry(today_date, cart_name, staff_name, today_prev_closing_map, today_added_map):
-    """
-    Persists today's restock entry where:
-    - opening_units = previous day's closing balance
-    - added_units = restock quantity entered for today
-    - closing_units = opening_units + added_units
-    Updates existing record if present instead of throwing constraint conflicts.
-    """
     if db_conn is not None:
         with db_conn.session as s:
             res = s.execute(
@@ -498,7 +490,7 @@ def sync_today_restock_entry(today_date, cart_name, staff_name, today_prev_closi
             for code in FLAVOR_CODES:
                 open_u = int(today_prev_closing_map[code])
                 add_u = int(today_added_map.get(code, 0))
-                close_u = open_u + add_u  # Closing units = opening + added for today's restock
+                close_u = open_u + add_u
                 
                 item_res = s.execute(
                     text("SELECT id FROM daily_cart_items WHERE daily_entry_id = :eid AND flavor_code = :code;"),
@@ -562,26 +554,6 @@ def load_db_expenses_list():
         return df.to_dict("records")
     except Exception: return []
 
-def get_db_stock_removed_map():
-    if db_conn is None: return {code: 0 for code in FLAVOR_CODES}
-    try:
-        df = db_conn.query("""SELECT COALESCE(SUM(ml_units), 0) AS ml_units, COALESCE(SUM(mm_units), 0) AS mm_units, COALESCE(SUM(ps_units), 0) AS ps_units, COALESCE(SUM(mn_units), 0) AS mn_units, COALESCE(SUM(kb_units), 0) AS kb_units, COALESCE(SUM(bm_units), 0) AS bm_units, COALESCE(SUM(sg_units), 0) AS sg_units, COALESCE(SUM(ch_units), 0) AS ch_units, COALESCE(SUM(ra_units), 0) AS ra_units FROM stock_removed;""", ttl="0s")
-        if not df.empty: return {code: int(df.iloc[0].get(FLAVOR_MAP[code]["audit_col"], 0)) for code in FLAVOR_CODES}
-    except Exception: pass
-    return {code: 0 for code in FLAVOR_CODES}
-
-def get_db_freezer_stock():
-    if db_conn is None: return pd.DataFrame()
-    try:
-        recv_df = db_conn.query("SELECT flavor_code, COALESCE(SUM(received_units), 0) AS total_recv FROM stock_received_items GROUP BY flavor_code;", ttl="0s")
-        rec_map = dict(zip(recv_df["flavor_code"], recv_df["total_recv"])) if not recv_df.empty else {}
-        added_df = db_conn.query("SELECT flavor_code, COALESCE(SUM(added_units), 0) AS total_added FROM daily_cart_items GROUP BY flavor_code;", ttl="0s")
-        added_map = dict(zip(added_df["flavor_code"], added_df["total_added"])) if not added_df.empty else {}
-        rem_map = get_db_stock_removed_map()
-        rows = [{"code": code, "Flavour": FLAVOR_MAP[code]["name"], "mrp": float(FLAVOR_MAP[code]["mrp"]), "cost_price": float(FLAVOR_MAP[code]["cost_price"]), "Units in freezer": int(rec_map.get(code, 0)) - int(added_map.get(code, 0)) - int(rem_map.get(code, 0))} for code in FLAVOR_CODES]
-        return pd.DataFrame(rows).sort_values(by=["mrp", "Flavour"], ascending=[True, True])
-    except Exception: return pd.DataFrame()
-
 def load_db_expenses_summary_df():
     if db_conn is None: return pd.DataFrame()
     query = """
@@ -633,7 +605,6 @@ def calculate_incurred_labour_for_range(start_date, end_date):
     att_df = db_conn.query("SELECT a.staff_id, s.name AS staff_name, a.attendance_date, a.status, a.leave_type FROM staff_attendance a JOIN staff s ON a.staff_id = s.id WHERE a.attendance_date >= :sdate AND a.attendance_date <= :edate;", params={"sdate": start_date, "edate": end_date}, ttl="0s")
     pay_df = db_conn.query("SELECT p.amount_paid, e.staff_name FROM expense_payments p JOIN expenses e ON p.expense_id = e.id WHERE e.category = 'Labour Charges' AND p.payment_date >= :sdate AND p.payment_date <= :edate;", params={"sdate": start_date, "edate": end_date}, ttl="0s")
     
-    # Strictly pull Advances and Food/Tea allowances from the expenses table by sub_category
     exp_ledger_df = db_conn.query("""
         SELECT expense_date, staff_name, sub_category, total_amount 
         FROM expenses 
@@ -679,7 +650,6 @@ def calculate_incurred_labour_for_range(start_date, end_date):
                     "collection": float(_num(sh["total_collection"]))
                 })
                 
-        # Consolidate taken amounts strictly driven by the Expenses table's sub_category
         exp_map = {}
         if not st_exp.empty:
             for _, e_row in st_exp.iterrows():
@@ -690,13 +660,11 @@ def calculate_incurred_labour_for_range(start_date, end_date):
                 subcat = str(e_row.get("sub_category") or "").strip().lower()
                 amt = float(_num(e_row["total_amount"]))
                 
-                # Routes matching values directly to their respective columns
                 if 'food' in subcat or 'tea' in subcat or 'allow' in subcat:
                     exp_map[e_dt]["food"] += amt
                 elif 'advance' in subcat:
                     exp_map[e_dt]["advance"] += amt
 
-        # Create a superset of all active dates for this staff member
         all_dates = set(leave_map.keys()).union(set(shift_map.keys())).union(set(exp_map.keys()))
         paid_leaves_cnt = 0
 
@@ -771,7 +739,6 @@ def calculate_incurred_labour_for_range(start_date, end_date):
                             "advance_taken": 0.0, "food_taken": 0.0
                         })
             else:
-                # Logs any standalone disbursement created in the Expenses UI where sub_category was applied
                 detailed_ledger.append({
                     "date": d, "type": "Expense Recorded", "cart": "—", 
                     "collection": 0.0, "fixed_salary": 0.0, 
@@ -1186,6 +1153,7 @@ elif page == "Payslip Generator" and user_role == "admin":
                     )
             else:
                 st.warning("`reportlab` library is not installed in the Python environment for binary PDF downloads.")
+
 # ======================================================================
 # PAGE: LIVE CART TRACKING (Admin View)
 # ======================================================================
@@ -1193,7 +1161,6 @@ elif page == "Live Cart Tracking" and user_role == "admin":
     st.subheader("Live Cart Operations Tracker")
     st.caption("Monitor real-time sales pouring in from the mobile cart apps.")
 
-    # Auto-refresh the page every 30 seconds for live updates (optional but helpful)
     if st.button("🔄 Manual Refresh Live Data"):
         st.rerun()
     
@@ -1225,7 +1192,6 @@ elif page == "Live Cart Tracking" and user_role == "admin":
                 c3.metric("Total Cash", f"₹{float(shift['total_cash']):,.2f}")
                 c4.metric("Transactions Today", int(shift["transaction_count"]))
 
-                # Fetch live item breakdown for this shift
                 items_df = db_conn.query("""
                     SELECT f.name AS flavor_name, SUM(i.quantity) as qty_sold, SUM(i.subtotal) as rev
                     FROM live_transaction_items i
@@ -1622,7 +1588,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
             rem_display = []
             for _, r in rem_query_df.iterrows():
                 row_data = {"ID": f"#{r['ID']}", "Date": pd.to_datetime(r['Date']).strftime("%d %b %Y"), "Location": r['Location'], "Total Units": int(r['Total Units']) if pd.notna(r['Total Units']) else sum(int(r.get(FLAVOR_MAP[c]['audit_col'], 0)) for c in FLAVOR_CODES), "Cost (₹)": float(r['Cost (₹)']), "Reason": r['Reason'], "Removed By": r['Removed By'] if pd.notna(r['Removed By']) else "", "Verified By": r['Verified By']}
-                for code in FLAVOR_CODES: row_data[code] = int(r.get(FLAVOR_MAP[code]["audit_col"], 0))
+                for code in FLAVOR_CODES: row_data[code] = int(r.get(FLAVOR_MAP[c]['audit_col'], 0))
                 rem_display.append(row_data)
             st.dataframe(pd.DataFrame(rem_display), hide_index=True, use_container_width=True)
         else: st.caption("No stock removals recorded in database.")
@@ -1972,9 +1938,6 @@ elif page == "Staff & Payroll" and user_role == "admin":
 
     staff_df = load_full_staff_df()
 
-    # ------------------------------------------------------------------
-    # 1. STAFF DIRECTORY & KYC
-    # ------------------------------------------------------------------
     if staff_tab_sel == "👥 Staff Directory & KYC":
         st_mode = st.radio("Mode", ["View All Staff", "Add New Staff", "Edit Staff Profile & KYC"], horizontal=True, key="staff_dir_mode")
 
@@ -2121,7 +2084,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 k1.write(f"**Date of Birth:** {pd.to_datetime(s_row['date_of_birth']).strftime('%d %b %Y') if pd.notna(s_row['date_of_birth']) else '—'}")
                 
                 k2.write(f"**PAN Number:** {s_row['pan_number'] or '—'}")
-                k2.write(f"**Aadhaar Number:** {s_row['aadhaar_number'] or '—'}")
+                k2.write(f"**Aadhaar Number:** [Aadhaar Redacted]")
                 
                 k3.write(f"**Emergency Contact:** {s_row['emergency_contact_name'] or '—'} ({s_row['emergency_contact_phone'] or '—'})")
                 k3.write(f"**Date of Leaving:** {pd.to_datetime(s_row['date_of_leaving']).strftime('%d %b %Y') if pd.notna(s_row['date_of_leaving']) else '—'}")
@@ -2130,7 +2093,6 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 st.write(f"**Permanent Address:** {s_row['permanent_address'] or '—'}")
                 if s_row.get("notes"):
                     st.caption(f"Remarks: {s_row['notes']}")
-
 
         elif st_mode == "Edit Staff Profile & KYC":
             if staff_df.empty:
@@ -2168,7 +2130,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                     with ec7:
                         e_pan = st.text_input("PAN Number", value=str(s_edit.get("pan_number") or ""), key=f"e_pan_{s_id}")
                     with ec8:
-                        e_aadhaar = st.text_input("Aadhaar Number", value=str(s_edit.get("aadhaar_number") or ""), key=f"e_aadhaar_{s_id}")
+                        e_aadhaar = st.text_input("Aadhaar Number", value="", placeholder="[Aadhaar Redacted]", key=f"e_aadhaar_{s_id}")
 
                     ec9, ec10 = st.columns(2)
                     with ec9:
@@ -2192,24 +2154,31 @@ elif page == "Staff & Payroll" and user_role == "admin":
                     else:
                         try:
                             with db_conn.session as s:
+                                update_params = {
+                                    "name": e_name.strip(), "full_name": e_fullname.strip(), "status": e_status, 
+                                    "phone": re.sub(r'[^\d+]', '', e_phone),
+                                    "emg_n": e_emg_n.strip(), "emg_p": re.sub(r'[^\d+]', '', e_emg_p), 
+                                    "dob": e_dob, "pan": e_pan.strip().upper(),
+                                    "caddr": e_caddr.strip(), "paddr": e_paddr.strip(), "doj": e_doj, "dol": e_dol,
+                                    "notes": e_notes.strip(), "id": s_id
+                                }
+                                aadhaar_update_sql = ""
+                                if e_aadhaar.strip() and e_aadhaar.strip() != "[Aadhaar Redacted]":
+                                    update_params["aadhaar"] = re.sub(r'\D', '', e_aadhaar)
+                                    aadhaar_update_sql = ", aadhaar_number = :aadhaar"
+
                                 s.execute(
-                                    text("""
+                                    text(f"""
                                     UPDATE staff
                                     SET name = :name, full_name = :full_name, status = :status, phone_number = :phone,
                                         emergency_contact_name = :emg_n, emergency_contact_phone = :emg_p,
                                         date_of_birth = :dob, pan_number = :pan,
-                                        aadhaar_number = :aadhaar, current_address = :caddr, permanent_address = :paddr,
+                                        current_address = :caddr, permanent_address = :paddr,
                                         date_of_joining = :doj, date_of_leaving = :dol, notes = :notes, updated_at = NOW()
+                                        {aadhaar_update_sql}
                                     WHERE id = :id;
                                     """),
-                                    {
-                                        "name": e_name.strip(), "full_name": e_fullname.strip(), "status": e_status, 
-                                        "phone": re.sub(r'[^\d+]', '', e_phone),
-                                        "emg_n": e_emg_n.strip(), "emg_p": re.sub(r'[^\d+]', '', e_emg_p), 
-                                        "dob": e_dob, "pan": e_pan.strip().upper(), "aadhaar": re.sub(r'\D', '', e_aadhaar),
-                                        "caddr": e_caddr.strip(), "paddr": e_paddr.strip(), "doj": e_doj, "dol": e_dol,
-                                        "notes": e_notes.strip(), "id": s_id
-                                    }
+                                    update_params
                                 )
                                 s.commit()
                             st.cache_data.clear()
@@ -2217,9 +2186,6 @@ elif page == "Staff & Payroll" and user_role == "admin":
                         except Exception as e:
                             st.error(f"Could not update staff profile: {e}")
 
-    # ------------------------------------------------------------------
-    # 2. ATTENDANCE & LEAVE MANAGEMENT
-    # ------------------------------------------------------------------
     elif staff_tab_sel == "📅 Attendance & Leave":
         st.write("Record and manage staff leaves and absences for payroll deductions and day-wise attendance:")
 
@@ -2340,9 +2306,6 @@ elif page == "Staff & Payroll" and user_role == "admin":
                     except Exception as e:
                         st.error(f"Could not update attendance: {e}")
 
-    # ------------------------------------------------------------------
-    # 3. COMPENSATION PLANS & REVISIONS
-    # ------------------------------------------------------------------
     elif staff_tab_sel == "⚙️ Compensation Plans":
         st.write("View and assign effective-dated salary, commission slabs, and food/tea allowances:")
 
@@ -2434,9 +2397,6 @@ elif page == "Staff & Payroll" and user_role == "admin":
                     use_container_width=True
                 )
 
-    # ------------------------------------------------------------------
-    # 4. MONTHLY DUES & SETTLEMENT ENGINE
-    # ------------------------------------------------------------------
     elif staff_tab_sel == "💵 Monthly Dues & Settlement":
         st.write("Calculate monthly dues with fixed salary apportioned at **Rs 600/day worked**, commissions (15% > Rs 3,000), daily food/tea allowances, and deductions backed by the Payments table:")
 
@@ -2514,7 +2474,6 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 st_payments = staff_payments_df[staff_payments_df["staff_name"] == st_name].copy() if not staff_payments_df.empty else pd.DataFrame()
                 st_exp = exp_ledger_df[exp_ledger_df["staff_name"] == st_name] if not exp_ledger_df.empty else pd.DataFrame()
 
-                # Consolidate taken amounts strictly driven by the Expenses table's sub_category
                 exp_map = {}
                 if not st_exp.empty:
                     for _, e_row in st_exp.iterrows():
@@ -2727,6 +2686,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                         use_container_width=True,
                         column_config={"Amount Paid (₹)": st.column_config.NumberColumn(format="₹%.2f")}
                     )
+
 # ======================================================================
 # PAGE 8: DASHBOARD (100% Supabase PostgreSQL Powered)
 # ======================================================================
@@ -2736,18 +2696,9 @@ elif page == "Dashboard" and user_role == "admin":
         daily_df = load_db_daily_df()
         exp_list = load_db_expenses_list()
         exp_df = pd.DataFrame(exp_list)
-        freezer_df = get_db_freezer_stock()
     except Exception as e:
-        daily_df, exp_df, freezer_df = pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+        daily_df, exp_df = pd.DataFrame(), pd.DataFrame()
         st.warning(f"Could not load data from database ({e}).")
-
-    if not freezer_df.empty:
-        freezer_df["cost_price"] = freezer_df["code"].map(lambda c: FLAVOR_MAP.get(c, {}).get("cost_price", 0.0))
-        freezer_df["Stock_Value"] = freezer_df["Units in freezer"] * freezer_df["cost_price"]
-        total_freezer_val = float(freezer_df["Stock_Value"].sum())
-        total_freezer_units = int(freezer_df["Units in freezer"].sum())
-    else:
-        total_freezer_val, total_freezer_units = 0.0, 0
 
     today = pd.Timestamp(date.today())
     day_labels = [today - pd.Timedelta(days=3), today - pd.Timedelta(days=2), today - pd.Timedelta(days=1)]
@@ -2857,36 +2808,23 @@ elif page == "Dashboard" and user_role == "admin":
             cost_chart = alt.Chart(cost_dist_df).mark_bar().encode(x=alt.X("Cost Bucket:N", title="", sort=None, axis=alt.Axis(labelAngle=-15)), y=alt.Y("Amount (₹):Q", title="Amount (₹)"), color=alt.Color("Cost Bucket:N", scale=alt.Scale(domain=["COGS (Goods Sold)", "Operating Expenses (OPEX)", "Capital Expenditure (CAPEX)"], range=["#C43D17", "#8A5E17", "#4A2418"]), legend=None), tooltip=[alt.Tooltip("Cost Bucket:N", title="Type"), alt.Tooltip("Amount (₹):Q", format=",.2f", title="Amount")]).properties(height=240)
             st.altair_chart(cost_chart, use_container_width=True)
 
-        rcm_sub1, rcm_sub2 = st.columns([1, 1.2])
-        with rcm_sub1:
-            st.markdown("#### Collections & Cash Breakdown")
-            if not range_df.empty:
-                total_cash = range_df["Cash"].sum()
-                total_phonepe = range_df["PhonePe"].sum()
-                total_advance = range_df["Staff_Advance"].sum() if "Staff_Advance" in range_df.columns else 0.0
-                total_food = range_df["Food_Tea_Cash"].sum() if "Food_Tea_Cash" in range_df.columns else 0.0
-                
-                c_k1, c_k2 = st.columns(2)
-                c_k1.metric("Cash Collected", f"₹{total_cash:,.0f}")
-                c_k1.metric("Staff Advances", f"₹{total_advance:,.0f}")
-                c_k2.metric("PhonePe / UPI", f"₹{total_phonepe:,.0f}")
-                c_k2.metric("Food / Tea Cash", f"₹{total_food:,.0f}")
-                
-                split_df = pd.DataFrame({"Mode": ["Cash", "PhonePe / UPI", "Staff Advance", "Food / Tea"], "Amount (₹)": [total_cash, total_phonepe, total_advance, total_food]})
-                st.bar_chart(split_df.set_index("Mode")["Amount (₹)"])
-            else: 
-                st.caption("No collection data in this period.")
-
-        with rcm_sub2:
-            st.markdown("#### Flavour-Wise Revenue & Margin Performance")
-            if not flavor_range_df.empty and flavor_range_df["Units sold"].sum() > 0:
-                disp_flv = flavor_range_df.copy()
-                disp_flv["Gross Margin (₹)"] = disp_flv["Est. revenue (₹)"] - disp_flv["COGS (₹)"]
-                disp_flv["Margin %"] = (disp_flv["Gross Margin (₹)"] / disp_flv["Est. revenue (₹)"]) * 100
-                st.dataframe(disp_flv[["Flavour", "Units sold", "Est. revenue (₹)", "COGS (₹)", "Gross Margin (₹)", "Margin %"]], hide_index=True, use_container_width=True, column_config={"Est. revenue (₹)": st.column_config.NumberColumn(format="₹%.2f"), "COGS (₹)": st.column_config.NumberColumn(format="₹%.2f"), "Gross Margin (₹)": st.column_config.NumberColumn(format="₹%.2f"), "Margin %": st.column_config.NumberColumn(format="%.1f%%")})
-                st.bar_chart(flavor_range_df.set_index("Flavour")["Units sold"])
-            else: 
-                st.caption("No flavor sales recorded in this date range.")
+        st.markdown("#### Collections & Cash Breakdown")
+        if not range_df.empty:
+            total_cash = range_df["Cash"].sum()
+            total_phonepe = range_df["PhonePe"].sum()
+            total_advance = range_df["Staff_Advance"].sum() if "Staff_Advance" in range_df.columns else 0.0
+            total_food = range_df["Food_Tea_Cash"].sum() if "Food_Tea_Cash" in range_df.columns else 0.0
+            
+            c_k1, c_k2, c_k3, c_k4 = st.columns(4)
+            c_k1.metric("Cash Collected", f"₹{total_cash:,.0f}")
+            c_k2.metric("PhonePe / UPI", f"₹{total_phonepe:,.0f}")
+            c_k3.metric("Staff Advances", f"₹{total_advance:,.0f}")
+            c_k4.metric("Food / Tea Cash", f"₹{total_food:,.0f}")
+            
+            split_df = pd.DataFrame({"Mode": ["Cash", "PhonePe / UPI", "Staff Advance", "Food / Tea"], "Amount (₹)": [total_cash, total_phonepe, total_advance, total_food]})
+            st.bar_chart(split_df.set_index("Mode")["Amount (₹)"])
+        else: 
+            st.caption("No collection data in this period.")
 
         st.markdown("#### Incurred Operating Expense Breakdown by Category")
         exp_cat_list = []
@@ -2928,17 +2866,45 @@ elif page == "Dashboard" and user_role == "admin":
                 dw1, dw2 = st.columns(2)
                 with dw1: 
                     st.write("**Average Units Sold per Day of Week**")
-                    units_pivot = dow_df.pivot_table(index="Cart", columns="Day", values="Sold_Total", aggfunc="mean", fill_value=0, margins=True, margins_name="All Carts")
-                    day_cols = [d for d in day_order if d in units_pivot.columns] + ["All Carts"]
+                    units_pivot = dow_df.pivot_table(index="Cart", columns="Day", values="Sold_Total", aggfunc="mean", fill_value=0)
+                    day_cols = [d for d in day_order if d in units_pivot.columns]
                     units_pivot = units_pivot.reindex(columns=day_cols)
                     st.dataframe(units_pivot.round(0).astype(int), use_container_width=True)
                 with dw2: 
                     st.write("**Average Revenue (₹) per Day of Week**")
-                    rev_pivot = dow_df.pivot_table(index="Cart", columns="Day", values="Total_Collection", aggfunc="mean", fill_value=0, margins=True, margins_name="All Carts")
+                    rev_pivot = dow_df.pivot_table(index="Cart", columns="Day", values="Total_Collection", aggfunc="mean", fill_value=0)
                     rev_pivot = rev_pivot.reindex(columns=day_cols)
                     st.dataframe(rev_pivot.round(0).astype(int), use_container_width=True)
             else: 
                 st.caption("No active selling days found in this range.")
+
+            st.markdown("#### Date-Wise Daily Sales Log")
+            date_wise_agg = range_df.groupby("Date").agg({
+                "Sold_Total": "sum",
+                "Total_Collection": "sum",
+                "PhonePe": "sum",
+                "Cash": "sum",
+                "Staff_Advance": "sum",
+                "Food_Tea_Cash": "sum"
+            }).reset_index().sort_values("Date", ascending=False)
+            
+            date_wise_table = date_wise_agg.rename(columns={
+                "Sold_Total": "Units Sold",
+                "Total_Collection": "Revenue (₹)",
+                "PhonePe": "PhonePe (₹)",
+                "Cash": "Cash (₹)",
+                "Staff_Advance": "Staff Advance (₹)",
+                "Food_Tea_Cash": "Food / Tea (₹)"
+            })
+            date_wise_table["Units Sold"] = date_wise_table["Units Sold"].apply(lambda x: int(round(x)))
+            date_wise_table["Date"] = date_wise_table["Date"].dt.strftime("%d %b %Y")
+            st.dataframe(date_wise_table, hide_index=True, use_container_width=True, column_config={
+                "Revenue (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                "PhonePe (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                "Cash (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%.2f")
+            })
 
             st.markdown("#### Itemized Daily Cart Sales Log")
             display_cols = ["Date", "Cart", "Sold_Total", "Total_Collection", "PhonePe", "Cash", "Staff_Name", "Staff_Advance", "Food_Tea_Cash", "Remarks"]
@@ -2948,28 +2914,3 @@ elif page == "Dashboard" and user_role == "admin":
             st.dataframe(sales_table, hide_index=True, use_container_width=True, column_config={"Revenue (₹)": st.column_config.NumberColumn(format="₹%.2f"), "PhonePe (₹)": st.column_config.NumberColumn(format="₹%.2f"), "Cash (₹)": st.column_config.NumberColumn(format="₹%.2f"), "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%.2f"), "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%.2f")})
         else: 
             st.caption("No sales data recorded in this period.")
-
-    if not daily_df.empty:
-        st.markdown("---")
-        st.markdown('<div id="inventory-status"></div>', unsafe_allow_html=True)
-        st.markdown("## Current Live Inventory Status")
-        
-        inv_c1, inv_c2, inv_c3 = st.columns(3)
-        cart_stock_tot = int(round(daily_df.sort_values('Date').groupby('Cart').tail(1)['Closing_Total'].sum()))
-        inv_c1.metric("Stock Across Carts", f"{cart_stock_tot} units")
-        inv_c2.metric("Units in Freezer", f"{total_freezer_units} units")
-        inv_c3.metric("Freezer Stock Valuation (Cost)", f"₹{total_freezer_val:,.2f}")
-
-        try:
-            if not freezer_df.empty:
-                st.markdown("**Freezer stock breakdown & cost valuation**")
-                disp_freezer = freezer_df.rename(columns={"cost_price": "Unit Cost (₹)", "Stock_Value": "Stock Value (₹)"})[["Flavour", "Units in freezer", "Unit Cost (₹)", "Stock Value (₹)"]]
-                st.dataframe(disp_freezer, hide_index=True, use_container_width=True, column_config={"Unit Cost (₹)": st.column_config.NumberColumn(format="₹%.2f"), "Stock Value (₹)": st.column_config.NumberColumn(format="₹%.2f")})
-        except Exception as e: 
-            st.caption(f"Could not compute freezer stock from DB ({e}).")
-
-        st.markdown("**Latest stock per cart**")
-        latest_per_cart = daily_df.sort_values("Date").groupby("Cart").tail(1)[["Cart", "Date", "Closing_Total"]].copy()
-        latest_per_cart["Closing_Total"] = latest_per_cart["Closing_Total"].apply(lambda x: int(round(x)))
-        latest_per_cart["Date"] = latest_per_cart["Date"].dt.strftime("%d %b %Y")
-        st.dataframe(latest_per_cart, hide_index=True, use_container_width=True)
