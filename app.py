@@ -2849,31 +2849,27 @@ elif page == "Dashboard" and user_role == "admin":
         st.markdown("---")
         st.markdown("### 2. Comparative Cart Revenue")
         if not range_df.empty:
-            cart_grp = range_df.groupby("Cart")["Total_Collection"].sum().reset_index().rename(columns={"Total_Collection": "Revenue (₹)"}).sort_values("Revenue (₹)", ascending=False)
+            cart_grp = range_df.groupby("Cart")["Total_Collection"].sum().reset_index().rename(columns={"Total_Collection": "Revenue (₹)"})
             
-            cart_chart = alt.Chart(cart_grp).mark_bar(
-                color="#E8542A", 
-                cornerRadiusTopLeft=4, 
-                cornerRadiusTopRight=4,
-                size=65
-            ).encode(
-                x=alt.X("Cart:N", title="", sort="-y", axis=alt.Axis(labelAngle=0, labelFontSize=13, labelPadding=10)), 
-                y=alt.Y("Revenue (₹):Q", title="Total Revenue (₹)", axis=alt.Axis(grid=True, gridColor="#F0E5D1")), 
-                tooltip=["Cart", alt.Tooltip("Revenue (₹):Q", format=",.2f")]
-            ).properties(height=300)
-            
-            text_labels = cart_chart.mark_text(
-                align='center',
-                baseline='bottom',
-                dy=-8,
-                color="#4A2418",
-                fontWeight=700,
-                fontSize=14
-            ).encode(
-                text=alt.Text('Revenue (₹):Q', format="₹,.0f")
+            # 1. Base chart setup
+            base = alt.Chart(cart_grp).encode(
+                x=alt.X("Cart:N", title="", sort="-y", axis=alt.Axis(labelAngle=0, labelFontSize=13, labelPadding=10))
             )
             
-            st.altair_chart(cart_chart + text_labels, use_container_width=True)
+            # 2. Bar layer with domain padding so text doesn't hit the ceiling
+            bars = base.mark_bar(color="#E8542A", cornerRadiusTopLeft=4, cornerRadiusTopRight=4, size=60).encode(
+                y=alt.Y("Revenue (₹):Q", title="Total Revenue (₹)", scale=alt.Scale(domainPadding=20), axis=alt.Axis(grid=True, gridColor="#F0E5D1")),
+                tooltip=["Cart", alt.Tooltip("Revenue (₹):Q", format=",.2f")]
+            )
+            
+            # 3. Text layer using standard number formatting
+            text_labels = base.mark_text(align='center', baseline='bottom', dy=-5, color="#4A2418", fontWeight=700, fontSize=14).encode(
+                y=alt.Y("Revenue (₹):Q"),
+                text=alt.Text("Revenue (₹):Q", format=",.0f")
+            )
+            
+            # Combine and render
+            st.altair_chart((bars + text_labels).properties(height=300), use_container_width=True)
         else: 
             st.caption("No cart sales in this date range.")
 
