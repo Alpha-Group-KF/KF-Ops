@@ -1642,8 +1642,8 @@ elif page == "Freezer Analysis" and user_role == "admin":
         if not rem_query_df.empty:
             rem_display = []
             for _, r in rem_query_df.iterrows():
-                row_data = {"ID": f"#{r['ID']}", "Date": pd.to_datetime(r['Date']).strftime("%d %b %Y"), "Location": r['Location'], "Total Units": int(r['Total Units']) if pd.notna(r['Total Units']) else sum(int(r.get(FLAVOR_MAP[c]['audit_col'], 0)) for c in FLAVOR_CODES), "Cost (₹)": float(r['Cost (₹)']), "Reason": r['Reason'], "Removed By": r['Removed By'] if pd.notna(r['Removed By']) else "", "Verified By": r['Verified By']}
-                for code in FLAVOR_CODES: row_data[code] = int(r.get(FLAVOR_MAP[c]['audit_col'], 0))
+                row_data = {"ID": f"#{r['ID']}", "Date": pd.to_datetime(r['Date']).strftime("%d %b %Y"), "Location": r['Location'], "Total Units": int(r['Total Units']) if pd.notna(r['Total Units']) else sum(int(r.get(FLAVOR_MAP[code]['audit_col'], 0)) for c in FLAVOR_CODES), "Cost (₹)": float(r['Cost (₹)']), "Reason": r['Reason'], "Removed By": r['Removed By'] if pd.notna(r['Removed By']) else "", "Verified By": r['Verified By']}
+                for code in FLAVOR_CODES: row_data[code] = int(r.get(FLAVOR_MAP[code]['audit_col'], 0))
                 rem_display.append(row_data)
             st.dataframe(pd.DataFrame(rem_display), hide_index=True, use_container_width=True)
         else: st.caption("No stock removals recorded in database.")
@@ -1701,7 +1701,7 @@ elif page == "Stock Removed" and user_role == "admin":
 
             display_rem_list = []
             for _, r in rem_query_df.iterrows():
-                row_data = {"ID": f"#{r['ID']}", "Date": pd.to_datetime(r['Date']).strftime("%d %b %Y"), "Location": r['Location'], "Total Units": int(r['Total Units']) if pd.notna(r['Total Units']) else sum(int(r.get(FLAVOR_MAP[c]['audit_col'], 0)) for c in FLAVOR_CODES), "Cost (₹)": float(r['Cost (₹)']), "Reason": r['Reason'], "Removed By": r['Removed By'] if pd.notna(r['Removed By']) else "", "Verified By": r['Verified By']}
+                row_data = {"ID": f"#{r['ID']}", "Date": pd.to_datetime(r['Date']).strftime("%d %b %Y"), "Location": r['Location'], "Total Units": int(r['Total Units']) if pd.notna(r['Total Units']) else sum(int(r.get(FLAVOR_MAP[code]['audit_col'], 0)) for c in FLAVOR_CODES), "Cost (₹)": float(r['Cost (₹)']), "Reason": r['Reason'], "Removed By": r['Removed By'] if pd.notna(r['Removed By']) else "", "Verified By": r['Verified By']}
                 for code in FLAVOR_CODES: row_data[code] = int(r.get(FLAVOR_MAP[code]["audit_col"], 0))
                 display_rem_list.append(row_data)
 
