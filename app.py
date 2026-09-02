@@ -2925,6 +2925,17 @@ elif page == "Dashboard" and user_role == "admin":
             sales_table = range_df.sort_values(["Date", "Cart"])[display_cols].rename(columns={"Sold_Total": "Units Sold", "Total_Collection": "Revenue (₹)", "PhonePe": "PhonePe (₹)", "Cash": "Cash (₹)", "Staff_Name": "Staff Name", "Staff_Advance": "Staff Advance (₹)", "Food_Tea_Cash": "Food / Tea (₹)"})
             sales_table["Units Sold"] = sales_table["Units Sold"].apply(lambda x: int(round(x)))
             sales_table["Date"] = sales_table["Date"].dt.strftime("%d %b %Y")
-            st.dataframe(sales_table, hide_index=True, use_container_width=True, column_config={"Revenue (₹)": st.column_config.NumberColumn(format="₹%.2f"), "PhonePe (₹)": alt.Undefined, "Cash (₹)": st.column_config.NumberColumn(format="₹%.2f"), "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%.2f"), "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%.2f")})
+            st.dataframe(
+    sales_table, 
+    hide_index=True, 
+    use_container_width=True, 
+    column_config={
+        "Revenue (₹)": st.column_config.NumberColumn(format="₹%.2f"), 
+        "PhonePe (₹)": st.column_config.NumberColumn(format="₹%.2f"), 
+        "Cash (₹)": st.column_config.NumberColumn(format="₹%.2f"), 
+        "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%.2f"), 
+        "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%.2f")
+    }
+)
         else: 
             st.caption("No sales data recorded in this period.")
