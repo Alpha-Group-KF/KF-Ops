@@ -264,7 +264,7 @@ EXPENSE_CATEGORIES = [
     "Miscellaneous Expense",
 ]
 ATTRIBUTED_OPTIONS = ["Central / Freezer"] + CARTS
-EXPENSE_STATUSES = ["Pending", "Partially Paid", "Paid", "Cancelled"]
+EXPENSE_STATUSES = ["Pending", "Partially Paid", "Paid", "Not Applicable", "Cancelled"]
 PAYMENT_MODES = ["UPI / Bank Transfer", "Cash"]
 STAFF_STATUSES = ["active", "inactive", "on_leave"]
 LEAVE_STATUS_OPTIONS = ["Leave", "Sick Leave", "Casual Leave", "Absent"]
@@ -1229,7 +1229,7 @@ elif page == "Purchase Orders" and user_role == "admin":
             grid_rows.append({"Flavour": f_info["name"], "Code": code, "Unit Cost (₹)": float(f_info["cost_price"]), "Order Quantity": 0})
 
         st.write("Enter order quantities per flavour:")
-        po_editor_df = st.data_editor(pd.DataFrame(grid_rows), column_config={"Flavour": st.column_config.TextColumn(disabled=True), "Code": st.column_config.TextColumn(disabled=True), "Unit Cost (₹)": st.column_config.NumberColumn(format="₹%.2f", disabled=True), "Order Quantity": st.column_config.NumberColumn(min_value=0, step=10, format="%d")}, hide_index=True, use_container_width=True, key="new_po_editor")
+        po_editor_df = st.data_editor(pd.DataFrame(grid_rows), column_config={"Flavour": st.column_config.TextColumn(disabled=True), "Code": st.column_config.TextColumn(disabled=True), "Unit Cost (₹)": st.column_config.NumberColumn(format="₹%,.2f", disabled=True), "Order Quantity": st.column_config.NumberColumn(min_value=0, step=10, format="%d")}, hide_index=True, use_container_width=True, key="new_po_editor")
 
         total_units = int(po_editor_df["Order Quantity"].sum())
         gross_cost = float(sum(po_editor_df["Order Quantity"] * po_editor_df["Unit Cost (₹)"]))
@@ -1290,7 +1290,7 @@ elif page == "Purchase Orders" and user_role == "admin":
             edit_grid_rows = [{"Flavour": FLAVOR_MAP[code]["name"], "Code": code, "Unit Cost (₹)": float(FLAVOR_MAP[code]["cost_price"]), "Order Quantity": int(items_by_code.get(code) or 0)} for code in FLAVOR_CODES]
 
             st.write("Modify order quantities per flavour:")
-            po_edit_editor_df = st.data_editor(pd.DataFrame(edit_grid_rows), column_config={"Flavour": st.column_config.TextColumn(disabled=True), "Code": st.column_config.TextColumn(disabled=True), "Unit Cost (₹)": st.column_config.NumberColumn(format="₹%.2f", disabled=True), "Order Quantity": st.column_config.NumberColumn(min_value=0, step=10, format="%d")}, hide_index=True, use_container_width=True, key=f"edit_po_editor_{loaded_po_id}")
+            po_edit_editor_df = st.data_editor(pd.DataFrame(edit_grid_rows), column_config={"Flavour": st.column_config.TextColumn(disabled=True), "Code": st.column_config.TextColumn(disabled=True), "Unit Cost (₹)": st.column_config.NumberColumn(format="₹%,.2f", disabled=True), "Order Quantity": st.column_config.NumberColumn(min_value=0, step=10, format="%d")}, hide_index=True, use_container_width=True, key=f"edit_po_editor_{loaded_po_id}")
 
             e_total_units = int(po_edit_editor_df["Order Quantity"].sum())
             e_gross_cost = float(sum(po_edit_editor_df["Order Quantity"] * po_edit_editor_df["Unit Cost (₹)"]))
@@ -1369,7 +1369,7 @@ elif page == "Freezer Stock" and user_role == "admin":
         grid_rows = [{"Flavour": FLAVOR_MAP[code]["name"], "Code": code, "Unit Cost Price (₹)": float(FLAVOR_MAP[code]["cost_price"]), "Received": int(items_map[code]["rec"]) if (code in items_map and items_map[code].get("rec") is not None) else 0, "Damaged": int(items_map[code]["dam"]) if (code in items_map and items_map[code].get("dam") is not None) else 0} for code in FLAVOR_CODES]
 
         st.write("Enter units received per flavour:")
-        stock_edited = st.data_editor(pd.DataFrame(grid_rows), column_config={"Flavour": st.column_config.TextColumn(disabled=True), "Code": st.column_config.TextColumn(disabled=True), "Unit Cost Price (₹)": st.column_config.NumberColumn(format="₹%.2f", disabled=True), "Received": st.column_config.NumberColumn(min_value=0, step=1, format="%d"), "Damaged": st.column_config.NumberColumn(min_value=0, step=1, format="%d")}, hide_index=True, use_container_width=True, key=f"db_stock_editor{sk}")
+        stock_edited = st.data_editor(pd.DataFrame(grid_rows), column_config={"Flavour": st.column_config.TextColumn(disabled=True), "Code": st.column_config.TextColumn(disabled=True), "Unit Cost Price (₹)": st.column_config.NumberColumn(format="₹%,.2f", disabled=True), "Received": st.column_config.NumberColumn(min_value=0, step=1, format="%d"), "Damaged": st.column_config.NumberColumn(min_value=0, step=1, format="%d")}, hide_index=True, use_container_width=True, key=f"db_stock_editor{sk}")
 
         tot_received, tot_damaged = int(stock_edited["Received"].sum()), int(stock_edited["Damaged"].sum())
         gross_cost_val = float(sum(stock_edited["Received"] * stock_edited["Unit Cost Price (₹)"]))
@@ -1611,7 +1611,7 @@ elif page == "Stock Removed" and user_role == "admin":
         rem_grid_rows = [{"Flavour": FLAVOR_MAP[code]["name"], "Code": code, "Unit Cost (₹)": float(FLAVOR_MAP[code]["cost_price"]), "Units Removed": 0} for code in FLAVOR_CODES]
 
         st.write("Enter units removed per flavour:")
-        rem_editor_df = st.data_editor(pd.DataFrame(rem_grid_rows), column_config={"Flavour": st.column_config.TextColumn(disabled=True), "Code": st.column_config.TextColumn(disabled=True), "Unit Cost (₹)": st.column_config.NumberColumn(format="₹%.2f", disabled=True), "Units Removed": st.column_config.NumberColumn(min_value=0, step=1, format="%d")}, hide_index=True, use_container_width=True, key="new_rem_editor")
+        rem_editor_df = st.data_editor(pd.DataFrame(rem_grid_rows), column_config={"Flavour": st.column_config.TextColumn(disabled=True), "Code": st.column_config.TextColumn(disabled=True), "Unit Cost (₹)": st.column_config.NumberColumn(format="₹%,.2f", disabled=True), "Units Removed": st.column_config.NumberColumn(min_value=0, step=1, format="%d")}, hide_index=True, use_container_width=True, key="new_rem_editor")
 
         tot_rem_units = int(rem_editor_df["Units Removed"].sum())
         tot_rem_cost = float(sum(rem_editor_df["Units Removed"] * rem_editor_df["Unit Cost (₹)"]))
@@ -1650,7 +1650,7 @@ elif page == "Stock Removed" and user_role == "admin":
                 for code in FLAVOR_CODES: row_data[code] = int(r.get(FLAVOR_MAP[code]["audit_col"], 0))
                 display_rem_list.append(row_data)
 
-            st.dataframe(pd.DataFrame(display_rem_list), hide_index=True, use_container_width=True, column_config={"Cost (₹)": st.column_config.NumberColumn(format="₹%.2f")})
+            st.dataframe(pd.DataFrame(display_rem_list), hide_index=True, use_container_width=True, column_config={"Cost (₹)": st.column_config.NumberColumn(format="₹%,.2f")})
 
     elif rem_mode == "Edit Past Entry":
         rem_query_df = db_conn.query("SELECT id, removal_date, location, ml_units, mm_units, ps_units, mn_units, kb_units, bm_units, sg_units, ch_units, ra_units, cost_price_of_removed_items, reason_for_removal, removed_by, verified_by FROM stock_removed ORDER BY removal_date DESC, id DESC;", ttl="0s")
@@ -1672,7 +1672,7 @@ elif page == "Stock Removed" and user_role == "admin":
             edit_rem_rows = [{"Flavour": FLAVOR_MAP[code]["name"], "Code": code, "Unit Cost (₹)": float(FLAVOR_MAP[code]["cost_price"]), "Units Removed": int(loaded_rem.get(FLAVOR_MAP[code]["audit_col"], 0))} for code in FLAVOR_CODES]
 
             st.write("Modify units removed per flavour:")
-            rem_edit_editor_df = st.data_editor(pd.DataFrame(edit_rem_rows), column_config={"Flavour": st.column_config.TextColumn(disabled=True), "Code": st.column_config.TextColumn(disabled=True), "Unit Cost (₹)": st.column_config.NumberColumn(format="₹%.2f", disabled=True), "Units Removed": st.column_config.NumberColumn(min_value=0, step=1, format="%d")}, hide_index=True, use_container_width=True, key=f"edit_rem_editor_{loaded_rem_id}")
+            rem_edit_editor_df = st.data_editor(pd.DataFrame(edit_rem_rows), column_config={"Flavour": st.column_config.TextColumn(disabled=True), "Code": st.column_config.TextColumn(disabled=True), "Unit Cost (₹)": st.column_config.NumberColumn(format="₹%,.2f", disabled=True), "Units Removed": st.column_config.NumberColumn(min_value=0, step=1, format="%d")}, hide_index=True, use_container_width=True, key=f"edit_rem_editor_{loaded_rem_id}")
 
             e_tot_rem_units = int(rem_edit_editor_df["Units Removed"].sum())
             e_tot_rem_cost = float(sum(rem_edit_editor_df["Units Removed"] * rem_edit_editor_df["Unit Cost (₹)"]))
@@ -1763,7 +1763,7 @@ elif page == "Expenses" and user_role == "admin":
                 display_exp = expenses_summary_df.copy()
                 display_exp["expense_date"] = pd.to_datetime(display_exp["expense_date"]).dt.strftime("%d %b %Y")
                 display_exp["PO Link"] = display_exp["purchase_order_id"].apply(lambda p: f"PO #{int(p)}" if pd.notna(p) else "—")
-                st.dataframe(display_exp[["id", "expense_date", "expense_type", "category", "sub_category", "description", "total_amount", "total_paid", "balance_due", "status", "attributed_to", "vendor_name", "PO Link"]].rename(columns={"id": "ID", "expense_date": "Date", "expense_type": "Type", "category": "Category", "sub_category": "Sub-Category", "description": "Description", "total_amount": "Total (₹)", "total_paid": "Paid (₹)", "balance_due": "Balance (₹)", "status": "Status", "attributed_to": "Attributed To", "vendor_name": "Vendor"}), hide_index=True, use_container_width=True, column_config={"Total (₹)": st.column_config.NumberColumn(format="₹%.2f"), "Paid (₹)": st.column_config.NumberColumn(format="₹%.2f"), "Balance (₹)": st.column_config.NumberColumn(format="₹%.2f")})
+                st.dataframe(display_exp[["id", "expense_date", "expense_type", "category", "sub_category", "description", "total_amount", "total_paid", "balance_due", "status", "attributed_to", "vendor_name", "PO Link"]].rename(columns={"id": "ID", "expense_date": "Date", "expense_type": "Type", "category": "Category", "sub_category": "Sub-Category", "description": "Description", "total_amount": "Total (₹)", "total_paid": "Paid (₹)", "balance_due": "Balance (₹)", "status": "Status", "attributed_to": "Attributed To", "vendor_name": "Vendor"}), hide_index=True, use_container_width=True, column_config={"Total (₹)": st.column_config.NumberColumn(format="₹%,.2f"), "Paid (₹)": st.column_config.NumberColumn(format="₹%,.2f"), "Balance (₹)": st.column_config.NumberColumn(format="₹%,.2f")})
 
         elif e_sub_mode == "Edit Past Expense":
             if expenses_summary_df.empty: st.info("No expenses found to edit.")
@@ -1855,7 +1855,7 @@ elif page == "Expenses" and user_role == "admin":
             else:
                 st.metric("Total Payments Disbursed", f"₹{float(payments_df['amount_paid'].sum()):,.2f}")
                 disp_pay = payments_df.copy(); disp_pay["payment_date"] = pd.to_datetime(disp_pay["payment_date"]).dt.strftime("%d %b %Y"); disp_pay["Expense Link"] = disp_pay.apply(lambda r: f"#{r['expense_id']} — {r['category']} (₹{float(r['expense_total']):,.0f})", axis=1)
-                st.dataframe(disp_pay[["id", "payment_date", "Expense Link", "amount_paid", "payment_mode", "ref_no", "paid_to", "paid_by", "notes"]].rename(columns={"id": "Payment ID", "payment_date": "Date", "amount_paid": "Amount (₹)", "payment_mode": "Mode", "ref_no": "Ref / UTR", "paid_to": "Paid To", "paid_by": "Paid By", "notes": "Notes"}), hide_index=True, use_container_width=True, column_config={"Amount (₹)": st.column_config.NumberColumn(format="₹%.2f")})
+                st.dataframe(disp_pay[["id", "payment_date", "Expense Link", "amount_paid", "payment_mode", "ref_no", "paid_to", "paid_by", "notes"]].rename(columns={"id": "Payment ID", "payment_date": "Date", "amount_paid": "Amount (₹)", "payment_mode": "Mode", "ref_no": "Ref / UTR", "paid_to": "Paid To", "paid_by": "Paid By", "notes": "Notes"}), hide_index=True, use_container_width=True, column_config={"Amount (₹)": st.column_config.NumberColumn(format="₹%,.2f")})
 
         elif p_sub_mode == "Edit Past Payment":
             if payments_df.empty: st.info("No payments recorded to edit.")
@@ -1919,7 +1919,7 @@ elif page == "Expenses" and user_role == "admin":
                 else: st.caption("No expenses in this range.")
 
             st.markdown("#### Payments Disbursed by Mode")
-            if not f_pay.empty: st.dataframe(f_pay.groupby("payment_mode")["amount_paid"].sum().reset_index().rename(columns={"payment_mode": "Payment Mode", "amount_paid": "Amount Paid (₹)"}), hide_index=True, use_container_width=True, column_config={"Amount Paid (₹)": st.column_config.NumberColumn(format="₹%.2f")})
+            if not f_pay.empty: st.dataframe(f_pay.groupby("payment_mode")["amount_paid"].sum().reset_index().rename(columns={"payment_mode": "Payment Mode", "amount_paid": "Amount Paid (₹)"}), hide_index=True, use_container_width=True, column_config={"Amount Paid (₹)": st.column_config.NumberColumn(format="₹%,.2f")})
             else: st.caption("No payments in this range.")
 
 # ======================================================================
@@ -2632,13 +2632,13 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 hide_index=True,
                 use_container_width=True,
                 column_config={
-                    "Apportioned Salary (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                    "Total Sales (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                    "Commission Earned (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                    "Allowances Entitled (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                    "Gross Payable (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                    "Total Paid / Deductions (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                    "Net Amount Due (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                    "Apportioned Salary (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
+                    "Total Sales (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
+                    "Commission Earned (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
+                    "Allowances Entitled (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
+                    "Gross Payable (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
+                    "Total Paid / Deductions (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
+                    "Net Amount Due (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
                 }
             )
 
@@ -2659,13 +2659,13 @@ elif page == "Staff & Payroll" and user_role == "admin":
                         hide_index=True,
                         use_container_width=True,
                         column_config={
-                            "Daily Sales (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                            "Salary Apportioned (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                            "Commission (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                            "Allowance Entitled (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                            "Advance Taken (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                            "Allow. Taken (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                            "Total Entitled (₹)": st.column_config.NumberColumn(format="₹%.2f"),
+                            "Daily Sales (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
+                            "Salary Apportioned (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
+                            "Commission (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
+                            "Allowance Entitled (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
+                            "Advance Taken (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
+                            "Allow. Taken (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
+                            "Total Entitled (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
                         }
                     )
 
@@ -2684,7 +2684,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                         }),
                         hide_index=True,
                         use_container_width=True,
-                        column_config={"Amount Paid (₹)": st.column_config.NumberColumn(format="₹%.2f")}
+                        column_config={"Amount Paid (₹)": st.column_config.NumberColumn(format="₹%,.2f")}
                     )
 
 # ======================================================================
@@ -2718,8 +2718,27 @@ elif page == "Dashboard" and user_role == "admin":
 
         st.markdown('<div id="revenue-trend"></div>', unsafe_allow_html=True)
         st.markdown("**Revenue, last 14 days**")
-        trend_df = daily_df.assign(Day=daily_df["Date"].dt.normalize()).groupby("Day", as_index=False)["Total_Collection"].sum().sort_values("Day").tail(14)
-        trend_chart = alt.Chart(trend_df).mark_bar(color="#E8542A", width=16).encode(x=alt.X("Day:T", title="", axis=alt.Axis(format="%d %b", labelAngle=-45)), y=alt.Y("Total_Collection:Q", title="Revenue (₹)"), tooltip=[alt.Tooltip("Day:T", title="Date", format="%d %b %Y"), alt.Tooltip("Total_Collection:Q", title="Revenue", format=",.0f")]).properties(height=200)
+        
+        # Stacked bar graph for PhonePe vs Gross Cash
+        trend_agg = daily_df.assign(Day=daily_df["Date"].dt.normalize()).groupby("Day", as_index=False).agg({
+            "PhonePe": "sum", 
+            "Total_Collection": "sum"
+        }).sort_values("Day").tail(14)
+        
+        trend_agg["Gross Cash"] = trend_agg["Total_Collection"] - trend_agg["PhonePe"]
+        trend_melt = trend_agg.melt(id_vars=["Day"], value_vars=["PhonePe", "Gross Cash"], var_name="Mode", value_name="Amount")
+        
+        trend_chart = alt.Chart(trend_melt).mark_bar(width=16).encode(
+            x=alt.X("Day:T", title="", axis=alt.Axis(format="%d %b", labelAngle=-45)),
+            y=alt.Y("Amount:Q", title="Revenue (₹)"),
+            color=alt.Color("Mode:N", scale=alt.Scale(range=["#8A5E17", "#E8542A"])),
+            tooltip=[
+                alt.Tooltip("Day:T", title="Date", format="%d %b %Y"), 
+                "Mode", 
+                alt.Tooltip("Amount:Q", title="Amount", format=",.0f")
+            ]
+        ).properties(height=200)
+        
         st.altair_chart(trend_chart, use_container_width=True)
     else: 
         st.info("No sales logged in database yet.")
@@ -2786,15 +2805,27 @@ elif page == "Dashboard" and user_role == "admin":
         gross_margin = (gross_profit / total_rev * 100) if total_rev > 0 else 0.0
         net_profit = gross_profit - total_incurred_opex
         net_margin = (net_profit / total_rev * 100) if total_rev > 0 else 0.0
+        opex_margin = (total_incurred_opex / total_rev * 100) if total_rev > 0 else 0.0
 
         st.markdown("### 1. Revenue Cycle Management & Financial Performance")
         mc1, mc2, mc3, mc4, mc5, mc6 = st.columns(6)
         mc1.metric("Revenue in Range", f"₹{total_rev:,.0f}")
         mc2.metric("Units Sold", f"{total_units}")
-        mc3.metric("COGS (Exact Sold)", f"₹{exact_cogs_sold:,.0f}")
-        mc4.metric("Gross Profit", f"₹{gross_profit:,.0f}", f"{gross_margin:.1f}% Margin")
-        mc5.metric("Total OPEX (Incurred)", f"₹{total_incurred_opex:,.0f}", f"Labour: ₹{tot_labour_incurred:,.0f}")
-        mc6.metric("Net Profit", f"₹{net_profit:,.0f}", f"{net_margin:.1f}% Net Margin")
+        mc3.metric("COGS (Exact Goods Sold)", f"₹{exact_cogs_sold:,.0f}")
+        mc4.metric(f"Gross Profit ({gross_margin:.1f}% Margin)", f"₹{gross_profit:,.0f}")
+        mc5.metric(f"Total OPEX Incurred ({opex_margin:.1f}% of Rev)", f"₹{total_incurred_opex:,.0f}")
+        mc6.metric(f"Net Profit ({net_margin:.1f}% Margin)", f"₹{net_profit:,.0f}")
+
+        st.markdown("#### Daily Revenue Trend")
+        if not range_df.empty:
+            line_chart = alt.Chart(range_df.groupby("Date", as_index=False)["Total_Collection"].sum()).mark_line(point=True, color="#E8542A").encode(
+                x=alt.X("Date:T", title="Date", axis=alt.Axis(format="%d %b")),
+                y=alt.Y("Total_Collection:Q", title="Revenue (₹)"),
+                tooltip=[alt.Tooltip("Date:T", format="%d %b %Y", title="Date"), alt.Tooltip("Total_Collection:Q", format=",.2f", title="Revenue (₹)")]
+            ).properties(height=300)
+            st.altair_chart(line_chart, use_container_width=True)
+        else:
+            st.caption("No revenue data available for this range to plot.")
 
         pl_c1, pl_c2 = st.columns([1.1, 1.2])
         with pl_c1:
@@ -2803,7 +2834,7 @@ elif page == "Dashboard" and user_role == "admin":
                 "Financial Line Item": ["1. Gross Revenue", "2. COGS (Exact Goods Sold)", "3. Gross Profit (1 - 2)", "4. Staff Labour Charges (Incurred: Paid + Due)", "5. Other Operating Expenses (Rent, Logistics, etc.)", "6. Total Incurred OPEX (4 + 5)", "7. Net Operating Profit (3 - 6)"], 
                 "Amount (₹)": [total_rev, -exact_cogs_sold, gross_profit, -tot_labour_incurred, -other_opex_total, -total_incurred_opex, net_profit]
             })
-            st.dataframe(pnl_df, hide_index=True, use_container_width=True, column_config={"Amount (₹)": st.column_config.NumberColumn(format="₹%.2f")})
+            st.dataframe(pnl_df, hide_index=True, use_container_width=True, column_config={"Amount (₹)": st.column_config.NumberColumn(format="₹%,.2f")})
             st.caption(f"ℹ️ **Labour breakdown:** ₹{tot_labour_paid:,.0f} disbursed / paid + ₹{tot_labour_due:,.0f} accrued / yet to be paid.")
 
         with pl_c2:
@@ -2812,22 +2843,43 @@ elif page == "Dashboard" and user_role == "admin":
             cost_chart = alt.Chart(cost_dist_df).mark_bar(width=28).encode(x=alt.X("Cost Bucket:N", title="", sort=None, axis=alt.Axis(labelAngle=-15)), y=alt.Y("Amount (₹):Q", title="Amount (₹)"), color=alt.Color("Cost Bucket:N", scale=alt.Scale(domain=["COGS (Goods Sold)", "Operating Expenses (OPEX)", "Capital Expenditure (CAPEX)"], range=["#C43D17", "#8A5E17", "#4A2418"]), legend=None), tooltip=[alt.Tooltip("Cost Bucket:N", title="Type"), alt.Tooltip("Amount (₹):Q", format=",.2f", title="Amount")]).properties(height=200)
             st.altair_chart(cost_chart, use_container_width=True)
 
-        st.markdown("#### Collections & Cash Breakdown")
+        st.markdown("#### Revenue in Range - Breakdown")
         if not range_df.empty:
-            total_cash = range_df["Cash"].sum()
             total_phonepe = range_df["PhonePe"].sum()
-            total_advance = range_df["Staff_Advance"].sum() if "Staff_Advance" in range_df.columns else 0.0
-            total_food = range_df["Food_Tea_Cash"].sum() if "Food_Tea_Cash" in range_df.columns else 0.0
+            gross_cash = total_rev - total_phonepe
             
-            c_k1, c_k2, c_k3, c_k4 = st.columns(4)
-            c_k1.metric("Cash Collected", f"₹{total_cash:,.0f}")
-            c_k2.metric("PhonePe / UPI", f"₹{total_phonepe:,.0f}")
-            c_k3.metric("Staff Advances", f"₹{total_advance:,.0f}")
-            c_k4.metric("Food / Tea Cash", f"₹{total_food:,.0f}")
+            # Calculate Paid Allowances from the expenses table
+            paid_exp = range_exp[range_exp["Status"] == "Paid"] if not range_exp.empty else pd.DataFrame()
+            adv_paid = paid_exp[paid_exp["Sub_Category"] == "Staff Advance"]["Amount"].sum() if not paid_exp.empty else 0.0
+            food_paid = paid_exp[paid_exp["Sub_Category"] == "Food & Tea"]["Amount"].sum() if not paid_exp.empty else 0.0
+            net_cash = gross_cash - adv_paid - food_paid
+
+            # Pie Chart 1: Gross Cash vs PhonePe
+            pie1_df = pd.DataFrame({"Category": ["Gross Cash", "PhonePe"], "Amount (₹)": [gross_cash, total_phonepe]})
+            pie1 = alt.Chart(pie1_df).mark_arc(innerRadius=0).encode(
+                theta=alt.Theta(field="Amount (₹)", type="quantitative"),
+                color=alt.Color(field="Category", type="nominal", scale=alt.Scale(range=["#8A5E17", "#E8542A"])),
+                tooltip=["Category", alt.Tooltip("Amount (₹):Q", format=",.2f")]
+            ).properties(height=250)
+
+            # Pie Chart 2: PhonePe, Net Cash, Staff Advance, Food/Tea
+            pie2_df = pd.DataFrame({
+                "Category": ["PhonePe", "Net Cash", "Staff Advance", "Food / Tea"], 
+                "Amount (₹)": [total_phonepe, net_cash, adv_paid, food_paid]
+            })
+            pie2 = alt.Chart(pie2_df).mark_arc(innerRadius=0).encode(
+                theta=alt.Theta(field="Amount (₹)", type="quantitative"),
+                color=alt.Color(field="Category", type="nominal", scale=alt.Scale(scheme="dark2")),
+                tooltip=["Category", alt.Tooltip("Amount (₹):Q", format=",.2f")]
+            ).properties(height=250)
             
-            split_df = pd.DataFrame({"Mode": ["Cash", "PhonePe / UPI", "Staff Advance", "Food / Tea"], "Amount (₹)": [total_cash, total_phonepe, total_advance, total_food]})
-            split_chart = alt.Chart(split_df).mark_bar(width=28, color="#8A5E17").encode(x=alt.X("Mode:N", title=""), y=alt.Y("Amount (₹):Q", title="Amount (₹)"), tooltip=["Mode", alt.Tooltip("Amount (₹):Q", format=",.2f")]).properties(height=180)
-            st.altair_chart(split_chart, use_container_width=True)
+            c_p1, c_p2 = st.columns(2)
+            with c_p1:
+                st.write("**Gross Collection Split**")
+                st.altair_chart(pie1, use_container_width=True)
+            with c_p2:
+                st.write("**Net Cash & Paid Allowances Breakdown**")
+                st.altair_chart(pie2, use_container_width=True)
         else: 
             st.caption("No collection data in this period.")
 
@@ -2838,11 +2890,16 @@ elif page == "Dashboard" and user_role == "admin":
         if not non_labour_opex_df.empty:
             for cat, amt in non_labour_opex_df.groupby("Category")["Amount"].sum().items(): 
                 exp_cat_list.append({"Category": cat, "Amount (₹)": float(amt)})
+
         if exp_cat_list:
-            exp_cat_df = pd.DataFrame(exp_cat_list).sort_values(by="Amount (₹)", ascending=False)
-            st.dataframe(exp_cat_df, hide_index=True, use_container_width=True, column_config={"Amount (₹)": st.column_config.NumberColumn(format="₹%.2f")})
-            exp_chart = alt.Chart(exp_cat_df).mark_bar(width=22, color="#70440E").encode(x=alt.X("Category:N", title="", axis=alt.Axis(labelAngle=-25)), y=alt.Y("Amount (₹):Q", title="Amount (₹)"), tooltip=["Category", alt.Tooltip("Amount (₹):Q", format=",.2f")]).properties(height=180)
-            st.altair_chart(exp_chart, use_container_width=True)
+            exp_cat_df = pd.DataFrame(exp_cat_list)
+            # Replaced Bar Chart with 2D Pie Chart
+            exp_pie = alt.Chart(exp_cat_df).mark_arc(innerRadius=40).encode(
+                theta=alt.Theta(field="Amount (₹)", type="quantitative"),
+                color=alt.Color(field="Category", type="nominal"),
+                tooltip=["Category", alt.Tooltip("Amount (₹):Q", format=",.2f")]
+            ).properties(height=300)
+            st.altair_chart(exp_pie, use_container_width=True)
         else: 
             st.caption("No operating expenses incurred in this date range.")
 
@@ -2913,11 +2970,11 @@ elif page == "Dashboard" and user_role == "admin":
             date_wise_table["Units Sold"] = date_wise_table["Units Sold"].apply(lambda x: int(round(x)))
             date_wise_table["Date"] = date_wise_table["Date"].dt.strftime("%d %b %Y")
             st.dataframe(date_wise_table, hide_index=True, use_container_width=True, column_config={
-                "Revenue (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                "PhonePe (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                "Cash (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%.2f"),
-                "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%.2f")
+                "Revenue (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
+                "PhonePe (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
+                "Cash (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
+                "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
+                "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%,.2f")
             })
 
             st.markdown("#### Itemized Daily Cart Sales Log")
@@ -2926,16 +2983,16 @@ elif page == "Dashboard" and user_role == "admin":
             sales_table["Units Sold"] = sales_table["Units Sold"].apply(lambda x: int(round(x)))
             sales_table["Date"] = sales_table["Date"].dt.strftime("%d %b %Y")
             st.dataframe(
-    sales_table, 
-    hide_index=True, 
-    use_container_width=True, 
-    column_config={
-        "Revenue (₹)": st.column_config.NumberColumn(format="₹%.2f"), 
-        "PhonePe (₹)": st.column_config.NumberColumn(format="₹%.2f"), 
-        "Cash (₹)": st.column_config.NumberColumn(format="₹%.2f"), 
-        "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%.2f"), 
-        "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%.2f")
-    }
-)
+                sales_table, 
+                hide_index=True, 
+                use_container_width=True, 
+                column_config={
+                    "Revenue (₹)": st.column_config.NumberColumn(format="₹%,.2f"), 
+                    "PhonePe (₹)": st.column_config.NumberColumn(format="₹%,.2f"), 
+                    "Cash (₹)": st.column_config.NumberColumn(format="₹%,.2f"), 
+                    "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%,.2f"), 
+                    "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%,.2f")
+                }
+            )
         else: 
             st.caption("No sales data recorded in this period.")
