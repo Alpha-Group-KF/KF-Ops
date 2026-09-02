@@ -589,6 +589,45 @@ def load_db_payments_df():
     try: return db_conn.query(query, ttl="0s")
     except Exception: return pd.DataFrame()
 
+def get_db_stock_removed_map():
+    if db_conn is None: return {c: 0 for c in FLAVOR_CODES}
+    query = """
+    SELECT 
+        COALESCE(SUM(ml_units), 0) AS ml_units, COALESCE(SUM(mm_units), 0) AS mm_units, 
+        COALESCE(SUM(ps_units), 0) AS ps_units, COALESCE(SUM(mn_units), 0) AS mn_units, 
+        COALESCE(SUM(kb_units), 0) AS kb_units, COALESCE(SUM(bm_units), 0) AS bm_units, 
+        COALESCE(SUM(sg_units), 0) AS sg_units, COALESCE(SUM(ch_units), 0) AS ch_units, 
+        COALESCE(SUM(ra_units), 0) AS ra_units 
+    FROM stock_removed;
+    """
+    try:
+        df = db_conn.query(query, ttl="0s")
+        if not df.empty:
+            r = df.iloc[0]
+            return {code: int(r.get(FLAVOR_MAP[code]["audit_col"], 0)) for code in FLAVOR_CODES}
+    except Exception:
+        pass
+    return {code: 0 for code in FLAVOR_CODES}
+
+def get_db_freezer_stock():
+    if db_conn is None: return pd.DataFrame(columns=["code", "Units in freezer"])
+    try:
+        rec_df = db_conn.query("SELECT flavor_code, SUM(received_units) AS total_recv FROM stock_received_items GROUP BY flavor_code;", ttl="0s")
+        rec_map = dict(zip(rec_df["flavor_code"], rec_df["total_recv"])) if not rec_df.empty else {}
+
+        added_df = db_conn.query("SELECT flavor_code, SUM(added_units) AS total_added FROM daily_cart_items GROUP BY flavor_code;", ttl="0s")
+        added_map = dict(zip(added_df["flavor_code"], added_df["total_added"])) if not added_df.empty else {}
+
+        rem_map = get_db_stock_removed_map()
+        
+        rows = []
+        for code in FLAVOR_CODES:
+            calc_stock = int(rec_map.get(code, 0)) - int(added_map.get(code, 0)) - int(rem_map.get(code, 0))
+            rows.append({"code": code, "Units in freezer": calc_stock})
+        return pd.DataFrame(rows)
+    except Exception:
+        return pd.DataFrame(columns=["code", "Units in freezer"])
+    
 def load_full_staff_df():
     if db_conn is None: return pd.DataFrame()
     query = """
