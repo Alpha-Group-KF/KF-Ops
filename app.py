@@ -1155,7 +1155,7 @@ elif page == "Payslip Generator" and user_role == "admin":
                 st.warning("`reportlab` library is not installed in the Python environment for binary PDF downloads.")
 
 # ======================================================================
-# PAGE: LIVE CART Tracking (Admin View)
+# PAGE: LIVE CART TRACKING (Admin View)
 # ======================================================================
 elif page == "Live Cart Tracking" and user_role == "admin":
     st.subheader("Live Cart Operations Tracker")
@@ -2849,26 +2849,22 @@ elif page == "Dashboard" and user_role == "admin":
         st.markdown("---")
         st.markdown("### 2. Comparative Cart Revenue")
         if not range_df.empty:
-            cart_grp = range_df.groupby("Cart")["Total_Collection"].sum().reset_index().rename(columns={"Total_Collection": "Revenue (₹)"})
+            cart_grp = range_df.groupby("Cart")["Total_Collection"].sum().reset_index().rename(columns={"Total_Collection": "Revenue (₹)"}).sort_values("Revenue (₹)", ascending=False)
             
-            # 1. Base chart setup
             base = alt.Chart(cart_grp).encode(
                 x=alt.X("Cart:N", title="", sort="-y", axis=alt.Axis(labelAngle=0, labelFontSize=13, labelPadding=10))
             )
             
-            # 2. Bar layer with domain padding so text doesn't hit the ceiling
             bars = base.mark_bar(color="#E8542A", cornerRadiusTopLeft=4, cornerRadiusTopRight=4, size=60).encode(
-                y=alt.Y("Revenue (₹):Q", title="Total Revenue (₹)", scale=alt.Scale(domainPadding=20), axis=alt.Axis(grid=True, gridColor="#F0E5D1")),
+                y=alt.Y("Revenue (₹):Q", title="Total Revenue (₹)", axis=alt.Axis(grid=True, gridColor="#F0E5D1")),
                 tooltip=["Cart", alt.Tooltip("Revenue (₹):Q", format=",.2f")]
             )
             
-            # 3. Text layer using standard number formatting
             text_labels = base.mark_text(align='center', baseline='bottom', dy=-5, color="#4A2418", fontWeight=700, fontSize=14).encode(
                 y=alt.Y("Revenue (₹):Q"),
                 text=alt.Text("Revenue (₹):Q", format=",.0f")
             )
             
-            # Combine and render
             st.altair_chart((bars + text_labels).properties(height=300), use_container_width=True)
         else: 
             st.caption("No cart sales in this date range.")
@@ -2929,6 +2925,6 @@ elif page == "Dashboard" and user_role == "admin":
             sales_table = range_df.sort_values(["Date", "Cart"])[display_cols].rename(columns={"Sold_Total": "Units Sold", "Total_Collection": "Revenue (₹)", "PhonePe": "PhonePe (₹)", "Cash": "Cash (₹)", "Staff_Name": "Staff Name", "Staff_Advance": "Staff Advance (₹)", "Food_Tea_Cash": "Food / Tea (₹)"})
             sales_table["Units Sold"] = sales_table["Units Sold"].apply(lambda x: int(round(x)))
             sales_table["Date"] = sales_table["Date"].dt.strftime("%d %b %Y")
-            st.dataframe(sales_table, hide_index=True, use_container_width=True, column_config={"Revenue (₹)": st.column_config.NumberColumn(format="₹%.2f"), "PhonePe (₹)": st.column_config.NumberColumn(format="₹%.2f"), "Cash (₹)": st.column_config.NumberColumn(format="₹%.2f"), "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%.2f"), "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%.2f")})
+            st.dataframe(sales_table, hide_index=True, use_container_width=True, column_config={"Revenue (₹)": st.column_config.NumberColumn(format="₹%.2f"), "PhonePe (₹)": alt.Undefined, "Cash (₹)": st.column_config.NumberColumn(format="₹%.2f"), "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%.2f"), "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%.2f")})
         else: 
             st.caption("No sales data recorded in this period.")
