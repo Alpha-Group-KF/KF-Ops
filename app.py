@@ -206,28 +206,29 @@ div[data-testid="stMetric"] {
     background: #FFFBF2;
     border: 1px solid #E3CBA0;
     border-radius: 8px;
-    padding: 6px 10px; /* Slightly increased box padding */
+    padding: 8px 12px; /* Increased padding */
     box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-    height: 100%; /* Ensures all cards in a row stretch evenly */
+    height: 100%;
 }
-div[data-testid="stMetricLabel"] { 
-    font-weight: 700; 
-    font-size: 10.5px !important; /* Slightly decreased font size */
-    color: #7A5A34; 
-    white-space: normal !important; /* Forces text to wrap instead of cutting off */
+/* Aggressively target all nested elements to prevent truncation */
+div[data-testid="stMetricLabel"], 
+div[data-testid="stMetricLabel"] > div, 
+div[data-testid="stMetricLabel"] p, 
+div[data-testid="stMetricLabel"] span { 
+    font-weight: 700 !important; 
+    font-size: 11px !important; 
+    color: #7A5A34 !important; 
+    white-space: normal !important;     /* Force text wrapping */
+    word-wrap: break-word !important; 
+    overflow: visible !important; 
+    text-overflow: clip !important;     /* Remove the ellipsis */
     line-height: 1.3 !important;
-    height: auto !important;
-    min-height: 28px; /* Ensures alignment even if some wrap and others don't */
-}
-div[data-testid="stMetricLabel"] > div {
-    white-space: normal !important;
-    overflow: visible !important;
 }
 div[data-testid="stMetricValue"] { 
     font-family: 'Fraunces', serif; 
-    font-size: 1.05rem !important; 
+    font-size: 1.1rem !important; 
     color: #4A2418; 
-    margin-top: 4px;
+    margin-top: 6px;
 }
 
 /* Tables */
@@ -2855,50 +2856,46 @@ elif page == "Dashboard" and user_role == "admin":
 
         st.markdown("#### Revenue in Range - Breakdown")
         if not range_df.empty:
-            total_phonepe = range_df["PhonePe"].sum()
-            gross_cash = total_rev - total_phonepe
+            total_phonepe = float(range_df["PhonePe"].sum())
+            gross_cash = float(total_rev - total_phonepe)
             
-            # Calculate Paid Allowances from the expenses table safely and robustly
+            # Calculate Paid Allowances from the expenses table safely
             adv_paid = 0.0
             food_paid = 0.0
             
             if not range_exp.empty and "Status" in range_exp.columns and "Sub_Category" in range_exp.columns:
-                # Filter to only Paid expenses
                 paid_exp = range_exp[range_exp["Status"].astype(str).str.strip().str.lower() == "paid"]
-                
                 if not paid_exp.empty:
-                    # Use str.contains to robustly catch variations in Sub_Category naming
                     adv_mask = paid_exp["Sub_Category"].astype(str).str.contains("Advance", case=False, na=False)
                     food_mask = paid_exp["Sub_Category"].astype(str).str.contains("Food|Tea", case=False, na=False)
-                    
-                    adv_paid = paid_exp[adv_mask]["Amount"].sum()
-                    food_paid = paid_exp[food_mask]["Amount"].sum()
+                    adv_paid = float(paid_exp[adv_mask]["Amount"].sum())
+                    food_paid = float(paid_exp[food_mask]["Amount"].sum())
 
-            net_cash = gross_cash - adv_paid - food_paid
+            net_cash = float(gross_cash - adv_paid - food_paid)
 
-            # Pie Chart 1: Gross Cash vs PhonePe
-            pie1_df = pd.DataFrame({"Category": ["Gross Cash", "PhonePe"], "Amount (₹)": [gross_cash, total_phonepe]})
-            pie1_df = pie1_df[pie1_df["Amount (₹)"] > 0] # Clean up zeros
+            # Pie Chart 1: Gross Cash vs PhonePe (Renamed column to 'Amount' to fix rendering)
+            pie1_df = pd.DataFrame({"Category": ["Gross Cash", "PhonePe"], "Amount": [gross_cash, total_phonepe]})
+            pie1_df = pie1_df[pie1_df["Amount"] > 0] 
             
             pie1 = alt.Chart(pie1_df).mark_arc(innerRadius=0).encode(
-                theta=alt.Theta(field="Amount (₹)", type="quantitative"),
+                theta=alt.Theta(field="Amount", type="quantitative"),
                 color=alt.Color(
                     field="Category", 
                     type="nominal", 
                     scale=alt.Scale(domain=["Gross Cash", "PhonePe"], range=["#2A9D8F", "#E76F51"])
                 ),
-                tooltip=["Category", alt.Tooltip("Amount (₹):Q", format="₹%,.2f")]
+                tooltip=[alt.Tooltip("Category:N"), alt.Tooltip("Amount:Q", format="₹%,.2f")]
             ).properties(height=250)
 
             # Pie Chart 2: PhonePe, Net Cash, Staff Advance, Food/Tea
             pie2_df = pd.DataFrame({
                 "Category": ["PhonePe", "Net Cash (In Hand)", "Staff Advance", "Food / Tea"], 
-                "Amount (₹)": [total_phonepe, net_cash, adv_paid, food_paid]
+                "Amount": [total_phonepe, net_cash, adv_paid, food_paid]
             })
-            pie2_df = pie2_df[pie2_df["Amount (₹)"] > 0] # Clean up zeros
+            pie2_df = pie2_df[pie2_df["Amount"] > 0] 
             
             pie2 = alt.Chart(pie2_df).mark_arc(innerRadius=0).encode(
-                theta=alt.Theta(field="Amount (₹)", type="quantitative"),
+                theta=alt.Theta(field="Amount", type="quantitative"),
                 color=alt.Color(
                     field="Category", 
                     type="nominal", 
@@ -2907,7 +2904,7 @@ elif page == "Dashboard" and user_role == "admin":
                         range=["#E76F51", "#2A9D8F", "#E9C46A", "#F4A261"]
                     )
                 ),
-                tooltip=["Category", alt.Tooltip("Amount (₹):Q", format="₹%,.2f")]
+                tooltip=[alt.Tooltip("Category:N"), alt.Tooltip("Amount:Q", format="₹%,.2f")]
             ).properties(height=250)
             
             c_p1, c_p2 = st.columns(2)
@@ -2923,18 +2920,18 @@ elif page == "Dashboard" and user_role == "admin":
         st.markdown("#### Incurred Operating Expense Breakdown by Category")
         exp_cat_list = []
         if tot_labour_incurred > 0: 
-            exp_cat_list.append({"Category": "Labour Charges (Incurred)", "Amount (₹)": tot_labour_incurred})
+            exp_cat_list.append({"Category": "Labour Charges (Incurred)", "Amount": float(tot_labour_incurred)})
         if not non_labour_opex_df.empty:
             for cat, amt in non_labour_opex_df.groupby("Category")["Amount"].sum().items(): 
-                exp_cat_list.append({"Category": cat, "Amount (₹)": float(amt)})
+                exp_cat_list.append({"Category": cat, "Amount": float(amt)})
 
         if exp_cat_list:
             exp_cat_df = pd.DataFrame(exp_cat_list)
-            # Replaced Bar Chart with 2D Pie Chart
+            # Replaced Bar Chart with 2D Pie Chart (Using generic 'Amount' to prevent Altair silent fail)
             exp_pie = alt.Chart(exp_cat_df).mark_arc(innerRadius=40).encode(
-                theta=alt.Theta(field="Amount (₹)", type="quantitative"),
-                color=alt.Color(field="Category", type="nominal", scale=alt.Scale(scheme="tableau10")), # Professional standard multi-color palette
-                tooltip=["Category", alt.Tooltip("Amount (₹):Q", format=",.2f")]
+                theta=alt.Theta(field="Amount", type="quantitative"),
+                color=alt.Color(field="Category", type="nominal", scale=alt.Scale(scheme="tableau10")),
+                tooltip=[alt.Tooltip("Category:N"), alt.Tooltip("Amount:Q", format="₹%,.2f")]
             ).properties(height=300)
             st.altair_chart(exp_pie, use_container_width=True)
         else: 
