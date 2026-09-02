@@ -2756,7 +2756,7 @@ elif page == "Dashboard" and user_role == "admin":
             tooltip=[
                 alt.Tooltip("Day:T", title="Date", format="%d %b %Y"), 
                 alt.Tooltip("Mode:N", title="Mode"), 
-                alt.Tooltip("Amount:Q", title="Amount", format="₹%,.0f")
+                alt.Tooltip("Amount:Q", title="Amount (₹)", format=",.0f") # Fixed currency format crash
             ]
         ).properties(height=200)
         
