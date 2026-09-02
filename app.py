@@ -925,7 +925,7 @@ else:
     with st.sidebar:
         try: st.image("assets/logo.png", use_container_width=True)
         except Exception: st.markdown("## 🍦 Kulfi Ops")
-        nav_options = ["Dashboard", "Daily Entry", "Purchase Orders", "Freezer Stock", "Freezer Analysis", "Stock Removed", "Expenses", "Staff & Payroll", "Payslip Generator"]
+        nav_options = ["Dashboard", "Daily Entry", "Live Cart Tracking", "Purchase Orders", "Freezer Stock", "Freezer Analysis", "Stock Removed", "Expenses", "Staff & Payroll", "Payslip Generator"]
         page = st.radio("Go to", nav_options, label_visibility="collapsed")
         st.markdown("---")
         if st.button("Log out", use_container_width=True):
@@ -1238,7 +1238,7 @@ elif page == "Live Cart Tracking" and user_role == "admin":
                 if not items_df.empty:
                     with st.expander("View Flavour Breakdown"):
                         st.dataframe(items_df.rename(columns={"flavor_name": "Flavour", "qty_sold": "Units Sold", "rev": "Revenue (₹)"}), hide_index=True, use_container_width=True)
-                        
+
 elif page == "Purchase Orders" and user_role == "admin":
     st.subheader("Purchase Order Estimator & Order Management")
     st.caption("Plan order quantities, apply overall discounts, calculate net payable cost, and manage orders.")
