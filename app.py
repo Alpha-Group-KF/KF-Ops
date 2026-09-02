@@ -2719,7 +2719,7 @@ elif page == "Dashboard" and user_role == "admin":
         st.markdown('<div id="revenue-trend"></div>', unsafe_allow_html=True)
         st.markdown("**Revenue, last 14 days**")
         trend_df = daily_df.assign(Day=daily_df["Date"].dt.normalize()).groupby("Day", as_index=False)["Total_Collection"].sum().sort_values("Day").tail(14)
-        trend_chart = alt.Chart(trend_df).mark_bar(color="#E8542A").encode(x=alt.X("Day:T", title="", axis=alt.Axis(format="%d %b", labelAngle=-45)), y=alt.Y("Total_Collection:Q", title="Revenue (₹)"), tooltip=[alt.Tooltip("Day:T", title="Date", format="%d %b %Y"), alt.Tooltip("Total_Collection:Q", title="Revenue", format=",.0f")]).properties(height=280)
+        trend_chart = alt.Chart(trend_df).mark_bar(color="#E8542A", width=16).encode(x=alt.X("Day:T", title="", axis=alt.Axis(format="%d %b", labelAngle=-45)), y=alt.Y("Total_Collection:Q", title="Revenue (₹)"), tooltip=[alt.Tooltip("Day:T", title="Date", format="%d %b %Y"), alt.Tooltip("Total_Collection:Q", title="Revenue", format=",.0f")]).properties(height=200)
         st.altair_chart(trend_chart, use_container_width=True)
     else: 
         st.info("No sales logged in database yet.")
@@ -2730,13 +2730,17 @@ elif page == "Dashboard" and user_role == "admin":
         st.markdown("## Reports & Performance Analytics")
         today_cur = date.today()
         month_start_cur = today_cur.replace(day=1)
+        default_end_cur = today_cur - timedelta(days=1)
+        if default_end_cur < month_start_cur:
+            default_end_cur = month_start_cur
+
         all_dates = [today_cur, month_start_cur]
         if not daily_df.empty: all_dates += [daily_df["Date"].min().date(), daily_df["Date"].max().date()]
         if not exp_df.empty and exp_df["Date"].notna().any(): all_dates += [exp_df["Date"].min().date(), exp_df["Date"].max().date()]
         min_d, max_d = min(all_dates), max(today_cur, max(all_dates))
 
         if "applied_start" not in st.session_state: st.session_state["applied_start"] = month_start_cur
-        if "applied_end" not in st.session_state: st.session_state["applied_end"] = today_cur
+        if "applied_end" not in st.session_state: st.session_state["applied_end"] = default_end_cur
         st.session_state["applied_start"] = min(max(st.session_state["applied_start"], min_d), max_d)
         st.session_state["applied_end"] = min(max(st.session_state["applied_end"], min_d), max_d)
 
@@ -2805,8 +2809,8 @@ elif page == "Dashboard" and user_role == "admin":
         with pl_c2:
             st.markdown("#### Cost Distribution: COGS, OPEX & CAPEX")
             cost_dist_df = pd.DataFrame({"Cost Bucket": ["COGS (Goods Sold)", "Operating Expenses (OPEX)", "Capital Expenditure (CAPEX)"], "Amount (₹)": [exact_cogs_sold, total_incurred_opex, capex_total]})
-            cost_chart = alt.Chart(cost_dist_df).mark_bar().encode(x=alt.X("Cost Bucket:N", title="", sort=None, axis=alt.Axis(labelAngle=-15)), y=alt.Y("Amount (₹):Q", title="Amount (₹)"), color=alt.Color("Cost Bucket:N", scale=alt.Scale(domain=["COGS (Goods Sold)", "Operating Expenses (OPEX)", "Capital Expenditure (CAPEX)"], range=["#C43D17", "#8A5E17", "#4A2418"]), legend=None), tooltip=[alt.Tooltip("Cost Bucket:N", title="Type"), alt.Tooltip("Amount (₹):Q", format=",.2f", title="Amount")]).properties(height=240)
-            st.altair_chart(cost_chart, use_container_width=True)
+            cost_chart = alt.Chart(cost_dist_df).mark_bar(width=28).encode(x=alt.X("Cost Bucket:N", title="", sort=None, axis=alt.Axis(labelAngle=-15)), y=alt.Y("Amount (₹):Q", title="Amount (₹)"), color=alt.Color("Cost Bucket:N", scale=alt.Scale(domain=["COGS (Goods Sold)", "Operating Expenses (OPEX)", "Capital Expenditure (CAPEX)"], range=["#C43D17", "#8A5E17", "#4A2418"]), legend=None), tooltip=[alt.Tooltip("Cost Bucket:N", title="Type"), alt.Tooltip("Amount (₹):Q", format=",.2f", title="Amount")]).properties(height=200)
+            st.altair_chart(cost_chart, use_center_width=True, use_container_width=True)
 
         st.markdown("#### Collections & Cash Breakdown")
         if not range_df.empty:
@@ -2822,7 +2826,8 @@ elif page == "Dashboard" and user_role == "admin":
             c_k4.metric("Food / Tea Cash", f"₹{total_food:,.0f}")
             
             split_df = pd.DataFrame({"Mode": ["Cash", "PhonePe / UPI", "Staff Advance", "Food / Tea"], "Amount (₹)": [total_cash, total_phonepe, total_advance, total_food]})
-            st.bar_chart(split_df.set_index("Mode")["Amount (₹)"])
+            split_chart = alt.Chart(split_df).mark_bar(width=28, color="#8A5E17").encode(x=alt.X("Mode:N", title=""), y=alt.Y("Amount (₹):Q", title="Amount (₹)"), tooltip=["Mode", alt.Tooltip("Amount (₹):Q", format=",.2f")]).properties(height=180)
+            st.altair_chart(split_chart, use_container_width=True)
         else: 
             st.caption("No collection data in this period.")
 
@@ -2836,7 +2841,8 @@ elif page == "Dashboard" and user_role == "admin":
         if exp_cat_list:
             exp_cat_df = pd.DataFrame(exp_cat_list).sort_values(by="Amount (₹)", ascending=False)
             st.dataframe(exp_cat_df, hide_index=True, use_container_width=True, column_config={"Amount (₹)": st.column_config.NumberColumn(format="₹%.2f")})
-            st.bar_chart(exp_cat_df.set_index("Category")["Amount (₹)"])
+            exp_chart = alt.Chart(exp_cat_df).mark_bar(width=22, color="#70440E").encode(x=alt.X("Category:N", title="", axis=alt.Axis(labelAngle=-25)), y=alt.Y("Amount (₹):Q", title="Amount (₹)"), tooltip=["Category", alt.Tooltip("Amount (₹):Q", format=",.2f")]).properties(height=180)
+            st.altair_chart(exp_chart, use_container_width=True)
         else: 
             st.caption("No operating expenses incurred in this date range.")
 
@@ -2848,10 +2854,11 @@ elif page == "Dashboard" and user_role == "admin":
                 st.markdown("#### Revenue & Volume per Cart")
                 cart_grp = range_df.groupby("Cart").agg(**{"Revenue (₹)": ("Total_Collection", "sum"), "Units Sold": ("Sold_Total", "sum"), "Cash (₹)": ("Cash", "sum"), "PhonePe (₹)": ("PhonePe", "sum"), "Staff Advance (₹)": ("Staff_Advance", "sum"), "Food/Tea Cash (₹)": ("Food_Tea_Cash", "sum")}).reset_index().sort_values("Revenue (₹)", ascending=False)
                 cart_grp["Units Sold"] = cart_grp["Units Sold"].apply(lambda x: int(round(x)))
-                st.dataframe(cart_grp, hide_index=True, use_container_width=True, column_config={"Revenue (₹)": st.column_config.NumberColumn(format="₹%.2f"), "Cash (₹)": st.column_config.NumberColumn(format="₹%.2f"), "PhonePe (₹)": st.column_config.NumberColumn(format="₹%.2f"), "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%.2f"), "Food/Tea Cash (₹)": st.column_config.NumberColumn(format="₹%.2f")})
+                st.dataframe(cart_grp, hide_index=True, use_container_width=True, height=220, column_config={"Cart": st.column_config.TextColumn(width="large"), "Revenue (₹)": st.column_config.NumberColumn(format="₹%.2f"), "Cash (₹)": st.column_config.NumberColumn(format="₹%.2f"), "PhonePe (₹)": st.column_config.NumberColumn(format="₹%.2f"), "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%.2f"), "Food/Tea Cash (₹)": st.column_config.NumberColumn(format="₹%.2f")})
             with cart_col2: 
                 st.markdown("#### Comparative Cart Revenue")
-                st.bar_chart(cart_grp.set_index("Cart")["Revenue (₹)"])
+                cart_chart = alt.Chart(cart_grp).mark_bar(width=28, color="#E8542A").encode(x=alt.X("Cart:N", title=""), y=alt.Y("Revenue (₹):Q", title="Revenue (₹)"), tooltip=["Cart", alt.Tooltip("Revenue (₹):Q", format=",.2f")]).properties(height=180)
+                st.altair_chart(cart_chart, use_container_width=True)
         else: 
             st.caption("No cart sales in this date range.")
 
@@ -2911,6 +2918,6 @@ elif page == "Dashboard" and user_role == "admin":
             sales_table = range_df.sort_values(["Date", "Cart"])[display_cols].rename(columns={"Sold_Total": "Units Sold", "Total_Collection": "Revenue (₹)", "PhonePe": "PhonePe (₹)", "Cash": "Cash (₹)", "Staff_Name": "Staff Name", "Staff_Advance": "Staff Advance (₹)", "Food_Tea_Cash": "Food / Tea (₹)"})
             sales_table["Units Sold"] = sales_table["Units Sold"].apply(lambda x: int(round(x)))
             sales_table["Date"] = sales_table["Date"].dt.strftime("%d %b %Y")
-            st.dataframe(sales_table, hide_index=True, use_container_width=True, column_config={"Revenue (₹)": st.column_config.NumberColumn(format="₹%.2f"), "PhonePe (₹)": st.column_config.NumberColumn(format="₹%.2f"), "Cash (₹)": st.column_config.NumberColumn(format="₹%.2f"), "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%.2f"), "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%.2f")})
+            st.dataframe(sales_table, hide_index=True, use_container_width=True, column_config={"Revenue (₹)": st.column_config.NumberColumn(format="₹%.2f"), "PhonePe (₹)": alt.Undefined, "Cash (₹)": st.column_config.NumberColumn(format="₹%.2f"), "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%.2f"), "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%.2f")})
         else: 
             st.caption("No sales data recorded in this period.")
