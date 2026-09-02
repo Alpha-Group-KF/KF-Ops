@@ -2959,9 +2959,10 @@ elif page == "Dashboard" and user_role == "admin":
         st.markdown("---")
         st.markdown("### 3. Day-Wise & Timing Patterns")
         if not range_df.empty:
-            day_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+            # Abbreviate day names to 3 letters to prevent horizontal scrolling
+            day_order = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
             dow_df = range_df[range_df["Sold_Total"] > 0].copy()
-            dow_df["Day"] = dow_df["Date"].dt.day_name()
+            dow_df["Day"] = dow_df["Date"].dt.day_name().str[:3]
             
             if not dow_df.empty:
                 dw1, dw2 = st.columns(2)
