@@ -1212,15 +1212,40 @@ elif page == "Payslip Generator" and user_role == "admin":
 # ======================================================================
 # PAGE: LIVE CART TRACKING (Admin View)
 # ======================================================================
+# ======================================================================
+# PAGE: LIVE CART TRACKING (Admin / Owner View)
+# ======================================================================
 elif page == "Live Cart Tracking" and user_role == "admin":
-    st.subheader("Live Cart Operations Tracker")
-    st.caption("Monitor real-time sales pouring in from the mobile cart apps.")
+    st.subheader("Live Cart Operations & Sales Map")
+    st.caption("Monitor real-time sales and geographical hotspots pouring in from the mobile cart apps.")
 
     if st.button("🔄 Manual Refresh Live Data"):
         st.rerun()
     
     st.markdown("---")
 
+    # --- MAP VISUALIZATION ---
+    st.markdown("#### 📍 Live Sales Map (Today)")
+    map_query = """
+        SELECT t.txn_lat AS lat, t.txn_lng AS lon, s.cart_name, t.total_amount
+        FROM live_cart_transactions t
+        JOIN live_cart_shifts s ON t.shift_id = s.id
+        WHERE s.shift_date = CURRENT_DATE 
+        AND t.txn_lat IS NOT NULL 
+        AND t.txn_lng IS NOT NULL;
+    """
+    map_df = db_conn.query(map_query, ttl="0s")
+    
+    if not map_df.empty:
+        # Streamlit's native st.map requires columns specifically named 'lat' and 'lon'
+        st.map(map_df, size=40, color="#E8542A")
+    else:
+        st.info("No GPS-tagged transactions recorded yet today.")
+
+    st.markdown("---")
+    st.markdown("#### 🛒 Active Shifts Breakdown")
+
+    # --- SHIFTS BREAKDOWN ---
     active_shifts_df = db_conn.query("""
         SELECT s.id, s.cart_name, s.staff_name, s.started_at, s.status,
                COALESCE(SUM(t.total_amount), 0) AS gross_sales,
