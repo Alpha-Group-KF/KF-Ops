@@ -2121,7 +2121,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
 
                 submit_staff = st.form_submit_button("👤 Register Staff Member", type="primary", use_container_width=True)
 
-            if submit_staff:
+        if submit_staff:
                 if not new_s_name.strip():
                     st.error("Display Name is mandatory.")
                 else:
