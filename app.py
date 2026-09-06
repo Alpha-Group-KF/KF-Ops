@@ -384,11 +384,11 @@ def list_daily_entries_with_prefill():
     entries = []
     if db_conn is not None:
         query = """
-        SELECT e.id AS db_id, e.entry_date, e.cart_name, e.staff_name, e.total_collection, e.phonepe, e.cash, e.staff_advance, e.food_tea_cash, e.remarks,
+        SELECT e.id AS db_id, e.entry_date, e.cart_name, e.staff_name, e.total_collection, e.phonepe, e.cash, e.staff_advance, e.food_tea_cash, e.cash_leakage, e.remarks,
             json_agg(json_build_object('code', i.flavor_code, 'open', i.opening_units, 'add', i.added_units, 'sold', i.sold_units, 'close', i.closing_units)) AS items
         FROM daily_cart_entries e
         LEFT JOIN daily_cart_items i ON e.id = i.daily_entry_id
-        GROUP BY e.id, e.entry_date, e.cart_name, e.staff_name, e.total_collection, e.phonepe, e.cash, e.staff_advance, e.food_tea_cash, e.remarks
+        GROUP BY e.id, e.entry_date, e.cart_name, e.staff_name, e.total_collection, e.phonepe, e.cash, e.staff_advance, e.food_tea_cash, e.cash_leakage, e.remarks
         ORDER BY e.entry_date DESC, e.cart_name ASC;
         """
         df = db_conn.query(query, ttl="0s")
@@ -400,8 +400,15 @@ def list_daily_entries_with_prefill():
                 entries.append({
                     "db_id": r["db_id"], "date": pd.to_datetime(r["entry_date"]), "cart": str(r["cart_name"]).strip(),
                     "by_code": {code: {"opening": int(items_by_code.get(code, {}).get("open") or 0), "added": int(items_by_code.get(code, {}).get("add") or 0), "sold": int(items_by_code.get(code, {}).get("sold") or 0), "closing": int(items_by_code.get(code, {}).get("close") or 0)} for code in FLAVOR_CODES},
-                    "total": float(r["total_collection"]) if pd.notna(r["total_collection"]) else 0.0, "phonepe": float(r["phonepe"]) if pd.notna(r["phonepe"]) else 0.0, "cash": float(r["cash"]) if pd.notna(r["cash"]) else 0.0, "remarks": str(r["remarks"]) if pd.notna(r["remarks"]) else "",
-                    "staff_name": str(r["staff_name"]) if pd.notna(r["staff_name"]) else "", "staff_advance": float(r["staff_advance"]) if pd.notna(r["staff_advance"]) else 0.0, "food_tea_cash": float(r["food_tea_cash"]) if pd.notna(r["food_tea_cash"]) else 0.0, "is_prefill": False
+                    "total": float(r["total_collection"]) if pd.notna(r["total_collection"]) else 0.0, 
+                    "phonepe": float(r["phonepe"]) if pd.notna(r["phonepe"]) else 0.0, 
+                    "cash": float(r["cash"]) if pd.notna(r["cash"]) else 0.0, 
+                    "cash_leakage": float(r["cash_leakage"]) if pd.notna(r["cash_leakage"]) else 0.0,
+                    "remarks": str(r["remarks"]) if pd.notna(r["remarks"]) else "",
+                    "staff_name": str(r["staff_name"]) if pd.notna(r["staff_name"]) else "", 
+                    "staff_advance": float(r["staff_advance"]) if pd.notna(r["staff_advance"]) else 0.0, 
+                    "food_tea_cash": float(r["food_tea_cash"]) if pd.notna(r["food_tea_cash"]) else 0.0, 
+                    "is_prefill": False
                 })
 
     yesterday = date.today() - timedelta(days=1)
@@ -413,24 +420,29 @@ def list_daily_entries_with_prefill():
             by_code = {code: {"opening": prev_closings.get(code, 0), "added": 0, "closing": prev_closings.get(code, 0), "sold": 0} for code in FLAVOR_CODES}
             entries.append({
                 "db_id": f"prefill_{cart}_{yesterday.strftime('%Y%m%d')}", "date": pd.Timestamp(yesterday), "cart": cart, "by_code": by_code,
-                "total": 0.0, "phonepe": 0.0, "cash": 0.0, "remarks": "", "staff_name": prev_staff, "staff_advance": 0.0, "food_tea_cash": 0.0, "is_prefill": True
+                "total": 0.0, "phonepe": 0.0, "cash": 0.0, "cash_leakage": 0.0, "remarks": "", "staff_name": prev_staff, "staff_advance": 0.0, "food_tea_cash": 0.0, "is_prefill": True
             })
 
     entries.sort(key=lambda x: (x["date"], x["cart"]), reverse=True)
     return entries
 
-def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map, sold_map, total, phonepe, cash, remarks, staff_name="", staff_advance=0.0, food_tea_cash=0.0):
+def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map, sold_map, total, phonepe, cash, remarks, staff_name="", staff_advance=0.0, food_tea_cash=0.0, cash_leakage=0.0):
     if db_conn is not None:
         with db_conn.session as s:
             res = s.execute(
                 text("""
-                INSERT INTO daily_cart_entries (entry_date, cart_name, city, staff_name, total_collection, phonepe, cash, staff_advance, food_tea_cash, remarks)
-                VALUES (:date, :cart, :city, :staff, :tot, :ph, :cash, :adv, :food, :rem)
+                INSERT INTO daily_cart_entries (entry_date, cart_name, city, staff_name, total_collection, phonepe, cash, staff_advance, food_tea_cash, cash_leakage, remarks)
+                VALUES (:date, :cart, :city, :staff, :tot, :ph, :cash, :adv, :food, :leak, :rem)
                 ON CONFLICT (entry_date, cart_name) DO UPDATE 
-                SET staff_name = EXCLUDED.staff_name, total_collection = EXCLUDED.total_collection, phonepe = EXCLUDED.phonepe, cash = EXCLUDED.cash, staff_advance = EXCLUDED.staff_advance, food_tea_cash = EXCLUDED.food_tea_cash, remarks = EXCLUDED.remarks
+                SET staff_name = EXCLUDED.staff_name, total_collection = EXCLUDED.total_collection, phonepe = EXCLUDED.phonepe, cash = EXCLUDED.cash, staff_advance = EXCLUDED.staff_advance, food_tea_cash = EXCLUDED.food_tea_cash, cash_leakage = EXCLUDED.cash_leakage, remarks = EXCLUDED.remarks
                 RETURNING id;
                 """),
-                {"date": entry_date, "cart": cart_name, "city": CITY, "staff": staff_name, "tot": float(total), "ph": float(phonepe), "cash": float(cash), "adv": float(staff_advance), "food": float(food_tea_cash), "rem": str(remarks)}
+                {
+                    "date": entry_date, "cart": cart_name, "city": CITY, "staff": staff_name, 
+                    "tot": float(total), "ph": float(phonepe), "cash": float(cash), 
+                    "adv": float(staff_advance), "food": float(food_tea_cash), "leak": float(cash_leakage), 
+                    "rem": str(remarks)
+                }
             )
             daily_id = res.scalar()
             
@@ -444,8 +456,10 @@ def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map,
                     {"eid": daily_id, "code": code, "open": int(opening_map[code]), "add": int(added_map[code]), "sold": int(sold_map[code]), "close": int(closing_map[code])}
                 )
 
+            # Clear out previous auto-generated expenses for this daily entry to prevent duplicates on update
             s.execute(text("DELETE FROM expenses WHERE remarks LIKE :tag;"), {"tag": f"[Auto: Daily Entry #{daily_id}]%"})
 
+            # 1. Staff Advance Auto Expense (if applicable)
             if float(staff_advance) > 0 and staff_name:
                 res_adv = s.execute(
                     text("""
@@ -463,6 +477,7 @@ def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map,
                     {"eid": exp_adv_id, "pdate": entry_date, "pamt": float(staff_advance), "pref": f"CART-ADV-{entry_date.strftime('%Y%m%d')}", "pto": staff_name, "notes": f"Cash advance disbursed from daily sales collection at {cart_name}"}
                 )
 
+            # 2. Food & Tea Cash Auto Expense (if applicable)
             if float(food_tea_cash) > 0 and staff_name:
                 res_food = s.execute(
                     text("""
@@ -479,6 +494,23 @@ def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map,
                     """),
                     {"eid": exp_food_id, "pdate": entry_date, "pamt": float(food_tea_cash), "pref": f"CART-FOOD-{entry_date.strftime('%Y%m%d')}", "pto": staff_name, "notes": f"Daily food and tea cash allowance disbursed from cart collection at {cart_name}"}
                 )
+
+            # 3. Cash Leakage Automatic Expense Entry (No payment row, staff_name = NULL, status = 'Not Applicable')
+            if float(cash_leakage) > 0.001:
+                s.execute(
+                    text("""
+                    INSERT INTO expenses (expense_date, expense_type, category, sub_category, description, total_amount, attributed_to, vendor_name, staff_name, status, recorded_by, remarks) 
+                    VALUES (:ed, 'OPEX', 'Leakage Expense', 'Cash Leakage', :desc, :amt, :attr, NULL, NULL, 'Not Applicable', 'Daily Entry Auto', :rem);
+                    """),
+                    {
+                        "ed": entry_date, 
+                        "desc": f"Cash Leakage recorded at {cart_name}", 
+                        "amt": float(cash_leakage), 
+                        "attr": cart_name, 
+                        "rem": f"[Auto: Daily Entry #{daily_id}] Cash Leakage"
+                    }
+                )
+
             s.commit()
 
 def sync_today_restock_entry(today_date, cart_name, staff_name, today_prev_closing_map, today_added_map):
@@ -1105,7 +1137,7 @@ if page == "Daily Entry":
                 else:
                     try:
                         selected_staff = "" if staff_name == "Select Staff" else staff_name
-                        sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map, sold_map, total_collection_val, phonepe_val, cash_val, remarks, selected_staff, staff_advance_val, food_tea_val)
+                        sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map, sold_map, total_collection_val, phonepe_val, cash_val, remarks, selected_staff, staff_advance_val, food_tea_val, cash_leakage=cash_leakage)
                         sync_today_restock_entry(today_val, cart_name, selected_staff, today_db_opening_map, today_added_map)
                         st.cache_resource.clear()
                         st.session_state["active_daily_cart"] = None
