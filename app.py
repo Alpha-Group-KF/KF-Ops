@@ -2061,7 +2061,10 @@ elif page == "Staff & Payroll" and user_role == "admin":
     if staff_tab_sel == "👥 Staff Directory & KYC":
         st_mode = st.radio("Mode", ["View All Staff", "Add New Staff", "Edit Staff Profile & KYC"], horizontal=True, key="staff_dir_mode")
 
-        with st.form("new_staff_form"):
+        if st_mode == "Add New Staff":
+            st.write("Register a new staff member and configure their starting compensation package:")
+
+            with st.form("new_staff_form"):
                 sc1, sc2, sc3 = st.columns(3)
                 with sc1:
                     new_s_name = st.text_input("Display Name (App) *", placeholder="e.g. Ramesh", key="add_s_name")
@@ -2121,7 +2124,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
 
                 submit_staff = st.form_submit_button("👤 Register Staff Member", type="primary", use_container_width=True)
 
-        if submit_staff:
+            if submit_staff:
                 if not new_s_name.strip():
                     st.error("Display Name is mandatory.")
                 else:
@@ -2150,7 +2153,6 @@ elif page == "Staff & Payroll" and user_role == "admin":
                                 }
                             )
                             new_sid = res.scalar()
-                            # ... (compensation insert remains same)
 
                             s.execute(
                                 text("""
@@ -2173,6 +2175,155 @@ elif page == "Staff & Payroll" and user_role == "admin":
                         show_success_modal(f"Staff member '{new_s_name}' registered successfully with ID #{new_sid}!")
                     except Exception as e:
                         st.error(f"Could not register staff: {e}")
+
+        elif st_mode == "View All Staff":
+            if staff_df.empty:
+                st.info("No staff records found in database.")
+            else:
+                active_cnt = len(staff_df[staff_df["status"] == "active"])
+                st.metric("Total Staff Registered", f"{len(staff_df)} ({active_cnt} Active)")
+
+                disp_staff = staff_df.copy()
+                disp_staff["Role"] = disp_staff["role"].fillna("Cart Operator")
+                disp_staff["Gender"] = disp_staff["gender"].fillna("—")
+                disp_staff["Daily Fixed Rate"] = disp_staff["monthly_fixed_salary"].apply(lambda v: f"₹600/day (₹{_num(v):,.0f}/mo)")
+                disp_staff["Commission"] = disp_staff.apply(lambda r: f"{_num(r['commission_percentage']):.0f}% > ₹{_num(r['commission_threshold_daily']):,.0f}", axis=1)
+                disp_staff["Joined"] = pd.to_datetime(disp_staff["date_of_joining"]).dt.strftime("%d %b %Y")
+
+                summary_cols = ["id", "name", "Role", "Gender", "status", "phone_number", "Joined", "Daily Fixed Rate"]
+                st.dataframe(
+                    disp_staff[summary_cols].rename(columns={
+                        "id": "ID", "name": "Name", "status": "Status", "phone_number": "Phone"
+                    }),
+                    hide_index=True,
+                    use_container_width=True
+                )
+
+                st.markdown("---")
+                st.markdown("#### Detailed KYC Inspection")
+                sel_inspect = st.selectbox("Select staff member to inspect KYC profile", staff_df["name"].tolist(), key="inspect_staff_sel")
+                s_row = staff_df[staff_df["name"] == sel_inspect].iloc[0]
+
+                k1, k2, k3 = st.columns(3)
+                k1.write(f"**Full Legal Name:** {s_row.get('full_name') or '—'}")
+                k1.write(f"**Role:** {s_row.get('role') or 'Cart Operator'}")
+                k1.write(f"**Gender:** {s_row.get('gender') or '—'}")
+                
+                k2.write(f"**Date of Birth:** {pd.to_datetime(s_row['date_of_birth']).strftime('%d %b %Y') if pd.notna(s_row['date_of_birth']) else '—'}")
+                k2.write(f"**PAN Number:** {s_row['pan_number'] or '—'}")
+                
+                k3.write(f"**Emergency Contact:** {s_row['emergency_contact_name'] or '—'} ({s_row['emergency_contact_phone'] or '—'})")
+                k3.write(f"**Date of Leaving:** {pd.to_datetime(s_row['date_of_leaving']).strftime('%d %b %Y') if pd.notna(s_row['date_of_leaving']) else '—'}")
+
+                st.write(f"**Current Address:** {s_row['current_address'] or '—'}")
+                st.write(f"**Permanent Address:** {s_row['permanent_address'] or '—'}")
+                if s_row.get("notes"):
+                    st.caption(f"Remarks: {s_row['notes']}")
+
+        elif st_mode == "Edit Staff Profile & KYC":
+            if staff_df.empty:
+                st.info("No staff records found to edit.")
+            else:
+                staff_names = staff_df["name"].tolist()
+                sel_edit_name = st.selectbox("Select Staff to Edit", staff_names, key="edit_staff_picker")
+                s_edit = staff_df[staff_df["name"] == sel_edit_name].iloc[0]
+                s_id = int(s_edit["id"])
+
+                with st.form("edit_staff_form"):
+                    ec1, ec2, ec3 = st.columns(3)
+                    with ec1:
+                        e_name = st.text_input("Display Name (App) *", value=str(s_edit["name"]), key=f"e_name_{s_id}")
+                    with ec2:
+                        e_fullname = st.text_input("Full Legal Name", value=str(s_edit.get("full_name") or ""), key=f"e_fname_{s_id}")
+                    with ec3:
+                        e_phone = st.text_input("Mobile Number", value=str(s_edit.get("phone_number") or ""), key=f"e_phone_{s_id}")
+
+                    roles_opts = ["Cart Operator", "Ops Coordinator", "Manager", "Helper"]
+                    curr_role = str(s_edit.get("role") or "Cart Operator")
+                    if curr_role not in roles_opts: roles_opts.append(curr_role)
+
+                    gender_opts = ["Male", "Female", "Other"]
+                    curr_gender = str(s_edit.get("gender") or "Male")
+                    if curr_gender not in gender_opts: gender_opts.append(curr_gender)
+
+                    ec_role, ec_gender, ec4, ec5 = st.columns(4)
+                    with ec_role:
+                        e_role = st.selectbox("Role / Designation", roles_opts, index=roles_opts.index(curr_role), key=f"e_role_{s_id}")
+                    with ec_gender:
+                        e_gender = st.selectbox("Gender", gender_opts, index=gender_opts.index(curr_gender), key=f"e_gender_{s_id}")
+                    with ec4:
+                        stat_idx = STAFF_STATUSES.index(s_edit["status"]) if s_edit["status"] in STAFF_STATUSES else 0
+                        e_status = st.selectbox("Status", STAFF_STATUSES, index=stat_idx, key=f"e_status_{s_id}")
+                    with ec5:
+                        doj_val = pd.to_datetime(s_edit["date_of_joining"]).date() if pd.notna(s_edit["date_of_joining"]) else date.today()
+                        e_doj = st.date_input("Date of Joining", value=doj_val, key=f"e_doj_{s_id}")
+
+                    ec6, ec_dol, ec7, ec8 = st.columns(4)
+                    with ec6:
+                        dob_val = pd.to_datetime(s_edit["date_of_birth"]).date() if pd.notna(s_edit["date_of_birth"]) else date(1995, 1, 1)
+                        e_dob = st.date_input("Date of Birth", value=dob_val, key=f"e_dob_{s_id}")
+                    with ec_dol:
+                        dol_val = pd.to_datetime(s_edit["date_of_leaving"]).date() if pd.notna(s_edit["date_of_leaving"]) else None
+                        e_dol = st.date_input("Date of Leaving", value=dol_val, key=f"e_dol_{s_id}")
+                    with ec7:
+                        e_pan = st.text_input("PAN Number", value=str(s_edit.get("pan_number") or ""), key=f"e_pan_{s_id}")
+                    with ec8:
+                        e_aadhaar = st.text_input("Aadhaar Number", value="", placeholder="[Aadhaar Redacted]", key=f"e_aadhaar_{s_id}")
+
+                    ec9, ec10 = st.columns(2)
+                    with ec9:
+                        e_caddr = st.text_area("Current Address", value=str(s_edit.get("current_address") or ""), height=68, key=f"e_caddr_{s_id}")
+                    with ec10:
+                        e_paddr = st.text_area("Permanent Address", value=str(s_edit.get("permanent_address") or ""), height=68, key=f"e_paddr_{s_id}")
+
+                    ec11, ec12 = st.columns(2)
+                    with ec11:
+                        e_emg_n = st.text_input("Emergency Contact Name", value=str(s_edit.get("emergency_contact_name") or ""), key=f"e_emgn_{s_id}")
+                    with ec12:
+                        e_emg_p = st.text_input("Emergency Contact Phone", value=str(s_edit.get("emergency_contact_phone") or ""), key=f"e_emgp_{s_id}")
+
+                    e_notes = st.text_input("Notes", value=str(s_edit.get("notes") or ""), key=f"e_notes_{s_id}")
+
+                    save_edit_staff = st.form_submit_button("💾 Save Profile Changes", type="primary", use_container_width=True)
+
+                if save_edit_staff:
+                    if not e_name.strip():
+                        st.error("Display Name cannot be blank.")
+                    else:
+                        try:
+                            with db_conn.session as s:
+                                update_params = {
+                                    "name": e_name.strip(), "full_name": e_fullname.strip(), 
+                                    "role": e_role, "gender": e_gender, "status": e_status, 
+                                    "phone": re.sub(r'[^\d+]', '', e_phone),
+                                    "emg_n": e_emg_n.strip(), "emg_p": re.sub(r'[^\d+]', '', e_emg_p), 
+                                    "dob": e_dob, "pan": e_pan.strip().upper(),
+                                    "caddr": e_caddr.strip(), "paddr": e_paddr.strip(), "doj": e_doj, "dol": e_dol,
+                                    "notes": e_notes.strip(), "id": s_id
+                                }
+                                aadhaar_update_sql = ""
+                                if e_aadhaar.strip() and e_aadhaar.strip() != "[Aadhaar Redacted]":
+                                    update_params["aadhaar"] = re.sub(r'\D', '', e_aadhaar)
+                                    aadhaar_update_sql = ", aadhaar_number = :aadhaar"
+
+                                s.execute(
+                                    text(f"""
+                                    UPDATE staff
+                                    SET name = :name, full_name = :full_name, role = :role, gender = :gender, status = :status, phone_number = :phone,
+                                        emergency_contact_name = :emg_n, emergency_contact_phone = :emg_p,
+                                        date_of_birth = :dob, pan_number = :pan,
+                                        current_address = :caddr, permanent_address = :paddr,
+                                        date_of_joining = :doj, date_of_leaving = :dol, notes = :notes, updated_at = NOW()
+                                        {aadhaar_update_sql}
+                                    WHERE id = :id;
+                                    """),
+                                    update_params
+                                )
+                                s.commit()
+                            st.cache_data.clear()
+                            show_success_modal(f"Staff profile for '{e_name}' updated successfully!")
+                        except Exception as e:
+                            st.error(f"Could not update staff profile: {e}")
 
         elif st_mode == "View All Staff":
             if staff_df.empty:
