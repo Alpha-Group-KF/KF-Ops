@@ -567,9 +567,17 @@ def sync_today_restock_entry(today_date, cart_name, staff_name, today_prev_closi
 def load_db_daily_df():
     if db_conn is None: return pd.DataFrame()
     query = """
-    SELECT e.entry_date AS "Date", e.cart_name AS "Cart", e.total_collection AS "Total_Collection", e.phonepe AS "PhonePe", e.cash AS "Cash", e.staff_name AS "Staff_Name", e.staff_advance AS "Staff_Advance", e.food_tea_cash AS "Food_Tea_Cash", e.remarks AS "Remarks", COALESCE(SUM(i.sold_units), 0) AS "Sold_Total", COALESCE(SUM(i.closing_units), 0) AS "Closing_Total"
-    FROM daily_cart_entries e LEFT JOIN daily_cart_items i ON e.id = i.daily_entry_id
-    GROUP BY e.id, e.entry_date, e.cart_name, e.total_collection, e.phonepe, e.cash, e.staff_name, e.staff_advance, e.food_tea_cash, e.remarks ORDER BY e.entry_date DESC;
+    SELECT e.entry_date AS "Date", e.cart_name AS "Cart", e.total_collection AS "Total_Collection", 
+           e.phonepe AS "PhonePe", e.cash AS "Cash", e.staff_name AS "Staff_Name", 
+           e.staff_advance AS "Staff_Advance", e.food_tea_cash AS "Food_Tea_Cash", 
+           e.cash_leakage AS "Cash_Leakage", e.remarks AS "Remarks", 
+           COALESCE(SUM(i.sold_units), 0) AS "Sold_Total", 
+           COALESCE(SUM(i.closing_units), 0) AS "Closing_Total"
+    FROM daily_cart_entries e 
+    LEFT JOIN daily_cart_items i ON e.id = i.daily_entry_id
+    GROUP BY e.id, e.entry_date, e.cart_name, e.total_collection, e.phonepe, e.cash, 
+             e.staff_name, e.staff_advance, e.food_tea_cash, e.cash_leakage, e.remarks 
+    ORDER BY e.entry_date DESC;
     """
     df = db_conn.query(query, ttl="0s")
     if not df.empty: df["Date"] = pd.to_datetime(df["Date"])
@@ -2966,9 +2974,10 @@ elif page == "Dashboard" and user_role == "admin":
             total_phonepe = float(range_df["PhonePe"].sum())
             gross_cash = max(0.0, float(total_rev - total_phonepe))
             
-            # Calculate Paid Allowances from the expenses table safely
+            # Sum actual paid allowances from expenses table
             adv_paid = 0.0
             food_paid = 0.0
+            leakage_recorded = float(range_df["Cash_Leakage"].sum()) if "Cash_Leakage" in range_df.columns else 0.0
             
             if not range_exp.empty and "Status" in range_exp.columns and "Sub_Category" in range_exp.columns:
                 paid_exp = range_exp[range_exp["Status"].astype(str).str.strip().str.lower() == "paid"]
@@ -2978,7 +2987,8 @@ elif page == "Dashboard" and user_role == "admin":
                     adv_paid = float(paid_exp[adv_mask]["Amount"].sum())
                     food_paid = float(paid_exp[food_mask]["Amount"].sum())
 
-            net_cash = max(0.0, float(gross_cash - adv_paid - food_paid))
+            # Net Cash in hand subtracts phonepe, staff advances, food/tea allowances, and cash leakage
+            net_cash = max(0.0, float(gross_cash - adv_paid - food_paid - leakage_recorded))
 
             # Pie Chart 1: Gross Cash vs PhonePe
             pie1_df = pd.DataFrame({"Category": ["Gross Cash", "PhonePe"], "Amount": [gross_cash, total_phonepe]})
@@ -3088,7 +3098,8 @@ elif page == "Dashboard" and user_role == "admin":
                 "PhonePe": "sum",
                 "Cash": "sum",
                 "Staff_Advance": "sum",
-                "Food_Tea_Cash": "sum"
+                "Food_Tea_Cash": "sum",
+                "Cash_Leakage": "sum"  # <--- Added Cash Leakage
             }).reset_index().sort_values("Date", ascending=False)
             
             date_wise_table = date_wise_agg.rename(columns={
@@ -3097,7 +3108,8 @@ elif page == "Dashboard" and user_role == "admin":
                 "PhonePe": "PhonePe (₹)",
                 "Cash": "Cash (₹)",
                 "Staff_Advance": "Staff Advance (₹)",
-                "Food_Tea_Cash": "Food / Tea (₹)"
+                "Food_Tea_Cash": "Food / Tea (₹)",
+                "Cash_Leakage": "Cash Leakage (₹)" # <--- Renamed for display
             })
             date_wise_table["Units Sold"] = date_wise_table["Units Sold"].apply(lambda x: int(round(x)))
             date_wise_table["Date"] = date_wise_table["Date"].dt.strftime("%d %b %Y")
@@ -3106,12 +3118,22 @@ elif page == "Dashboard" and user_role == "admin":
                 "PhonePe (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
                 "Cash (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
                 "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
-                "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%,.2f")
+                "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
+                "Cash Leakage (₹)": st.column_config.NumberColumn(format="₹%,.2f")
             })
 
             st.markdown("#### Itemized Daily Cart Sales Log")
-            display_cols = ["Date", "Cart", "Sold_Total", "Total_Collection", "PhonePe", "Cash", "Staff_Name", "Staff_Advance", "Food_Tea_Cash", "Remarks"]
-            sales_table = range_df.sort_values(["Date", "Cart"])[display_cols].rename(columns={"Sold_Total": "Units Sold", "Total_Collection": "Revenue (₹)", "PhonePe": "PhonePe (₹)", "Cash": "Cash (₹)", "Staff_Name": "Staff Name", "Staff_Advance": "Staff Advance (₹)", "Food_Tea_Cash": "Food / Tea (₹)"})
+            display_cols = ["Date", "Cart", "Sold_Total", "Total_Collection", "PhonePe", "Cash", "Staff_Name", "Staff_Advance", "Food_Tea_Cash", "Cash_Leakage", "Remarks"]
+            sales_table = range_df.sort_values(["Date", "Cart"])[display_cols].rename(columns={
+                "Sold_Total": "Units Sold", 
+                "Total_Collection": "Revenue (₹)", 
+                "PhonePe": "PhonePe (₹)", 
+                "Cash": "Cash (₹)", 
+                "Staff_Name": "Staff Name", 
+                "Staff_Advance": "Staff Advance (₹)", 
+                "Food_Tea_Cash": "Food / Tea (₹)",
+                "Cash_Leakage": "Cash Leakage (₹)"
+            })
             sales_table["Units Sold"] = sales_table["Units Sold"].apply(lambda x: int(round(x)))
             sales_table["Date"] = sales_table["Date"].dt.strftime("%d %b %Y")
             st.dataframe(
@@ -3123,7 +3145,8 @@ elif page == "Dashboard" and user_role == "admin":
                     "PhonePe (₹)": st.column_config.NumberColumn(format="₹%,.2f"), 
                     "Cash (₹)": st.column_config.NumberColumn(format="₹%,.2f"), 
                     "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%,.2f"), 
-                    "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%,.2f")
+                    "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
+                    "Cash Leakage (₹)": st.column_config.NumberColumn(format="₹%,.2f")
                 }
             )
         else: 
