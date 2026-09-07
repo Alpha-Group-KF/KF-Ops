@@ -2005,7 +2005,7 @@ elif page == "Expenses" and user_role == "admin":
                     new_p_notes = st.text_input("Payment Notes / Remarks", placeholder="e.g. Part payment tranche 1...", key="rec_p_notes")
 
                     if st.button("💳 Disburse Payment", type="primary", use_container_width=True):
-    if new_p_amount <= 0: 
+        if new_p_amount <= 0: 
         st.error("Please enter a payment amount greater than 0.")
     else:
         try:
@@ -2042,7 +2042,7 @@ elif page == "Expenses" and user_role == "admin":
                 disp_pay = payments_df.copy(); disp_pay["payment_date"] = pd.to_datetime(disp_pay["payment_date"]).dt.strftime("%d %b %Y"); disp_pay["Expense Link"] = disp_pay.apply(lambda r: f"#{r['expense_id']} — {r['category']} (₹{float(r['expense_total']):,.0f})", axis=1)
                 st.dataframe(disp_pay[["id", "payment_date", "Expense Link", "amount_paid", "payment_mode", "ref_no", "paid_to", "paid_by", "notes"]].rename(columns={"id": "Payment ID", "payment_date": "Date", "amount_paid": "Amount (₹)", "payment_mode": "Mode", "ref_no": "Ref / UTR", "paid_to": "Paid To", "paid_by": "Paid By", "notes": "Notes"}), hide_index=True, use_container_width=True, column_config={"Amount (₹)": st.column_config.NumberColumn(format="₹%,.2f")})
 
-        elif p_sub_mode == "Edit Past Payment":
+elif p_sub_mode == "Edit Past Payment":
             if payments_df.empty: st.info("No payments recorded to edit.")
             else:
                 pay_records = payments_df.to_dict("records")
@@ -2069,7 +2069,7 @@ elif page == "Expenses" and user_role == "admin":
                             show_success_modal(f"Payment #{loaded_pay_id} updated successfully!")
                         except Exception as e: st.error(f"Could not update payment: {e}")
 
-    elif exp_nav == "📊 Summary & Date Reports":
+elif exp_nav == "📊 Summary & Date Reports":
         st.write("Analyze expense obligations, actual disbursements, and settlement ratios over any time window:")
         expenses_summary_df, payments_df = load_db_expenses_summary_df(), load_db_payments_df()
 
