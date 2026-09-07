@@ -3148,7 +3148,7 @@ elif page == "Dashboard" and user_role == "admin":
                 st.caption("No active selling days found in this range.")
 
             st.markdown("#### Date-Wise Daily Sales Log")
-                        date_wise_agg = range_df.groupby("Date").agg({
+            date_wise_agg = range_df.groupby("Date").agg({
                             "Sold_Total": "sum",
                             "Total_Collection": "sum",
                             "PhonePe": "sum",
@@ -3158,7 +3158,7 @@ elif page == "Dashboard" and user_role == "admin":
                             "Cash_Leakage": "sum"  # <--- Added Cash Leakage
                         }).reset_index().sort_values("Date", ascending=False)
                         
-                        date_wise_table = date_wise_agg.rename(columns={
+            date_wise_table = date_wise_agg.rename(columns={
                             "Sold_Total": "Units Sold",
                             "Total_Collection": "Revenue (₹)",
                             "PhonePe": "PhonePe (₹)",
@@ -3167,9 +3167,9 @@ elif page == "Dashboard" and user_role == "admin":
                             "Food_Tea_Cash": "Food / Tea (₹)",
                             "Cash_Leakage": "Cash Leakage (₹)" # <--- Renamed for display
                         })
-                        date_wise_table["Units Sold"] = date_wise_table["Units Sold"].apply(lambda x: int(round(x)))
-                        date_wise_table["Date"] = date_wise_table["Date"].dt.strftime("%d %b %Y")
-                        st.dataframe(date_wise_table, hide_index=True, use_container_width=True, column_config={
+            date_wise_table["Units Sold"] = date_wise_table["Units Sold"].apply(lambda x: int(round(x)))
+            date_wise_table["Date"] = date_wise_table["Date"].dt.strftime("%d %b %Y")
+            st.dataframe(date_wise_table, hide_index=True, use_container_width=True, column_config={
                             "Revenue (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
                             "PhonePe (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
                             "Cash (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
@@ -3178,9 +3178,9 @@ elif page == "Dashboard" and user_role == "admin":
                             "Cash Leakage (₹)": st.column_config.NumberColumn(format="₹%,.2f")
                         })
             
-                        st.markdown("#### Itemized Daily Cart Sales Log")
-                        display_cols = ["Date", "Cart", "Sold_Total", "Total_Collection", "PhonePe", "Cash", "Staff_Name", "Staff_Advance", "Food_Tea_Cash", "Cash_Leakage", "Remarks"]
-                        sales_table = range_df.sort_values(["Date", "Cart"])[display_cols].rename(columns={
+            st.markdown("#### Itemized Daily Cart Sales Log")
+            display_cols = ["Date", "Cart", "Sold_Total", "Total_Collection", "PhonePe", "Cash", "Staff_Name", "Staff_Advance", "Food_Tea_Cash", "Cash_Leakage", "Remarks"]
+            sales_table = range_df.sort_values(["Date", "Cart"])[display_cols].rename(columns={
                             "Sold_Total": "Units Sold", 
                             "Total_Collection": "Revenue (₹)", 
                             "PhonePe": "PhonePe (₹)", 
@@ -3190,9 +3190,9 @@ elif page == "Dashboard" and user_role == "admin":
                             "Food_Tea_Cash": "Food / Tea (₹)",
                             "Cash_Leakage": "Cash Leakage (₹)"
                         })
-                        sales_table["Units Sold"] = sales_table["Units Sold"].apply(lambda x: int(round(x)))
-                        sales_table["Date"] = sales_table["Date"].dt.strftime("%d %b %Y")
-                        st.dataframe(
+            sales_table["Units Sold"] = sales_table["Units Sold"].apply(lambda x: int(round(x)))
+            sales_table["Date"] = sales_table["Date"].dt.strftime("%d %b %Y")
+            st.dataframe(
                             sales_table, 
                             hide_index=True, 
                             use_container_width=True, 
@@ -3205,5 +3205,5 @@ elif page == "Dashboard" and user_role == "admin":
                                 "Cash Leakage (₹)": st.column_config.NumberColumn(format="₹%,.2f")
                             }
                         )
-                    else: 
-                        st.caption("No sales data recorded in this period.")
+        else: 
+            st.caption("No sales data recorded in this period.")
