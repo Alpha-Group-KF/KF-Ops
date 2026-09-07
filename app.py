@@ -210,7 +210,6 @@ div[data-testid="stMetric"] {
     box-shadow: 0 1px 2px rgba(0,0,0,0.03);
     height: 100%;
 }
-/* Aggressively target all nested elements to prevent truncation */
 div[data-testid="stMetricLabel"], 
 div[data-testid="stMetricLabel"] > div, 
 div[data-testid="stMetricLabel"] label,
@@ -456,10 +455,8 @@ def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map,
                     {"eid": daily_id, "code": code, "open": int(opening_map[code]), "add": int(added_map[code]), "sold": int(sold_map[code]), "close": int(closing_map[code])}
                 )
 
-            # Clear out previous auto-generated expenses for this daily entry to prevent duplicates on update
             s.execute(text("DELETE FROM expenses WHERE remarks LIKE :tag;"), {"tag": f"[Auto: Daily Entry #{daily_id}]%"})
 
-            # 1. Staff Advance Auto Expense (if applicable)
             if float(staff_advance) > 0 and staff_name:
                 res_adv = s.execute(
                     text("""
@@ -477,7 +474,6 @@ def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map,
                     {"eid": exp_adv_id, "pdate": entry_date, "pamt": float(staff_advance), "pref": f"CART-ADV-{entry_date.strftime('%Y%m%d')}", "pto": staff_name, "notes": f"Cash advance disbursed from daily sales collection at {cart_name}"}
                 )
 
-            # 2. Food & Tea Cash Auto Expense (if applicable)
             if float(food_tea_cash) > 0 and staff_name:
                 res_food = s.execute(
                     text("""
@@ -495,7 +491,6 @@ def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map,
                     {"eid": exp_food_id, "pdate": entry_date, "pamt": float(food_tea_cash), "pref": f"CART-FOOD-{entry_date.strftime('%Y%m%d')}", "pto": staff_name, "notes": f"Daily food and tea cash allowance disbursed from cart collection at {cart_name}"}
                 )
 
-            # 3. Cash Leakage Automatic Expense Entry (No payment row, staff_name = NULL, status = 'Not Applicable')
             if float(cash_leakage) > 0.001:
                 s.execute(
                     text("""
@@ -667,6 +662,58 @@ def get_db_freezer_stock():
         return pd.DataFrame(rows)
     except Exception:
         return pd.DataFrame(columns=["code", "Units in freezer"])
+
+def get_physical_current_stock_map():
+    if db_conn is None: return {}
+    try:
+        audit_df = db_conn.query("SELECT * FROM stock_audits_wide ORDER BY audit_date DESC, audit_id DESC LIMIT 1;", ttl="0s")
+        if audit_df.empty: return {}
+        audit_row = audit_df.iloc[0]
+        audit_date = pd.to_datetime(audit_row["audit_date"]).date()
+        audit_next_date = audit_date + timedelta(days=1)
+        
+        audit_map = {code: int(audit_row.get(FLAVOR_MAP[code]["audit_col"], 0)) for code in FLAVOR_CODES}
+        
+        rec_df = db_conn.query("""
+            SELECT ri.flavor_code, COALESCE(SUM(ri.received_units), 0) AS recv 
+            FROM stock_received_items ri 
+            JOIN stock_received r ON ri.received_id = r.id 
+            WHERE r.received_date >= :adate 
+            GROUP BY ri.flavor_code;
+        """, params={"adate": audit_date}, ttl="0s")
+        rec_map = dict(zip(rec_df["flavor_code"], rec_df["recv"])) if not rec_df.empty else {}
+        
+        added_df = db_conn.query("""
+            SELECT i.flavor_code, COALESCE(SUM(i.added_units), 0) AS added 
+            FROM daily_cart_items i 
+            JOIN daily_cart_entries e ON i.daily_entry_id = e.id 
+            WHERE e.entry_date >= :anext 
+            GROUP BY i.flavor_code;
+        """, params={"anext": audit_next_date}, ttl="0s")
+        added_map = dict(zip(added_df["flavor_code"], added_df["added"])) if not added_df.empty else {}
+        
+        rem_df = db_conn.query("""
+            SELECT 
+                COALESCE(SUM(ml_units), 0) AS ml_units, COALESCE(SUM(mm_units), 0) AS mm_units, 
+                COALESCE(SUM(ps_units), 0) AS ps_units, COALESCE(SUM(mn_units), 0) AS mn_units, 
+                COALESCE(SUM(kb_units), 0) AS kb_units, COALESCE(SUM(bm_units), 0) AS bm_units, 
+                COALESCE(SUM(sg_units), 0) AS sg_units, COALESCE(SUM(ch_units), 0) AS ch_units, 
+                COALESCE(SUM(ra_units), 0) AS ra_units 
+            FROM stock_removed 
+            WHERE removal_date >= :anext;
+        """, params={"anext": audit_next_date}, ttl="0s")
+        rem_map = {code: int(rem_df.iloc[0].get(FLAVOR_MAP[code]["audit_col"], 0)) for code in FLAVOR_CODES} if not rem_df.empty else {code: 0 for code in FLAVOR_CODES}
+        
+        phys_current_map = {}
+        for code in FLAVOR_CODES:
+            base = audit_map.get(code, 0)
+            recv = rec_map.get(code, 0)
+            added = added_map.get(code, 0)
+            removed = rem_map.get(code, 0)
+            phys_current_map[code] = base + recv - added - removed
+        return phys_current_map
+    except Exception as e:
+        return {}
     
 def load_full_staff_df():
     if db_conn is None: return pd.DataFrame()
@@ -1252,9 +1299,6 @@ elif page == "Payslip Generator" and user_role == "admin":
 # ======================================================================
 # PAGE: LIVE CART TRACKING (Admin View)
 # ======================================================================
-# ======================================================================
-# PAGE: LIVE CART TRACKING (Admin / Owner View)
-# ======================================================================
 elif page == "Live Cart Tracking" and user_role == "admin":
     st.subheader("Live Cart Operations & Sales Map")
     st.caption("Monitor real-time sales and geographical hotspots pouring in from the mobile cart apps.")
@@ -1277,7 +1321,6 @@ elif page == "Live Cart Tracking" and user_role == "admin":
     map_df = db_conn.query(map_query, ttl="0s")
     
     if not map_df.empty:
-        # Streamlit's native st.map requires columns specifically named 'lat' and 'lon'
         st.map(map_df, size=40, color="#E8542A")
     else:
         st.info("No GPS-tagged transactions recorded yet today.")
@@ -1632,10 +1675,12 @@ elif page == "Freezer Analysis" and user_role == "admin":
 
     st.markdown("---"); st.markdown("### 2. Suggested Orders & Inventory Runway &nbsp; *(Calculated from Live Freezer Stock Today)*")
     reorder_rows, trigger_dates, tot_calc_active, tot_rate, tot_suggested_units, tot_order_cost = [], [], 0, 0.0, 0, 0.0
+    phys_curr_map = get_physical_current_stock_map()
 
     for code in FLAVOR_CODES:
         f_info = FLAVOR_MAP[code]
         avail_stock = int(rec_map.get(code, 0)) - int(added_map.get(code, 0)) - int(rem_map.get(code, 0))
+        phys_stock_pos = phys_curr_map.get(code, "—")
         tot_calc_active += avail_stock
         rate = float(sales_pace_map.get(code, 0)) / lookback_days
         tot_rate += rate
@@ -1650,7 +1695,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
             else: status, suggested_qty, reason = "🟢 OK", 0, f"Stock covers {int(round(days_left))} days"
 
         tot_suggested_units += suggested_qty; tot_order_cost += (suggested_qty * f_info["cost_price"])
-        reorder_rows.append({"Flavour": f_info["name"], "Calculated Stock": avail_stock, "Daily Pace": f"{rate:.1f} /d", "Runway": f"{int(round(days_left))} days" if days_left is not None else "—", "Target Buffer": target_req, "Suggested Order": int(suggested_qty), "Urgency": status, "Rationale": reason})
+        reorder_rows.append({"Flavour": f_info["name"], "Calculated Stock": avail_stock, "Physical Current Stock": phys_stock_pos, "Daily Pace": f"{rate:.1f} /d", "Runway": f"{int(round(days_left))} days" if days_left is not None else "—", "Target Buffer": target_req, "Suggested Order": int(suggested_qty), "Urgency": status, "Rationale": reason})
 
     r_m1, r_m2, r_m3, r_m4 = st.columns(4)
     overall_order_date = min(trigger_dates) if trigger_dates else None
@@ -1661,7 +1706,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
         else: st.info(f"📅 **Next Order Milestone:** Estimated order placement on **{overall_order_date.strftime('%d %b %Y')}** ({(overall_order_date - today_fa).days} days remaining).")
 
     reorder_df = pd.DataFrame(reorder_rows)
-    reorder_df = pd.concat([reorder_df, pd.DataFrame([{"Flavour": "🔥 OVERALL TOTAL", "Calculated Stock": tot_calc_active, "Daily Pace": f"{tot_rate:.1f} /d", "Runway": f"{(tot_calc_active / tot_rate):.0f} days" if tot_rate > 0 else "—", "Target Buffer": int(round(tot_rate * (buffer_days + cover_days))), "Suggested Order": tot_suggested_units, "Urgency": "🔴 Order Now" if overall_order_date and overall_order_date <= today_fa else "🟢 Stable", "Rationale": f"Est Cost: ₹{tot_order_cost:,.0f}"}])], ignore_index=True)
+    reorder_df = pd.concat([reorder_df, pd.DataFrame([{"Flavour": "🔥 OVERALL TOTAL", "Calculated Stock": tot_calc_active, "Physical Current Stock": "—", "Daily Pace": f"{tot_rate:.1f} /d", "Runway": f"{(tot_calc_active / tot_rate):.0f} days" if tot_rate > 0 else "—", "Target Buffer": int(round(tot_rate * (buffer_days + cover_days))), "Suggested Order": tot_suggested_units, "Urgency": "🔴 Order Now" if overall_order_date and overall_order_date <= today_fa else "🟢 Stable", "Rationale": f"Est Cost: ₹{tot_order_cost:,.0f}"}])], ignore_index=True)
     st.dataframe(reorder_df, hide_index=True, use_container_width=True, height=370)
 
     st.markdown("---"); st.markdown("### 3. Detailed Stock Movement Logs")
@@ -2175,155 +2220,6 @@ elif page == "Staff & Payroll" and user_role == "admin":
                         show_success_modal(f"Staff member '{new_s_name}' registered successfully with ID #{new_sid}!")
                     except Exception as e:
                         st.error(f"Could not register staff: {e}")
-
-        elif st_mode == "View All Staff":
-            if staff_df.empty:
-                st.info("No staff records found in database.")
-            else:
-                active_cnt = len(staff_df[staff_df["status"] == "active"])
-                st.metric("Total Staff Registered", f"{len(staff_df)} ({active_cnt} Active)")
-
-                disp_staff = staff_df.copy()
-                disp_staff["Role"] = disp_staff["role"].fillna("Cart Operator")
-                disp_staff["Gender"] = disp_staff["gender"].fillna("—")
-                disp_staff["Daily Fixed Rate"] = disp_staff["monthly_fixed_salary"].apply(lambda v: f"₹600/day (₹{_num(v):,.0f}/mo)")
-                disp_staff["Commission"] = disp_staff.apply(lambda r: f"{_num(r['commission_percentage']):.0f}% > ₹{_num(r['commission_threshold_daily']):,.0f}", axis=1)
-                disp_staff["Joined"] = pd.to_datetime(disp_staff["date_of_joining"]).dt.strftime("%d %b %Y")
-
-                summary_cols = ["id", "name", "Role", "Gender", "status", "phone_number", "Joined", "Daily Fixed Rate"]
-                st.dataframe(
-                    disp_staff[summary_cols].rename(columns={
-                        "id": "ID", "name": "Name", "status": "Status", "phone_number": "Phone"
-                    }),
-                    hide_index=True,
-                    use_container_width=True
-                )
-
-                st.markdown("---")
-                st.markdown("#### Detailed KYC Inspection")
-                sel_inspect = st.selectbox("Select staff member to inspect KYC profile", staff_df["name"].tolist(), key="inspect_staff_sel")
-                s_row = staff_df[staff_df["name"] == sel_inspect].iloc[0]
-
-                k1, k2, k3 = st.columns(3)
-                k1.write(f"**Full Legal Name:** {s_row.get('full_name') or '—'}")
-                k1.write(f"**Role:** {s_row.get('role') or 'Cart Operator'}")
-                k1.write(f"**Gender:** {s_row.get('gender') or '—'}")
-                
-                k2.write(f"**Date of Birth:** {pd.to_datetime(s_row['date_of_birth']).strftime('%d %b %Y') if pd.notna(s_row['date_of_birth']) else '—'}")
-                k2.write(f"**PAN Number:** {s_row['pan_number'] or '—'}")
-                
-                k3.write(f"**Emergency Contact:** {s_row['emergency_contact_name'] or '—'} ({s_row['emergency_contact_phone'] or '—'})")
-                k3.write(f"**Date of Leaving:** {pd.to_datetime(s_row['date_of_leaving']).strftime('%d %b %Y') if pd.notna(s_row['date_of_leaving']) else '—'}")
-
-                st.write(f"**Current Address:** {s_row['current_address'] or '—'}")
-                st.write(f"**Permanent Address:** {s_row['permanent_address'] or '—'}")
-                if s_row.get("notes"):
-                    st.caption(f"Remarks: {s_row['notes']}")
-
-        elif st_mode == "Edit Staff Profile & KYC":
-            if staff_df.empty:
-                st.info("No staff records found to edit.")
-            else:
-                staff_names = staff_df["name"].tolist()
-                sel_edit_name = st.selectbox("Select Staff to Edit", staff_names, key="edit_staff_picker")
-                s_edit = staff_df[staff_df["name"] == sel_edit_name].iloc[0]
-                s_id = int(s_edit["id"])
-
-                with st.form("edit_staff_form"):
-                    ec1, ec2, ec3 = st.columns(3)
-                    with ec1:
-                        e_name = st.text_input("Display Name (App) *", value=str(s_edit["name"]), key=f"e_name_{s_id}")
-                    with ec2:
-                        e_fullname = st.text_input("Full Legal Name", value=str(s_edit.get("full_name") or ""), key=f"e_fname_{s_id}")
-                    with ec3:
-                        e_phone = st.text_input("Mobile Number", value=str(s_edit.get("phone_number") or ""), key=f"e_phone_{s_id}")
-
-                    roles_opts = ["Cart Operator", "Ops Coordinator", "Manager", "Helper"]
-                    curr_role = str(s_edit.get("role") or "Cart Operator")
-                    if curr_role not in roles_opts: roles_opts.append(curr_role)
-
-                    gender_opts = ["Male", "Female", "Other"]
-                    curr_gender = str(s_edit.get("gender") or "Male")
-                    if curr_gender not in gender_opts: gender_opts.append(curr_gender)
-
-                    ec_role, ec_gender, ec4, ec5 = st.columns(4)
-                    with ec_role:
-                        e_role = st.selectbox("Role / Designation", roles_opts, index=roles_opts.index(curr_role), key=f"e_role_{s_id}")
-                    with ec_gender:
-                        e_gender = st.selectbox("Gender", gender_opts, index=gender_opts.index(curr_gender), key=f"e_gender_{s_id}")
-                    with ec4:
-                        stat_idx = STAFF_STATUSES.index(s_edit["status"]) if s_edit["status"] in STAFF_STATUSES else 0
-                        e_status = st.selectbox("Status", STAFF_STATUSES, index=stat_idx, key=f"e_status_{s_id}")
-                    with ec5:
-                        doj_val = pd.to_datetime(s_edit["date_of_joining"]).date() if pd.notna(s_edit["date_of_joining"]) else date.today()
-                        e_doj = st.date_input("Date of Joining", value=doj_val, key=f"e_doj_{s_id}")
-
-                    ec6, ec_dol, ec7, ec8 = st.columns(4)
-                    with ec6:
-                        dob_val = pd.to_datetime(s_edit["date_of_birth"]).date() if pd.notna(s_edit["date_of_birth"]) else date(1995, 1, 1)
-                        e_dob = st.date_input("Date of Birth", value=dob_val, key=f"e_dob_{s_id}")
-                    with ec_dol:
-                        dol_val = pd.to_datetime(s_edit["date_of_leaving"]).date() if pd.notna(s_edit["date_of_leaving"]) else None
-                        e_dol = st.date_input("Date of Leaving", value=dol_val, key=f"e_dol_{s_id}")
-                    with ec7:
-                        e_pan = st.text_input("PAN Number", value=str(s_edit.get("pan_number") or ""), key=f"e_pan_{s_id}")
-                    with ec8:
-                        e_aadhaar = st.text_input("Aadhaar Number", value="", placeholder="[Aadhaar Redacted]", key=f"e_aadhaar_{s_id}")
-
-                    ec9, ec10 = st.columns(2)
-                    with ec9:
-                        e_caddr = st.text_area("Current Address", value=str(s_edit.get("current_address") or ""), height=68, key=f"e_caddr_{s_id}")
-                    with ec10:
-                        e_paddr = st.text_area("Permanent Address", value=str(s_edit.get("permanent_address") or ""), height=68, key=f"e_paddr_{s_id}")
-
-                    ec11, ec12 = st.columns(2)
-                    with ec11:
-                        e_emg_n = st.text_input("Emergency Contact Name", value=str(s_edit.get("emergency_contact_name") or ""), key=f"e_emgn_{s_id}")
-                    with ec12:
-                        e_emg_p = st.text_input("Emergency Contact Phone", value=str(s_edit.get("emergency_contact_phone") or ""), key=f"e_emgp_{s_id}")
-
-                    e_notes = st.text_input("Notes", value=str(s_edit.get("notes") or ""), key=f"e_notes_{s_id}")
-
-                    save_edit_staff = st.form_submit_button("💾 Save Profile Changes", type="primary", use_container_width=True)
-
-                if save_edit_staff:
-                    if not e_name.strip():
-                        st.error("Display Name cannot be blank.")
-                    else:
-                        try:
-                            with db_conn.session as s:
-                                update_params = {
-                                    "name": e_name.strip(), "full_name": e_fullname.strip(), 
-                                    "role": e_role, "gender": e_gender, "status": e_status, 
-                                    "phone": re.sub(r'[^\d+]', '', e_phone),
-                                    "emg_n": e_emg_n.strip(), "emg_p": re.sub(r'[^\d+]', '', e_emg_p), 
-                                    "dob": e_dob, "pan": e_pan.strip().upper(),
-                                    "caddr": e_caddr.strip(), "paddr": e_paddr.strip(), "doj": e_doj, "dol": e_dol,
-                                    "notes": e_notes.strip(), "id": s_id
-                                }
-                                aadhaar_update_sql = ""
-                                if e_aadhaar.strip() and e_aadhaar.strip() != "[Aadhaar Redacted]":
-                                    update_params["aadhaar"] = re.sub(r'\D', '', e_aadhaar)
-                                    aadhaar_update_sql = ", aadhaar_number = :aadhaar"
-
-                                s.execute(
-                                    text(f"""
-                                    UPDATE staff
-                                    SET name = :name, full_name = :full_name, role = :role, gender = :gender, status = :status, phone_number = :phone,
-                                        emergency_contact_name = :emg_n, emergency_contact_phone = :emg_p,
-                                        date_of_birth = :dob, pan_number = :pan,
-                                        current_address = :caddr, permanent_address = :paddr,
-                                        date_of_joining = :doj, date_of_leaving = :dol, notes = :notes, updated_at = NOW()
-                                        {aadhaar_update_sql}
-                                    WHERE id = :id;
-                                    """),
-                                    update_params
-                                )
-                                s.commit()
-                            st.cache_data.clear()
-                            show_success_modal(f"Staff profile for '{e_name}' updated successfully!")
-                        except Exception as e:
-                            st.error(f"Could not update staff profile: {e}")
 
         elif st_mode == "View All Staff":
             if staff_df.empty:
@@ -3007,7 +2903,6 @@ elif page == "Dashboard" and user_role == "admin":
         st.markdown('<div id="revenue-trend"></div>', unsafe_allow_html=True)
         st.markdown("**Revenue, last 14 days**")
         
-        # Stacked bar graph for PhonePe vs Gross Cash
         trend_agg = daily_df.assign(Day=daily_df["Date"].dt.normalize()).groupby("Day", as_index=False).agg({
             "PhonePe": "sum", 
             "Total_Collection": "sum"
@@ -3022,7 +2917,6 @@ elif page == "Dashboard" and user_role == "admin":
             color=alt.Color(
                 "Mode:N", 
                 scale=alt.Scale(domain=["Gross Cash", "PhonePe"], range=["#2A9D8F", "#E76F51"]),
-                # Force legend completely outside the chart grid
                 legend=alt.Legend(title="", orient="bottom", direction="horizontal") 
             ),
             tooltip=[
@@ -3030,7 +2924,7 @@ elif page == "Dashboard" and user_role == "admin":
                 alt.Tooltip("Mode:N", title="Mode"), 
                 alt.Tooltip("Amount:Q", title="Amount (₹)", format=",.0f") 
             ]
-        ).properties(height=260) # Increased height slightly to accommodate the bottom legend
+        ).properties(height=260)
         
         st.altair_chart(trend_chart, use_container_width=True)
     else: 
@@ -3102,7 +2996,6 @@ elif page == "Dashboard" and user_role == "admin":
 
         st.markdown("### 1. Revenue Cycle Management & Financial Performance")
         mc1, mc2, mc3, mc4, mc5, mc6 = st.columns(6)
-        # Shortened labels so they fit beautifully
         mc1.metric("Revenue in Range", f"₹{total_rev:,.0f}")
         mc2.metric("Units Sold", f"{total_units}")
         mc3.metric("COGS (Actual)", f"₹{exact_cogs_sold:,.0f}")
@@ -3142,7 +3035,6 @@ elif page == "Dashboard" and user_role == "admin":
             total_phonepe = float(range_df["PhonePe"].sum())
             gross_cash = max(0.0, float(total_rev - total_phonepe))
             
-            # Sum actual paid allowances from expenses table
             adv_paid = 0.0
             food_paid = 0.0
             leakage_recorded = float(range_df["Cash_Leakage"].sum()) if "Cash_Leakage" in range_df.columns else 0.0
@@ -3155,10 +3047,8 @@ elif page == "Dashboard" and user_role == "admin":
                     adv_paid = float(paid_exp[adv_mask]["Amount"].sum())
                     food_paid = float(paid_exp[food_mask]["Amount"].sum())
 
-            # Net Cash in hand subtracts phonepe, staff advances, food/tea allowances, and cash leakage
             net_cash = max(0.0, float(gross_cash - adv_paid - food_paid - leakage_recorded))
 
-            # Pie Chart 1: Gross Cash vs PhonePe
             pie1_df = pd.DataFrame({"Category": ["Gross Cash", "PhonePe"], "Amount": [gross_cash, total_phonepe]})
             pie1_df = pie1_df[pie1_df["Amount"] > 0] 
             
@@ -3168,7 +3058,6 @@ elif page == "Dashboard" and user_role == "admin":
                 tooltip=[alt.Tooltip("Category:N", title="Category"), alt.Tooltip("Amount:Q", format=",.2f", title="Amount (₹)")]
             ).properties(height=250)
 
-            # Pie Chart 2: PhonePe, Net Cash, Staff Advance, Food/Tea
             pie2_df = pd.DataFrame({
                 "Category": ["PhonePe", "Net Cash (In Hand)", "Staff Advance", "Food / Tea"], 
                 "Amount": [total_phonepe, net_cash, adv_paid, food_paid]
@@ -3238,7 +3127,6 @@ elif page == "Dashboard" and user_role == "admin":
         st.markdown("---")
         st.markdown("### 3. Day-Wise & Timing Patterns")
         if not range_df.empty:
-            # Abbreviate day names to 3 letters to prevent horizontal scrolling
             day_order = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
             dow_df = range_df[range_df["Sold_Total"] > 0].copy()
             dow_df["Day"] = dow_df["Date"].dt.day_name().str[:3]
@@ -3260,62 +3148,62 @@ elif page == "Dashboard" and user_role == "admin":
                 st.caption("No active selling days found in this range.")
 
             st.markdown("#### Date-Wise Daily Sales Log")
-            date_wise_agg = range_df.groupby("Date").agg({
-                "Sold_Total": "sum",
-                "Total_Collection": "sum",
-                "PhonePe": "sum",
-                "Cash": "sum",
-                "Staff_Advance": "sum",
-                "Food_Tea_Cash": "sum",
-                "Cash_Leakage": "sum"  # <--- Added Cash Leakage
-            }).reset_index().sort_values("Date", ascending=False)
+                        date_wise_agg = range_df.groupby("Date").agg({
+                            "Sold_Total": "sum",
+                            "Total_Collection": "sum",
+                            "PhonePe": "sum",
+                            "Cash": "sum",
+                            "Staff_Advance": "sum",
+                            "Food_Tea_Cash": "sum",
+                            "Cash_Leakage": "sum"  # <--- Added Cash Leakage
+                        }).reset_index().sort_values("Date", ascending=False)
+                        
+                        date_wise_table = date_wise_agg.rename(columns={
+                            "Sold_Total": "Units Sold",
+                            "Total_Collection": "Revenue (₹)",
+                            "PhonePe": "PhonePe (₹)",
+                            "Cash": "Cash (₹)",
+                            "Staff_Advance": "Staff Advance (₹)",
+                            "Food_Tea_Cash": "Food / Tea (₹)",
+                            "Cash_Leakage": "Cash Leakage (₹)" # <--- Renamed for display
+                        })
+                        date_wise_table["Units Sold"] = date_wise_table["Units Sold"].apply(lambda x: int(round(x)))
+                        date_wise_table["Date"] = date_wise_table["Date"].dt.strftime("%d %b %Y")
+                        st.dataframe(date_wise_table, hide_index=True, use_container_width=True, column_config={
+                            "Revenue (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
+                            "PhonePe (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
+                            "Cash (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
+                            "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
+                            "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
+                            "Cash Leakage (₹)": st.column_config.NumberColumn(format="₹%,.2f")
+                        })
             
-            date_wise_table = date_wise_agg.rename(columns={
-                "Sold_Total": "Units Sold",
-                "Total_Collection": "Revenue (₹)",
-                "PhonePe": "PhonePe (₹)",
-                "Cash": "Cash (₹)",
-                "Staff_Advance": "Staff Advance (₹)",
-                "Food_Tea_Cash": "Food / Tea (₹)",
-                "Cash_Leakage": "Cash Leakage (₹)" # <--- Renamed for display
-            })
-            date_wise_table["Units Sold"] = date_wise_table["Units Sold"].apply(lambda x: int(round(x)))
-            date_wise_table["Date"] = date_wise_table["Date"].dt.strftime("%d %b %Y")
-            st.dataframe(date_wise_table, hide_index=True, use_container_width=True, column_config={
-                "Revenue (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
-                "PhonePe (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
-                "Cash (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
-                "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
-                "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
-                "Cash Leakage (₹)": st.column_config.NumberColumn(format="₹%,.2f")
-            })
-
-            st.markdown("#### Itemized Daily Cart Sales Log")
-            display_cols = ["Date", "Cart", "Sold_Total", "Total_Collection", "PhonePe", "Cash", "Staff_Name", "Staff_Advance", "Food_Tea_Cash", "Cash_Leakage", "Remarks"]
-            sales_table = range_df.sort_values(["Date", "Cart"])[display_cols].rename(columns={
-                "Sold_Total": "Units Sold", 
-                "Total_Collection": "Revenue (₹)", 
-                "PhonePe": "PhonePe (₹)", 
-                "Cash": "Cash (₹)", 
-                "Staff_Name": "Staff Name", 
-                "Staff_Advance": "Staff Advance (₹)", 
-                "Food_Tea_Cash": "Food / Tea (₹)",
-                "Cash_Leakage": "Cash Leakage (₹)"
-            })
-            sales_table["Units Sold"] = sales_table["Units Sold"].apply(lambda x: int(round(x)))
-            sales_table["Date"] = sales_table["Date"].dt.strftime("%d %b %Y")
-            st.dataframe(
-                sales_table, 
-                hide_index=True, 
-                use_container_width=True, 
-                column_config={
-                    "Revenue (₹)": st.column_config.NumberColumn(format="₹%,.2f"), 
-                    "PhonePe (₹)": st.column_config.NumberColumn(format="₹%,.2f"), 
-                    "Cash (₹)": st.column_config.NumberColumn(format="₹%,.2f"), 
-                    "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%,.2f"), 
-                    "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
-                    "Cash Leakage (₹)": st.column_config.NumberColumn(format="₹%,.2f")
-                }
-            )
-        else: 
-            st.caption("No sales data recorded in this period.")
+                        st.markdown("#### Itemized Daily Cart Sales Log")
+                        display_cols = ["Date", "Cart", "Sold_Total", "Total_Collection", "PhonePe", "Cash", "Staff_Name", "Staff_Advance", "Food_Tea_Cash", "Cash_Leakage", "Remarks"]
+                        sales_table = range_df.sort_values(["Date", "Cart"])[display_cols].rename(columns={
+                            "Sold_Total": "Units Sold", 
+                            "Total_Collection": "Revenue (₹)", 
+                            "PhonePe": "PhonePe (₹)", 
+                            "Cash": "Cash (₹)", 
+                            "Staff_Name": "Staff Name", 
+                            "Staff_Advance": "Staff Advance (₹)", 
+                            "Food_Tea_Cash": "Food / Tea (₹)",
+                            "Cash_Leakage": "Cash Leakage (₹)"
+                        })
+                        sales_table["Units Sold"] = sales_table["Units Sold"].apply(lambda x: int(round(x)))
+                        sales_table["Date"] = sales_table["Date"].dt.strftime("%d %b %Y")
+                        st.dataframe(
+                            sales_table, 
+                            hide_index=True, 
+                            use_container_width=True, 
+                            column_config={
+                                "Revenue (₹)": st.column_config.NumberColumn(format="₹%,.2f"), 
+                                "PhonePe (₹)": st.column_config.NumberColumn(format="₹%,.2f"), 
+                                "Cash (₹)": st.column_config.NumberColumn(format="₹%,.2f"), 
+                                "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%,.2f"), 
+                                "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
+                                "Cash Leakage (₹)": st.column_config.NumberColumn(format="₹%,.2f")
+                            }
+                        )
+                    else: 
+                        st.caption("No sales data recorded in this period.")
