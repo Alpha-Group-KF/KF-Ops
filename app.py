@@ -1674,7 +1674,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
 
     comp_df = pd.DataFrame(comparison_rows)
     comp_df = pd.concat([comp_df, pd.DataFrame([{"Flavour": "🔥 OVERALL TOTAL", "Received (In)": tot_rec_a, "Issued (Carts)": tot_issued_a, "Removed": tot_removed_a, "Calc. Stock (Audit)": tot_calc_a, "Physical Audit Count": str(tot_phys) if has_audit else "—", "Variance": f"{net_var:+d}" if has_audit else "—", "Audit Status": "✅ Match" if net_var == 0 and has_audit else (f"⚠️ {net_var:+d}" if has_audit else "—")}])], ignore_index=True)
-    st.dataframe(comp_df, hide_index=True, use_container_width=True, height=260)
+    st.dataframe(comp_df, hide_index=True, use_container_width=True)
 
     # --- TABLE 2: Physical-Base Current Stock Position ---
     st.markdown("---")
@@ -1750,7 +1750,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
         "Removed (>= Audit)": tot_rem_b,
         "Current Physical-Base Stock": tot_curr_b
     }])], ignore_index=True)
-    st.dataframe(phys_base_df, hide_index=True, use_container_width=True, height=350)
+    st.dataframe(phys_base_df, hide_index=True, use_container_width=True)
 
     # --- SECTION 3: Suggested Orders & Inventory Runway (Based on Physical-Base Stock) ---
     st.markdown("---")
@@ -1759,7 +1759,6 @@ elif page == "Freezer Analysis" and user_role == "admin":
 
     for code in FLAVOR_CODES:
         f_info = FLAVOR_MAP[code]
-        # Use physical-base current stock instead of old calculated stock
         avail_stock = phys_curr_map.get(code, 0)
         tot_calc_active += avail_stock
         rate = float(sales_pace_map.get(code, 0)) / lookback_days
