@@ -1645,7 +1645,9 @@ elif page == "Freezer Analysis" and user_role == "admin":
         st.error(f"Could not load analysis transactions from database: {e}")
         sales_pace_map, rec_map, added_map, rem_map, audit_map, rec_map_audit, added_map_audit, rem_map_audit, audit_date_str = {}, {}, {}, {}, {}, {}, {}, {}, "N/A"
 
-    st.markdown("---"); st.markdown(f"### 1. Physical Stock vs Calculated Freezer Stock &nbsp; *(As on Audit Date: {audit_date_str})*")
+    # --- TABLE 1: Audit Date Variance Comparison ---
+    st.markdown("---")
+    st.markdown(f"### 1. Audit Date Variance Comparison &nbsp; *(As on Audit Date: {audit_date_str})*")
     comparison_rows = []
     tot_rec_a, tot_issued_a, tot_removed_a, tot_calc_a, tot_phys, has_audit = 0, 0, 0, 0, 0, bool(audit_map)
 
@@ -1662,7 +1664,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
             phys_display, var_display = str(phys_stock), str(var_qty)
         else: phys_display, var_display, var_status = "—", "—", "⚪ Missing"
 
-        comparison_rows.append({"Flavour": f_info["name"], "Received (In)": recv_units, "Issued (Carts)": issued_units, "Removed": removed_units, "Calc. Stock": calc_stock, "Physical Audit": phys_display, "Variance": var_display, "Audit Status": var_status})
+        comparison_rows.append({"Flavour": f_info["name"], "Received (In)": recv_units, "Issued (Carts)": issued_units, "Removed": removed_units, "Calc. Stock (Audit)": calc_stock, "Physical Audit Count": phys_display, "Variance": var_display, "Audit Status": var_status})
 
     c_m1, c_m2, c_m3, c_m4, c_m5, c_m6 = st.columns(6)
     c_m1.metric("Inward (at Audit)", f"{tot_rec_a} pcs"); c_m2.metric("Issued (at Audit)", f"{tot_issued_a} pcs"); c_m3.metric("Removed (at Audit)", f"{tot_removed_a} pcs"); c_m4.metric("Calc. Stock (at Audit)", f"{tot_calc_a} pcs"); c_m5.metric("Physical Audited", f"{tot_phys} pcs" if has_audit else "Not Available")
@@ -1670,17 +1672,91 @@ elif page == "Freezer Analysis" and user_role == "admin":
     c_m6.metric("Net Variance", f"{net_var:+d} pcs" if has_audit else "N/A")
 
     comp_df = pd.DataFrame(comparison_rows)
-    comp_df = pd.concat([comp_df, pd.DataFrame([{"Flavour": "🔥 OVERALL TOTAL", "Received (In)": tot_rec_a, "Issued (Carts)": tot_issued_a, "Removed": tot_removed_a, "Calc. Stock": tot_calc_a, "Physical Audit": str(tot_phys) if has_audit else "—", "Variance": f"{net_var:+d}" if has_audit else "—", "Audit Status": "✅ Match" if net_var == 0 and has_audit else (f"⚠️ {net_var:+d}" if has_audit else "—")}])], ignore_index=True)
-    st.dataframe(comp_df, hide_index=True, use_container_width=True, height=370)
+    comp_df = pd.concat([comp_df, pd.DataFrame([{"Flavour": "🔥 OVERALL TOTAL", "Received (In)": tot_rec_a, "Issued (Carts)": tot_issued_a, "Removed": tot_removed_a, "Calc. Stock (Audit)": tot_calc_a, "Physical Audit Count": str(tot_phys) if has_audit else "—", "Variance": f"{net_var:+d}" if has_audit else "—", "Audit Status": "✅ Match" if net_var == 0 and has_audit else (f"⚠️ {net_var:+d}" if has_audit else "—")}])], ignore_index=True)
+    st.dataframe(comp_df, hide_index=True, use_container_width=True, height=260)
 
-    st.markdown("---"); st.markdown("### 2. Suggested Orders & Inventory Runway &nbsp; *(Calculated from Live Freezer Stock Today)*")
+    # --- TABLE 2: Physical-Base Current Stock Position ---
+    st.markdown("---")
+    st.markdown("### 2. Physical-Base Current Stock Position &nbsp; *(Anchored on Last Physical Audit Base)*")
+    st.caption("Calculated using: Last Physical Audit Base + Stock Received (>= Audit Date) - Added to Carts (>= Audit Date + 1) - Stock Removed (>= Audit Date + 1)")
+
+    audit_next_dt_t2 = audit_date_val + timedelta(days=1) if audit_date_val else None
+
+    rec_since_df = db_conn.query("""
+        SELECT ri.flavor_code, COALESCE(SUM(ri.received_units), 0) AS recv 
+        FROM stock_received_items ri 
+        JOIN stock_received r ON ri.received_id = r.id 
+        WHERE r.received_date >= :adate 
+        GROUP BY ri.flavor_code;
+    """, params={"adate": audit_date_val if audit_date_val else date.today()}, ttl="0s")
+    rec_since_map = dict(zip(rec_since_df["flavor_code"], rec_since_df["recv"])) if not rec_since_df.empty else {}
+
+    added_since_df = db_conn.query("""
+        SELECT i.flavor_code, COALESCE(SUM(i.added_units), 0) AS added 
+        FROM daily_cart_items i 
+        JOIN daily_cart_entries e ON i.daily_entry_id = e.id 
+        WHERE e.entry_date >= :anext 
+        GROUP BY i.flavor_code;
+    """, params={"anext": audit_next_dt_t2 if audit_next_dt_t2 else date.today()}, ttl="0s")
+    added_since_map = dict(zip(added_since_df["flavor_code"], added_since_df["added"])) if not added_since_df.empty else {}
+
+    rem_since_df = db_conn.query("""
+        SELECT 
+            COALESCE(SUM(ml_units), 0) AS ml_units, COALESCE(SUM(mm_units), 0) AS mm_units, 
+            COALESCE(SUM(ps_units), 0) AS ps_units, COALESCE(SUM(mn_units), 0) AS mn_units, 
+            COALESCE(SUM(kb_units), 0) AS kb_units, COALESCE(SUM(bm_units), 0) AS bm_units, 
+            COALESCE(SUM(sg_units), 0) AS sg_units, COALESCE(SUM(ch_units), 0) AS ch_units, 
+            COALESCE(SUM(ra_units), 0) AS ra_units 
+        FROM stock_removed 
+        WHERE removal_date >= :anext;
+    """, params={"anext": audit_next_dt_t2 if audit_next_dt_t2 else date.today()}, ttl="0s")
+    rem_since_map = {code: int(rem_since_df.iloc[0].get(FLAVOR_MAP[code]["audit_col"], 0)) for code in FLAVOR_CODES} if not rem_since_df.empty else {code: 0 for code in FLAVOR_CODES}
+
+    phys_base_rows = []
+    tot_base_b, tot_rec_b, tot_added_b, tot_rem_b, tot_curr_b = 0, 0, 0, 0, 0
+    for code in FLAVOR_CODES:
+        f_info = FLAVOR_MAP[code]
+        base_audit = audit_map.get(code, 0)
+        rec_onward = rec_since_map.get(code, 0)
+        added_onward = added_since_map.get(code, 0)
+        removed_onward = rem_since_map.get(code, 0)
+        
+        current_physical_base_stock = base_audit + rec_onward - added_onward - removed_onward
+        
+        tot_base_b += base_audit
+        tot_rec_b += rec_onward
+        tot_added_b += added_onward
+        tot_rem_b += removed_onward
+        tot_curr_b += current_physical_base_stock
+
+        phys_base_rows.append({
+            "Flavour": f_info["name"],
+            "Last Audit Base": base_audit,
+            "Recv (>= Audit)": rec_onward,
+            "Added (>= Audit+1)": added_onward,
+            "Removed (>= Audit+1)": removed_onward,
+            "Current Physical-Base Stock": current_physical_base_stock
+        })
+
+    phys_base_df = pd.DataFrame(phys_base_rows)
+    phys_base_df = pd.concat([phys_base_df, pd.DataFrame([{
+        "Flavour": "🔥 OVERALL TOTAL",
+        "Last Audit Base": tot_base_b,
+        "Recv (>= Audit)": tot_rec_b,
+        "Added (>= Audit+1)": tot_added_b,
+        "Removed (>= Audit+1)": tot_rem_b,
+        "Current Physical-Base Stock": tot_curr_b
+    }])], ignore_index=True)
+    st.dataframe(phys_base_df, hide_index=True, use_container_width=True, height=350)
+
+    # --- SECTION 3: Suggested Orders & Inventory Runway ---
+    st.markdown("---")
+    st.markdown("### 3. Suggested Orders & Inventory Runway &nbsp; *(Calculated from Live Freezer Stock Today)*")
     reorder_rows, trigger_dates, tot_calc_active, tot_rate, tot_suggested_units, tot_order_cost = [], [], 0, 0.0, 0, 0.0
-    phys_curr_map = get_physical_current_stock_map()
 
     for code in FLAVOR_CODES:
         f_info = FLAVOR_MAP[code]
         avail_stock = int(rec_map.get(code, 0)) - int(added_map.get(code, 0)) - int(rem_map.get(code, 0))
-        phys_stock_pos = phys_curr_map.get(code, "—")
         tot_calc_active += avail_stock
         rate = float(sales_pace_map.get(code, 0)) / lookback_days
         tot_rate += rate
@@ -1695,7 +1771,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
             else: status, suggested_qty, reason = "🟢 OK", 0, f"Stock covers {int(round(days_left))} days"
 
         tot_suggested_units += suggested_qty; tot_order_cost += (suggested_qty * f_info["cost_price"])
-        reorder_rows.append({"Flavour": f_info["name"], "Calculated Stock": avail_stock, "Physical Current Stock": phys_stock_pos, "Daily Pace": f"{rate:.1f} /d", "Runway": f"{int(round(days_left))} days" if days_left is not None else "—", "Target Buffer": target_req, "Suggested Order": int(suggested_qty), "Urgency": status, "Rationale": reason})
+        reorder_rows.append({"Flavour": f_info["name"], "Calculated Stock": avail_stock, "Daily Pace": f"{rate:.1f} /d", "Runway": f"{int(round(days_left))} days" if days_left is not None else "—", "Target Buffer": target_req, "Suggested Order": int(suggested_qty), "Urgency": status, "Rationale": reason})
 
     r_m1, r_m2, r_m3, r_m4 = st.columns(4)
     overall_order_date = min(trigger_dates) if trigger_dates else None
@@ -1706,10 +1782,10 @@ elif page == "Freezer Analysis" and user_role == "admin":
         else: st.info(f"📅 **Next Order Milestone:** Estimated order placement on **{overall_order_date.strftime('%d %b %Y')}** ({(overall_order_date - today_fa).days} days remaining).")
 
     reorder_df = pd.DataFrame(reorder_rows)
-    reorder_df = pd.concat([reorder_df, pd.DataFrame([{"Flavour": "🔥 OVERALL TOTAL", "Calculated Stock": tot_calc_active, "Physical Current Stock": "—", "Daily Pace": f"{tot_rate:.1f} /d", "Runway": f"{(tot_calc_active / tot_rate):.0f} days" if tot_rate > 0 else "—", "Target Buffer": int(round(tot_rate * (buffer_days + cover_days))), "Suggested Order": tot_suggested_units, "Urgency": "🔴 Order Now" if overall_order_date and overall_order_date <= today_fa else "🟢 Stable", "Rationale": f"Est Cost: ₹{tot_order_cost:,.0f}"}])], ignore_index=True)
+    reorder_df = pd.concat([reorder_df, pd.DataFrame([{"Flavour": "🔥 OVERALL TOTAL", "Calculated Stock": tot_calc_active, "Daily Pace": f"{tot_rate:.1f} /d", "Runway": f"{(tot_calc_active / tot_rate):.0f} days" if tot_rate > 0 else "—", "Target Buffer": int(round(tot_rate * (buffer_days + cover_days))), "Suggested Order": tot_suggested_units, "Urgency": "🔴 Order Now" if overall_order_date and overall_order_date <= today_fa else "🟢 Stable", "Rationale": f"Est Cost: ₹{tot_order_cost:,.0f}"}])], ignore_index=True)
     st.dataframe(reorder_df, hide_index=True, use_container_width=True, height=370)
 
-    st.markdown("---"); st.markdown("### 3. Detailed Stock Movement Logs")
+    st.markdown("---"); st.markdown("### 4. Detailed Stock Movement Logs")
     m_tab1, m_tab2, m_tab3, m_tab4 = st.tabs(["📋 Purchase Orders", "📦 Received Deliveries", "🔍 Physical Stock Audits", "🗑️ Stock Removed"])
 
     with m_tab1:
@@ -1753,7 +1829,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
             rem_display = []
             for _, r in rem_query_df.iterrows():
                 row_data = {"ID": f"#{r['ID']}", "Date": pd.to_datetime(r['Date']).strftime("%d %b %Y"), "Location": r['Location'], "Total Units": int(r['Total Units']) if pd.notna(r['Total Units']) else sum(int(r.get(FLAVOR_MAP[code]['audit_col'], 0)) for c in FLAVOR_CODES), "Cost (₹)": float(r['Cost (₹)']), "Reason": r['Reason'], "Removed By": r['Removed By'] if pd.notna(r['Removed By']) else "", "Verified By": r['Verified By']}
-                for code in FLAVOR_CODES: row_data[code] = int(r.get(FLAVOR_MAP[code]['audit_col'], 0))
+                for code in FLAVOR_CODES: row_data[code] = int(r.get(FLAVOR_MAP[code]["audit_col"], 0))
                 rem_display.append(row_data)
             st.dataframe(pd.DataFrame(rem_display), hide_index=True, use_container_width=True)
         else: st.caption("No stock removals recorded in database.")
