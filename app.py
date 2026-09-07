@@ -2005,44 +2005,44 @@ elif page == "Expenses" and user_role == "admin":
                     new_p_notes = st.text_input("Payment Notes / Remarks", placeholder="e.g. Part payment tranche 1...", key="rec_p_notes")
 
                     if st.button("💳 Disburse Payment", type="primary", use_container_width=True):
-                if new_p_amount <= 0: 
-        st.error("Please enter a payment amount greater than 0.")
-    else:
-        try:
-            with db_conn.session as s:
-                # Insert into expense_payments
-                pay_res = s.execute(text("""
-                    INSERT INTO expense_payments (expense_id, payment_date, amount_paid, payment_mode, ref_no, paid_to, paid_by, notes) 
-                    VALUES (:eid, :pdate, :pamt, :pmode, :pref, :pto, :pby, :notes) RETURNING id;
-                """), {"eid": target_exp_id, "pdate": new_p_date, "pamt": float(new_p_amount), "pmode": new_p_mode, "pref": new_p_ref.strip(), "pto": new_p_to.strip(), "pby": "Admin", "notes": new_p_notes.strip()})
-                new_pay_id = pay_res.scalar()
+                        if new_p_amount <= 0:
+                            st.error("Please enter a payment amount greater than 0.")
+                        else:
+                            try:
+                                with db_conn.session as s:
+                                    # Insert into expense_payments
+                                    pay_res = s.execute(text("""
+                                        INSERT INTO expense_payments (expense_id, payment_date, amount_paid, payment_mode, ref_no, paid_to, paid_by, notes)
+                                        VALUES (:eid, :pdate, :pamt, :pmode, :pref, :pto, :pby, :notes) RETURNING id;
+                                    """), {"eid": target_exp_id, "pdate": new_p_date, "pamt": float(new_p_amount), "pmode": new_p_mode, "pref": new_p_ref.strip(), "pto": new_p_to.strip(), "pby": "Admin", "notes": new_p_notes.strip()})
+                                    new_pay_id = pay_res.scalar()
 
-                # Auto-entry check for salary sub-category
-                exp_row = s.execute(text("SELECT category, sub_category, staff_name, description, remarks FROM expenses WHERE id = :id;"), {"id": target_exp_id}).fetchone()
-                if exp_row:
-                    cat, subcat, s_name, desc, rem = exp_row
-                    if (subcat and 'salary' in subcat.lower()) or (cat and 'labour' in cat.lower() and subcat and 'salary' in subcat.lower()):
-                        s_month, s_year = parse_salary_month_year(new_p_date, desc or "", rem or "")
-                        s.execute(text("""
-                            INSERT INTO staff_salary_payouts (payment_id, expense_id, staff_name, salary_month, salary_year, amount_paid, payment_date)
-                            VALUES (:pid, :eid, :sname, :smon, :syr, :pamt, :pdate)
-                        """), {"pid": new_pay_id, "eid": target_exp_id, "sname": s_name or new_p_to.strip(), "smon": s_month, "syr": s_year, "pamt": float(new_p_amount), "pdate": new_p_date})
+                                    # Auto-entry check for salary sub-category
+                                    exp_row = s.execute(text("SELECT category, sub_category, staff_name, description, remarks FROM expenses WHERE id = :id;"), {"id": target_exp_id}).fetchone()
+                                    if exp_row:
+                                        cat, subcat, s_name, desc, rem = exp_row
+                                        if (subcat and 'salary' in subcat.lower()) or (cat and 'labour' in cat.lower() and subcat and 'salary' in subcat.lower()):
+                                            s_month, s_year = parse_salary_month_year(new_p_date, desc or "", rem or "")
+                                            s.execute(text("""
+                                                INSERT INTO staff_salary_payouts (payment_id, expense_id, staff_name, salary_month, salary_year, amount_paid, payment_date)
+                                                VALUES (:pid, :eid, :sname, :smon, :syr, :pamt, :pdate)
+                                            """), {"pid": new_pay_id, "eid": target_exp_id, "sname": s_name or new_p_to.strip(), "smon": s_month, "syr": s_year, "pamt": float(new_p_amount), "pdate": new_p_date})
 
-                new_status = "Paid" if (float(target_exp["total_paid"]) + float(new_p_amount)) >= float(target_exp["total_amount"]) else "Partially Paid"
-                s.execute(text("UPDATE expenses SET status = :stat, updated_at = NOW() WHERE id = :id;"), {"stat": new_status, "id": target_exp_id})
-                s.commit()
-            show_success_modal(f"Payment of ₹{new_p_amount:,.2f} recorded successfully for Expense #{target_exp_id}!")
-        except Exception as e: 
-            st.error(f"Could not record payment: {e}")
+                                    new_status = "Paid" if (float(target_exp["total_paid"]) + float(new_p_amount)) >= float(target_exp["total_amount"]) else "Partially Paid"
+                                    s.execute(text("UPDATE expenses SET status = :stat, updated_at = NOW() WHERE id = :id;"), {"stat": new_status, "id": target_exp_id})
+                                    s.commit()
+                                show_success_modal(f"Payment of ₹{new_p_amount:,.2f} recorded successfully for Expense #{target_exp_id}!")
+                            except Exception as e:
+                                st.error(f"Could not record payment: {e}")
 
-            elif p_sub_mode == "View Payments":
+        elif p_sub_mode == "View Payments":
             if payments_df.empty: st.info("No payment transactions found in database.")
             else:
                 st.metric("Total Payments Disbursed", f"₹{float(payments_df['amount_paid'].sum()):,.2f}")
                 disp_pay = payments_df.copy(); disp_pay["payment_date"] = pd.to_datetime(disp_pay["payment_date"]).dt.strftime("%d %b %Y"); disp_pay["Expense Link"] = disp_pay.apply(lambda r: f"#{r['expense_id']} — {r['category']} (₹{float(r['expense_total']):,.0f})", axis=1)
                 st.dataframe(disp_pay[["id", "payment_date", "Expense Link", "amount_paid", "payment_mode", "ref_no", "paid_to", "paid_by", "notes"]].rename(columns={"id": "Payment ID", "payment_date": "Date", "amount_paid": "Amount (₹)", "payment_mode": "Mode", "ref_no": "Ref / UTR", "paid_to": "Paid To", "paid_by": "Paid By", "notes": "Notes"}), hide_index=True, use_container_width=True, column_config={"Amount (₹)": st.column_config.NumberColumn(format="₹%,.2f")})
 
-elif p_sub_mode == "Edit Past Payment":
+        elif p_sub_mode == "Edit Past Payment":
             if payments_df.empty: st.info("No payments recorded to edit.")
             else:
                 pay_records = payments_df.to_dict("records")
