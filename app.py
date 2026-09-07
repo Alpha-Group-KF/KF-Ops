@@ -692,6 +692,7 @@ def get_physical_current_stock_map():
         """, params={"anext": audit_next_date}, ttl="0s")
         added_map = dict(zip(added_df["flavor_code"], added_df["added"])) if not added_df.empty else {}
         
+        # Stock removed from audit date onwards (inclusive of audit date)
         rem_df = db_conn.query("""
             SELECT 
                 COALESCE(SUM(ml_units), 0) AS ml_units, COALESCE(SUM(mm_units), 0) AS mm_units, 
@@ -700,8 +701,8 @@ def get_physical_current_stock_map():
                 COALESCE(SUM(sg_units), 0) AS sg_units, COALESCE(SUM(ch_units), 0) AS ch_units, 
                 COALESCE(SUM(ra_units), 0) AS ra_units 
             FROM stock_removed 
-            WHERE removal_date >= :anext;
-        """, params={"anext": audit_next_date}, ttl="0s")
+            WHERE removal_date >= :adate;
+        """, params={"adate": audit_date}, ttl="0s")
         rem_map = {code: int(rem_df.iloc[0].get(FLAVOR_MAP[code]["audit_col"], 0)) for code in FLAVOR_CODES} if not rem_df.empty else {code: 0 for code in FLAVOR_CODES}
         
         phys_current_map = {}
@@ -1677,8 +1678,8 @@ elif page == "Freezer Analysis" and user_role == "admin":
 
     # --- TABLE 2: Physical-Base Current Stock Position ---
     st.markdown("---")
-    st.markdown("### 2. Physical-Base Current Stock Position &nbsp; *(Anchored on Last Physical Audit Base)*")
-    st.caption("Calculated using: Last Physical Audit Base + Stock Received (>= Audit Date) - Added to Carts (>= Audit Date + 1) - Stock Removed (>= Audit Date + 1)")
+    st.markdown(f"### 2. Physical-Base Current Stock Position &nbsp; *(Base Audit Date: {audit_date_str})*")
+    st.caption("Calculated using: Last Physical Audit Base + Stock Received (>= Audit Date) - Added to Carts (>= Audit Date + 1) - Stock Removed (>= Audit Date)")
 
     audit_next_dt_t2 = audit_date_val + timedelta(days=1) if audit_date_val else None
 
@@ -1708,12 +1709,14 @@ elif page == "Freezer Analysis" and user_role == "admin":
             COALESCE(SUM(sg_units), 0) AS sg_units, COALESCE(SUM(ch_units), 0) AS ch_units, 
             COALESCE(SUM(ra_units), 0) AS ra_units 
         FROM stock_removed 
-        WHERE removal_date >= :anext;
-    """, params={"anext": audit_next_dt_t2 if audit_next_dt_t2 else date.today()}, ttl="0s")
+        WHERE removal_date >= :adate;
+    """, params={"adate": audit_date_val if audit_date_val else date.today()}, ttl="0s")
     rem_since_map = {code: int(rem_since_df.iloc[0].get(FLAVOR_MAP[code]["audit_col"], 0)) for code in FLAVOR_CODES} if not rem_since_df.empty else {code: 0 for code in FLAVOR_CODES}
 
     phys_base_rows = []
     tot_base_b, tot_rec_b, tot_added_b, tot_rem_b, tot_curr_b = 0, 0, 0, 0, 0
+    phys_curr_map = get_physical_current_stock_map()
+
     for code in FLAVOR_CODES:
         f_info = FLAVOR_MAP[code]
         base_audit = audit_map.get(code, 0)
@@ -1734,7 +1737,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
             "Last Audit Base": base_audit,
             "Recv (>= Audit)": rec_onward,
             "Added (>= Audit+1)": added_onward,
-            "Removed (>= Audit+1)": removed_onward,
+            "Removed (>= Audit)": removed_onward,
             "Current Physical-Base Stock": current_physical_base_stock
         })
 
@@ -1744,19 +1747,20 @@ elif page == "Freezer Analysis" and user_role == "admin":
         "Last Audit Base": tot_base_b,
         "Recv (>= Audit)": tot_rec_b,
         "Added (>= Audit+1)": tot_added_b,
-        "Removed (>= Audit+1)": tot_rem_b,
+        "Removed (>= Audit)": tot_rem_b,
         "Current Physical-Base Stock": tot_curr_b
     }])], ignore_index=True)
     st.dataframe(phys_base_df, hide_index=True, use_container_width=True, height=350)
 
-    # --- SECTION 3: Suggested Orders & Inventory Runway ---
+    # --- SECTION 3: Suggested Orders & Inventory Runway (Based on Physical-Base Stock) ---
     st.markdown("---")
-    st.markdown("### 3. Suggested Orders & Inventory Runway &nbsp; *(Calculated from Live Freezer Stock Today)*")
+    st.markdown("### 3. Suggested Orders & Inventory Runway &nbsp; *(Calculated from Physical-Base Stock Today)*")
     reorder_rows, trigger_dates, tot_calc_active, tot_rate, tot_suggested_units, tot_order_cost = [], [], 0, 0.0, 0, 0.0
 
     for code in FLAVOR_CODES:
         f_info = FLAVOR_MAP[code]
-        avail_stock = int(rec_map.get(code, 0)) - int(added_map.get(code, 0)) - int(rem_map.get(code, 0))
+        # Use physical-base current stock instead of old calculated stock
+        avail_stock = phys_curr_map.get(code, 0)
         tot_calc_active += avail_stock
         rate = float(sales_pace_map.get(code, 0)) / lookback_days
         tot_rate += rate
@@ -1771,18 +1775,18 @@ elif page == "Freezer Analysis" and user_role == "admin":
             else: status, suggested_qty, reason = "🟢 OK", 0, f"Stock covers {int(round(days_left))} days"
 
         tot_suggested_units += suggested_qty; tot_order_cost += (suggested_qty * f_info["cost_price"])
-        reorder_rows.append({"Flavour": f_info["name"], "Calculated Stock": avail_stock, "Daily Pace": f"{rate:.1f} /d", "Runway": f"{int(round(days_left))} days" if days_left is not None else "—", "Target Buffer": target_req, "Suggested Order": int(suggested_qty), "Urgency": status, "Rationale": reason})
+        reorder_rows.append({"Flavour": f_info["name"], "Physical-Base Stock": avail_stock, "Daily Pace": f"{rate:.1f} /d", "Runway": f"{int(round(days_left))} days" if days_left is not None else "—", "Target Buffer": target_req, "Suggested Order": int(suggested_qty), "Urgency": status, "Rationale": reason})
 
     r_m1, r_m2, r_m3, r_m4 = st.columns(4)
     overall_order_date = min(trigger_dates) if trigger_dates else None
-    r_m1.metric("Calculated Active Stock", f"{tot_calc_active} units"); r_m2.metric("Daily Velocity", f"{tot_rate:.1f} units/day"); r_m3.metric("Total Order Quantity", f"{tot_suggested_units} pcs"); r_m4.metric("Estimated PO Cost", f"₹{tot_order_cost:,.2f}")
+    r_m1.metric("Physical-Base Active Stock", f"{tot_calc_active} units"); r_m2.metric("Daily Velocity", f"{tot_rate:.1f} units/day"); r_m3.metric("Total Order Quantity", f"{tot_suggested_units} pcs"); r_m4.metric("Estimated PO Cost", f"₹{tot_order_cost:,.2f}")
 
     if overall_order_date is not None:
-        if overall_order_date <= today_fa: st.error(f"🚨 **Action Required:** At least one flavor has breached the safety buffer based on calculated stock. Place replenishment order today!")
+        if overall_order_date <= today_fa: st.error(f"🚨 **Action Required:** At least one flavor has breached the safety buffer based on physical-base stock. Place replenishment order today!")
         else: st.info(f"📅 **Next Order Milestone:** Estimated order placement on **{overall_order_date.strftime('%d %b %Y')}** ({(overall_order_date - today_fa).days} days remaining).")
 
     reorder_df = pd.DataFrame(reorder_rows)
-    reorder_df = pd.concat([reorder_df, pd.DataFrame([{"Flavour": "🔥 OVERALL TOTAL", "Calculated Stock": tot_calc_active, "Daily Pace": f"{tot_rate:.1f} /d", "Runway": f"{(tot_calc_active / tot_rate):.0f} days" if tot_rate > 0 else "—", "Target Buffer": int(round(tot_rate * (buffer_days + cover_days))), "Suggested Order": tot_suggested_units, "Urgency": "🔴 Order Now" if overall_order_date and overall_order_date <= today_fa else "🟢 Stable", "Rationale": f"Est Cost: ₹{tot_order_cost:,.0f}"}])], ignore_index=True)
+    reorder_df = pd.concat([reorder_df, pd.DataFrame([{"Flavour": "🔥 OVERALL TOTAL", "Physical-Base Stock": tot_calc_active, "Daily Pace": f"{tot_rate:.1f} /d", "Runway": f"{(tot_calc_active / tot_rate):.0f} days" if tot_rate > 0 else "—", "Target Buffer": int(round(tot_rate * (buffer_days + cover_days))), "Suggested Order": tot_suggested_units, "Urgency": "🔴 Order Now" if overall_order_date and overall_order_date <= today_fa else "🟢 Stable", "Rationale": f"Est Cost: ₹{tot_order_cost:,.0f}"}])], ignore_index=True)
     st.dataframe(reorder_df, hide_index=True, use_container_width=True, height=370)
 
     st.markdown("---"); st.markdown("### 4. Detailed Stock Movement Logs")
