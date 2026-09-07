@@ -2005,7 +2005,7 @@ elif page == "Expenses" and user_role == "admin":
                     new_p_notes = st.text_input("Payment Notes / Remarks", placeholder="e.g. Part payment tranche 1...", key="rec_p_notes")
 
                     if st.button("💳 Disburse Payment", type="primary", use_container_width=True):
-        if new_p_amount <= 0: 
+                if new_p_amount <= 0: 
         st.error("Please enter a payment amount greater than 0.")
     else:
         try:
