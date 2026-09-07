@@ -739,31 +739,6 @@ def load_staff_attendance_df(start_date=None, end_date=None):
     try: return db_conn.query(f"SELECT a.id, a.staff_id, s.name AS staff_name, a.attendance_date, a.status, a.leave_type, a.reason, a.recorded_by, a.created_at FROM staff_attendance a JOIN staff s ON a.staff_id = s.id {where_sql} ORDER BY a.attendance_date DESC, a.id DESC;", params=params, ttl="0s")
     except Exception: return pd.DataFrame()
 
-def parse_salary_month_year(pay_date, description="", remarks=""):
-    months = {
-        'january': 1, 'february': 2, 'march': 3, 'april': 4, 'may': 5, 'june': 6,
-        'july': 7, 'august': 8, 'september': 9, 'october': 10, 'november': 11, 'december': 12,
-        'jan': 1, 'feb': 2, 'mar': 3, 'apr': 4, 'jun': 6, 'jul': 7, 'aug': 8, 'sep': 9, 'oct': 10, 'nov': 11, 'dec': 12
-    }
-    text_combined = f"{description} {remarks}".lower()
-    found_month = None
-    found_year = pay_date.year
-    for m_name, m_num in months.items():
-        if m_name in text_combined:
-            found_month = m_num
-            break
-    year_match = re.search(r'20\d{2}', text_combined)
-    if year_match:
-        found_year = int(year_match.group(0))
-    
-    if not found_month:
-        dt = pd.to_datetime(pay_date)
-        prev_dt = dt - pd.DateOffset(months=1)
-        found_month = prev_dt.month
-        found_year = prev_dt.year
-        
-    return found_month, found_year
-
 def calculate_incurred_labour_for_range(start_date, end_date):
     if db_conn is None: return 0.0, 0.0, 0.0, {}
     staff_df = load_full_staff_df()
@@ -771,28 +746,15 @@ def calculate_incurred_labour_for_range(start_date, end_date):
     
     entries_df = db_conn.query("SELECT entry_date, cart_name, staff_name, total_collection FROM daily_cart_entries WHERE entry_date >= :sdate AND entry_date <= :edate AND staff_name IS NOT NULL AND staff_name != '' AND staff_name != 'Select Staff';", params={"sdate": start_date, "edate": end_date}, ttl="0s")
     att_df = db_conn.query("SELECT a.staff_id, s.name AS staff_name, a.attendance_date, a.status, a.leave_type FROM staff_attendance a JOIN staff s ON a.staff_id = s.id WHERE a.attendance_date >= :sdate AND a.attendance_date <= :edate;", params={"sdate": start_date, "edate": end_date}, ttl="0s")
-    
-    pay_df = db_conn.query("""
-        SELECT p.amount_paid, e.staff_name 
-        FROM expense_payments p 
-        JOIN expenses e ON p.expense_id = e.id 
-        WHERE e.category = 'Labour Charges' 
-          AND LOWER(COALESCE(e.sub_category, '')) NOT LIKE '%salary%'
-          AND p.payment_date >= :sdate AND p.payment_date <= :edate;
-    """, params={"sdate": start_date, "edate": end_date}, ttl="0s")
-    
-    target_month = start_date.month
-    target_year = start_date.year
-    salary_pay_df = db_conn.query("""
-        SELECT amount_paid, staff_name 
-        FROM staff_salary_payouts 
-        WHERE salary_month = :smon AND salary_year = :syr;
-    """, params={"smon": target_month, "syr": target_year}, ttl="0s")
+    pay_df = db_conn.query("SELECT p.amount_paid, e.staff_name FROM expense_payments p JOIN expenses e ON p.expense_id = e.id WHERE e.category = 'Labour Charges' AND p.payment_date >= :sdate AND p.payment_date <= :edate;", params={"sdate": start_date, "edate": end_date}, ttl="0s")
     
     exp_ledger_df = db_conn.query("""
         SELECT expense_date, staff_name, sub_category, total_amount 
         FROM expenses 
-        WHERE category = 'Labour Charges' AND status = 'Paid' AND expense_date >= :sdate AND expense_date <= :edate;
+        WHERE category = 'Labour Charges' 
+          AND status = 'Paid'
+          AND expense_date >= :sdate 
+          AND expense_date <= :edate;
     """, params={"sdate": start_date, "edate": end_date}, ttl="0s")
     
     total_labour_incurred, total_labour_paid, breakdown_by_staff = 0.0, 0.0, {}
@@ -809,22 +771,138 @@ def calculate_incurred_labour_for_range(start_date, end_date):
         
         st_shifts = entries_df[entries_df["staff_name"] == st_name] if not entries_df.empty else pd.DataFrame()
         st_leaves = att_df[att_df["staff_name"] == st_name] if not att_df.empty else pd.DataFrame()
-        st_non_salary_pay = pay_df[pay_df["staff_name"] == st_name] if not pay_df.empty else pd.DataFrame()
-        st_salary_pay = salary_pay_df[salary_pay_df["staff_name"] == st_name] if not salary_pay_df.empty else pd.DataFrame()
+        st_pay = pay_df[pay_df["staff_name"] == st_name] if not pay_df.empty else pd.DataFrame()
+        st_exp = exp_ledger_df[exp_ledger_df["staff_name"] == st_name] if not exp_ledger_df.empty else pd.DataFrame()
         
         shift_sal, shift_comm, shift_allow, days_worked, detailed_ledger = 0.0, 0.0, 0.0, 0, []
         
+        leave_map = {}
+        if not st_leaves.empty:
+            for _, l_row in st_leaves.iterrows():
+                l_dt = pd.to_datetime(l_row["attendance_date"]).date()
+                leave_map[l_dt] = str(l_row.get("leave_type", "Unpaid"))
+
+        shift_map = {}
+        if not st_shifts.empty:
+            for _, sh in st_shifts.iterrows():
+                s_dt = pd.to_datetime(sh["entry_date"]).date()
+                if s_dt not in shift_map:
+                    shift_map[s_dt] = []
+                shift_map[s_dt].append({
+                    "cart": sh["cart_name"],
+                    "collection": float(_num(sh["total_collection"]))
+                })
+                
+        exp_map = {}
+        if not st_exp.empty:
+            for _, e_row in st_exp.iterrows():
+                e_dt = pd.to_datetime(e_row["expense_date"]).date()
+                if e_dt not in exp_map:
+                    exp_map[e_dt] = {"advance": 0.0, "food": 0.0}
+                
+                subcat = str(e_row.get("sub_category") or "").strip().lower()
+                amt = float(_num(e_row["total_amount"]))
+                
+                if 'food' in subcat or 'tea' in subcat or 'allow' in subcat:
+                    exp_map[e_dt]["food"] += amt
+                elif 'advance' in subcat:
+                    exp_map[e_dt]["advance"] += amt
+
+        all_dates = set(leave_map.keys()).union(set(shift_map.keys())).union(set(exp_map.keys()))
+        paid_leaves_cnt = 0
+
+        for d in sorted(all_dates):
+            is_leave = d in leave_map
+            leave_type = leave_map.get(d)
+            day_allow_rate = allow_sun if (d.weekday() == 6) else allow_wd
+            
+            day_adv = exp_map.get(d, {}).get("advance", 0.0)
+            day_food = exp_map.get(d, {}).get("food", 0.0)
+            exp_attached = False
+            
+            if is_leave:
+                if leave_type == "Paid":
+                    paid_leaves_cnt += 1
+                    shift_sal += daily_rate
+                    shift_allow += day_allow_rate
+                    detailed_ledger.append({
+                        "date": d, "type": "Paid Leave", "cart": "—", 
+                        "collection": 0.0, "fixed_salary": daily_rate, 
+                        "commission": 0.0, "allowance": day_allow_rate,
+                        "advance_taken": day_adv, "food_taken": day_food
+                    })
+                    exp_attached = True
+                else:
+                    detailed_ledger.append({
+                        "date": d, "type": "Unpaid Leave", "cart": "—", 
+                        "collection": 0.0, "fixed_salary": 0.0, 
+                        "commission": 0.0, "allowance": 0.0,
+                        "advance_taken": day_adv, "food_taken": day_food
+                    })
+                    exp_attached = True
+                
+                if d in shift_map:
+                    for cart_shift in shift_map[d]:
+                        s_col = cart_shift["collection"]
+                        day_comm = max(0.0, s_col - comm_thresh) * (comm_pct / 100.0)
+                        shift_comm += day_comm
+                        detailed_ledger.append({
+                            "date": d, "type": "Sales on Leave Day", "cart": cart_shift["cart"], 
+                            "collection": s_col, "fixed_salary": 0.0, 
+                            "commission": day_comm, "allowance": 0.0,
+                            "advance_taken": 0.0 if exp_attached else day_adv, 
+                            "food_taken": 0.0 if exp_attached else day_food
+                        })
+                        exp_attached = True
+
+            elif d in shift_map:
+                days_worked += 1
+                shift_sal += daily_rate
+                shift_allow += day_allow_rate
+                
+                for idx, cart_shift in enumerate(shift_map[d]):
+                    s_col = cart_shift["collection"]
+                    day_comm = max(0.0, s_col - comm_thresh) * (comm_pct / 100.0)
+                    shift_comm += day_comm
+                    
+                    if idx == 0:
+                        detailed_ledger.append({
+                            "date": d, "type": "Worked Day", "cart": cart_shift["cart"], 
+                            "collection": s_col, "fixed_salary": daily_rate, 
+                            "commission": day_comm, "allowance": day_allow_rate,
+                            "advance_taken": day_adv if not exp_attached else 0.0,
+                            "food_taken": day_food if not exp_attached else 0.0
+                        })
+                        exp_attached = True
+                    else:
+                        detailed_ledger.append({
+                            "date": d, "type": "Extra Cart Shift", "cart": cart_shift["cart"], 
+                            "collection": s_col, "fixed_salary": 0.0, 
+                            "commission": day_comm, "allowance": 0.0,
+                            "advance_taken": 0.0, "food_taken": 0.0
+                        })
+            else:
+                detailed_ledger.append({
+                    "date": d, "type": "Expense Recorded", "cart": "—", 
+                    "collection": 0.0, "fixed_salary": 0.0, 
+                    "commission": 0.0, "allowance": 0.0,
+                    "advance_taken": day_adv, "food_taken": day_food
+                })
+        
+        detailed_ledger.sort(key=lambda x: x["date"])
+        
         staff_incurred = shift_sal + shift_comm + shift_allow
-        staff_paid = float(st_non_salary_pay["amount_paid"].sum()) + float(st_salary_pay["amount_paid"].sum())
+        staff_paid = float(st_pay["amount_paid"].sum()) if not st_pay.empty else 0.0
         staff_due = staff_incurred - staff_paid
         total_labour_incurred += staff_incurred
         total_labour_paid += staff_paid
         
         breakdown_by_staff[st_name] = {
-            "monthly_fixed_salary": monthly_sal, "daily_rate": daily_rate, "days_worked": days_worked, "paid_leaves": 0, 
+            "monthly_fixed_salary": monthly_sal, "daily_rate": daily_rate, "days_worked": days_worked, "paid_leaves": paid_leaves_cnt, 
             "salary": shift_sal, "commissions": shift_comm, "allowances": shift_allow, "incurred": staff_incurred, 
             "paid": staff_paid, "due": staff_due, "detailed_ledger": detailed_ledger, "doj": doj
         }
+        
     return total_labour_incurred, total_labour_paid, total_labour_incurred - total_labour_paid, breakdown_by_staff
 
 def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
@@ -2005,35 +2083,16 @@ elif page == "Expenses" and user_role == "admin":
                     new_p_notes = st.text_input("Payment Notes / Remarks", placeholder="e.g. Part payment tranche 1...", key="rec_p_notes")
 
                     if st.button("💳 Disburse Payment", type="primary", use_container_width=True):
-                        if new_p_amount <= 0:
-                            st.error("Please enter a payment amount greater than 0.")
+                        if new_p_amount <= 0: st.error("Please enter a payment amount greater than 0.")
                         else:
                             try:
                                 with db_conn.session as s:
-                                    # Insert into expense_payments
-                                    pay_res = s.execute(text("""
-                                        INSERT INTO expense_payments (expense_id, payment_date, amount_paid, payment_mode, ref_no, paid_to, paid_by, notes)
-                                        VALUES (:eid, :pdate, :pamt, :pmode, :pref, :pto, :pby, :notes) RETURNING id;
-                                    """), {"eid": target_exp_id, "pdate": new_p_date, "pamt": float(new_p_amount), "pmode": new_p_mode, "pref": new_p_ref.strip(), "pto": new_p_to.strip(), "pby": "Admin", "notes": new_p_notes.strip()})
-                                    new_pay_id = pay_res.scalar()
-
-                                    # Auto-entry check for salary sub-category
-                                    exp_row = s.execute(text("SELECT category, sub_category, staff_name, description, remarks FROM expenses WHERE id = :id;"), {"id": target_exp_id}).fetchone()
-                                    if exp_row:
-                                        cat, subcat, s_name, desc, rem = exp_row
-                                        if (subcat and 'salary' in subcat.lower()) or (cat and 'labour' in cat.lower() and subcat and 'salary' in subcat.lower()):
-                                            s_month, s_year = parse_salary_month_year(new_p_date, desc or "", rem or "")
-                                            s.execute(text("""
-                                                INSERT INTO staff_salary_payouts (payment_id, expense_id, staff_name, salary_month, salary_year, amount_paid, payment_date)
-                                                VALUES (:pid, :eid, :sname, :smon, :syr, :pamt, :pdate)
-                                            """), {"pid": new_pay_id, "eid": target_exp_id, "sname": s_name or new_p_to.strip(), "smon": s_month, "syr": s_year, "pamt": float(new_p_amount), "pdate": new_p_date})
-
+                                    s.execute(text("INSERT INTO expense_payments (expense_id, payment_date, amount_paid, payment_mode, ref_no, paid_to, paid_by, notes) VALUES (:eid, :pdate, :pamt, :pmode, :pref, :pto, :pby, :notes);"), {"eid": target_exp_id, "pdate": new_p_date, "pamt": float(new_p_amount), "pmode": new_p_mode, "pref": new_p_ref.strip(), "pto": new_p_to.strip(), "pby": "Admin", "notes": new_p_notes.strip()})
                                     new_status = "Paid" if (float(target_exp["total_paid"]) + float(new_p_amount)) >= float(target_exp["total_amount"]) else "Partially Paid"
                                     s.execute(text("UPDATE expenses SET status = :stat, updated_at = NOW() WHERE id = :id;"), {"stat": new_status, "id": target_exp_id})
                                     s.commit()
                                 show_success_modal(f"Payment of ₹{new_p_amount:,.2f} recorded successfully for Expense #{target_exp_id}!")
-                            except Exception as e:
-                                st.error(f"Could not record payment: {e}")
+                            except Exception as e: st.error(f"Could not record payment: {e}")
 
         elif p_sub_mode == "View Payments":
             if payments_df.empty: st.info("No payment transactions found in database.")
@@ -2069,7 +2128,7 @@ elif page == "Expenses" and user_role == "admin":
                             show_success_modal(f"Payment #{loaded_pay_id} updated successfully!")
                         except Exception as e: st.error(f"Could not update payment: {e}")
 
-elif exp_nav == "📊 Summary & Date Reports":
+    elif exp_nav == "📊 Summary & Date Reports":
         st.write("Analyze expense obligations, actual disbursements, and settlement ratios over any time window:")
         expenses_summary_df, payments_df = load_db_expenses_summary_df(), load_db_payments_df()
 
@@ -2152,7 +2211,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 with sc6:
                     new_s_dob = st.date_input("Date of Birth", value=date(1995, 1, 1), key="add_s_dob")
                 with sc_dol:
-                    new_s_dol = st.date_input("Last Working Day", value=None, key="add_s_dol")
+                    new_s_dol = st.date_input("Date of Leaving", value=None, key="add_s_dol")
                 with sc7:
                     new_s_pan = st.text_input("PAN Number", placeholder="e.g. ABCDE1234F", key="add_s_pan")
                 with sc8:
@@ -2278,7 +2337,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 k2.write(f"**PAN Number:** {s_row['pan_number'] or '—'}")
                 
                 k3.write(f"**Emergency Contact:** {s_row['emergency_contact_name'] or '—'} ({s_row['emergency_contact_phone'] or '—'})")
-                k3.write(f"**Last Working Day:** {pd.to_datetime(s_row['date_of_leaving']).strftime('%d %b %Y') if pd.notna(s_row['date_of_leaving']) else '—'}")
+                k3.write(f"**Date of Leaving:** {pd.to_datetime(s_row['date_of_leaving']).strftime('%d %b %Y') if pd.notna(s_row['date_of_leaving']) else '—'}")
 
                 st.write(f"**Current Address:** {s_row['current_address'] or '—'}")
                 st.write(f"**Permanent Address:** {s_row['permanent_address'] or '—'}")
@@ -2329,7 +2388,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                         e_dob = st.date_input("Date of Birth", value=dob_val, key=f"e_dob_{s_id}")
                     with ec_dol:
                         dol_val = pd.to_datetime(s_edit["date_of_leaving"]).date() if pd.notna(s_edit["date_of_leaving"]) else None
-                        e_dol = st.date_input("Last Working Day", value=dol_val, key=f"e_dol_{s_id}")
+                        e_dol = st.date_input("Date of Leaving", value=dol_val, key=f"e_dol_{s_id}")
                     with ec7:
                         e_pan = st.text_input("PAN Number", value=str(s_edit.get("pan_number") or ""), key=f"e_pan_{s_id}")
                     with ec8:
