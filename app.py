@@ -1786,7 +1786,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
 
     reorder_df = pd.DataFrame(reorder_rows)
     reorder_df = pd.concat([reorder_df, pd.DataFrame([{"Flavour": "🔥 OVERALL TOTAL", "Physical-Base Stock": tot_calc_active, "Daily Pace": f"{tot_rate:.1f} /d", "Runway": f"{(tot_calc_active / tot_rate):.0f} days" if tot_rate > 0 else "—", "Target Buffer": int(round(tot_rate * (buffer_days + cover_days))), "Suggested Order": tot_suggested_units, "Urgency": "🔴 Order Now" if overall_order_date and overall_order_date <= today_fa else "🟢 Stable", "Rationale": f"Est Cost: ₹{tot_order_cost:,.0f}"}])], ignore_index=True)
-    st.dataframe(reorder_df, hide_index=True, use_container_width=True, height=370)
+    st.dataframe(reorder_df, hide_index=True, use_container_width=True)
 
     st.markdown("---"); st.markdown("### 4. Detailed Stock Movement Logs")
     m_tab1, m_tab2, m_tab3, m_tab4 = st.tabs(["📋 Purchase Orders", "📦 Received Deliveries", "🔍 Physical Stock Audits", "🗑️ Stock Removed"])
