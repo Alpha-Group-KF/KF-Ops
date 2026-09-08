@@ -1952,18 +1952,18 @@ elif page == "Expenses" and user_role == "admin":
             po_opts = ["None"] + [f"PO #{r['id']} ({pd.to_datetime(r['order_date']).strftime('%d %b')})" for _, r in pos_df.iterrows()] if not pos_df.empty else ["None"]
             staff_opts = load_active_staff_list()
 
-            c1, c2, c3, c4, c5 = st.columns([1.05, 0.85, 1.05, 1.05, 1.35], gap="small")
-            with c1: e_date = st.date_input("Expense Date", value=date.today(), key="add_e_date")
-            with c2:
+            c1, c2, c3, c4, c5 = st.columns([1.05, 1.05, 1.35, 0.95, 1.10], gap="small")
+            with c1: e_type = st.selectbox("Expense Type", EXPENSE_TYPES, index=0, key="add_e_type")
+            with c2: e_cat = st.selectbox("Category", EXPENSE_CATEGORIES, index=0, key="add_e_cat")
+            with c3: e_subcat = st.text_input("Sub-Category (Optional)", placeholder="e.g. Dry Ice, Fuel, Repair", key="add_e_subcat")
+            with c4: e_date = st.date_input("Expense Date", value=date.today(), key="add_e_date")
+            with c5:
                 e_month = st.selectbox(
                     "Month",
                     list(calendar.month_name)[1:],
                     index=e_date.month - 1,
                     key=f"add_e_month_{e_date.strftime('%Y%m')}"
                 )
-            with c3: e_type = st.selectbox("Expense Type", EXPENSE_TYPES, index=0, key="add_e_type")
-            with c4: e_cat = st.selectbox("Category", EXPENSE_CATEGORIES, index=0, key="add_e_cat")
-            with c5: e_subcat = st.text_input("Sub-Category (Optional)", placeholder="e.g. Dry Ice, Fuel, Repair", key="add_e_subcat")
 
             c5, c6, c7 = st.columns(3)
             with c5: e_amount = st.number_input("Total Amount (₹)", min_value=0.0, step=10.0, key="add_e_amt")
@@ -2001,7 +2001,40 @@ elif page == "Expenses" and user_role == "admin":
                         with db_conn.session as s:
                             res = s.execute(text("INSERT INTO expenses (expense_date, month, expense_type, category, sub_category, description, total_amount, attributed_to, vendor_name, staff_name, purchase_order_id, status, recorded_by, remarks) VALUES (:ed, :month, :et, :cat, :subcat, :desc, :amt, :attr, :vendor, :staff, :poid, :stat, :recby, :rem) RETURNING id;"), {"ed": e_date, "month": e_month, "et": e_type, "cat": e_cat, "subcat": e_subcat.strip(), "desc": e_desc.strip(), "amt": float(e_amount), "attr": e_attr, "vendor": e_vendor.strip(), "staff": sel_staff, "poid": p_po_id, "stat": computed_status, "recby": "Admin", "rem": e_remarks.strip()})
                             new_exp_id = res.scalar()
-                            if has_direct_pay and p_amt > 0: s.execute(text("INSERT INTO expense_payments (expense_id, payment_date, amount_paid, payment_mode, ref_no, paid_to, paid_by, notes) VALUES (:eid, :pdate, :pamt, :pmode, :pref, :pto, :pby, :notes);"), {"eid": new_exp_id, "pdate": p_date, "pamt": float(p_amt), "pmode": p_mode, "pref": p_ref.strip(), "pto": p_to.strip(), "pby": "Admin", "notes": p_notes.strip()})
+                            new_payment_id = None
+                            if has_direct_pay and p_amt > 0:
+                                pay_res = s.execute(
+                                    text("INSERT INTO expense_payments (expense_id, payment_date, amount_paid, payment_mode, ref_no, paid_to, paid_by, notes) VALUES (:eid, :pdate, :pamt, :pmode, :pref, :pto, :pby, :notes) RETURNING id;"),
+                                    {"eid": new_exp_id, "pdate": p_date, "pamt": float(p_amt), "pmode": p_mode, "pref": p_ref.strip(), "pto": p_to.strip(), "pby": "Admin", "notes": p_notes.strip()}
+                                )
+                                new_payment_id = pay_res.scalar()
+
+                            # Automatically sync Salary expenses to staff_salary_payouts.
+                            # The sub-category comparison is case-insensitive.
+                            if e_subcat.strip().lower() == "salary":
+                                payout_res = s.execute(
+                                    text("SELECT id FROM staff_salary_payouts WHERE expense_id = :eid ORDER BY id DESC LIMIT 1;"),
+                                    {"eid": new_exp_id}
+                                ).fetchone()
+                                payout_params = {
+                                    "eid": new_exp_id,
+                                    "staff": sel_staff,
+                                    "salary_month": e_month,
+                                    "salary_year": e_date.year,
+                                    "amount_paid": float(e_amount),
+                                    "payment_date": p_date if (has_direct_pay and p_amt > 0) else e_date,
+                                    "payment_id": new_payment_id,
+                                }
+                                if payout_res:
+                                    s.execute(
+                                        text("UPDATE staff_salary_payouts SET payment_id = :payment_id, staff_name = :staff, salary_month = :salary_month, salary_year = :salary_year, amount_paid = :amount_paid, payment_date = :payment_date WHERE id = :id;"),
+                                        {**payout_params, "id": payout_res[0]}
+                                    )
+                                else:
+                                    s.execute(
+                                        text("INSERT INTO staff_salary_payouts (payment_id, expense_id, staff_name, salary_month, salary_year, amount_paid, payment_date) VALUES (:payment_id, :eid, :staff, :salary_month, :salary_year, :amount_paid, :payment_date);"),
+                                        payout_params
+                                    )
                             s.commit()
                         show_success_modal(f"Expense #{new_exp_id} of ₹{e_amount:,.2f} recorded successfully!")
                     except Exception as e: st.error(f"Could not save expense: {e}")
@@ -2029,16 +2062,16 @@ elif page == "Expenses" and user_role == "admin":
                 staff_opts = load_active_staff_list(); curr_staff = str(loaded_exp.get("staff_name") or "Select Staff")
                 if curr_staff not in staff_opts: staff_opts.append(curr_staff)
 
-                c1, c2, c3, c4, c5 = st.columns([1.05, 0.85, 1.05, 1.05, 1.35], gap="small")
-                with c1: e_edit_date = st.date_input("Expense Date", value=pd.to_datetime(loaded_exp["expense_date"]).date(), key=f"ee_date_{loaded_exp_id}")
-                with c2:
+                c1, c2, c3, c4, c5 = st.columns([1.05, 1.05, 1.35, 0.95, 1.10], gap="small")
+                with c1: e_edit_type = st.selectbox("Expense Type", EXPENSE_TYPES, index=EXPENSE_TYPES.index(loaded_exp["expense_type"]) if loaded_exp["expense_type"] in EXPENSE_TYPES else 0, key=f"ee_type_{loaded_exp_id}")
+                with c2: e_edit_cat = st.selectbox("Category", EXPENSE_CATEGORIES, index=EXPENSE_CATEGORIES.index(loaded_exp["category"]) if loaded_exp["category"] in EXPENSE_CATEGORIES else 0, key=f"ee_cat_{loaded_exp_id}")
+                with c3: e_edit_subcat = st.text_input("Sub-Category", value=str(loaded_exp.get("sub_category") or ""), key=f"ee_subcat_{loaded_exp_id}")
+                with c4: e_edit_date = st.date_input("Expense Date", value=pd.to_datetime(loaded_exp["expense_date"]).date(), key=f"ee_date_{loaded_exp_id}")
+                with c5:
                     db_month = str(loaded_exp.get("month") or "").strip()
                     month_options = list(calendar.month_name)[1:]
                     default_month_idx = month_options.index(db_month) if db_month in month_options else (e_edit_date.month - 1)
                     e_edit_month = st.selectbox("Month", month_options, index=default_month_idx, key=f"ee_month_{loaded_exp_id}")
-                with c3: e_edit_type = st.selectbox("Expense Type", EXPENSE_TYPES, index=EXPENSE_TYPES.index(loaded_exp["expense_type"]) if loaded_exp["expense_type"] in EXPENSE_TYPES else 0, key=f"ee_type_{loaded_exp_id}")
-                with c4: e_edit_cat = st.selectbox("Category", EXPENSE_CATEGORIES, index=EXPENSE_CATEGORIES.index(loaded_exp["category"]) if loaded_exp["category"] in EXPENSE_CATEGORIES else 0, key=f"ee_cat_{loaded_exp_id}")
-                with c5: e_edit_subcat = st.text_input("Sub-Category", value=str(loaded_exp.get("sub_category") or ""), key=f"ee_subcat_{loaded_exp_id}")
 
                 c5, c6, c7 = st.columns(3)
                 with c5: e_edit_amount = st.number_input("Total Amount (₹)", min_value=0.0, value=float(loaded_exp["total_amount"]), step=10.0, key=f"ee_amt_{loaded_exp_id}")
@@ -2061,6 +2094,31 @@ elif page == "Expenses" and user_role == "admin":
                             sel_staff = None if e_edit_staff == "Select Staff" else e_edit_staff
                             with db_conn.session as s:
                                 s.execute(text("UPDATE expenses SET expense_date = :ed, month = :month, expense_type = :et, category = :cat, sub_category = :subcat, description = :desc, total_amount = :amt, attributed_to = :attr, vendor_name = :vendor, staff_name = :staff, purchase_order_id = :poid, status = :stat, remarks = :rem, updated_at = NOW() WHERE id = :id;"), {"ed": e_edit_date, "month": e_edit_month, "et": e_edit_type, "cat": e_edit_cat, "subcat": e_edit_subcat.strip(), "desc": e_edit_desc.strip(), "amt": float(e_edit_amount), "attr": e_edit_attr, "vendor": e_edit_vendor.strip(), "staff": sel_staff, "poid": p_po_id, "stat": e_edit_stat, "rem": e_edit_remarks.strip(), "id": loaded_exp_id})
+
+                                # Keep the linked salary payout in sync when editing a Salary expense.
+                                if e_edit_subcat.strip().lower() == "salary":
+                                    payout_res = s.execute(
+                                        text("SELECT id FROM staff_salary_payouts WHERE expense_id = :eid ORDER BY id DESC LIMIT 1;"),
+                                        {"eid": loaded_exp_id}
+                                    ).fetchone()
+                                    payout_params = {
+                                        "eid": loaded_exp_id,
+                                        "staff": sel_staff,
+                                        "salary_month": e_edit_month,
+                                        "salary_year": e_edit_date.year,
+                                        "amount_paid": float(e_edit_amount),
+                                        "payment_date": e_edit_date,
+                                    }
+                                    if payout_res:
+                                        s.execute(
+                                            text("UPDATE staff_salary_payouts SET staff_name = :staff, salary_month = :salary_month, salary_year = :salary_year, amount_paid = :amount_paid, payment_date = :payment_date WHERE id = :id;"),
+                                            {**payout_params, "id": payout_res[0]}
+                                        )
+                                    else:
+                                        s.execute(
+                                            text("INSERT INTO staff_salary_payouts (expense_id, staff_name, salary_month, salary_year, amount_paid, payment_date) VALUES (:eid, :staff, :salary_month, :salary_year, :amount_paid, :payment_date);"),
+                                            payout_params
+                                        )
                                 s.commit()
                             show_success_modal(f"Expense #{loaded_exp_id} updated successfully!")
                         except Exception as e: st.error(f"Could not update expense: {e}")
@@ -2099,9 +2157,50 @@ elif page == "Expenses" and user_role == "admin":
                         else:
                             try:
                                 with db_conn.session as s:
-                                    s.execute(text("INSERT INTO expense_payments (expense_id, payment_date, amount_paid, payment_mode, ref_no, paid_to, paid_by, notes) VALUES (:eid, :pdate, :pamt, :pmode, :pref, :pto, :pby, :notes);"), {"eid": target_exp_id, "pdate": new_p_date, "pamt": float(new_p_amount), "pmode": new_p_mode, "pref": new_p_ref.strip(), "pto": new_p_to.strip(), "pby": "Admin", "notes": new_p_notes.strip()})
+                                    pay_res = s.execute(
+                                        text("INSERT INTO expense_payments (expense_id, payment_date, amount_paid, payment_mode, ref_no, paid_to, paid_by, notes) VALUES (:eid, :pdate, :pamt, :pmode, :pref, :pto, :pby, :notes) RETURNING id;"),
+                                        {"eid": target_exp_id, "pdate": new_p_date, "pamt": float(new_p_amount), "pmode": new_p_mode, "pref": new_p_ref.strip(), "pto": new_p_to.strip(), "pby": "Admin", "notes": new_p_notes.strip()}
+                                    )
+                                    new_payment_id = pay_res.scalar()
                                     new_status = "Paid" if (float(target_exp["total_paid"]) + float(new_p_amount)) >= float(target_exp["total_amount"]) else "Partially Paid"
                                     s.execute(text("UPDATE expenses SET status = :stat, updated_at = NOW() WHERE id = :id;"), {"stat": new_status, "id": target_exp_id})
+
+                                    # For Salary expenses, keep staff_salary_payouts.payment_id linked
+                                    # to the most recently recorded payment for this expense.
+                                    salary_res = s.execute(
+                                        text("SELECT sub_category FROM expenses WHERE id = :eid;"),
+                                        {"eid": target_exp_id}
+                                    ).fetchone()
+                                    if salary_res and str(salary_res[0] or "").strip().lower() == "salary":
+                                        payout_res = s.execute(
+                                            text("SELECT id FROM staff_salary_payouts WHERE expense_id = :eid ORDER BY id DESC LIMIT 1;"),
+                                            {"eid": target_exp_id}
+                                        ).fetchone()
+                                        if payout_res:
+                                            s.execute(
+                                                text("UPDATE staff_salary_payouts SET payment_id = :payment_id WHERE id = :id;"),
+                                                {"payment_id": new_payment_id, "id": payout_res[0]}
+                                            )
+                                        else:
+                                            # Create the payout link if the salary expense was created before
+                                            # salary-payout synchronization was introduced.
+                                            exp_res = s.execute(
+                                                text("SELECT staff_name, month, expense_date, total_amount FROM expenses WHERE id = :eid;"),
+                                                {"eid": target_exp_id}
+                                            ).fetchone()
+                                            if exp_res:
+                                                s.execute(
+                                                    text("INSERT INTO staff_salary_payouts (payment_id, expense_id, staff_name, salary_month, salary_year, amount_paid, payment_date) VALUES (:payment_id, :eid, :staff, :salary_month, :salary_year, :amount_paid, :payment_date);"),
+                                                    {
+                                                        "payment_id": new_payment_id,
+                                                        "eid": target_exp_id,
+                                                        "staff": exp_res[0],
+                                                        "salary_month": exp_res[1],
+                                                        "salary_year": pd.to_datetime(exp_res[2]).year,
+                                                        "amount_paid": float(new_p_amount),
+                                                        "payment_date": new_p_date,
+                                                    }
+                                                )
                                     s.commit()
                                 show_success_modal(f"Payment of ₹{new_p_amount:,.2f} recorded successfully for Expense #{target_exp_id}!")
                             except Exception as e: st.error(f"Could not record payment: {e}")
@@ -2136,6 +2235,22 @@ elif page == "Expenses" and user_role == "admin":
                         try:
                             with db_conn.session as s:
                                 s.execute(text("UPDATE expense_payments SET payment_date = :pdate, amount_paid = :pamt, payment_mode = :pmode, ref_no = :pref, paid_to = :pto, notes = :notes WHERE id = :id;"), {"pdate": ep_date, "pamt": float(ep_amt), "pmode": ep_mode, "pref": ep_ref.strip(), "pto": ep_to.strip(), "notes": ep_notes.strip(), "id": loaded_pay_id})
+
+                                # If this payment is the payment currently linked to a Salary payout,
+                                # keep the payout's amount/date synchronized with the edited payment.
+                                s.execute(
+                                    text("""
+                                        UPDATE staff_salary_payouts sp
+                                        SET amount_paid = :pamt, payment_date = :pdate
+                                        WHERE sp.payment_id = :pid
+                                          AND EXISTS (
+                                              SELECT 1 FROM expenses e
+                                              WHERE e.id = sp.expense_id
+                                                AND LOWER(TRIM(COALESCE(e.sub_category, ''))) = 'salary'
+                                          );
+                                    """),
+                                    {"pamt": float(ep_amt), "pdate": ep_date, "pid": loaded_pay_id}
+                                )
                                 s.commit()
                             show_success_modal(f"Payment #{loaded_pay_id} updated successfully!")
                         except Exception as e: st.error(f"Could not update payment: {e}")
