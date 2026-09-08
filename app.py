@@ -591,64 +591,26 @@ def load_db_flavor_sales(start_date=None, end_date=None):
     """
     return db_conn.query(query, params=params, ttl="0s")
 
-
-def display_filtered_dataframe(df, *args, **kwargs):
-    """Display a dataframe with optional per-column filters above it."""
-    import inspect
-    import pandas as pd
-
-    # Keep styled DataFrames (e.g. Styler objects) working as before.
-    if not isinstance(df, pd.DataFrame):
-        st.dataframe(df, *args, **kwargs)
-        return
-
-    caller = inspect.currentframe().f_back
-    line_no = caller.f_lineno if caller is not None else 0
-    key_prefix = kwargs.pop("filter_key", f"table_filter_{line_no}")
-
-    with st.expander("🔎 Filter table", expanded=False):
-        columns = list(df.columns)
-        if not columns:
-            st.caption("No columns available to filter.")
-        else:
-            filter_cols = st.columns(min(3, len(columns)))
-            filters = {}
-            for i, col in enumerate(columns):
-                series = df[col]
-                non_null = series.dropna()
-                unique_vals = list(pd.unique(non_null))
-                # Use a dropdown for manageable categorical columns; otherwise use
-                # a text search field. Text search is case-insensitive and matches
-                # anywhere in the displayed value.
-                if len(unique_vals) <= 30 and len(unique_vals) > 0:
-                    display_vals = sorted([str(v) for v in unique_vals])
-                    with filter_cols[i % len(filter_cols)]:
-                        filters[col] = st.selectbox(
-                            str(col),
-                            ["All"] + display_vals,
-                            key=f"{key_prefix}_{i}",
-                        )
-                else:
-                    with filter_cols[i % len(filter_cols)]:
-                        filters[col] = st.text_input(
-                            str(col),
-                            key=f"{key_prefix}_{i}",
-                            placeholder=f"Filter {col}...",
-                        )
-
-            filtered_df = df.copy()
-            for col, value in filters.items():
-                if not value or value == "All":
-                    continue
-                # Convert values to their displayed string representation so this
-                # works consistently for dates, numbers and text columns.
-                mask = filtered_df[col].astype(str).str.contains(
-                    str(value), case=False, na=False, regex=False
-                )
-                filtered_df = filtered_df.loc[mask]
-
-            st.caption(f"Showing {len(filtered_df):,} of {len(df):,} rows")
-            st.dataframe(filtered_df, *args, **kwargs)
+def apply_smart_filters(df, filter_columns, key_prefix):
+    """Apply a small set of useful filters without cluttering every table."""
+    if df is None or df.empty or not filter_columns:
+        return df
+    valid = [c for c in filter_columns if c in df.columns]
+    if not valid:
+        return df
+    with st.expander("🔎 Filters", expanded=False):
+        cols = st.columns(len(valid))
+        filtered = df.copy()
+        for i, col in enumerate(valid):
+            values = filtered[col].dropna().astype(str).str.strip()
+            values = sorted([v for v in values.unique().tolist() if v])
+            with cols[i]:
+                selected = st.selectbox(col, ["All"] + values, key=f"{key_prefix}_{i}")
+            if selected != "All":
+                filtered = filtered[filtered[col].fillna("").astype(str).str.strip() == selected]
+        st.caption(f"Showing {len(filtered):,} of {len(df):,} rows")
+        return filtered
+    return df
 
 def load_db_expenses_list():
     if db_conn is None: return []
@@ -1327,7 +1289,7 @@ elif page == "Payslip Generator" and user_role == "admin":
                     return ["font-weight: bold;"] * len(row)
                 return [""] * len(row)
                 
-            display_filtered_dataframe(summary_df.style.apply(style_bold_rows, axis=1), hide_index=True, use_container_width=True)
+            st.dataframe(summary_df.style.apply(style_bold_rows, axis=1), hide_index=True, use_container_width=True)
 
             st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
             st.markdown(f"#### Detailed Commission & Allowance Entitlement Ledger")
@@ -1346,7 +1308,7 @@ elif page == "Payslip Generator" and user_role == "admin":
                 ledger_df["Advance Taken (₹)"] = ledger_df["advance_taken"].apply(lambda v: f"₹{v:,.2f}" if v > 0 else "—")
                 ledger_df["Allow. Taken (₹)"] = ledger_df["food_taken"].apply(lambda v: f"₹{v:,.2f}" if v > 0 else "—")
                 
-                display_filtered_dataframe(
+                st.dataframe(
                     ledger_df[["Date", "Type", "Cart", "Collection (₹)", "Salary (₹)", "Commission (₹)", "Allowance (₹)", "Advance Taken (₹)", "Allow. Taken (₹)"]], 
                     hide_index=True, 
                     use_container_width=True,
@@ -1441,7 +1403,7 @@ elif page == "Live Cart Tracking" and user_role == "admin":
 
                 if not items_df.empty:
                     with st.expander("View Flavour Breakdown"):
-                        display_filtered_dataframe(items_df.rename(columns={"flavor_name": "Flavour", "qty_sold": "Units Sold", "rev": "Revenue (₹)"}), hide_index=True, use_container_width=True)
+                        st.dataframe(items_df.rename(columns={"flavor_name": "Flavour", "qty_sold": "Units Sold", "rev": "Revenue (₹)"}), hide_index=True, use_container_width=True)
 
 elif page == "Purchase Orders" and user_role == "admin":
     st.subheader("Purchase Order Estimator & Order Management")
@@ -1748,7 +1710,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
 
     comp_df = pd.DataFrame(comparison_rows)
     comp_df = pd.concat([comp_df, pd.DataFrame([{"Flavour": "🔥 OVERALL TOTAL", "Received (In)": tot_rec_a, "Issued (Carts)": tot_issued_a, "Removed": tot_removed_a, "Calc. Stock (Audit)": tot_calc_a, "Physical Audit Count": str(tot_phys) if has_audit else "—", "Variance": f"{net_var:+d}" if has_audit else "—", "Audit Status": "✅ Match" if net_var == 0 and has_audit else (f"⚠️ {net_var:+d}" if has_audit else "—")}])], ignore_index=True)
-    display_filtered_dataframe(comp_df, hide_index=True, use_container_width=True)
+    st.dataframe(comp_df, hide_index=True, use_container_width=True)
 
     # --- TABLE 2: Physical-Base Current Stock Position ---
     st.markdown("---")
@@ -1824,7 +1786,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
         "Removed (>= Audit)": tot_rem_b,
         "Current Physical-Base Stock": tot_curr_b
     }])], ignore_index=True)
-    display_filtered_dataframe(phys_base_df, hide_index=True, use_container_width=True)
+    st.dataframe(phys_base_df, hide_index=True, use_container_width=True)
 
     # --- SECTION 3: Suggested Orders & Inventory Runway (Based on Physical-Base Stock) ---
     st.markdown("---")
@@ -1860,7 +1822,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
 
     reorder_df = pd.DataFrame(reorder_rows)
     reorder_df = pd.concat([reorder_df, pd.DataFrame([{"Flavour": "🔥 OVERALL TOTAL", "Physical-Base Stock": tot_calc_active, "Daily Pace": f"{tot_rate:.1f} /d", "Runway": f"{(tot_calc_active / tot_rate):.0f} days" if tot_rate > 0 else "—", "Target Buffer": int(round(tot_rate * (buffer_days + cover_days))), "Suggested Order": tot_suggested_units, "Urgency": "🔴 Order Now" if overall_order_date and overall_order_date <= today_fa else "🟢 Stable", "Rationale": f"Est Cost: ₹{tot_order_cost:,.0f}"}])], ignore_index=True)
-    display_filtered_dataframe(reorder_df, hide_index=True, use_container_width=True)
+    st.dataframe(reorder_df, hide_index=True, use_container_width=True)
 
     st.markdown("---"); st.markdown("### 4. Detailed Stock Movement Logs")
     m_tab1, m_tab2, m_tab3, m_tab4 = st.tabs(["📋 Purchase Orders", "📦 Received Deliveries", "🔍 Physical Stock Audits", "🗑️ Stock Removed"])
@@ -1874,7 +1836,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
                 row_data = {"PO #": f"PO #{r['PO #']}", "Order Date": pd.to_datetime(r['Order Date']).strftime("%d-%b-%y"), "Expected": pd.to_datetime(r['Expected Date']).strftime("%d-%b-%y") if pd.notna(r['Expected Date']) else "—", "Location": r['Location'], "Status": r['Status'], "Total Qty": sum(int(q or 0) for q in items_dict.values())}
                 for code in FLAVOR_CODES: row_data[code] = items_dict.get(code, 0)
                 po_display.append(row_data)
-            display_filtered_dataframe(pd.DataFrame(po_display), hide_index=True, use_container_width=True)
+            st.dataframe(pd.DataFrame(po_display), hide_index=True, use_container_width=True)
         else: st.caption("No purchase orders found in database.")
 
     with m_tab2:
@@ -1886,7 +1848,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
                 row_data = {"Receipt #": f"#{r['Receipt #']}", "Received Date": pd.to_datetime(r['Received Date']).strftime("%d-%b-%y"), "Location": r['Location'], "Linked PO": f"PO #{r['PO Ref']}" if pd.notna(r['PO Ref']) else "Ad-hoc", "Payment Status": r['Payment'], "Total Received": sum(int(q or 0) for q in items_dict.values())}
                 for code in FLAVOR_CODES: row_data[code] = items_dict.get(code, 0)
                 rec_display.append(row_data)
-            display_filtered_dataframe(pd.DataFrame(rec_display), hide_index=True, use_container_width=True)
+            st.dataframe(pd.DataFrame(rec_display), hide_index=True, use_container_width=True)
         else: st.caption("No stock receipts recorded in database.")
 
     with m_tab3:
@@ -1897,7 +1859,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
                 row_data = {"Audit #": f"#{r['Audit #']}", "Audit Date": pd.to_datetime(r['Audit Date']).strftime("%d-%b-%y"), "Location": r['Location'], "Audited By": r['Auditor'], "Total Count": r['Total Count'], "Remarks": r['Remarks']}
                 for code in FLAVOR_CODES: row_data[code] = int(r.get(FLAVOR_MAP[code]["audit_col"], 0))
                 aud_display.append(row_data)
-            display_filtered_dataframe(pd.DataFrame(aud_display), hide_index=True, use_container_width=True)
+            st.dataframe(pd.DataFrame(aud_display), hide_index=True, use_container_width=True)
         else: st.caption("No physical stock audits recorded in database.")
 
     with m_tab4:
@@ -1908,7 +1870,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
                 row_data = {"ID": f"#{r['ID']}", "Date": pd.to_datetime(r['Date']).strftime("%d-%b-%y"), "Location": r['Location'], "Total Units": int(r['Total Units']) if pd.notna(r['Total Units']) else sum(int(r.get(FLAVOR_MAP[code]['audit_col'], 0)) for c in FLAVOR_CODES), "Cost (₹)": float(r['Cost (₹)']), "Reason": r['Reason'], "Removed By": r['Removed By'] if pd.notna(r['Removed By']) else "", "Verified By": r['Verified By']}
                 for code in FLAVOR_CODES: row_data[code] = int(r.get(FLAVOR_MAP[code]["audit_col"], 0))
                 rem_display.append(row_data)
-            display_filtered_dataframe(pd.DataFrame(rem_display), hide_index=True, use_container_width=True)
+            st.dataframe(pd.DataFrame(rem_display), hide_index=True, use_container_width=True)
         else: st.caption("No stock removals recorded in database.")
 
 elif page == "Stock Removed" and user_role == "admin":
@@ -1968,7 +1930,7 @@ elif page == "Stock Removed" and user_role == "admin":
                 for code in FLAVOR_CODES: row_data[code] = int(r.get(FLAVOR_MAP[code]["audit_col"], 0))
                 display_rem_list.append(row_data)
 
-            display_filtered_dataframe(pd.DataFrame(display_rem_list), hide_index=True, use_container_width=True, column_config={"Cost (₹)": st.column_config.NumberColumn(format="₹%,.2f")})
+            st.dataframe(pd.DataFrame(display_rem_list), hide_index=True, use_container_width=True, column_config={"Cost (₹)": st.column_config.NumberColumn(format="₹%,.2f")})
 
     elif rem_mode == "Edit Past Entry":
         rem_query_df = db_conn.query("SELECT id, removal_date, location, ml_units, mm_units, ps_units, mn_units, kb_units, bm_units, sg_units, ch_units, ra_units, cost_price_of_removed_items, reason_for_removal, removed_by, verified_by FROM stock_removed ORDER BY removal_date DESC, id DESC;", ttl="0s")
@@ -2121,7 +2083,9 @@ elif page == "Expenses" and user_role == "admin":
                 display_exp = expenses_summary_df.copy()
                 display_exp["expense_date"] = pd.to_datetime(display_exp["expense_date"]).dt.strftime("%d-%b-%y")
                 display_exp["PO Link"] = display_exp["purchase_order_id"].apply(lambda p: f"PO #{int(p)}" if pd.notna(p) else "—")
-                display_filtered_dataframe(display_exp[["id", "expense_date", "expense_type", "category", "sub_category", "description", "total_amount", "total_paid", "balance_due", "status", "attributed_to", "vendor_name", "PO Link"]].rename(columns={"id": "ID", "expense_date": "Date", "expense_type": "Type", "category": "Category", "sub_category": "Sub-Category", "description": "Description", "total_amount": "Total (₹)", "total_paid": "Paid (₹)", "balance_due": "Balance (₹)", "status": "Status", "attributed_to": "Attributed To", "vendor_name": "Vendor"}), hide_index=True, use_container_width=True, column_config={"Total (₹)": st.column_config.NumberColumn(format="₹%,.2f"), "Paid (₹)": st.column_config.NumberColumn(format="₹%,.2f"), "Balance (₹)": st.column_config.NumberColumn(format="₹%,.2f")})
+                display_exp = display_exp[["id", "expense_date", "month", "expense_type", "category", "sub_category", "description", "total_amount", "total_paid", "balance_due", "status", "attributed_to", "vendor_name", "PO Link"]].rename(columns={"id": "ID", "expense_date": "Date", "month": "Month", "expense_type": "Type", "category": "Category", "sub_category": "Sub-Category", "description": "Description", "total_amount": "Total (₹)", "total_paid": "Paid (₹)", "balance_due": "Balance (₹)", "status": "Status", "attributed_to": "Attributed To", "vendor_name": "Vendor"})
+                display_exp = apply_smart_filters(display_exp, ["Month", "Category", "Status", "Attributed To"], "expense_filters")
+                st.dataframe(display_exp, hide_index=True, use_container_width=True, column_config={"Total (₹)": st.column_config.NumberColumn(format="₹%,.2f"), "Paid (₹)": st.column_config.NumberColumn(format="₹%,.2f"), "Balance (₹)": st.column_config.NumberColumn(format="₹%,.2f")})
 
         elif e_sub_mode == "Edit Past Expense":
             if expenses_summary_df.empty: st.info("No expenses found to edit.")
@@ -2284,7 +2248,9 @@ elif page == "Expenses" and user_role == "admin":
             else:
                 st.metric("Total Payments Disbursed", f"₹{float(payments_df['amount_paid'].sum()):,.2f}")
                 disp_pay = payments_df.copy(); disp_pay["payment_date"] = pd.to_datetime(disp_pay["payment_date"]).dt.strftime("%d-%b-%y"); disp_pay["Expense Link"] = disp_pay.apply(lambda r: f"#{r['expense_id']} — {r['category']} (₹{float(r['expense_total']):,.0f})", axis=1)
-                display_filtered_dataframe(disp_pay[["id", "payment_date", "Expense Link", "amount_paid", "payment_mode", "ref_no", "paid_to", "paid_by", "notes"]].rename(columns={"id": "Payment ID", "payment_date": "Date", "amount_paid": "Amount (₹)", "payment_mode": "Mode", "ref_no": "Ref / UTR", "paid_to": "Paid To", "paid_by": "Paid By", "notes": "Notes"}), hide_index=True, use_container_width=True, column_config={"Amount (₹)": st.column_config.NumberColumn(format="₹%,.2f")})
+                disp_pay = disp_pay[["id", "payment_date", "Expense Link", "amount_paid", "payment_mode", "ref_no", "paid_to", "paid_by", "notes"]].rename(columns={"id": "Payment ID", "payment_date": "Date", "amount_paid": "Amount (₹)", "payment_mode": "Mode", "ref_no": "Ref / UTR", "paid_to": "Paid To", "paid_by": "Paid By", "notes": "Notes"})
+                disp_pay = apply_smart_filters(disp_pay, ["Mode", "Paid To"], "payment_filters")
+                st.dataframe(disp_pay, hide_index=True, use_container_width=True, column_config={"Amount (₹)": st.column_config.NumberColumn(format="₹%,.2f")})
 
         elif p_sub_mode == "Edit Past Payment":
             if payments_df.empty: st.info("No payments recorded to edit.")
@@ -2364,7 +2330,7 @@ elif page == "Expenses" and user_role == "admin":
                 else: st.caption("No expenses in this range.")
 
             st.markdown("#### Payments Disbursed by Mode")
-            if not f_pay.empty: display_filtered_dataframe(f_pay.groupby("payment_mode")["amount_paid"].sum().reset_index().rename(columns={"payment_mode": "Payment Mode", "amount_paid": "Amount Paid (₹)"}), hide_index=True, use_container_width=True, column_config={"Amount Paid (₹)": st.column_config.NumberColumn(format="₹%,.2f")})
+            if not f_pay.empty: st.dataframe(f_pay.groupby("payment_mode")["amount_paid"].sum().reset_index().rename(columns={"payment_mode": "Payment Mode", "amount_paid": "Amount Paid (₹)"}), hide_index=True, use_container_width=True, column_config={"Amount Paid (₹)": st.column_config.NumberColumn(format="₹%,.2f")})
             else: st.caption("No payments in this range.")
 
 # ======================================================================
@@ -2516,7 +2482,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 disp_staff["Joined"] = pd.to_datetime(disp_staff["date_of_joining"]).dt.strftime("%d-%b-%y")
 
                 summary_cols = ["id", "name", "Role", "Gender", "status", "phone_number", "Joined", "Daily Fixed Rate"]
-                display_filtered_dataframe(
+                st.dataframe(
                     disp_staff[summary_cols].rename(columns={
                         "id": "ID", "name": "Name", "status": "Status", "phone_number": "Phone"
                     }),
@@ -2715,14 +2681,12 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 disp_att = att_df.copy()
                 disp_att["attendance_date"] = pd.to_datetime(disp_att["attendance_date"]).dt.strftime("%d-%b-%y")
                 
-                display_filtered_dataframe(
-                    disp_att[["id", "staff_name", "attendance_date", "status", "leave_type", "reason", "recorded_by"]].rename(columns={
-                        "id": "ID", "staff_name": "Staff Name", "attendance_date": "Date", "status": "Status",
-                        "leave_type": "Leave Type", "reason": "Reason", "recorded_by": "Recorded By"
-                    }),
-                    hide_index=True,
-                    use_container_width=True
-                )
+                disp_att = disp_att[["id", "staff_name", "attendance_date", "status", "leave_type", "reason", "recorded_by"]].rename(columns={
+                    "id": "ID", "staff_name": "Staff Name", "attendance_date": "Date", "status": "Status",
+                    "leave_type": "Leave Type", "reason": "Reason", "recorded_by": "Recorded By"
+                })
+                disp_att = apply_smart_filters(disp_att, ["Staff Name", "Status", "Leave Type"], "attendance_filters")
+                st.dataframe(disp_att, hide_index=True, use_container_width=True)
 
         elif att_mode == "Edit Past Leave Entry":
             att_df = load_staff_attendance_df()
@@ -2851,7 +2815,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 disp_hist = hist_df.copy()
                 disp_hist["effective_from"] = pd.to_datetime(disp_hist["effective_from"]).dt.strftime("%d-%b-%y")
                 disp_hist["effective_to"] = disp_hist["effective_to"].apply(lambda d: pd.to_datetime(d).strftime("%d-%b-%y") if pd.notna(d) else "Active Present")
-                display_filtered_dataframe(
+                st.dataframe(
                     disp_hist[["effective_from", "effective_to", "monthly_fixed_salary", "commission_threshold_daily", "commission_percentage", "allowance_weekday", "allowance_sunday"]].rename(columns={
                         "effective_from": "From", "effective_to": "To", "monthly_fixed_salary": "Fixed Salary (₹)",
                         "commission_threshold_daily": "Threshold (₹)", "commission_percentage": "Commission (%)",
@@ -3091,7 +3055,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
 
             st.markdown("---")
             st.markdown("#### Staff Settlement Summary Table")
-            display_filtered_dataframe(
+            st.dataframe(
                 settlement_df,
                 hide_index=True,
                 use_container_width=True,
@@ -3118,7 +3082,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 if target_staff_log.empty:
                     st.info(f"No shifts or leave records logged for {sel_staff_drill} in {sel_month_name} {sel_year}.")
                 else:
-                    display_filtered_dataframe(
+                    st.dataframe(
                         target_staff_log,
                         hide_index=True,
                         use_container_width=True,
@@ -3140,7 +3104,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 else:
                     disp_sp = target_staff_pay.copy()
                     disp_sp["payment_date"] = pd.to_datetime(disp_sp["payment_date"]).dt.strftime("%d-%b-%y")
-                    display_filtered_dataframe(
+                    st.dataframe(
                         disp_sp[["payment_id", "payment_date", "sub_category", "description", "amount_paid", "payment_mode", "ref_no", "notes"]].rename(columns={
                             "payment_id": "Payment ID", "payment_date": "Date", "sub_category": "Type",
                             "description": "Description", "amount_paid": "Amount Paid (₹)", "payment_mode": "Mode",
@@ -3178,7 +3142,7 @@ elif page == "Dashboard" and user_role == "admin":
         })
         st.markdown('<div id="last-3-days"></div>', unsafe_allow_html=True)
         st.markdown("**Last 3 days**")
-        display_filtered_dataframe(compare_df, hide_index=True, use_container_width=True)
+        st.dataframe(compare_df, hide_index=True, use_container_width=True)
 
         st.markdown('<div id="revenue-trend"></div>', unsafe_allow_html=True)
         st.markdown("**Revenue, last 14 days**")
@@ -3301,7 +3265,7 @@ elif page == "Dashboard" and user_role == "admin":
                 "Financial Line Item": ["1. Gross Revenue", "2. COGS (Exact Goods Sold)", "3. Gross Profit (1 - 2)", "4. Staff Labour Charges (Incurred: Paid + Due)", "5. Other Operating Expenses (Rent, Logistics, etc.)", "6. Total Incurred OPEX (4 + 5)", "7. Net Operating Profit (3 - 6)"], 
                 "Amount (₹)": [total_rev, -exact_cogs_sold, gross_profit, -tot_labour_incurred, -other_opex_total, -total_incurred_opex, net_profit]
             })
-            display_filtered_dataframe(pnl_df, hide_index=True, use_container_width=True, column_config={"Amount (₹)": st.column_config.NumberColumn(format="₹%,.2f")})
+            st.dataframe(pnl_df, hide_index=True, use_container_width=True, column_config={"Amount (₹)": st.column_config.NumberColumn(format="₹%,.2f")})
             st.caption(f"ℹ️ **Labour breakdown:** ₹{tot_labour_paid:,.0f} disbursed / paid + ₹{tot_labour_due:,.0f} accrued / yet to be paid.")
 
         with pl_c2:
@@ -3418,12 +3382,12 @@ elif page == "Dashboard" and user_role == "admin":
                     units_pivot = dow_df.pivot_table(index="Cart", columns="Day", values="Sold_Total", aggfunc="mean", fill_value=0)
                     day_cols = [d for d in day_order if d in units_pivot.columns]
                     units_pivot = units_pivot.reindex(columns=day_cols)
-                    display_filtered_dataframe(units_pivot.round(0).astype(int), use_container_width=True)
+                    st.dataframe(units_pivot.round(0).astype(int), use_container_width=True)
                 with dw2: 
                     st.write("**Average Revenue (₹) per Day of Week**")
                     rev_pivot = dow_df.pivot_table(index="Cart", columns="Day", values="Total_Collection", aggfunc="mean", fill_value=0)
                     rev_pivot = rev_pivot.reindex(columns=day_cols)
-                    display_filtered_dataframe(rev_pivot.round(0).astype(int), use_container_width=True)
+                    st.dataframe(rev_pivot.round(0).astype(int), use_container_width=True)
             else: 
                 st.caption("No active selling days found in this range.")
 
@@ -3449,7 +3413,7 @@ elif page == "Dashboard" and user_role == "admin":
                         })
             date_wise_table["Units Sold"] = date_wise_table["Units Sold"].apply(lambda x: int(round(x)))
             date_wise_table["Date"] = date_wise_table["Date"].dt.strftime("%d-%b-%y")
-            display_filtered_dataframe(date_wise_table, hide_index=True, use_container_width=True, column_config={
+            st.dataframe(date_wise_table, hide_index=True, use_container_width=True, column_config={
                             "Revenue (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
                             "PhonePe (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
                             "Cash (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
@@ -3472,7 +3436,8 @@ elif page == "Dashboard" and user_role == "admin":
                         })
             sales_table["Units Sold"] = sales_table["Units Sold"].apply(lambda x: int(round(x)))
             sales_table["Date"] = sales_table["Date"].dt.strftime("%d-%b-%y")
-            display_filtered_dataframe(
+            sales_table = apply_smart_filters(sales_table, ["Cart", "Staff Name"], "sales_filters")
+            st.dataframe(
                             sales_table, 
                             hide_index=True, 
                             use_container_width=True, 
