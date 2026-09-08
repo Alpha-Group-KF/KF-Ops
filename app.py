@@ -2211,7 +2211,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 with sc6:
                     new_s_dob = st.date_input("Date of Birth", value=date(1995, 1, 1), key="add_s_dob")
                 with sc_dol:
-                    new_s_dol = st.date_input("Date of Leaving", value=None, key="add_s_dol")
+                    new_s_dol = st.date_input("Last Working Day", value=None, key="add_s_dol")
                 with sc7:
                     new_s_pan = st.text_input("PAN Number", placeholder="e.g. ABCDE1234F", key="add_s_pan")
                 with sc8:
@@ -2337,7 +2337,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 k2.write(f"**PAN Number:** {s_row['pan_number'] or '—'}")
                 
                 k3.write(f"**Emergency Contact:** {s_row['emergency_contact_name'] or '—'} ({s_row['emergency_contact_phone'] or '—'})")
-                k3.write(f"**Date of Leaving:** {pd.to_datetime(s_row['date_of_leaving']).strftime('%d %b %Y') if pd.notna(s_row['date_of_leaving']) else '—'}")
+                k3.write(f"**Last Working Day:** {pd.to_datetime(s_row['date_of_leaving']).strftime('%d %b %Y') if pd.notna(s_row['date_of_leaving']) else '—'}")
 
                 st.write(f"**Current Address:** {s_row['current_address'] or '—'}")
                 st.write(f"**Permanent Address:** {s_row['permanent_address'] or '—'}")
@@ -2388,7 +2388,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                         e_dob = st.date_input("Date of Birth", value=dob_val, key=f"e_dob_{s_id}")
                     with ec_dol:
                         dol_val = pd.to_datetime(s_edit["date_of_leaving"]).date() if pd.notna(s_edit["date_of_leaving"]) else None
-                        e_dol = st.date_input("Date of Leaving", value=dol_val, key=f"e_dol_{s_id}")
+                        e_dol = st.date_input("Last Working Day", value=dol_val, key=f"e_dol_{s_id}")
                     with ec7:
                         e_pan = st.text_input("PAN Number", value=str(s_edit.get("pan_number") or ""), key=f"e_pan_{s_id}")
                     with ec8:
