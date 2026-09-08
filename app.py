@@ -280,8 +280,8 @@ EXPENSE_CATEGORIES = [
 ]
 ATTRIBUTED_OPTIONS = ["Central / Freezer"] + CARTS
 EXPENSE_STATUSES = ["Pending", "Partially Paid", "Paid", "Not Applicable", "Cancelled"]
-PAYMENT_MODES = ["UPI / Bank Transfer", "Cash"]
-STAFF_STATUSES = ["active", "inactive", "on_leave"]
+PAYMENT_MODES = ["UPI / Bank Transfer", "Cash","UPI / Bank Transfer + Cash", "Cheque / DD", "Credit Card / POS", "Other"]
+STAFF_STATUSES = ["active", "inactive", "on_leave","on-boarding"]
 LEAVE_STATUS_OPTIONS = ["Leave", "Sick Leave", "Casual Leave", "Absent"]
 LEAVE_TYPE_OPTIONS = ["Unpaid", "Paid"]
 
