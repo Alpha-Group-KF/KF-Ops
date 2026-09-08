@@ -797,6 +797,7 @@ def calculate_incurred_labour_for_range(start_date, end_date):
     
     for _, s_row in staff_df.iterrows():
         st_name = str(s_row["name"]).strip()
+        staff_role = str(s_row.get("role") or "Cart Operator").strip()
         doj = s_row.get("date_of_joining")
         monthly_sal = float(_num(s_row.get("monthly_fixed_salary")) or 18000.0)
         daily_rate = monthly_sal / 30.0
@@ -808,6 +809,61 @@ def calculate_incurred_labour_for_range(start_date, end_date):
         st_shifts = entries_df[entries_df["staff_name"] == st_name] if not entries_df.empty else pd.DataFrame()
         st_leaves = att_df[att_df["staff_name"] == st_name] if not att_df.empty else pd.DataFrame()
         st_pay = pay_df[pay_df["staff_name"] == st_name] if not pay_df.empty else pd.DataFrame()
+
+        # Non-Cart-Operator roles are salaried on a calendar-day basis only.
+        # Do NOT use daily_cart_entries, sales, commissions, or cart allowances
+        # for these roles. Their pay is daily salary minus unpaid leave plus/minus
+        # other amounts already disbursed.
+        if staff_role.lower() != "cart operator":
+            unpaid_leave_dates = set()
+            paid_leave_dates = set()
+            if not st_leaves.empty:
+                for _, l_row in st_leaves.iterrows():
+                    l_dt = pd.to_datetime(l_row["attendance_date"]).date()
+                    l_type = str(l_row.get("leave_type") or "Unpaid").strip().lower()
+                    if l_type == "paid":
+                        paid_leave_dates.add(l_dt)
+                    else:
+                        unpaid_leave_dates.add(l_dt)
+
+            period_days = (end_date - start_date).days + 1
+            unpaid_leave_cnt = sum(1 for d in unpaid_leave_dates if start_date <= d <= end_date)
+            payable_days = max(0, period_days - unpaid_leave_cnt)
+            staff_salary = payable_days * daily_rate
+            staff_paid = float(st_pay["amount_paid"].sum()) if not st_pay.empty else 0.0
+            staff_incurred = staff_salary
+            staff_due = staff_incurred - staff_paid
+
+            detailed_ledger = []
+            for offset in range(period_days):
+                d = start_date + timedelta(days=offset)
+                if d in unpaid_leave_dates:
+                    row_type = "Unpaid Leave"
+                    day_salary = 0.0
+                elif d in paid_leave_dates:
+                    row_type = "Paid Leave"
+                    day_salary = daily_rate
+                else:
+                    row_type = "Daily Salary"
+                    day_salary = daily_rate
+                detailed_ledger.append({
+                    "date": d, "type": row_type, "cart": "—",
+                    "collection": 0.0, "fixed_salary": day_salary,
+                    "commission": 0.0, "allowance": 0.0,
+                    "advance_taken": 0.0, "food_taken": 0.0
+                })
+
+            total_labour_incurred += staff_incurred
+            total_labour_paid += staff_paid
+            breakdown_by_staff[st_name] = {
+                "monthly_fixed_salary": monthly_sal, "daily_rate": daily_rate,
+                "days_worked": payable_days, "paid_leaves": len(paid_leave_dates),
+                "unpaid_leaves": unpaid_leave_cnt, "salary": staff_salary,
+                "commissions": 0.0, "allowances": 0.0, "incurred": staff_incurred,
+                "paid": staff_paid, "due": staff_due, "detailed_ledger": detailed_ledger,
+                "doj": doj, "role": staff_role
+            }
+            continue
         st_exp = exp_ledger_df[exp_ledger_df["staff_name"] == st_name] if not exp_ledger_df.empty else pd.DataFrame()
         
         shift_sal, shift_comm, shift_allow, days_worked, detailed_ledger = 0.0, 0.0, 0.0, 0, []
@@ -2890,6 +2946,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
 
             for _, s_row in staff_df.iterrows():
                 st_name = str(s_row["name"]).strip()
+                staff_role = str(s_row.get("role") or "Cart Operator").strip()
                 monthly_sal = float(_num(s_row.get("monthly_fixed_salary")) or 18000.0)
                 daily_rate = monthly_sal / 30.0
                 comm_thresh = float(_num(s_row.get("commission_threshold_daily")) or 3000.0)
@@ -2901,6 +2958,68 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 st_leaves = att_month_df[att_month_df["staff_name"] == st_name].copy() if not att_month_df.empty else pd.DataFrame()
                 st_payments = staff_payments_df[staff_payments_df["staff_name"] == st_name].copy() if not staff_payments_df.empty else pd.DataFrame()
                 st_exp = exp_ledger_df[exp_ledger_df["staff_name"] == st_name] if not exp_ledger_df.empty else pd.DataFrame()
+
+                # Non-Cart-Operator roles do not depend on cart entries at all.
+                # Salary = daily rate for every calendar day in the settlement period
+                # minus unpaid leave days, less any labour amounts already disbursed.
+                if staff_role.lower() != "cart operator":
+                    unpaid_leave_dates = set()
+                    paid_leave_dates = set()
+                    if not st_leaves.empty:
+                        for _, l_row in st_leaves.iterrows():
+                            l_dt = pd.to_datetime(l_row["attendance_date"]).date()
+                            l_type = str(l_row.get("leave_type") or "Unpaid").strip().lower()
+                            if l_type == "paid":
+                                paid_leave_dates.add(l_dt)
+                            else:
+                                unpaid_leave_dates.add(l_dt)
+
+                    period_days = (m_end_dt - m_start_dt).days + 1
+                    unpaid_leave_cnt = len(unpaid_leave_dates)
+                    payable_days = max(0, period_days - unpaid_leave_cnt)
+                    apportioned_base_salary = payable_days * daily_rate
+                    total_payments_disbursed = float(st_payments["amount_paid"].sum()) if not st_payments.empty else 0.0
+                    gross_earnings = apportioned_base_salary
+                    net_payable_due = gross_earnings - total_payments_disbursed
+
+                    settlement_summary_rows.append({
+                        "Staff Name": st_name,
+                        "Status": s_row["status"],
+                        "Days Worked": f"{payable_days} salary days",
+                        "Leaves Logged": f"{len(st_leaves)} ({len(paid_leave_dates)}P / {unpaid_leave_cnt}U)",
+                        "Apportioned Salary (₹)": apportioned_base_salary,
+                        "Daily Rate Used (₹)": f"₹{daily_rate:.0f}/day",
+                        "Total Sales (₹)": 0.0,
+                        "Commission Earned (₹)": 0.0,
+                        "Allowances Entitled (₹)": 0.0,
+                        "Gross Payable (₹)": gross_earnings,
+                        "Total Paid / Deductions (₹)": total_payments_disbursed,
+                        "Net Amount Due (₹)": net_payable_due
+                    })
+
+                    staff_shift_records = []
+                    for offset in range(period_days):
+                        d = m_start_dt + timedelta(days=offset)
+                        if d in unpaid_leave_dates:
+                            row_type = "Unpaid Leave"
+                            day_salary = 0.0
+                        elif d in paid_leave_dates:
+                            row_type = "Paid Leave"
+                            day_salary = daily_rate
+                        else:
+                            row_type = "Daily Salary"
+                            day_salary = daily_rate
+                        staff_shift_records.append({
+                            "Date": d.strftime("%d-%b-%y"), "Day": d.strftime("%A"),
+                            "Staff Name": st_name, "Cart Operated": "—",
+                            "Shift Status": row_type, "Daily Sales (₹)": 0.0,
+                            "Salary Apportioned (₹)": day_salary, "Commission (₹)": 0.0,
+                            "Allowance Entitled (₹)": 0.0, "Advance Taken (₹)": 0.0,
+                            "Allow. Taken (₹)": 0.0, "Total Entitled (₹)": day_salary
+                        })
+                    detailed_staff_logs[st_name] = pd.DataFrame(staff_shift_records)
+                    detailed_staff_payments[st_name] = st_payments
+                    continue
 
                 exp_map = {}
                 if not st_exp.empty:
