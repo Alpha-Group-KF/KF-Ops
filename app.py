@@ -594,7 +594,7 @@ def load_db_flavor_sales(start_date=None, end_date=None):
 def load_db_expenses_list():
     if db_conn is None: return []
     query = """
-    SELECT id, expense_date AS "Date", description AS "Description", total_amount AS "Amount", category AS "Category", sub_category AS "Sub_Category", expense_type AS "Expense_Type", attributed_to AS "Attributed_To", vendor_name AS "Vendor", staff_name AS "Staff_Name", status AS "Status", remarks AS "Remarks"
+    SELECT id, expense_date AS "Date", month AS "Month", description AS "Description", total_amount AS "Amount", category AS "Category", sub_category AS "Sub_Category", expense_type AS "Expense_Type", attributed_to AS "Attributed_To", vendor_name AS "Vendor", staff_name AS "Staff_Name", status AS "Status", remarks AS "Remarks"
     FROM expenses ORDER BY expense_date DESC, id DESC;
     """
     try:
@@ -608,7 +608,7 @@ def load_db_expenses_list():
 def load_db_expenses_summary_df():
     if db_conn is None: return pd.DataFrame()
     query = """
-    SELECT e.id, e.expense_date, e.expense_type, e.category, e.sub_category, e.description, e.total_amount, e.attributed_to, e.vendor_name, e.staff_name, e.purchase_order_id, e.status, e.remarks, COALESCE(SUM(p.amount_paid), 0) AS total_paid, e.total_amount - COALESCE(SUM(p.amount_paid), 0) AS balance_due, COUNT(p.id) AS payment_count
+    SELECT e.id, e.expense_date, e.month, e.expense_type, e.category, e.sub_category, e.description, e.total_amount, e.attributed_to, e.vendor_name, e.staff_name, e.purchase_order_id, e.status, e.remarks, COALESCE(SUM(p.amount_paid), 0) AS total_paid, e.total_amount - COALESCE(SUM(p.amount_paid), 0) AS balance_due, COUNT(p.id) AS payment_count
     FROM expenses e LEFT JOIN expense_payments p ON e.id = p.expense_id
     GROUP BY e.id, e.expense_date, e.expense_type, e.category, e.sub_category, e.description, e.total_amount, e.attributed_to, e.vendor_name, e.staff_name, e.purchase_order_id, e.status, e.remarks ORDER BY e.expense_date DESC, e.id DESC;
     """
@@ -1952,9 +1952,16 @@ elif page == "Expenses" and user_role == "admin":
             po_opts = ["None"] + [f"PO #{r['id']} ({pd.to_datetime(r['order_date']).strftime('%d %b')})" for _, r in pos_df.iterrows()] if not pos_df.empty else ["None"]
             staff_opts = load_active_staff_list()
 
-            c1, c2, c3, c4 = st.columns(4)
+            c1, c2, c3, c4, c5 = st.columns(5)
             with c1: e_date = st.date_input("Expense Date", value=date.today(), key="add_e_date")
-            with c2: e_type = st.selectbox("Expense Type", EXPENSE_TYPES, index=0, key="add_e_type")
+            with c2:
+                e_month = st.selectbox(
+                    "Month",
+                    list(calendar.month_name)[1:],
+                    index=e_date.month - 1,
+                    key=f"add_e_month_{e_date.strftime('%Y%m')}"
+                )
+            with c3: e_type = st.selectbox("Expense Type", EXPENSE_TYPES, index=0, key="add_e_type")
             with c3: e_cat = st.selectbox("Category", EXPENSE_CATEGORIES, index=0, key="add_e_cat")
             with c4: e_subcat = st.text_input("Sub-Category (Optional)", placeholder="e.g. Dry Ice, Fuel, Repair", key="add_e_subcat")
 
@@ -1992,7 +1999,7 @@ elif page == "Expenses" and user_role == "admin":
                         sel_staff = None if e_staff == "Select Staff" else e_staff
                         computed_status = "Paid" if (has_direct_pay and p_amt >= e_amount) else ("Partially Paid" if (has_direct_pay and p_amt > 0) else e_stat)
                         with db_conn.session as s:
-                            res = s.execute(text("INSERT INTO expenses (expense_date, expense_type, category, sub_category, description, total_amount, attributed_to, vendor_name, staff_name, purchase_order_id, status, recorded_by, remarks) VALUES (:ed, :et, :cat, :subcat, :desc, :amt, :attr, :vendor, :staff, :poid, :stat, :recby, :rem) RETURNING id;"), {"ed": e_date, "et": e_type, "cat": e_cat, "subcat": e_subcat.strip(), "desc": e_desc.strip(), "amt": float(e_amount), "attr": e_attr, "vendor": e_vendor.strip(), "staff": sel_staff, "poid": p_po_id, "stat": computed_status, "recby": "Admin", "rem": e_remarks.strip()})
+                            res = s.execute(text("INSERT INTO expenses (expense_date, month, expense_type, category, sub_category, description, total_amount, attributed_to, vendor_name, staff_name, purchase_order_id, status, recorded_by, remarks) VALUES (:ed, :month, :et, :cat, :subcat, :desc, :amt, :attr, :vendor, :staff, :poid, :stat, :recby, :rem) RETURNING id;"), {"ed": e_date, "month": e_month, "et": e_type, "cat": e_cat, "subcat": e_subcat.strip(), "desc": e_desc.strip(), "amt": float(e_amount), "attr": e_attr, "vendor": e_vendor.strip(), "staff": sel_staff, "poid": p_po_id, "stat": computed_status, "recby": "Admin", "rem": e_remarks.strip()})
                             new_exp_id = res.scalar()
                             if has_direct_pay and p_amt > 0: s.execute(text("INSERT INTO expense_payments (expense_id, payment_date, amount_paid, payment_mode, ref_no, paid_to, paid_by, notes) VALUES (:eid, :pdate, :pamt, :pmode, :pref, :pto, :pby, :notes);"), {"eid": new_exp_id, "pdate": p_date, "pamt": float(p_amt), "pmode": p_mode, "pref": p_ref.strip(), "pto": p_to.strip(), "pby": "Admin", "notes": p_notes.strip()})
                             s.commit()
@@ -2022,9 +2029,14 @@ elif page == "Expenses" and user_role == "admin":
                 staff_opts = load_active_staff_list(); curr_staff = str(loaded_exp.get("staff_name") or "Select Staff")
                 if curr_staff not in staff_opts: staff_opts.append(curr_staff)
 
-                c1, c2, c3, c4 = st.columns(4)
+                c1, c2, c3, c4, c5 = st.columns(5)
                 with c1: e_edit_date = st.date_input("Expense Date", value=pd.to_datetime(loaded_exp["expense_date"]).date(), key=f"ee_date_{loaded_exp_id}")
-                with c2: e_edit_type = st.selectbox("Expense Type", EXPENSE_TYPES, index=EXPENSE_TYPES.index(loaded_exp["expense_type"]) if loaded_exp["expense_type"] in EXPENSE_TYPES else 0, key=f"ee_type_{loaded_exp_id}")
+                with c2:
+                    db_month = str(loaded_exp.get("month") or "").strip()
+                    month_options = list(calendar.month_name)[1:]
+                    default_month_idx = month_options.index(db_month) if db_month in month_options else (e_edit_date.month - 1)
+                    e_edit_month = st.selectbox("Month", month_options, index=default_month_idx, key=f"ee_month_{loaded_exp_id}")
+                with c3: e_edit_type = st.selectbox("Expense Type", EXPENSE_TYPES, index=EXPENSE_TYPES.index(loaded_exp["expense_type"]) if loaded_exp["expense_type"] in EXPENSE_TYPES else 0, key=f"ee_type_{loaded_exp_id}")
                 with c3: e_edit_cat = st.selectbox("Category", EXPENSE_CATEGORIES, index=EXPENSE_CATEGORIES.index(loaded_exp["category"]) if loaded_exp["category"] in EXPENSE_CATEGORIES else 0, key=f"ee_cat_{loaded_exp_id}")
                 with c4: e_edit_subcat = st.text_input("Sub-Category", value=str(loaded_exp.get("sub_category") or ""), key=f"ee_subcat_{loaded_exp_id}")
 
@@ -2048,7 +2060,7 @@ elif page == "Expenses" and user_role == "admin":
                             p_po_id = int(e_edit_po.split("#")[1].split(" ")[0]) if "PO #" in e_edit_po else None
                             sel_staff = None if e_edit_staff == "Select Staff" else e_edit_staff
                             with db_conn.session as s:
-                                s.execute(text("UPDATE expenses SET expense_date = :ed, expense_type = :et, category = :cat, sub_category = :subcat, description = :desc, total_amount = :amt, attributed_to = :attr, vendor_name = :vendor, staff_name = :staff, purchase_order_id = :poid, status = :stat, remarks = :rem, updated_at = NOW() WHERE id = :id;"), {"ed": e_edit_date, "et": e_edit_type, "cat": e_edit_cat, "subcat": e_edit_subcat.strip(), "desc": e_edit_desc.strip(), "amt": float(e_edit_amount), "attr": e_edit_attr, "vendor": e_edit_vendor.strip(), "staff": sel_staff, "poid": p_po_id, "stat": e_edit_stat, "rem": e_edit_remarks.strip(), "id": loaded_exp_id})
+                                s.execute(text("UPDATE expenses SET expense_date = :ed, month = :month, expense_type = :et, category = :cat, sub_category = :subcat, description = :desc, total_amount = :amt, attributed_to = :attr, vendor_name = :vendor, staff_name = :staff, purchase_order_id = :poid, status = :stat, remarks = :rem, updated_at = NOW() WHERE id = :id;"), {"ed": e_edit_date, "month": e_edit_month, "et": e_edit_type, "cat": e_edit_cat, "subcat": e_edit_subcat.strip(), "desc": e_edit_desc.strip(), "amt": float(e_edit_amount), "attr": e_edit_attr, "vendor": e_edit_vendor.strip(), "staff": sel_staff, "poid": p_po_id, "stat": e_edit_stat, "rem": e_edit_remarks.strip(), "id": loaded_exp_id})
                                 s.commit()
                             show_success_modal(f"Expense #{loaded_exp_id} updated successfully!")
                         except Exception as e: st.error(f"Could not update expense: {e}")
