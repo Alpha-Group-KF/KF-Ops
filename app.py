@@ -746,16 +746,31 @@ def calculate_incurred_labour_for_range(start_date, end_date):
     
     entries_df = db_conn.query("SELECT entry_date, cart_name, staff_name, total_collection FROM daily_cart_entries WHERE entry_date >= :sdate AND entry_date <= :edate AND staff_name IS NOT NULL AND staff_name != '' AND staff_name != 'Select Staff';", params={"sdate": start_date, "edate": end_date}, ttl="0s")
     att_df = db_conn.query("SELECT a.staff_id, s.name AS staff_name, a.attendance_date, a.status, a.leave_type FROM staff_attendance a JOIN staff s ON a.staff_id = s.id WHERE a.attendance_date >= :sdate AND a.attendance_date <= :edate;", params={"sdate": start_date, "edate": end_date}, ttl="0s")
-    pay_df = db_conn.query("SELECT p.amount_paid, e.staff_name FROM expense_payments p JOIN expenses e ON p.expense_id = e.id WHERE e.category = 'Labour Charges' AND p.payment_date >= :sdate AND p.payment_date <= :edate;", params={"sdate": start_date, "edate": end_date}, ttl="0s")
+    pay_df = db_conn.query("""
+        SELECT p.amount_paid, e.staff_name
+        FROM expense_payments p
+        JOIN expenses e ON p.expense_id = e.id
+        WHERE e.category = 'Labour Charges'
+          AND p.payment_date >= :sdate
+          AND p.payment_date <= :edate
+          AND (
+              LOWER(TRIM(COALESCE(e.sub_category, ''))) <> 'salary'
+              OR LOWER(TRIM(COALESCE(e.month, ''))) = LOWER(:salary_month)
+          );
+    """, params={"sdate": start_date, "edate": end_date, "salary_month": start_date.strftime('%B')}, ttl="0s")
     
     exp_ledger_df = db_conn.query("""
-        SELECT expense_date, staff_name, sub_category, total_amount 
-        FROM expenses 
-        WHERE category = 'Labour Charges' 
+        SELECT expense_date, staff_name, sub_category, total_amount, month
+        FROM expenses
+        WHERE category = 'Labour Charges'
           AND status = 'Paid'
-          AND expense_date >= :sdate 
-          AND expense_date <= :edate;
-    """, params={"sdate": start_date, "edate": end_date}, ttl="0s")
+          AND expense_date >= :sdate
+          AND expense_date <= :edate
+          AND (
+              LOWER(TRIM(COALESCE(sub_category, ''))) <> 'salary'
+              OR LOWER(TRIM(COALESCE(month, ''))) = LOWER(:salary_month)
+          );
+    """, params={"sdate": start_date, "edate": end_date, "salary_month": start_date.strftime('%B')}, ttl="0s")
     
     total_labour_incurred, total_labour_paid, breakdown_by_staff = 0.0, 0.0, {}
     
@@ -927,7 +942,7 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
     story.append(header_table); story.append(Spacer(1, 10))
     
     doj_val = data_dict.get('doj')
-    doj_str = pd.to_datetime(doj_val).strftime('%d %b %Y') if pd.notna(doj_val) and str(doj_val).strip() else "N/A"
+    doj_str = pd.to_datetime(doj_val).strftime('%d-%b-%y') if pd.notna(doj_val) and str(doj_val).strip() else "N/A"
     month_str = start_date.strftime('%B %Y')
     
     story.append(Paragraph(f"<b>Staff Member:</b> {staff_name} &nbsp;|&nbsp; <b>Date of Joining:</b> {doj_str} &nbsp;|&nbsp; <b>Payslip for the month:</b> {month_str}", sub_style))
@@ -966,7 +981,7 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
     ledger_rows = [["Date", "Type", "Cart", "Sales", "Salary", "Comm.", "Allow.", "Adv. Taken", "Allow. Taken"]]
     for item in data_dict.get("detailed_ledger", []):
         ledger_rows.append([
-            item["date"].strftime("%d %b %Y"), item["type"], item["cart"],
+            item["date"].strftime("%d-%b-%y"), item["type"], item["cart"],
             f"{item['collection']:,.0f}" if item['collection'] > 0 else "—",
             f"{item['fixed_salary']:,.0f}",
             f"{item['commission']:,.0f}" if item['commission'] > 0 else "—",
@@ -1081,7 +1096,7 @@ if page == "Daily Entry":
         if not cart_entries: st.info(f"No entries found for {cart_name}.")
         else:
             top_c1, top_c2 = st.columns([1.3, 1])
-            labels = [f"{e['date'].strftime('%d %b %Y')}" for e in cart_entries]
+            labels = [f"{e['date'].strftime('%d-%b-%y')}" for e in cart_entries]
             with top_c1: sel_date_label = st.selectbox("Select entry date to update sales", labels, key=f"date_sel_{cart_name}")
             loaded = cart_entries[labels.index(sel_date_label)]
             entry_id, entry_date, today_val = loaded["db_id"], loaded["date"].date(), date.today()
@@ -1104,9 +1119,9 @@ if page == "Daily Entry":
             opening_map = {code: loaded["by_code"][code]["opening"] for code in FLAVOR_CODES}
 
             with col_box_left:
-                st.markdown(f"<div class='header-box-sales'><span>📅 1. Sales & Closing Entry — {entry_date.strftime('%a, %d %b %Y')}</span><span><b>{cart_name}</b></span></div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='header-box-sales'><span>📅 1. Sales & Closing Entry — {entry_date.strftime('%a, %d-%b-%y')}</span><span><b>{cart_name}</b></span></div>", unsafe_allow_html=True)
                 with st.container(border=True):
-                    st.caption(f"Record **closing counts** and daytime stock additions for **{entry_date.strftime('%d %b %Y')}**:")
+                    st.caption(f"Record **closing counts** and daytime stock additions for **{entry_date.strftime('%d-%b-%y')}**:")
                     for code in FLAVOR_CODES:
                         f_info = FLAVOR_MAP[code]
                         k_add, k_cls = f"add_{entry_id}_{code}", f"cls_{entry_id}_{code}"
@@ -1126,7 +1141,7 @@ if page == "Daily Entry":
                     m1, m2, m3, m4 = st.columns(4)
                     m1.metric("Opening", f"{tot_open} pcs"); m2.metric("Added", f"{tot_add} pcs"); m3.metric("Closing", f"{tot_close} pcs"); m4.metric("Total Sold", f"{tot_sold} pcs")
 
-                    if any(s < 0 for s in sold_map.values()): st.error(f"Sales negative for at least one flavour on {entry_date.strftime('%d %b %Y')} - check closing count.")
+                    if any(s < 0 for s in sold_map.values()): st.error(f"Sales negative for at least one flavour on {entry_date.strftime('%d-%b-%y')} - check closing count.")
 
                     calculated_mrp_total = float(sum(sold_map[code] * FLAVOR_MAP[code]["mrp"] for code in FLAVOR_CODES))
                     k_tot, k_prev_calc = f"daily_total{data_key_suffix}", f"daily_prev_calc{data_key_suffix}"
@@ -1139,7 +1154,7 @@ if page == "Daily Entry":
                     if f"daily_cash{data_key_suffix}" not in st.session_state: st.session_state[f"daily_cash{data_key_suffix}"] = f"{loaded['cash']:.2f}"
 
                     st.markdown("---")
-                    st.write(f"**Cash, UPI & Advance Collection ({entry_date.strftime('%d %b')})**")
+                    st.write(f"**Cash, UPI & Advance Collection ({entry_date.strftime('%d-%b')})**")
                     c3, c4 = st.columns(2)
                     with c3:
                         total_collection_val = _num(st.text_input("Total collection (₹)", key=k_tot))
@@ -1157,9 +1172,9 @@ if page == "Daily Entry":
 
             today_added_map, today_opening_map, today_db_opening_map = {}, {}, {}
             with col_box_right:
-                st.markdown(f"<div class='header-box-restock'><span>🚀 2. Today's Restock & Opening — {today_val.strftime('%a, %d %b %Y')}</span><span><b>{cart_name}</b></span></div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='header-box-restock'><span>🚀 2. Today's Restock & Opening — {today_val.strftime('%a, %d-%b-%y')}</span><span><b>{cart_name}</b></span></div>", unsafe_allow_html=True)
                 with st.container(border=True):
-                    st.caption(f"Enter **stock added for today ({today_val.strftime('%d %b')})**.")
+                    st.caption(f"Enter **stock added for today ({today_val.strftime('%d-%b')})**.")
                     for code in FLAVOR_CODES:
                         f_info = FLAVOR_MAP[code]
                         k_today_add = f"today_add_{cart_name}_{code}"
@@ -1197,7 +1212,7 @@ if page == "Daily Entry":
                         sync_today_restock_entry(today_val, cart_name, selected_staff, today_db_opening_map, today_added_map)
                         st.cache_resource.clear()
                         st.session_state["active_daily_cart"] = None
-                        success_msg = f"Record Saved successfully:\n\n{entry_date.strftime('%d %b %Y')} : Total sold units {tot_sold} units\n\n{today_val.strftime('%d %b %Y')} : Opening balance after restock {tot_today_open_display} units"
+                        success_msg = f"Record Saved successfully:\n\n{entry_date.strftime('%d-%b-%y')} : Total sold units {tot_sold} units\n\n{today_val.strftime('%d-%b-%y')} : Opening balance after restock {tot_today_open_display} units"
                         show_success_modal(success_msg)
                     except Exception as e:
                         st.error(f"Could not save entries - {e}")
@@ -1215,8 +1230,8 @@ elif page == "Payslip Generator" and user_role == "admin":
     else:
         pc1, pc2, pc3 = st.columns([1.2, 1, 1])
         with pc1: sel_staff_payslip = st.selectbox("Select Staff Member", staff_df["name"].tolist(), key="payslip_staff_sel")
-        with pc2: payslip_start = st.date_input("Start Date", value=date.today().replace(day=1), key="payslip_start_dt")
-        with pc3: payslip_end = st.date_input("End Date", value=date.today(), key="payslip_end_dt")
+        with pc2: payslip_start = st.date_input("Start Date", value=date.today().replace(day=1), key="payslip_start_dt", format="DD-MMM-YY")
+        with pc3: payslip_end = st.date_input("End Date", value=date.today(), key="payslip_end_dt", format="DD-MMM-YY")
 
         if payslip_start > payslip_end: st.error("Start date must be before or equal to end date.")
         else:
@@ -1227,7 +1242,7 @@ elif page == "Payslip Generator" and user_role == "admin":
             })
 
             doj_val = staff_data.get('doj')
-            doj_str = pd.to_datetime(doj_val).strftime('%d %b %Y') if pd.notna(doj_val) and str(doj_val).strip() else "N/A"
+            doj_str = pd.to_datetime(doj_val).strftime('%d-%b-%y') if pd.notna(doj_val) and str(doj_val).strip() else "N/A"
             month_str = payslip_start.strftime('%B %Y')
 
             st.markdown("---")
@@ -1262,7 +1277,7 @@ elif page == "Payslip Generator" and user_role == "admin":
             ledger_list = staff_data.get("detailed_ledger", [])
             if ledger_list:
                 ledger_df = pd.DataFrame(ledger_list)
-                ledger_df["Date"] = pd.to_datetime(ledger_df["date"]).dt.strftime("%d %b %Y")
+                ledger_df["Date"] = pd.to_datetime(ledger_df["date"]).dt.strftime("%d-%b-%y")
                 ledger_df["Type"] = ledger_df["type"]
                 ledger_df["Cart"] = ledger_df["cart"]
                 ledger_df["Collection (₹)"] = ledger_df["collection"].apply(lambda v: f"₹{v:,.2f}" if v > 0 else "—")
@@ -1379,8 +1394,8 @@ elif page == "Purchase Orders" and user_role == "admin":
         st.write("Enter details and specify quantities per flavor to calculate the estimated purchase cost.")
 
         c1, c2, c3 = st.columns(3)
-        with c1: order_date = st.date_input("Order Date", value=date.today(), key="new_po_order_date")
-        with c2: expected_date = st.date_input("Expected Delivery Date", value=date.today() + timedelta(days=2), key="new_po_exp_date")
+        with c1: order_date = st.date_input("Order Date", value=date.today(), key="new_po_order_date", format="DD-MMM-YY")
+        with c2: expected_date = st.date_input("Expected Delivery Date", value=date.today() + timedelta(days=2), key="new_po_exp_date", format="DD-MMM-YY")
         with c3: location = st.text_input("Delivery Location", value=CITY, key="new_po_loc")
 
         c4, c5 = st.columns(2)
@@ -1430,7 +1445,7 @@ elif page == "Purchase Orders" and user_role == "admin":
         if po_query_df.empty: st.info("No purchase orders found in the database.")
         else:
             po_records = po_query_df.to_dict("records")
-            po_labels = [f"PO #{r['id']} — {pd.to_datetime(r['order_date']).strftime('%d %b %Y')} ({r['location']}) — Status: {r['order_status']}" for r in po_records]
+            po_labels = [f"PO #{r['id']} — {pd.to_datetime(r['order_date']).strftime('%d-%b-%y')} ({r['location']}) — Status: {r['order_status']}" for r in po_records]
             selected_po_label = st.selectbox("Select Purchase Order to edit", po_labels, key="edit_po_select")
             loaded_po = po_records[po_labels.index(selected_po_label)]
             loaded_po_id = loaded_po["id"]
@@ -1442,8 +1457,8 @@ elif page == "Purchase Orders" and user_role == "admin":
                 except Exception: default_disc = 0.0
 
             c1, c2, c3 = st.columns(3)
-            with c1: e_order_date = st.date_input("Order Date", value=pd.to_datetime(loaded_po["order_date"]).date() if loaded_po.get("order_date") else date.today(), key=f"edit_po_od_{loaded_po_id}")
-            with c2: e_expected_date = st.date_input("Expected Delivery Date", value=pd.to_datetime(loaded_po["expected_date"]).date() if loaded_po.get("expected_date") else date.today() + timedelta(days=2), key=f"edit_po_ed_{loaded_po_id}")
+            with c1: e_order_date = st.date_input("Order Date", value=pd.to_datetime(loaded_po["order_date"]).date() if loaded_po.get("order_date") else date.today(), key=f"edit_po_od_{loaded_po_id}", format="DD-MMM-YY")
+            with c2: e_expected_date = st.date_input("Expected Delivery Date", value=pd.to_datetime(loaded_po["expected_date"]).date() if loaded_po.get("expected_date") else date.today() + timedelta(days=2), key=f"edit_po_ed_{loaded_po_id}", format="DD-MMM-YY")
             with c3: e_location = st.text_input("Delivery Location", value=str(loaded_po.get("location", CITY)), key=f"edit_po_loc_{loaded_po_id}")
 
             c4, c5 = st.columns(2)
@@ -1498,7 +1513,7 @@ elif page == "Freezer Stock" and user_role == "admin":
         if stock_mode == "Edit past entry":
             if not past_receipts: st.info("No past delivery receipts found in database.")
             else:
-                labels = [f"Receipt #{r['id']} — {pd.to_datetime(r['received_date']).strftime('%d %b %Y')} ({r['location']})" for r in past_receipts]
+                labels = [f"Receipt #{r['id']} — {pd.to_datetime(r['received_date']).strftime('%d-%b-%y')} ({r['location']})" for r in past_receipts]
                 selected_rec = st.selectbox("Select delivery receipt to edit", labels, key="db_stock_select")
                 stock_loaded = past_receipts[labels.index(selected_rec)]; loaded_id = stock_loaded["id"]
 
@@ -1512,7 +1527,7 @@ elif page == "Freezer Stock" and user_role == "admin":
                 except Exception: default_rec_disc = 2.0
 
         pos_df = db_conn.query("SELECT id, order_date, location FROM purchase_orders WHERE order_status != 'Completed' ORDER BY order_date DESC;", ttl="0s")
-        po_options = ["None (Ad-hoc delivery)"] + [f"PO #{r['id']} ({pd.to_datetime(r['order_date']).strftime('%d %b')})" for _, r in pos_df.iterrows()]
+        po_options = ["None (Ad-hoc delivery)"] + [f"PO #{r['id']} ({pd.to_datetime(r['order_date']).strftime('%d-%b')})" for _, r in pos_df.iterrows()]
         
         default_po_idx = 0
         poid_raw = stock_loaded.get("purchase_order_id") if stock_loaded else None
@@ -1524,7 +1539,7 @@ elif page == "Freezer Stock" and user_role == "admin":
             except Exception: default_po_idx = 0
 
         c1, c2, c3, c4 = st.columns(4)
-        with c1: received_date = st.date_input("Received date", value=pd.to_datetime(stock_loaded["received_date"]).date() if (stock_loaded and stock_loaded.get("received_date")) else date.today(), key=f"rec_date{sk}")
+        with c1: received_date = st.date_input("Received date", value=pd.to_datetime(stock_loaded["received_date"]).date() if (stock_loaded and stock_loaded.get("received_date")) else date.today(), key=f"rec_date{sk}", format="DD-MMM-YY")
         with c2: location = st.text_input("Location", value=str(stock_loaded["location"]) if (stock_loaded and stock_loaded.get("location")) else CITY, key=f"rec_loc{sk}")
         with c3: selected_po = st.selectbox("Link to Purchase Order (Optional)", po_options, index=default_po_idx, key=f"rec_po{sk}")
         with c4: rec_discount_pct = st.number_input("Overall Discount (%)", min_value=0.0, max_value=100.0, value=default_rec_disc, step=0.5, format="%.2f", key=f"rec_disc{sk}")
@@ -1550,10 +1565,10 @@ elif page == "Freezer Stock" and user_role == "admin":
         with c6: payment_status = st.selectbox("Payment status", PAYMENT_STATUSES, index=PAYMENT_STATUSES.index(stock_loaded["payment_status"]) if (stock_loaded and stock_loaded.get("payment_status") in PAYMENT_STATUSES) else 0, key=f"db_rec_status{sk}")
 
         has_payment_date = st.checkbox("Add payment date", value=bool(stock_loaded and stock_loaded.get("payment_date")), key=f"db_rec_has_pdate{sk}")
-        payment_date = st.date_input("Payment date", value=pd.to_datetime(stock_loaded["payment_date"]).date() if (stock_loaded and stock_loaded.get("payment_date")) else date.today(), key=f"db_rec_pdate{sk}") if has_payment_date else None
+        payment_date = st.date_input("Payment date", value=pd.to_datetime(stock_loaded["payment_date"]).date() if (stock_loaded and stock_loaded.get("payment_date")) else date.today(), key=f"db_rec_pdate{sk}", format="DD-MMM-YY") if has_payment_date else None
         payment_details = st.text_input("Payment details (optional)", value=str(stock_loaded["payment_details"]) if (stock_loaded and stock_loaded.get("payment_details")) else "", key=f"db_rec_pdet{sk}")
         has_dam_ret = st.checkbox("Damaged items were returned", value=bool(stock_loaded and stock_loaded.get("damaged_returned_on")), key=f"db_rec_has_dam{sk}")
-        damaged_returned_on = st.date_input("Damaged returned date", value=pd.to_datetime(stock_loaded["damaged_returned_on"]).date() if (stock_loaded and stock_loaded.get("damaged_returned_on")) else date.today(), key=f"db_rec_damdate{sk}") if has_dam_ret else None
+        damaged_returned_on = st.date_input("Damaged returned date", value=pd.to_datetime(stock_loaded["damaged_returned_on"]).date() if (stock_loaded and stock_loaded.get("damaged_returned_on")) else date.today(), key=f"db_rec_damdate{sk}", format="DD-MMM-YY") if has_dam_ret else None
         notes = st.text_input("Notes (optional)", value=clean_rec_notes, key=f"db_rec_notes{sk}")
 
         if st.button("Update delivery entry" if loaded_id else "Save stock received", type="primary", use_container_width=True):
@@ -1580,7 +1595,7 @@ elif page == "Freezer Stock" and user_role == "admin":
     elif freezer_tab_choice == "Stock Audit (Physical Count)":
         st.write("Log a physical stock count from the freezer to calculate inventory variance.")
         aud_c1, aud_c2, aud_c3 = st.columns(3)
-        with aud_c1: audit_date = st.date_input("Audit date", value=date.today(), key="audit_dt_entry")
+        with aud_c1: audit_date = st.date_input("Audit date", value=date.today(), key="audit_dt_entry", format="DD-MMM-YY")
         with aud_c2: audit_location = st.text_input("Freezer / Location", value=CITY, key="audit_loc_entry")
         with aud_c3: audited_by = st.text_input("Audited by", value="Admin", key="audit_by_entry")
 
@@ -1621,7 +1636,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
             audit_row = latest_audit_df.iloc[0]
             audit_date_val = pd.to_datetime(audit_row["audit_date"]).date()
             audit_map = {code: int(audit_row.get(FLAVOR_MAP[code]["audit_col"], 0)) for code in FLAVOR_CODES}
-            audit_date_str = pd.to_datetime(audit_row["audit_date"]).strftime("%d %b %Y")
+            audit_date_str = pd.to_datetime(audit_row["audit_date"]).strftime("%d-%b-%y")
         else:
             audit_date_val, audit_map, audit_date_str = None, {}, "No audits logged"
 
@@ -1782,7 +1797,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
 
     if overall_order_date is not None:
         if overall_order_date <= today_fa: st.error(f"🚨 **Action Required:** At least one flavor has breached the safety buffer based on physical-base stock. Place replenishment order today!")
-        else: st.info(f"📅 **Next Order Milestone:** Estimated order placement on **{overall_order_date.strftime('%d %b %Y')}** ({(overall_order_date - today_fa).days} days remaining).")
+        else: st.info(f"📅 **Next Order Milestone:** Estimated order placement on **{overall_order_date.strftime('%d-%b-%y')}** ({(overall_order_date - today_fa).days} days remaining).")
 
     reorder_df = pd.DataFrame(reorder_rows)
     reorder_df = pd.concat([reorder_df, pd.DataFrame([{"Flavour": "🔥 OVERALL TOTAL", "Physical-Base Stock": tot_calc_active, "Daily Pace": f"{tot_rate:.1f} /d", "Runway": f"{(tot_calc_active / tot_rate):.0f} days" if tot_rate > 0 else "—", "Target Buffer": int(round(tot_rate * (buffer_days + cover_days))), "Suggested Order": tot_suggested_units, "Urgency": "🔴 Order Now" if overall_order_date and overall_order_date <= today_fa else "🟢 Stable", "Rationale": f"Est Cost: ₹{tot_order_cost:,.0f}"}])], ignore_index=True)
@@ -1797,7 +1812,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
             po_display = []
             for _, r in po_query_df.iterrows():
                 items_dict = {itm['code']: itm['qty'] for itm in r['items']} if r['items'] else {}
-                row_data = {"PO #": f"PO #{r['PO #']}", "Order Date": pd.to_datetime(r['Order Date']).strftime("%d %b %Y"), "Expected": pd.to_datetime(r['Expected Date']).strftime("%d %b %Y") if pd.notna(r['Expected Date']) else "—", "Location": r['Location'], "Status": r['Status'], "Total Qty": sum(int(q or 0) for q in items_dict.values())}
+                row_data = {"PO #": f"PO #{r['PO #']}", "Order Date": pd.to_datetime(r['Order Date']).strftime("%d-%b-%y"), "Expected": pd.to_datetime(r['Expected Date']).strftime("%d-%b-%y") if pd.notna(r['Expected Date']) else "—", "Location": r['Location'], "Status": r['Status'], "Total Qty": sum(int(q or 0) for q in items_dict.values())}
                 for code in FLAVOR_CODES: row_data[code] = items_dict.get(code, 0)
                 po_display.append(row_data)
             st.dataframe(pd.DataFrame(po_display), hide_index=True, use_container_width=True)
@@ -1809,7 +1824,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
             rec_display = []
             for _, r in rec_query_df.iterrows():
                 items_dict = {itm['code']: itm['rec'] for itm in r['items']} if r['items'] else {}
-                row_data = {"Receipt #": f"#{r['Receipt #']}", "Received Date": pd.to_datetime(r['Received Date']).strftime("%d %b %Y"), "Location": r['Location'], "Linked PO": f"PO #{r['PO Ref']}" if pd.notna(r['PO Ref']) else "Ad-hoc", "Payment Status": r['Payment'], "Total Received": sum(int(q or 0) for q in items_dict.values())}
+                row_data = {"Receipt #": f"#{r['Receipt #']}", "Received Date": pd.to_datetime(r['Received Date']).strftime("%d-%b-%y"), "Location": r['Location'], "Linked PO": f"PO #{r['PO Ref']}" if pd.notna(r['PO Ref']) else "Ad-hoc", "Payment Status": r['Payment'], "Total Received": sum(int(q or 0) for q in items_dict.values())}
                 for code in FLAVOR_CODES: row_data[code] = items_dict.get(code, 0)
                 rec_display.append(row_data)
             st.dataframe(pd.DataFrame(rec_display), hide_index=True, use_container_width=True)
@@ -1820,7 +1835,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
         if not audit_query_df.empty:
             aud_display = []
             for _, r in audit_query_df.iterrows():
-                row_data = {"Audit #": f"#{r['Audit #']}", "Audit Date": pd.to_datetime(r['Audit Date']).strftime("%d %b %Y"), "Location": r['Location'], "Audited By": r['Auditor'], "Total Count": r['Total Count'], "Remarks": r['Remarks']}
+                row_data = {"Audit #": f"#{r['Audit #']}", "Audit Date": pd.to_datetime(r['Audit Date']).strftime("%d-%b-%y"), "Location": r['Location'], "Audited By": r['Auditor'], "Total Count": r['Total Count'], "Remarks": r['Remarks']}
                 for code in FLAVOR_CODES: row_data[code] = int(r.get(FLAVOR_MAP[code]["audit_col"], 0))
                 aud_display.append(row_data)
             st.dataframe(pd.DataFrame(aud_display), hide_index=True, use_container_width=True)
@@ -1831,7 +1846,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
         if not rem_query_df.empty:
             rem_display = []
             for _, r in rem_query_df.iterrows():
-                row_data = {"ID": f"#{r['ID']}", "Date": pd.to_datetime(r['Date']).strftime("%d %b %Y"), "Location": r['Location'], "Total Units": int(r['Total Units']) if pd.notna(r['Total Units']) else sum(int(r.get(FLAVOR_MAP[code]['audit_col'], 0)) for c in FLAVOR_CODES), "Cost (₹)": float(r['Cost (₹)']), "Reason": r['Reason'], "Removed By": r['Removed By'] if pd.notna(r['Removed By']) else "", "Verified By": r['Verified By']}
+                row_data = {"ID": f"#{r['ID']}", "Date": pd.to_datetime(r['Date']).strftime("%d-%b-%y"), "Location": r['Location'], "Total Units": int(r['Total Units']) if pd.notna(r['Total Units']) else sum(int(r.get(FLAVOR_MAP[code]['audit_col'], 0)) for c in FLAVOR_CODES), "Cost (₹)": float(r['Cost (₹)']), "Reason": r['Reason'], "Removed By": r['Removed By'] if pd.notna(r['Removed By']) else "", "Verified By": r['Verified By']}
                 for code in FLAVOR_CODES: row_data[code] = int(r.get(FLAVOR_MAP[code]["audit_col"], 0))
                 rem_display.append(row_data)
             st.dataframe(pd.DataFrame(rem_display), hide_index=True, use_container_width=True)
@@ -1846,7 +1861,7 @@ elif page == "Stock Removed" and user_role == "admin":
     if rem_mode == "New Entry":
         st.write("Enter details and specify quantities removed per flavour:")
         c1, c2, c3, c4 = st.columns(4)
-        with c1: removal_date = st.date_input("Removal Date", value=date.today(), key="new_rem_date")
+        with c1: removal_date = st.date_input("Removal Date", value=date.today(), key="new_rem_date", format="DD-MMM-YY")
         with c2: location = st.text_input("Location", value=CITY, key="new_rem_loc")
         with c3: removed_by = st.text_input("Removed By", placeholder="e.g. Staff / Cart Boy", key="new_rem_rby")
         with c4: verified_by = st.text_input("Verified By", value="Admin", key="new_rem_vby")
@@ -1862,7 +1877,7 @@ elif page == "Stock Removed" and user_role == "admin":
 
         st.markdown("#### Removal Summary")
         m1, m2, m3 = st.columns(3)
-        m1.metric("Total Units Removed", f"{tot_rem_units} units"); m2.metric("Total Cost Value", f"₹{tot_rem_cost:,.2f}"); m3.metric("Date of Removal", removal_date.strftime("%d %b %Y"))
+        m1.metric("Total Units Removed", f"{tot_rem_units} units"); m2.metric("Total Cost Value", f"₹{tot_rem_cost:,.2f}"); m3.metric("Date of Removal", removal_date.strftime("%d-%b-%y"))
 
         if st.button("🗑️ Save Stock Removal", type="primary", use_container_width=True):
             if tot_rem_units <= 0: st.error("Please enter at least one quantity greater than 0 before saving.")
@@ -1890,7 +1905,7 @@ elif page == "Stock Removed" and user_role == "admin":
 
             display_rem_list = []
             for _, r in rem_query_df.iterrows():
-                row_data = {"ID": f"#{r['ID']}", "Date": pd.to_datetime(r['Date']).strftime("%d %b %Y"), "Location": r['Location'], "Total Units": int(r['Total Units']) if pd.notna(r['Total Units']) else sum(int(r.get(FLAVOR_MAP[code]['audit_col'], 0)) for c in FLAVOR_CODES), "Cost (₹)": float(r['Cost (₹)']), "Reason": r['Reason'], "Removed By": r['Removed By'] if pd.notna(r['Removed By']) else "", "Verified By": r['Verified By']}
+                row_data = {"ID": f"#{r['ID']}", "Date": pd.to_datetime(r['Date']).strftime("%d-%b-%y"), "Location": r['Location'], "Total Units": int(r['Total Units']) if pd.notna(r['Total Units']) else sum(int(r.get(FLAVOR_MAP[code]['audit_col'], 0)) for c in FLAVOR_CODES), "Cost (₹)": float(r['Cost (₹)']), "Reason": r['Reason'], "Removed By": r['Removed By'] if pd.notna(r['Removed By']) else "", "Verified By": r['Verified By']}
                 for code in FLAVOR_CODES: row_data[code] = int(r.get(FLAVOR_MAP[code]["audit_col"], 0))
                 display_rem_list.append(row_data)
 
@@ -1901,13 +1916,13 @@ elif page == "Stock Removed" and user_role == "admin":
         if rem_query_df.empty: st.info("No past stock removals found in database.")
         else:
             rem_records = rem_query_df.to_dict("records")
-            rem_labels = [f"Removal #{r['id']} — {pd.to_datetime(r['removal_date']).strftime('%d %b %Y')} ({r['location']}) — {str(r['reason_for_removal'])[:25]} (₹{float(r['cost_price_of_removed_items']):,.0f})" for r in rem_records]
+            rem_labels = [f"Removal #{r['id']} — {pd.to_datetime(r['removal_date']).strftime('%d-%b-%y')} ({r['location']}) — {str(r['reason_for_removal'])[:25]} (₹{float(r['cost_price_of_removed_items']):,.0f})" for r in rem_records]
             sel_rem_label = st.selectbox("Select removal entry to edit", rem_labels, key="edit_rem_select")
             loaded_rem = rem_records[rem_labels.index(sel_rem_label)]
             loaded_rem_id = loaded_rem["id"]
 
             c1, c2, c3, c4 = st.columns(4)
-            with c1: e_rem_date = st.date_input("Removal Date", value=pd.to_datetime(loaded_rem["removal_date"]).date() if loaded_rem.get("removal_date") else date.today(), key=f"edit_rem_date_{loaded_rem_id}")
+            with c1: e_rem_date = st.date_input("Removal Date", value=pd.to_datetime(loaded_rem["removal_date"]).date() if loaded_rem.get("removal_date") else date.today(), key=f"edit_rem_date_{loaded_rem_id}", format="DD-MMM-YY")
             with c2: e_rem_loc = st.text_input("Location", value=str(loaded_rem.get("location", CITY)), key=f"edit_rem_loc_{loaded_rem_id}")
             with c3: e_rem_rby = st.text_input("Removed By", value=str(loaded_rem.get("removed_by") or ""), key=f"edit_rem_rby_{loaded_rem_id}")
             with c4: e_rem_vby = st.text_input("Verified By", value=str(loaded_rem.get("verified_by", "Admin")), key=f"edit_rem_vby_{loaded_rem_id}")
@@ -1923,7 +1938,7 @@ elif page == "Stock Removed" and user_role == "admin":
 
             st.markdown("#### Updated Summary")
             em1, em2, em3 = st.columns(3)
-            em1.metric("Total Units Removed", f"{e_tot_rem_units} units"); em2.metric("Total Cost Value", f"₹{e_tot_rem_cost:,.2f}"); em3.metric("Date", e_rem_date.strftime("%d %b %Y"))
+            em1.metric("Total Units Removed", f"{e_tot_rem_units} units"); em2.metric("Total Cost Value", f"₹{e_tot_rem_cost:,.2f}"); em3.metric("Date", e_rem_date.strftime("%d-%b-%y"))
 
             if st.button("💾 Update Stock Removal", type="primary", use_container_width=True):
                 if e_tot_rem_units <= 0: st.error("Please enter at least one quantity greater than 0.")
@@ -1949,14 +1964,14 @@ elif page == "Expenses" and user_role == "admin":
         if e_sub_mode == "Add New Expense":
             st.write("Record a new bill or obligation incurred:")
             pos_df = db_conn.query("SELECT id, order_date, location FROM purchase_orders ORDER BY order_date DESC;", ttl="0s") if db_conn else pd.DataFrame()
-            po_opts = ["None"] + [f"PO #{r['id']} ({pd.to_datetime(r['order_date']).strftime('%d %b')})" for _, r in pos_df.iterrows()] if not pos_df.empty else ["None"]
+            po_opts = ["None"] + [f"PO #{r['id']} ({pd.to_datetime(r['order_date']).strftime('%d-%b')})" for _, r in pos_df.iterrows()] if not pos_df.empty else ["None"]
             staff_opts = load_active_staff_list()
 
             c1, c2, c3, c4, c5 = st.columns([1.05, 1.05, 1.35, 0.95, 1.10], gap="small")
             with c1: e_type = st.selectbox("Expense Type", EXPENSE_TYPES, index=0, key="add_e_type")
             with c2: e_cat = st.selectbox("Category", EXPENSE_CATEGORIES, index=0, key="add_e_cat")
             with c3: e_subcat = st.text_input("Sub-Category (Optional)", placeholder="e.g. Dry Ice, Fuel, Repair", key="add_e_subcat")
-            with c4: e_date = st.date_input("Expense Date", value=date.today(), key="add_e_date")
+            with c4: e_date = st.date_input("Expense Date", value=date.today(), key="add_e_date", format="DD-MMM-YY")
             with c5:
                 e_month = st.selectbox(
                     "Month",
@@ -1983,7 +1998,7 @@ elif page == "Expenses" and user_role == "admin":
             p_date, p_amt, p_mode, p_ref, p_to, p_notes = None, 0.0, "UPI / Bank Transfer", "", "", ""
             if has_direct_pay:
                 p1, p2, p3 = st.columns(3)
-                with p1: p_date = st.date_input("Payment Date", value=e_date, key="add_p_date")
+                with p1: p_date = st.date_input("Payment Date", value=e_date, key="add_p_date", format="DD-MMM-YY")
                 with p2: p_amt = st.number_input("Amount Paid (₹)", min_value=0.0, value=float(e_amount), step=10.0, key="add_p_amt")
                 with p3: p_mode = st.selectbox("Payment Mode", PAYMENT_MODES, index=0, key="add_p_mode")
                 p4, p5 = st.columns(2)
@@ -2045,7 +2060,7 @@ elif page == "Expenses" and user_role == "admin":
                 ek1, ek2, ek3 = st.columns(3)
                 ek1.metric("Total Expenses Incurred", f"₹{float(expenses_summary_df['total_amount'].sum()):,.2f}"); ek2.metric("Total Amount Paid", f"₹{float(expenses_summary_df['total_paid'].sum()):,.2f}"); ek3.metric("Outstanding Balance Due", f"₹{float(expenses_summary_df['balance_due'].sum()):,.2f}")
                 display_exp = expenses_summary_df.copy()
-                display_exp["expense_date"] = pd.to_datetime(display_exp["expense_date"]).dt.strftime("%d %b %Y")
+                display_exp["expense_date"] = pd.to_datetime(display_exp["expense_date"]).dt.strftime("%d-%b-%y")
                 display_exp["PO Link"] = display_exp["purchase_order_id"].apply(lambda p: f"PO #{int(p)}" if pd.notna(p) else "—")
                 st.dataframe(display_exp[["id", "expense_date", "expense_type", "category", "sub_category", "description", "total_amount", "total_paid", "balance_due", "status", "attributed_to", "vendor_name", "PO Link"]].rename(columns={"id": "ID", "expense_date": "Date", "expense_type": "Type", "category": "Category", "sub_category": "Sub-Category", "description": "Description", "total_amount": "Total (₹)", "total_paid": "Paid (₹)", "balance_due": "Balance (₹)", "status": "Status", "attributed_to": "Attributed To", "vendor_name": "Vendor"}), hide_index=True, use_container_width=True, column_config={"Total (₹)": st.column_config.NumberColumn(format="₹%,.2f"), "Paid (₹)": st.column_config.NumberColumn(format="₹%,.2f"), "Balance (₹)": st.column_config.NumberColumn(format="₹%,.2f")})
 
@@ -2053,11 +2068,11 @@ elif page == "Expenses" and user_role == "admin":
             if expenses_summary_df.empty: st.info("No expenses found to edit.")
             else:
                 exp_records = expenses_summary_df.to_dict("records")
-                exp_labels = [f"#{r['id']} — {pd.to_datetime(r['expense_date']).strftime('%d %b %Y')} — {r['category']} (Total: ₹{float(r['total_amount']):,.0f} | Due: ₹{float(r['balance_due']):,.0f})" for r in exp_records]
+                exp_labels = [f"#{r['id']} — {pd.to_datetime(r['expense_date']).strftime('%d-%b-%y')} — {r['category']} (Total: ₹{float(r['total_amount']):,.0f} | Due: ₹{float(r['balance_due']):,.0f})" for r in exp_records]
                 sel_exp_label = st.selectbox("Select Expense to Edit", exp_labels, key="edit_exp_select")
                 loaded_exp = exp_records[exp_labels.index(sel_exp_label)]; loaded_exp_id = loaded_exp["id"]
                 pos_df = db_conn.query("SELECT id, order_date, location FROM purchase_orders ORDER BY order_date DESC;", ttl="0s") if db_conn else pd.DataFrame()
-                po_opts = ["None"] + [f"PO #{r['id']} ({pd.to_datetime(r['order_date']).strftime('%d %b')})" for _, r in pos_df.iterrows()] if not pos_df.empty else ["None"]
+                po_opts = ["None"] + [f"PO #{r['id']} ({pd.to_datetime(r['order_date']).strftime('%d-%b')})" for _, r in pos_df.iterrows()] if not pos_df.empty else ["None"]
                 default_po_idx = next((i for i, o in enumerate(po_opts) if o.startswith(f"PO #{int(loaded_exp['purchase_order_id'])} ")), 0) if loaded_exp.get("purchase_order_id") and pd.notna(loaded_exp["purchase_order_id"]) else 0
                 staff_opts = load_active_staff_list(); curr_staff = str(loaded_exp.get("staff_name") or "Select Staff")
                 if curr_staff not in staff_opts: staff_opts.append(curr_staff)
@@ -2066,7 +2081,7 @@ elif page == "Expenses" and user_role == "admin":
                 with c1: e_edit_type = st.selectbox("Expense Type", EXPENSE_TYPES, index=EXPENSE_TYPES.index(loaded_exp["expense_type"]) if loaded_exp["expense_type"] in EXPENSE_TYPES else 0, key=f"ee_type_{loaded_exp_id}")
                 with c2: e_edit_cat = st.selectbox("Category", EXPENSE_CATEGORIES, index=EXPENSE_CATEGORIES.index(loaded_exp["category"]) if loaded_exp["category"] in EXPENSE_CATEGORIES else 0, key=f"ee_cat_{loaded_exp_id}")
                 with c3: e_edit_subcat = st.text_input("Sub-Category", value=str(loaded_exp.get("sub_category") or ""), key=f"ee_subcat_{loaded_exp_id}")
-                with c4: e_edit_date = st.date_input("Expense Date", value=pd.to_datetime(loaded_exp["expense_date"]).date(), key=f"ee_date_{loaded_exp_id}")
+                with c4: e_edit_date = st.date_input("Expense Date", value=pd.to_datetime(loaded_exp["expense_date"]).date(), key=f"ee_date_{loaded_exp_id}", format="DD-MMM-YY")
                 with c5:
                     db_month = str(loaded_exp.get("month") or "").strip()
                     month_options = list(calendar.month_name)[1:]
@@ -2143,7 +2158,7 @@ elif page == "Expenses" and user_role == "admin":
                     m1.metric("Bill Total", f"₹{float(target_exp['total_amount']):,.2f}"); m2.metric("Already Paid", f"₹{float(target_exp['total_paid']):,.2f}"); m3.metric("Outstanding Balance", f"₹{curr_due:,.2f}")
 
                     c1, c2, c3 = st.columns(3)
-                    with c1: new_p_date = st.date_input("Payment Date", value=date.today(), key="rec_p_date")
+                    with c1: new_p_date = st.date_input("Payment Date", value=date.today(), key="rec_p_date", format="DD-MMM-YY")
                     with c2: new_p_amount = st.number_input("Amount to Pay (₹)", min_value=0.0, value=max(0.0, curr_due), step=10.0, key="rec_p_amt")
                     with c3: new_p_mode = st.selectbox("Payment Mode", PAYMENT_MODES, index=0, key="rec_p_mode")
 
@@ -2209,18 +2224,18 @@ elif page == "Expenses" and user_role == "admin":
             if payments_df.empty: st.info("No payment transactions found in database.")
             else:
                 st.metric("Total Payments Disbursed", f"₹{float(payments_df['amount_paid'].sum()):,.2f}")
-                disp_pay = payments_df.copy(); disp_pay["payment_date"] = pd.to_datetime(disp_pay["payment_date"]).dt.strftime("%d %b %Y"); disp_pay["Expense Link"] = disp_pay.apply(lambda r: f"#{r['expense_id']} — {r['category']} (₹{float(r['expense_total']):,.0f})", axis=1)
+                disp_pay = payments_df.copy(); disp_pay["payment_date"] = pd.to_datetime(disp_pay["payment_date"]).dt.strftime("%d-%b-%y"); disp_pay["Expense Link"] = disp_pay.apply(lambda r: f"#{r['expense_id']} — {r['category']} (₹{float(r['expense_total']):,.0f})", axis=1)
                 st.dataframe(disp_pay[["id", "payment_date", "Expense Link", "amount_paid", "payment_mode", "ref_no", "paid_to", "paid_by", "notes"]].rename(columns={"id": "Payment ID", "payment_date": "Date", "amount_paid": "Amount (₹)", "payment_mode": "Mode", "ref_no": "Ref / UTR", "paid_to": "Paid To", "paid_by": "Paid By", "notes": "Notes"}), hide_index=True, use_container_width=True, column_config={"Amount (₹)": st.column_config.NumberColumn(format="₹%,.2f")})
 
         elif p_sub_mode == "Edit Past Payment":
             if payments_df.empty: st.info("No payments recorded to edit.")
             else:
                 pay_records = payments_df.to_dict("records")
-                pay_labels = [f"Payment #{r['id']} — {pd.to_datetime(r['payment_date']).strftime('%d %b %Y')} — For Expense #{r['expense_id']} ({r['category']}) (₹{float(r['amount_paid']):,.2f})" for r in pay_records]
+                pay_labels = [f"Payment #{r['id']} — {pd.to_datetime(r['payment_date']).strftime('%d-%b-%y')} — For Expense #{r['expense_id']} ({r['category']}) (₹{float(r['amount_paid']):,.2f})" for r in pay_records]
                 loaded_pay = pay_records[pay_labels.index(st.selectbox("Select Payment to Edit", pay_labels, key="edit_pay_select"))]; loaded_pay_id = loaded_pay["id"]
 
                 c1, c2, c3 = st.columns(3)
-                with c1: ep_date = st.date_input("Payment Date", value=pd.to_datetime(loaded_pay["payment_date"]).date(), key=f"ep_dt_{loaded_pay_id}")
+                with c1: ep_date = st.date_input("Payment Date", value=pd.to_datetime(loaded_pay["payment_date"]).date(), key=f"ep_dt_{loaded_pay_id}", format="DD-MMM-YY")
                 with c2: ep_amt = st.number_input("Amount Paid (₹)", min_value=0.0, value=float(loaded_pay["amount_paid"]), step=10.0, key=f"ep_amt_{loaded_pay_id}")
                 with c3: ep_mode = st.selectbox("Payment Mode", PAYMENT_MODES, index=PAYMENT_MODES.index(loaded_pay["payment_mode"]) if loaded_pay["payment_mode"] in PAYMENT_MODES else 0, key=f"ep_mode_{loaded_pay_id}")
 
@@ -2267,8 +2282,8 @@ elif page == "Expenses" and user_role == "admin":
             min_exp_d, max_exp_d = min(all_dts), max(all_dts)
 
             rc1, rc2 = st.columns(2)
-            with rc1: rpt_start = st.date_input("From Date", value=max(min_exp_d, max_exp_d - timedelta(days=29)), min_value=min_exp_d, max_value=max_exp_d, key="exp_rpt_start")
-            with rc2: rpt_end = st.date_input("To Date", value=max_exp_d, min_value=min_exp_d, max_value=max_exp_d, key="exp_rpt_end")
+            with rc1: rpt_start = st.date_input("From Date", value=max(min_exp_d, max_exp_d - timedelta(days=29)), min_value=min_exp_d, max_value=max_exp_d, key="exp_rpt_start", format="DD-MMM-YY")
+            with rc2: rpt_end = st.date_input("To Date", value=max_exp_d, min_value=min_exp_d, max_value=max_exp_d, key="exp_rpt_end", format="DD-MMM-YY")
             if rpt_start > rpt_end: st.error("'From' date must be before 'To' date."); rpt_start, rpt_end = rpt_end, rpt_start
 
             f_exp = expenses_summary_df[(pd.to_datetime(expenses_summary_df["expense_date"]).dt.date >= rpt_start) & (pd.to_datetime(expenses_summary_df["expense_date"]).dt.date <= rpt_end)] if not expenses_summary_df.empty else pd.DataFrame()
@@ -2332,13 +2347,13 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 with sc4:
                     new_s_status = st.selectbox("Status", STAFF_STATUSES, index=0, key="add_s_status")
                 with sc5:
-                    new_s_doj = st.date_input("Date of Joining", value=date.today(), key="add_s_doj")
+                    new_s_doj = st.date_input("Date of Joining", value=date.today(), key="add_s_doj", format="DD-MMM-YY")
 
                 sc6, sc_dol, sc7, sc8 = st.columns(4)
                 with sc6:
-                    new_s_dob = st.date_input("Date of Birth", value=date(1995, 1, 1), key="add_s_dob")
+                    new_s_dob = st.date_input("Date of Birth", value=date(1995, 1, 1), key="add_s_dob", format="DD-MMM-YY")
                 with sc_dol:
-                    new_s_dol = st.date_input("Last Working Day", value=None, key="add_s_dol")
+                    new_s_dol = st.date_input("Last Working Day", value=None, key="add_s_dol", format="DD-MMM-YY")
                 with sc7:
                     new_s_pan = st.text_input("PAN Number", placeholder="e.g. ABCDE1234F", key="add_s_pan")
                 with sc8:
@@ -2439,7 +2454,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 disp_staff["Gender"] = disp_staff["gender"].fillna("—")
                 disp_staff["Daily Fixed Rate"] = disp_staff["monthly_fixed_salary"].apply(lambda v: f"₹600/day (₹{_num(v):,.0f}/mo)")
                 disp_staff["Commission"] = disp_staff.apply(lambda r: f"{_num(r['commission_percentage']):.0f}% > ₹{_num(r['commission_threshold_daily']):,.0f}", axis=1)
-                disp_staff["Joined"] = pd.to_datetime(disp_staff["date_of_joining"]).dt.strftime("%d %b %Y")
+                disp_staff["Joined"] = pd.to_datetime(disp_staff["date_of_joining"]).dt.strftime("%d-%b-%y")
 
                 summary_cols = ["id", "name", "Role", "Gender", "status", "phone_number", "Joined", "Daily Fixed Rate"]
                 st.dataframe(
@@ -2460,11 +2475,11 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 k1.write(f"**Role:** {s_row.get('role') or 'Cart Operator'}")
                 k1.write(f"**Gender:** {s_row.get('gender') or '—'}")
                 
-                k2.write(f"**Date of Birth:** {pd.to_datetime(s_row['date_of_birth']).strftime('%d %b %Y') if pd.notna(s_row['date_of_birth']) else '—'}")
+                k2.write(f"**Date of Birth:** {pd.to_datetime(s_row['date_of_birth']).strftime('%d-%b-%y') if pd.notna(s_row['date_of_birth']) else '—'}")
                 k2.write(f"**PAN Number:** {s_row['pan_number'] or '—'}")
                 
                 k3.write(f"**Emergency Contact:** {s_row['emergency_contact_name'] or '—'} ({s_row['emergency_contact_phone'] or '—'})")
-                k3.write(f"**Last Working Day:** {pd.to_datetime(s_row['date_of_leaving']).strftime('%d %b %Y') if pd.notna(s_row['date_of_leaving']) else '—'}")
+                k3.write(f"**Last Working Day:** {pd.to_datetime(s_row['date_of_leaving']).strftime('%d-%b-%y') if pd.notna(s_row['date_of_leaving']) else '—'}")
 
                 st.write(f"**Current Address:** {s_row['current_address'] or '—'}")
                 st.write(f"**Permanent Address:** {s_row['permanent_address'] or '—'}")
@@ -2507,15 +2522,15 @@ elif page == "Staff & Payroll" and user_role == "admin":
                         e_status = st.selectbox("Status", STAFF_STATUSES, index=stat_idx, key=f"e_status_{s_id}")
                     with ec5:
                         doj_val = pd.to_datetime(s_edit["date_of_joining"]).date() if pd.notna(s_edit["date_of_joining"]) else date.today()
-                        e_doj = st.date_input("Date of Joining", value=doj_val, key=f"e_doj_{s_id}")
+                        e_doj = st.date_input("Date of Joining", value=doj_val, key=f"e_doj_{s_id}", format="DD-MMM-YY")
 
                     ec6, ec_dol, ec7, ec8 = st.columns(4)
                     with ec6:
                         dob_val = pd.to_datetime(s_edit["date_of_birth"]).date() if pd.notna(s_edit["date_of_birth"]) else date(1995, 1, 1)
-                        e_dob = st.date_input("Date of Birth", value=dob_val, key=f"e_dob_{s_id}")
+                        e_dob = st.date_input("Date of Birth", value=dob_val, key=f"e_dob_{s_id}", format="DD-MMM-YY")
                     with ec_dol:
                         dol_val = pd.to_datetime(s_edit["date_of_leaving"]).date() if pd.notna(s_edit["date_of_leaving"]) else None
-                        e_dol = st.date_input("Last Working Day", value=dol_val, key=f"e_dol_{s_id}")
+                        e_dol = st.date_input("Last Working Day", value=dol_val, key=f"e_dol_{s_id}", format="DD-MMM-YY")
                     with ec7:
                         e_pan = st.text_input("PAN Number", value=str(s_edit.get("pan_number") or ""), key=f"e_pan_{s_id}")
                     with ec8:
@@ -2591,7 +2606,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                     with ac1:
                         att_staff_name = st.selectbox("Staff Member *", st_names, key="leave_sname")
                     with ac2:
-                        att_date = st.date_input("Leave Date *", value=date.today(), key="leave_dt")
+                        att_date = st.date_input("Leave Date *", value=date.today(), key="leave_dt", format="DD-MMM-YY")
 
                     ac3, ac4 = st.columns(2)
                     with ac3:
@@ -2624,7 +2639,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                                 }
                             )
                             s.commit()
-                        show_success_modal(f"{att_status} ({att_type}) recorded for {att_staff_name} on {att_date.strftime('%d %b %Y')}!")
+                        show_success_modal(f"{att_status} ({att_type}) recorded for {att_staff_name} on {att_date.strftime('%d-%b-%y')}!")
                     except Exception as e:
                         st.error(f"Could not record attendance: {e}")
 
@@ -2639,7 +2654,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 k3.metric("Paid Leaves", len(att_df[att_df["leave_type"] == "Paid"]))
 
                 disp_att = att_df.copy()
-                disp_att["attendance_date"] = pd.to_datetime(disp_att["attendance_date"]).dt.strftime("%d %b %Y")
+                disp_att["attendance_date"] = pd.to_datetime(disp_att["attendance_date"]).dt.strftime("%d-%b-%y")
                 
                 st.dataframe(
                     disp_att[["id", "staff_name", "attendance_date", "status", "leave_type", "reason", "recorded_by"]].rename(columns={
@@ -2657,7 +2672,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
             else:
                 att_records = att_df.to_dict("records")
                 att_labels = [
-                    f"#{r['id']} — {r['staff_name']} on {pd.to_datetime(r['attendance_date']).strftime('%d %b %Y')} ({r['status']} - {r['leave_type']})"
+                    f"#{r['id']} — {r['staff_name']} on {pd.to_datetime(r['attendance_date']).strftime('%d-%b-%y')} ({r['status']} - {r['leave_type']})"
                     for r in att_records
                 ]
                 sel_att_label = st.selectbox("Select Leave Entry to Edit", att_labels, key="edit_att_select")
@@ -2666,7 +2681,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
 
                 c1, c2 = st.columns(2)
                 with c1:
-                    e_att_date = st.date_input("Leave Date", value=pd.to_datetime(loaded_att["attendance_date"]).date(), key=f"e_att_dt_{loaded_att_id}")
+                    e_att_date = st.date_input("Leave Date", value=pd.to_datetime(loaded_att["attendance_date"]).date(), key=f"e_att_dt_{loaded_att_id}", format="DD-MMM-YY")
                 with c2:
                     e_att_stat = st.selectbox("Status", LEAVE_STATUS_OPTIONS, index=LEAVE_STATUS_OPTIONS.index(loaded_att["status"]) if loaded_att["status"] in LEAVE_STATUS_OPTIONS else 0, key=f"e_att_st_{loaded_att_id}")
 
@@ -2720,7 +2735,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
             with st.form("new_comp_plan_form"):
                 cp1, cp2 = st.columns(2)
                 with cp1:
-                    plan_eff_from = st.date_input("Effective From Date", value=date.today())
+                    plan_eff_from = st.date_input("Effective From Date", value=date.today(), format="DD-MMM-YY")
                 with cp2:
                     plan_salary = st.number_input("Monthly Fixed Salary (₹)", min_value=0.0, value=float(_num(target_s_row['monthly_fixed_salary']) or 18000.0), step=500.0)
 
@@ -2766,7 +2781,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                             }
                         )
                         s.commit()
-                    show_success_modal(f"New compensation plan activated for {sel_s_plan} from {plan_eff_from.strftime('%d %b %Y')}!")
+                    show_success_modal(f"New compensation plan activated for {sel_s_plan} from {plan_eff_from.strftime('%d-%b-%y')}!")
                 except Exception as e:
                     st.error(f"Could not save compensation plan: {e}")
 
@@ -2775,8 +2790,8 @@ elif page == "Staff & Payroll" and user_role == "admin":
             hist_df = load_staff_compensation_history(target_s_id)
             if not hist_df.empty:
                 disp_hist = hist_df.copy()
-                disp_hist["effective_from"] = pd.to_datetime(disp_hist["effective_from"]).dt.strftime("%d %b %Y")
-                disp_hist["effective_to"] = disp_hist["effective_to"].apply(lambda d: pd.to_datetime(d).strftime("%d %b %Y") if pd.notna(d) else "Active Present")
+                disp_hist["effective_from"] = pd.to_datetime(disp_hist["effective_from"]).dt.strftime("%d-%b-%y")
+                disp_hist["effective_to"] = disp_hist["effective_to"].apply(lambda d: pd.to_datetime(d).strftime("%d-%b-%y") if pd.notna(d) else "Active Present")
                 st.dataframe(
                     disp_hist[["effective_from", "effective_to", "monthly_fixed_salary", "commission_threshold_daily", "commission_percentage", "allowance_weekday", "allowance_sunday"]].rename(columns={
                         "effective_from": "From", "effective_to": "To", "monthly_fixed_salary": "Fixed Salary (₹)",
@@ -2803,7 +2818,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
         m_start_dt = date(sel_year, sel_month_idx, 1)
         m_end_dt = date(sel_year, sel_month_idx, num_days_in_month)
 
-        st.caption(f"Calculating for period: **{m_start_dt.strftime('%d %b %Y')}** to **{m_end_dt.strftime('%d %b %Y')}** ({num_days_in_month} Days in Month)")
+        st.caption(f"Calculating for period: **{m_start_dt.strftime('%d-%b-%y')}** to **{m_end_dt.strftime('%d-%b-%y')}** ({num_days_in_month} Days in Month)")
 
         daily_month_df = pd.DataFrame()
         att_month_df = pd.DataFrame()
@@ -2909,7 +2924,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                         if s_dt in exp_map: del exp_map[s_dt]
 
                         staff_shift_records.append({
-                            "Date": s_dt.strftime("%d %b %Y"),
+                            "Date": s_dt.strftime("%d-%b-%y"),
                             "Day": s_dt.strftime("%A"),
                             "Staff Name": st_name,
                             "Cart Operated": shift["cart_name"],
@@ -2942,7 +2957,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                         if l_dt in exp_map: del exp_map[l_dt]
 
                         staff_shift_records.append({
-                            "Date": l_dt.strftime("%d %b %Y"),
+                            "Date": l_dt.strftime("%d-%b-%y"),
                             "Day": l_dt.strftime("%A"),
                             "Staff Name": st_name,
                             "Cart Operated": "— (On Leave)",
@@ -2958,7 +2973,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                         
                 for d, vals in exp_map.items():
                     staff_shift_records.append({
-                        "Date": d.strftime("%d %b %Y"),
+                        "Date": d.strftime("%d-%b-%y"),
                         "Day": d.strftime("%A"),
                         "Staff Name": st_name,
                         "Cart Operated": "— (Expense)",
@@ -2995,7 +3010,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
 
                 if staff_shift_records:
                     s_ledger_df = pd.DataFrame(staff_shift_records)
-                    s_ledger_df["dt_sort"] = pd.to_datetime(s_ledger_df["Date"], format="%d %b %Y")
+                    s_ledger_df["dt_sort"] = pd.to_datetime(s_ledger_df["Date"], format="%d-%b-%y")
                     detailed_staff_logs[st_name] = s_ledger_df.sort_values(by="dt_sort").drop(columns=["dt_sort"])
                 else:
                     detailed_staff_logs[st_name] = pd.DataFrame()
@@ -3065,7 +3080,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                     st.info(f"No disbursements / payments recorded for {sel_staff_drill} in {sel_month_name} {sel_year}.")
                 else:
                     disp_sp = target_staff_pay.copy()
-                    disp_sp["payment_date"] = pd.to_datetime(disp_sp["payment_date"]).dt.strftime("%d %b %Y")
+                    disp_sp["payment_date"] = pd.to_datetime(disp_sp["payment_date"]).dt.strftime("%d-%b-%y")
                     st.dataframe(
                         disp_sp[["payment_id", "payment_date", "sub_category", "description", "amount_paid", "payment_mode", "ref_no", "notes"]].rename(columns={
                             "payment_id": "Payment ID", "payment_date": "Date", "sub_category": "Type",
@@ -3096,7 +3111,7 @@ elif page == "Dashboard" and user_role == "admin":
         day_rows = [daily_df[daily_df["Date"].dt.date == d.date()] for d in day_labels]
         day_rev = [r["Total_Collection"].sum() for r in day_rows]
         day_units = [int(round(r["Sold_Total"].sum())) for r in day_rows]
-        col_names = [d.strftime("%d %b") for d in day_labels]
+        col_names = [d.strftime("%d-%b") for d in day_labels]
         col_names[-1] = col_names[-1] + " (Yesterday)"
         compare_df = pd.DataFrame({
             "Metric": ["Revenue", "Units sold"], col_names[0]: [f"₹{day_rev[0]:,.0f}", f"{day_units[0]}"],
@@ -3118,7 +3133,7 @@ elif page == "Dashboard" and user_role == "admin":
         trend_melt = trend_agg.melt(id_vars=["Day"], value_vars=["PhonePe", "Gross Cash"], var_name="Mode", value_name="Amount")
         
         trend_chart = alt.Chart(trend_melt).mark_bar(width=16).encode(
-            x=alt.X("Day:T", title="", axis=alt.Axis(format="%d %b", labelAngle=-45)),
+            x=alt.X("Day:T", title="", axis=alt.Axis(format="%d-%b", labelAngle=-45)),
             y=alt.Y("Amount:Q", title="Revenue (₹)"),
             color=alt.Color(
                 "Mode:N", 
@@ -3126,7 +3141,7 @@ elif page == "Dashboard" and user_role == "admin":
                 legend=alt.Legend(title="", orient="bottom", direction="horizontal") 
             ),
             tooltip=[
-                alt.Tooltip("Day:T", title="Date", format="%d %b %Y"), 
+                alt.Tooltip("Day:T", title="Date", format="%d-%b-%y"), 
                 alt.Tooltip("Mode:N", title="Mode"), 
                 alt.Tooltip("Amount:Q", title="Amount (₹)", format=",.0f") 
             ]
@@ -3158,8 +3173,8 @@ elif page == "Dashboard" and user_role == "admin":
 
         with st.form("date_range_form"):
             rc1, rc2, rc3 = st.columns([2, 2, 1])
-            with rc1: pending_start = st.date_input("From", value=st.session_state["applied_start"], min_value=min_d, max_value=max_d)
-            with rc2: pending_end = st.date_input("To", value=st.session_state["applied_end"], min_value=min_d, max_value=max_d)
+            with rc1: pending_start = st.date_input("From", value=st.session_state["applied_start"], min_value=min_d, max_value=max_d, format="DD-MMM-YY")
+            with rc2: pending_end = st.date_input("To", value=st.session_state["applied_end"], min_value=min_d, max_value=max_d, format="DD-MMM-YY")
             with rc3: 
                 st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
                 apply_clicked = st.form_submit_button("Apply", type="primary", use_container_width=True)
@@ -3173,7 +3188,7 @@ elif page == "Dashboard" and user_role == "admin":
             st.error("'From' date is after 'To' date - swap them and click Apply again.")
             range_start, range_end = range_end, range_start
             
-        st.caption(f"Showing performance for: **{range_start.strftime('%d %b %Y')}** – **{range_end.strftime('%d %b %Y')}**")
+        st.caption(f"Showing performance for: **{range_start.strftime('%d-%b-%y')}** – **{range_end.strftime('%d-%b-%y')}**")
 
         range_df = daily_df[(daily_df["Date"].dt.date >= range_start) & (daily_df["Date"].dt.date <= range_end)] if not daily_df.empty else daily_df
         range_exp = exp_df[(exp_df["Date"].dt.date >= range_start) & (exp_df["Date"].dt.date <= range_end)] if not exp_df.empty else exp_df
@@ -3212,9 +3227,9 @@ elif page == "Dashboard" and user_role == "admin":
         st.markdown("#### Daily Revenue Trend")
         if not range_df.empty:
             line_chart = alt.Chart(range_df.groupby("Date", as_index=False)["Total_Collection"].sum()).mark_line(point=True, color="#E8542A").encode(
-                x=alt.X("Date:T", title="Date", axis=alt.Axis(format="%d %b")),
+                x=alt.X("Date:T", title="Date", axis=alt.Axis(format="%d-%b")),
                 y=alt.Y("Total_Collection:Q", title="Revenue (₹)"),
-                tooltip=[alt.Tooltip("Date:T", format="%d %b %Y", title="Date"), alt.Tooltip("Total_Collection:Q", format=",.2f", title="Revenue (₹)")]
+                tooltip=[alt.Tooltip("Date:T", format="%d-%b-%y", title="Date"), alt.Tooltip("Total_Collection:Q", format=",.2f", title="Revenue (₹)")]
             ).properties(height=300)
             st.altair_chart(line_chart, use_container_width=True)
         else:
@@ -3374,7 +3389,7 @@ elif page == "Dashboard" and user_role == "admin":
                             "Cash_Leakage": "Cash Leakage (₹)" # <--- Renamed for display
                         })
             date_wise_table["Units Sold"] = date_wise_table["Units Sold"].apply(lambda x: int(round(x)))
-            date_wise_table["Date"] = date_wise_table["Date"].dt.strftime("%d %b %Y")
+            date_wise_table["Date"] = date_wise_table["Date"].dt.strftime("%d-%b-%y")
             st.dataframe(date_wise_table, hide_index=True, use_container_width=True, column_config={
                             "Revenue (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
                             "PhonePe (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
@@ -3397,7 +3412,7 @@ elif page == "Dashboard" and user_role == "admin":
                             "Cash_Leakage": "Cash Leakage (₹)"
                         })
             sales_table["Units Sold"] = sales_table["Units Sold"].apply(lambda x: int(round(x)))
-            sales_table["Date"] = sales_table["Date"].dt.strftime("%d %b %Y")
+            sales_table["Date"] = sales_table["Date"].dt.strftime("%d-%b-%y")
             st.dataframe(
                             sales_table, 
                             hide_index=True, 
