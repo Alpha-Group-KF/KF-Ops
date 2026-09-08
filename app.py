@@ -1952,7 +1952,7 @@ elif page == "Expenses" and user_role == "admin":
             po_opts = ["None"] + [f"PO #{r['id']} ({pd.to_datetime(r['order_date']).strftime('%d %b')})" for _, r in pos_df.iterrows()] if not pos_df.empty else ["None"]
             staff_opts = load_active_staff_list()
 
-            c1, c2, c3, c4, c5 = st.columns(5)
+            c1, c2, c3, c4, c5 = st.columns([1.05, 0.85, 1.05, 1.05, 1.35], gap="small")
             with c1: e_date = st.date_input("Expense Date", value=date.today(), key="add_e_date")
             with c2:
                 e_month = st.selectbox(
@@ -1962,8 +1962,8 @@ elif page == "Expenses" and user_role == "admin":
                     key=f"add_e_month_{e_date.strftime('%Y%m')}"
                 )
             with c3: e_type = st.selectbox("Expense Type", EXPENSE_TYPES, index=0, key="add_e_type")
-            with c3: e_cat = st.selectbox("Category", EXPENSE_CATEGORIES, index=0, key="add_e_cat")
-            with c4: e_subcat = st.text_input("Sub-Category (Optional)", placeholder="e.g. Dry Ice, Fuel, Repair", key="add_e_subcat")
+            with c4: e_cat = st.selectbox("Category", EXPENSE_CATEGORIES, index=0, key="add_e_cat")
+            with c5: e_subcat = st.text_input("Sub-Category (Optional)", placeholder="e.g. Dry Ice, Fuel, Repair", key="add_e_subcat")
 
             c5, c6, c7 = st.columns(3)
             with c5: e_amount = st.number_input("Total Amount (₹)", min_value=0.0, step=10.0, key="add_e_amt")
@@ -2029,7 +2029,7 @@ elif page == "Expenses" and user_role == "admin":
                 staff_opts = load_active_staff_list(); curr_staff = str(loaded_exp.get("staff_name") or "Select Staff")
                 if curr_staff not in staff_opts: staff_opts.append(curr_staff)
 
-                c1, c2, c3, c4, c5 = st.columns(5)
+                c1, c2, c3, c4, c5 = st.columns([1.05, 0.85, 1.05, 1.05, 1.35], gap="small")
                 with c1: e_edit_date = st.date_input("Expense Date", value=pd.to_datetime(loaded_exp["expense_date"]).date(), key=f"ee_date_{loaded_exp_id}")
                 with c2:
                     db_month = str(loaded_exp.get("month") or "").strip()
@@ -2037,8 +2037,8 @@ elif page == "Expenses" and user_role == "admin":
                     default_month_idx = month_options.index(db_month) if db_month in month_options else (e_edit_date.month - 1)
                     e_edit_month = st.selectbox("Month", month_options, index=default_month_idx, key=f"ee_month_{loaded_exp_id}")
                 with c3: e_edit_type = st.selectbox("Expense Type", EXPENSE_TYPES, index=EXPENSE_TYPES.index(loaded_exp["expense_type"]) if loaded_exp["expense_type"] in EXPENSE_TYPES else 0, key=f"ee_type_{loaded_exp_id}")
-                with c3: e_edit_cat = st.selectbox("Category", EXPENSE_CATEGORIES, index=EXPENSE_CATEGORIES.index(loaded_exp["category"]) if loaded_exp["category"] in EXPENSE_CATEGORIES else 0, key=f"ee_cat_{loaded_exp_id}")
-                with c4: e_edit_subcat = st.text_input("Sub-Category", value=str(loaded_exp.get("sub_category") or ""), key=f"ee_subcat_{loaded_exp_id}")
+                with c4: e_edit_cat = st.selectbox("Category", EXPENSE_CATEGORIES, index=EXPENSE_CATEGORIES.index(loaded_exp["category"]) if loaded_exp["category"] in EXPENSE_CATEGORIES else 0, key=f"ee_cat_{loaded_exp_id}")
+                with c5: e_edit_subcat = st.text_input("Sub-Category", value=str(loaded_exp.get("sub_category") or ""), key=f"ee_subcat_{loaded_exp_id}")
 
                 c5, c6, c7 = st.columns(3)
                 with c5: e_edit_amount = st.number_input("Total Amount (₹)", min_value=0.0, value=float(loaded_exp["total_amount"]), step=10.0, key=f"ee_amt_{loaded_exp_id}")
