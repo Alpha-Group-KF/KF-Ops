@@ -1230,8 +1230,8 @@ elif page == "Payslip Generator" and user_role == "admin":
     else:
         pc1, pc2, pc3 = st.columns([1.2, 1, 1])
         with pc1: sel_staff_payslip = st.selectbox("Select Staff Member", staff_df["name"].tolist(), key="payslip_staff_sel")
-        with pc2: payslip_start = st.date_input("Start Date", value=date.today().replace(day=1), key="payslip_start_dt", format="DD-MMM-YY")
-        with pc3: payslip_end = st.date_input("End Date", value=date.today(), key="payslip_end_dt", format="DD-MMM-YY")
+        with pc2: payslip_start = st.date_input("Start Date", value=date.today().replace(day=1), key="payslip_start_dt", format="DD-MM-YYYY")
+        with pc3: payslip_end = st.date_input("End Date", value=date.today(), key="payslip_end_dt", format="DD-MM-YYYY")
 
         if payslip_start > payslip_end: st.error("Start date must be before or equal to end date.")
         else:
@@ -1394,8 +1394,8 @@ elif page == "Purchase Orders" and user_role == "admin":
         st.write("Enter details and specify quantities per flavor to calculate the estimated purchase cost.")
 
         c1, c2, c3 = st.columns(3)
-        with c1: order_date = st.date_input("Order Date", value=date.today(), key="new_po_order_date", format="DD-MMM-YY")
-        with c2: expected_date = st.date_input("Expected Delivery Date", value=date.today() + timedelta(days=2), key="new_po_exp_date", format="DD-MMM-YY")
+        with c1: order_date = st.date_input("Order Date", value=date.today(), key="new_po_order_date", format="DD-MM-YYYY")
+        with c2: expected_date = st.date_input("Expected Delivery Date", value=date.today() + timedelta(days=2), key="new_po_exp_date", format="DD-MM-YYYY")
         with c3: location = st.text_input("Delivery Location", value=CITY, key="new_po_loc")
 
         c4, c5 = st.columns(2)
@@ -1457,8 +1457,8 @@ elif page == "Purchase Orders" and user_role == "admin":
                 except Exception: default_disc = 0.0
 
             c1, c2, c3 = st.columns(3)
-            with c1: e_order_date = st.date_input("Order Date", value=pd.to_datetime(loaded_po["order_date"]).date() if loaded_po.get("order_date") else date.today(), key=f"edit_po_od_{loaded_po_id}", format="DD-MMM-YY")
-            with c2: e_expected_date = st.date_input("Expected Delivery Date", value=pd.to_datetime(loaded_po["expected_date"]).date() if loaded_po.get("expected_date") else date.today() + timedelta(days=2), key=f"edit_po_ed_{loaded_po_id}", format="DD-MMM-YY")
+            with c1: e_order_date = st.date_input("Order Date", value=pd.to_datetime(loaded_po["order_date"]).date() if loaded_po.get("order_date") else date.today(), key=f"edit_po_od_{loaded_po_id}", format="DD-MM-YYYY")
+            with c2: e_expected_date = st.date_input("Expected Delivery Date", value=pd.to_datetime(loaded_po["expected_date"]).date() if loaded_po.get("expected_date") else date.today() + timedelta(days=2), key=f"edit_po_ed_{loaded_po_id}", format="DD-MM-YYYY")
             with c3: e_location = st.text_input("Delivery Location", value=str(loaded_po.get("location", CITY)), key=f"edit_po_loc_{loaded_po_id}")
 
             c4, c5 = st.columns(2)
@@ -1539,7 +1539,7 @@ elif page == "Freezer Stock" and user_role == "admin":
             except Exception: default_po_idx = 0
 
         c1, c2, c3, c4 = st.columns(4)
-        with c1: received_date = st.date_input("Received date", value=pd.to_datetime(stock_loaded["received_date"]).date() if (stock_loaded and stock_loaded.get("received_date")) else date.today(), key=f"rec_date{sk}", format="DD-MMM-YY")
+        with c1: received_date = st.date_input("Received date", value=pd.to_datetime(stock_loaded["received_date"]).date() if (stock_loaded and stock_loaded.get("received_date")) else date.today(), key=f"rec_date{sk}", format="DD-MM-YYYY")
         with c2: location = st.text_input("Location", value=str(stock_loaded["location"]) if (stock_loaded and stock_loaded.get("location")) else CITY, key=f"rec_loc{sk}")
         with c3: selected_po = st.selectbox("Link to Purchase Order (Optional)", po_options, index=default_po_idx, key=f"rec_po{sk}")
         with c4: rec_discount_pct = st.number_input("Overall Discount (%)", min_value=0.0, max_value=100.0, value=default_rec_disc, step=0.5, format="%.2f", key=f"rec_disc{sk}")
@@ -1565,10 +1565,10 @@ elif page == "Freezer Stock" and user_role == "admin":
         with c6: payment_status = st.selectbox("Payment status", PAYMENT_STATUSES, index=PAYMENT_STATUSES.index(stock_loaded["payment_status"]) if (stock_loaded and stock_loaded.get("payment_status") in PAYMENT_STATUSES) else 0, key=f"db_rec_status{sk}")
 
         has_payment_date = st.checkbox("Add payment date", value=bool(stock_loaded and stock_loaded.get("payment_date")), key=f"db_rec_has_pdate{sk}")
-        payment_date = st.date_input("Payment date", value=pd.to_datetime(stock_loaded["payment_date"]).date() if (stock_loaded and stock_loaded.get("payment_date")) else date.today(), key=f"db_rec_pdate{sk}", format="DD-MMM-YY") if has_payment_date else None
+        payment_date = st.date_input("Payment date", value=pd.to_datetime(stock_loaded["payment_date"]).date() if (stock_loaded and stock_loaded.get("payment_date")) else date.today(), key=f"db_rec_pdate{sk}", format="DD-MM-YYYY") if has_payment_date else None
         payment_details = st.text_input("Payment details (optional)", value=str(stock_loaded["payment_details"]) if (stock_loaded and stock_loaded.get("payment_details")) else "", key=f"db_rec_pdet{sk}")
         has_dam_ret = st.checkbox("Damaged items were returned", value=bool(stock_loaded and stock_loaded.get("damaged_returned_on")), key=f"db_rec_has_dam{sk}")
-        damaged_returned_on = st.date_input("Damaged returned date", value=pd.to_datetime(stock_loaded["damaged_returned_on"]).date() if (stock_loaded and stock_loaded.get("damaged_returned_on")) else date.today(), key=f"db_rec_damdate{sk}", format="DD-MMM-YY") if has_dam_ret else None
+        damaged_returned_on = st.date_input("Damaged returned date", value=pd.to_datetime(stock_loaded["damaged_returned_on"]).date() if (stock_loaded and stock_loaded.get("damaged_returned_on")) else date.today(), key=f"db_rec_damdate{sk}", format="DD-MM-YYYY") if has_dam_ret else None
         notes = st.text_input("Notes (optional)", value=clean_rec_notes, key=f"db_rec_notes{sk}")
 
         if st.button("Update delivery entry" if loaded_id else "Save stock received", type="primary", use_container_width=True):
@@ -1595,7 +1595,7 @@ elif page == "Freezer Stock" and user_role == "admin":
     elif freezer_tab_choice == "Stock Audit (Physical Count)":
         st.write("Log a physical stock count from the freezer to calculate inventory variance.")
         aud_c1, aud_c2, aud_c3 = st.columns(3)
-        with aud_c1: audit_date = st.date_input("Audit date", value=date.today(), key="audit_dt_entry", format="DD-MMM-YY")
+        with aud_c1: audit_date = st.date_input("Audit date", value=date.today(), key="audit_dt_entry", format="DD-MM-YYYY")
         with aud_c2: audit_location = st.text_input("Freezer / Location", value=CITY, key="audit_loc_entry")
         with aud_c3: audited_by = st.text_input("Audited by", value="Admin", key="audit_by_entry")
 
@@ -1861,7 +1861,7 @@ elif page == "Stock Removed" and user_role == "admin":
     if rem_mode == "New Entry":
         st.write("Enter details and specify quantities removed per flavour:")
         c1, c2, c3, c4 = st.columns(4)
-        with c1: removal_date = st.date_input("Removal Date", value=date.today(), key="new_rem_date", format="DD-MMM-YY")
+        with c1: removal_date = st.date_input("Removal Date", value=date.today(), key="new_rem_date", format="DD-MM-YYYY")
         with c2: location = st.text_input("Location", value=CITY, key="new_rem_loc")
         with c3: removed_by = st.text_input("Removed By", placeholder="e.g. Staff / Cart Boy", key="new_rem_rby")
         with c4: verified_by = st.text_input("Verified By", value="Admin", key="new_rem_vby")
@@ -1922,7 +1922,7 @@ elif page == "Stock Removed" and user_role == "admin":
             loaded_rem_id = loaded_rem["id"]
 
             c1, c2, c3, c4 = st.columns(4)
-            with c1: e_rem_date = st.date_input("Removal Date", value=pd.to_datetime(loaded_rem["removal_date"]).date() if loaded_rem.get("removal_date") else date.today(), key=f"edit_rem_date_{loaded_rem_id}", format="DD-MMM-YY")
+            with c1: e_rem_date = st.date_input("Removal Date", value=pd.to_datetime(loaded_rem["removal_date"]).date() if loaded_rem.get("removal_date") else date.today(), key=f"edit_rem_date_{loaded_rem_id}", format="DD-MM-YYYY")
             with c2: e_rem_loc = st.text_input("Location", value=str(loaded_rem.get("location", CITY)), key=f"edit_rem_loc_{loaded_rem_id}")
             with c3: e_rem_rby = st.text_input("Removed By", value=str(loaded_rem.get("removed_by") or ""), key=f"edit_rem_rby_{loaded_rem_id}")
             with c4: e_rem_vby = st.text_input("Verified By", value=str(loaded_rem.get("verified_by", "Admin")), key=f"edit_rem_vby_{loaded_rem_id}")
@@ -1971,7 +1971,7 @@ elif page == "Expenses" and user_role == "admin":
             with c1: e_type = st.selectbox("Expense Type", EXPENSE_TYPES, index=0, key="add_e_type")
             with c2: e_cat = st.selectbox("Category", EXPENSE_CATEGORIES, index=0, key="add_e_cat")
             with c3: e_subcat = st.text_input("Sub-Category (Optional)", placeholder="e.g. Dry Ice, Fuel, Repair", key="add_e_subcat")
-            with c4: e_date = st.date_input("Expense Date", value=date.today(), key="add_e_date", format="DD-MMM-YY")
+            with c4: e_date = st.date_input("Expense Date", value=date.today(), key="add_e_date", format="DD-MM-YYYY")
             with c5:
                 e_month = st.selectbox(
                     "Month",
@@ -1998,7 +1998,7 @@ elif page == "Expenses" and user_role == "admin":
             p_date, p_amt, p_mode, p_ref, p_to, p_notes = None, 0.0, "UPI / Bank Transfer", "", "", ""
             if has_direct_pay:
                 p1, p2, p3 = st.columns(3)
-                with p1: p_date = st.date_input("Payment Date", value=e_date, key="add_p_date", format="DD-MMM-YY")
+                with p1: p_date = st.date_input("Payment Date", value=e_date, key="add_p_date", format="DD-MM-YYYY")
                 with p2: p_amt = st.number_input("Amount Paid (₹)", min_value=0.0, value=float(e_amount), step=10.0, key="add_p_amt")
                 with p3: p_mode = st.selectbox("Payment Mode", PAYMENT_MODES, index=0, key="add_p_mode")
                 p4, p5 = st.columns(2)
@@ -2081,7 +2081,7 @@ elif page == "Expenses" and user_role == "admin":
                 with c1: e_edit_type = st.selectbox("Expense Type", EXPENSE_TYPES, index=EXPENSE_TYPES.index(loaded_exp["expense_type"]) if loaded_exp["expense_type"] in EXPENSE_TYPES else 0, key=f"ee_type_{loaded_exp_id}")
                 with c2: e_edit_cat = st.selectbox("Category", EXPENSE_CATEGORIES, index=EXPENSE_CATEGORIES.index(loaded_exp["category"]) if loaded_exp["category"] in EXPENSE_CATEGORIES else 0, key=f"ee_cat_{loaded_exp_id}")
                 with c3: e_edit_subcat = st.text_input("Sub-Category", value=str(loaded_exp.get("sub_category") or ""), key=f"ee_subcat_{loaded_exp_id}")
-                with c4: e_edit_date = st.date_input("Expense Date", value=pd.to_datetime(loaded_exp["expense_date"]).date(), key=f"ee_date_{loaded_exp_id}", format="DD-MMM-YY")
+                with c4: e_edit_date = st.date_input("Expense Date", value=pd.to_datetime(loaded_exp["expense_date"]).date(), key=f"ee_date_{loaded_exp_id}", format="DD-MM-YYYY")
                 with c5:
                     db_month = str(loaded_exp.get("month") or "").strip()
                     month_options = list(calendar.month_name)[1:]
@@ -2158,7 +2158,7 @@ elif page == "Expenses" and user_role == "admin":
                     m1.metric("Bill Total", f"₹{float(target_exp['total_amount']):,.2f}"); m2.metric("Already Paid", f"₹{float(target_exp['total_paid']):,.2f}"); m3.metric("Outstanding Balance", f"₹{curr_due:,.2f}")
 
                     c1, c2, c3 = st.columns(3)
-                    with c1: new_p_date = st.date_input("Payment Date", value=date.today(), key="rec_p_date", format="DD-MMM-YY")
+                    with c1: new_p_date = st.date_input("Payment Date", value=date.today(), key="rec_p_date", format="DD-MM-YYYY")
                     with c2: new_p_amount = st.number_input("Amount to Pay (₹)", min_value=0.0, value=max(0.0, curr_due), step=10.0, key="rec_p_amt")
                     with c3: new_p_mode = st.selectbox("Payment Mode", PAYMENT_MODES, index=0, key="rec_p_mode")
 
@@ -2235,7 +2235,7 @@ elif page == "Expenses" and user_role == "admin":
                 loaded_pay = pay_records[pay_labels.index(st.selectbox("Select Payment to Edit", pay_labels, key="edit_pay_select"))]; loaded_pay_id = loaded_pay["id"]
 
                 c1, c2, c3 = st.columns(3)
-                with c1: ep_date = st.date_input("Payment Date", value=pd.to_datetime(loaded_pay["payment_date"]).date(), key=f"ep_dt_{loaded_pay_id}", format="DD-MMM-YY")
+                with c1: ep_date = st.date_input("Payment Date", value=pd.to_datetime(loaded_pay["payment_date"]).date(), key=f"ep_dt_{loaded_pay_id}", format="DD-MM-YYYY")
                 with c2: ep_amt = st.number_input("Amount Paid (₹)", min_value=0.0, value=float(loaded_pay["amount_paid"]), step=10.0, key=f"ep_amt_{loaded_pay_id}")
                 with c3: ep_mode = st.selectbox("Payment Mode", PAYMENT_MODES, index=PAYMENT_MODES.index(loaded_pay["payment_mode"]) if loaded_pay["payment_mode"] in PAYMENT_MODES else 0, key=f"ep_mode_{loaded_pay_id}")
 
@@ -2282,8 +2282,8 @@ elif page == "Expenses" and user_role == "admin":
             min_exp_d, max_exp_d = min(all_dts), max(all_dts)
 
             rc1, rc2 = st.columns(2)
-            with rc1: rpt_start = st.date_input("From Date", value=max(min_exp_d, max_exp_d - timedelta(days=29)), min_value=min_exp_d, max_value=max_exp_d, key="exp_rpt_start", format="DD-MMM-YY")
-            with rc2: rpt_end = st.date_input("To Date", value=max_exp_d, min_value=min_exp_d, max_value=max_exp_d, key="exp_rpt_end", format="DD-MMM-YY")
+            with rc1: rpt_start = st.date_input("From Date", value=max(min_exp_d, max_exp_d - timedelta(days=29)), min_value=min_exp_d, max_value=max_exp_d, key="exp_rpt_start", format="DD-MM-YYYY")
+            with rc2: rpt_end = st.date_input("To Date", value=max_exp_d, min_value=min_exp_d, max_value=max_exp_d, key="exp_rpt_end", format="DD-MM-YYYY")
             if rpt_start > rpt_end: st.error("'From' date must be before 'To' date."); rpt_start, rpt_end = rpt_end, rpt_start
 
             f_exp = expenses_summary_df[(pd.to_datetime(expenses_summary_df["expense_date"]).dt.date >= rpt_start) & (pd.to_datetime(expenses_summary_df["expense_date"]).dt.date <= rpt_end)] if not expenses_summary_df.empty else pd.DataFrame()
@@ -2347,13 +2347,13 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 with sc4:
                     new_s_status = st.selectbox("Status", STAFF_STATUSES, index=0, key="add_s_status")
                 with sc5:
-                    new_s_doj = st.date_input("Date of Joining", value=date.today(), key="add_s_doj", format="DD-MMM-YY")
+                    new_s_doj = st.date_input("Date of Joining", value=date.today(), key="add_s_doj", format="DD-MM-YYYY")
 
                 sc6, sc_dol, sc7, sc8 = st.columns(4)
                 with sc6:
-                    new_s_dob = st.date_input("Date of Birth", value=date(1995, 1, 1), key="add_s_dob", format="DD-MMM-YY")
+                    new_s_dob = st.date_input("Date of Birth", value=date(1995, 1, 1), key="add_s_dob", format="DD-MM-YYYY")
                 with sc_dol:
-                    new_s_dol = st.date_input("Last Working Day", value=None, key="add_s_dol", format="DD-MMM-YY")
+                    new_s_dol = st.date_input("Last Working Day", value=None, key="add_s_dol", format="DD-MM-YYYY")
                 with sc7:
                     new_s_pan = st.text_input("PAN Number", placeholder="e.g. ABCDE1234F", key="add_s_pan")
                 with sc8:
@@ -2522,15 +2522,15 @@ elif page == "Staff & Payroll" and user_role == "admin":
                         e_status = st.selectbox("Status", STAFF_STATUSES, index=stat_idx, key=f"e_status_{s_id}")
                     with ec5:
                         doj_val = pd.to_datetime(s_edit["date_of_joining"]).date() if pd.notna(s_edit["date_of_joining"]) else date.today()
-                        e_doj = st.date_input("Date of Joining", value=doj_val, key=f"e_doj_{s_id}", format="DD-MMM-YY")
+                        e_doj = st.date_input("Date of Joining", value=doj_val, key=f"e_doj_{s_id}", format="DD-MM-YYYY")
 
                     ec6, ec_dol, ec7, ec8 = st.columns(4)
                     with ec6:
                         dob_val = pd.to_datetime(s_edit["date_of_birth"]).date() if pd.notna(s_edit["date_of_birth"]) else date(1995, 1, 1)
-                        e_dob = st.date_input("Date of Birth", value=dob_val, key=f"e_dob_{s_id}", format="DD-MMM-YY")
+                        e_dob = st.date_input("Date of Birth", value=dob_val, key=f"e_dob_{s_id}", format="DD-MM-YYYY")
                     with ec_dol:
                         dol_val = pd.to_datetime(s_edit["date_of_leaving"]).date() if pd.notna(s_edit["date_of_leaving"]) else None
-                        e_dol = st.date_input("Last Working Day", value=dol_val, key=f"e_dol_{s_id}", format="DD-MMM-YY")
+                        e_dol = st.date_input("Last Working Day", value=dol_val, key=f"e_dol_{s_id}", format="DD-MM-YYYY")
                     with ec7:
                         e_pan = st.text_input("PAN Number", value=str(s_edit.get("pan_number") or ""), key=f"e_pan_{s_id}")
                     with ec8:
@@ -2606,7 +2606,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                     with ac1:
                         att_staff_name = st.selectbox("Staff Member *", st_names, key="leave_sname")
                     with ac2:
-                        att_date = st.date_input("Leave Date *", value=date.today(), key="leave_dt", format="DD-MMM-YY")
+                        att_date = st.date_input("Leave Date *", value=date.today(), key="leave_dt", format="DD-MM-YYYY")
 
                     ac3, ac4 = st.columns(2)
                     with ac3:
@@ -2681,7 +2681,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
 
                 c1, c2 = st.columns(2)
                 with c1:
-                    e_att_date = st.date_input("Leave Date", value=pd.to_datetime(loaded_att["attendance_date"]).date(), key=f"e_att_dt_{loaded_att_id}", format="DD-MMM-YY")
+                    e_att_date = st.date_input("Leave Date", value=pd.to_datetime(loaded_att["attendance_date"]).date(), key=f"e_att_dt_{loaded_att_id}", format="DD-MM-YYYY")
                 with c2:
                     e_att_stat = st.selectbox("Status", LEAVE_STATUS_OPTIONS, index=LEAVE_STATUS_OPTIONS.index(loaded_att["status"]) if loaded_att["status"] in LEAVE_STATUS_OPTIONS else 0, key=f"e_att_st_{loaded_att_id}")
 
@@ -2735,7 +2735,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
             with st.form("new_comp_plan_form"):
                 cp1, cp2 = st.columns(2)
                 with cp1:
-                    plan_eff_from = st.date_input("Effective From Date", value=date.today(), format="DD-MMM-YY")
+                    plan_eff_from = st.date_input("Effective From Date", value=date.today(), format="DD-MM-YYYY")
                 with cp2:
                     plan_salary = st.number_input("Monthly Fixed Salary (₹)", min_value=0.0, value=float(_num(target_s_row['monthly_fixed_salary']) or 18000.0), step=500.0)
 
@@ -3173,8 +3173,8 @@ elif page == "Dashboard" and user_role == "admin":
 
         with st.form("date_range_form"):
             rc1, rc2, rc3 = st.columns([2, 2, 1])
-            with rc1: pending_start = st.date_input("From", value=st.session_state["applied_start"], min_value=min_d, max_value=max_d, format="DD-MMM-YY")
-            with rc2: pending_end = st.date_input("To", value=st.session_state["applied_end"], min_value=min_d, max_value=max_d, format="DD-MMM-YY")
+            with rc1: pending_start = st.date_input("From", value=st.session_state["applied_start"], min_value=min_d, max_value=max_d, format="DD-MM-YYYY")
+            with rc2: pending_end = st.date_input("To", value=st.session_state["applied_end"], min_value=min_d, max_value=max_d, format="DD-MM-YYYY")
             with rc3: 
                 st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
                 apply_clicked = st.form_submit_button("Apply", type="primary", use_container_width=True)
