@@ -1426,12 +1426,9 @@ elif page == "Live Cart Tracking" and user_role == "admin":
     map_query = """
         WITH today_transactions AS (
             SELECT
-                t.id,
                 t.txn_lat AS lat,
                 t.txn_lng AS lon,
-                s.cart_name,
-                t.total_amount,
-                t.created_at
+                s.cart_name
             FROM live_cart_transactions t
             JOIN live_cart_shifts s
                 ON t.shift_id = s.id
@@ -1439,30 +1436,21 @@ elif page == "Live Cart Tracking" and user_role == "admin":
               AND t.txn_lat IS NOT NULL
               AND t.txn_lng IS NOT NULL
         ),
-
         today_shifts AS (
             SELECT
-                s.id,
-                s.cart_name,
-                s.staff_name,
                 s.login_lat AS lat,
-                s.login_lng AS lon
+                s.login_lng AS lon,
+                s.cart_name
             FROM live_cart_shifts s
-            WHERE s.created_at >= CURRENT_DATE
+            WHERE s.shift_date = CURRENT_DATE
               AND s.login_lat IS NOT NULL
               AND s.login_lng IS NOT NULL
         ),
-
-        -- Only add login locations for carts which do not already
-        -- have a GPS-tagged sale today.
         login_locations AS (
             SELECT
-                'login_' || s.id::text AS id,
                 s.lat,
                 s.lon,
-                s.cart_name,
-                0::numeric AS total_amount,
-                NULL::timestamptz AS created_at
+                s.cart_name
             FROM today_shifts s
             WHERE NOT EXISTS (
                 SELECT 1
@@ -1470,25 +1458,10 @@ elif page == "Live Cart Tracking" and user_role == "admin":
                 WHERE t.cart_name = s.cart_name
             )
         )
-
-        SELECT
-            id,
-            lat,
-            lon,
-            cart_name,
-            total_amount,
-            created_at
+        SELECT lat, lon, cart_name
         FROM today_transactions
-
         UNION ALL
-
-        SELECT
-            id,
-            lat,
-            lon,
-            cart_name,
-            total_amount,
-            created_at
+        SELECT lat, lon, cart_name
         FROM login_locations;
     """
 
@@ -1537,7 +1510,7 @@ elif page == "Live Cart Tracking" and user_role == "admin":
             ON s.id = t.shift_id
             AND t.created_at >= CURRENT_DATE
 
-        WHERE s.created_at >= CURRENT_DATE
+        WHERE s.shift_date = CURRENT_DATE
 
         GROUP BY
             s.id,
@@ -1573,7 +1546,7 @@ elif page == "Live Cart Tracking" and user_role == "admin":
     active_count_df = db_conn.query("""
         SELECT COUNT(*) AS active_carts
         FROM live_cart_shifts
-        WHERE created_at >= CURRENT_DATE
+        WHERE shift_date = CURRENT_DATE
           AND status = 'Open';
     """, ttl="0s")
 
