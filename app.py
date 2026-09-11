@@ -1180,6 +1180,12 @@ if user_role == "entry":
         if st.button("🚪 Log out", type="secondary", use_container_width=True):
             st.session_state["authenticated"] = False; st.session_state["user_role"] = None; st.rerun()
 else:
+    # Apply navigation requested by a button on another page BEFORE the
+    # sidebar radio is created. Streamlit does not allow changing the
+    # session-state value of an already-instantiated widget.
+    if "_pending_page_nav" in st.session_state:
+        st.session_state["page_nav"] = st.session_state.pop("_pending_page_nav")
+
     with st.sidebar:
         try: st.image("assets/logo.png", use_container_width=True)
         except Exception: st.markdown("## 🍦 Kulfi Ops")
@@ -1189,14 +1195,6 @@ else:
         if st.button("Log out", use_container_width=True):
             st.session_state["authenticated"] = False; st.session_state["user_role"] = None; st.rerun()
     st.title(f"🍦 Kulfi Ops — {page}")
-
-# Apply navigation requested by an action on another page BEFORE any
-# widget using these session-state keys is created on this rerun.
-if "_pending_page_nav" in st.session_state:
-    st.session_state["page_nav"] = st.session_state.pop("_pending_page_nav")
-
-if page == "Purchase Orders" and "_pending_po_screen_mode" in st.session_state:
-    st.session_state["po_screen_mode"] = st.session_state.pop("_pending_po_screen_mode")
 
 # ======================================================================
 # PAGE ROUTING
@@ -1789,6 +1787,10 @@ elif page == "Live Cart Tracking" and user_role == "admin":
 elif page == "Purchase Orders" and user_role == "admin":
     st.subheader("Purchase Order Estimator & Order Management")
     st.caption("Plan order quantities, apply overall discounts, calculate net payable cost, and manage orders.")
+
+    # Apply pending PO mode before the radio widget is instantiated.
+    if "_pending_po_screen_mode" in st.session_state:
+        st.session_state["po_screen_mode"] = st.session_state.pop("_pending_po_screen_mode")
 
     po_mode = st.radio("Mode", ["Create New Order", "Edit / Track Existing Orders"], horizontal=True, key="po_screen_mode")
 
