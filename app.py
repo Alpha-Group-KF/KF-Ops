@@ -1836,11 +1836,14 @@ elif page == "Purchase Orders" and user_role == "admin":
             st.markdown("#### WhatsApp Order Message")
             whatsapp_number = st.text_input("WhatsApp Number", placeholder="e.g. 9876543210 or +91 9876543210", key="po_whatsapp_number")
             whatsapp_rows = [(str(row["Flavour"]), int(row["Order Quantity"])) for _, row in po_editor_df.iterrows() if int(row["Order Quantity"]) > 0]
-            wa_lines = ["KULFI ORDER", "", "Flavour                  Qty", "----------------------------"]
+            order_date_text = order_date.strftime("%d-%b-%Y") if hasattr(order_date, "strftime") else str(order_date)
+            wa_lines = [f"KULFI ORDER - {order_date_text}", "", "Flavour                    Qty", "--------------------------------"]
             for flavour, qty in whatsapp_rows:
-                wa_lines.append(f"{flavour:<24} {qty:>3}")
-            wa_lines.extend(["----------------------------", f"Overall Units             {total_units}"])
-            whatsapp_message = "\n".join(wa_lines)
+                wa_lines.append(f"{flavour:<26}{qty:>4}")
+            wa_lines.extend(["--------------------------------", f"Overall Units{total_units:>20}"])
+            # WhatsApp's normal font is proportional, so wrap the table in a
+            # monospace code block to preserve column alignment.
+            whatsapp_message = "```\n" + "\n".join(wa_lines) + "\n```"
             if total_units > 0:
                 wa_digits = re.sub(r"\D", "", whatsapp_number or "")
                 if len(wa_digits) == 10: wa_digits = "91" + wa_digits
