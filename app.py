@@ -348,8 +348,8 @@ def show_whatsapp_order_confirmation():
                 st.session_state.pop("wa_confirmation_payload", None)
                 st.session_state.pop("po_prefill_quantities", None)
                 st.session_state["po_prefill_active"] = False
-                st.session_state["page_nav"] = "Purchase Orders"
-                st.session_state["po_screen_mode"] = "Edit / Track Existing Orders"
+                st.session_state["_pending_page_nav"] = "Purchase Orders"
+                st.session_state["_pending_po_screen_mode"] = "Edit / Track Existing Orders"
                 st.session_state["po_success_message"] = f"Purchase Order #{poid} placed successfully!"
                 st.rerun()
             except Exception as e: st.error(f"Could not place purchase order: {e}")
@@ -368,8 +368,8 @@ def show_whatsapp_order_confirmation():
                 st.session_state["new_po_status"] = "Placed"
                 st.session_state["new_po_discount"] = 0.0
                 st.session_state["new_po_notes"] = ""
-                st.session_state["page_nav"] = "Purchase Orders"
-                st.session_state["po_screen_mode"] = "Create New Order"
+                st.session_state["_pending_page_nav"] = "Purchase Orders"
+                st.session_state["_pending_po_screen_mode"] = "Create New Order"
                 st.session_state["po_success_message"] = f"Purchase Order #{poid} saved as Draft. A blank Create New Order screen is ready."
                 st.rerun()
             except Exception as e: st.error(f"Could not save draft purchase order: {e}")
@@ -1189,6 +1189,14 @@ else:
         if st.button("Log out", use_container_width=True):
             st.session_state["authenticated"] = False; st.session_state["user_role"] = None; st.rerun()
     st.title(f"🍦 Kulfi Ops — {page}")
+
+# Apply navigation requested by an action on another page BEFORE any
+# widget using these session-state keys is created on this rerun.
+if "_pending_page_nav" in st.session_state:
+    st.session_state["page_nav"] = st.session_state.pop("_pending_page_nav")
+
+if page == "Purchase Orders" and "_pending_po_screen_mode" in st.session_state:
+    st.session_state["po_screen_mode"] = st.session_state.pop("_pending_po_screen_mode")
 
 # ======================================================================
 # PAGE ROUTING
@@ -2236,8 +2244,8 @@ elif page == "Freezer Analysis" and user_role == "admin":
         st.session_state["new_po_discount"] = 2.0
         st.session_state["new_po_notes"] = ""
         st.session_state.pop("new_po_editor", None)
-        st.session_state["page_nav"] = "Purchase Orders"
-        st.session_state["po_screen_mode"] = "Create New Order"
+        st.session_state["_pending_page_nav"] = "Purchase Orders"
+        st.session_state["_pending_po_screen_mode"] = "Create New Order"
         st.rerun()
 
     st.markdown("---"); st.markdown("### 4. Detailed Stock Movement Logs")
