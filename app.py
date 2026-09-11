@@ -22,6 +22,8 @@ import re
 import calendar
 import os
 import io
+from urllib.parse import quote
+from urllib.parse import quote
 from datetime import date, datetime, timedelta
 from sqlalchemy import text
 
@@ -263,7 +265,7 @@ CARTS = ["HOSUR CART 01", "HOSUR CART 02", "HOSUR CART 03"]
 CITY = "HOSUR"
 
 PAYMENT_STATUSES = ["Pending", "Partial", "Complete"]
-PO_STATUSES = ["Placed", "Pending", "In Transit", "Completed", "Cancelled"]
+PO_STATUSES = ["Draft", "Placed", "Pending", "In Transit", "Completed", "Cancelled"]
 
 EXPENSE_TYPES = ["OPEX", "COGS", "CAPEX"]
 EXPENSE_CATEGORIES = [
@@ -318,6 +320,60 @@ try:
     db_conn = st.connection("postgresql", type="sql")
 except Exception:
     db_conn = None
+
+@st.dialog("WhatsApp Confirmation")
+def show_whatsapp_order_confirmation():
+    payload = st.session_state.get("wa_confirmation_payload")
+    if not payload:
+        st.error("Order details are no longer available. Please start again from Freezer Analysis.")
+        return
+    st.success("WhatsApp message has been opened. Please confirm that you sent the order message.")
+    st.write(f"**Overall Units:** {payload['total_units']}")
+    st.write("Would you like to place the order?")
+    c1, c2 = st.columns(2)
+    def save_po(status):
+        notes = payload["notes"]
+        if payload["discount_pct"] > 0: notes = f"[Discount: {payload['discount_pct']:.2f}% | Final: ₹{payload['final_amount']:,.2f}] {notes}".strip()
+        with db_conn.session as s:
+            res = s.execute(text("INSERT INTO purchase_orders (order_date, expected_date, location, order_status, notes) VALUES (:od, :ed, :loc, :stat, :notes) RETURNING id;"), {"od": payload["order_date"], "ed": payload["expected_date"], "loc": payload["location"], "stat": status, "notes": notes})
+            poid = res.scalar()
+            for code, qty in payload["items"]:
+                s.execute(text("INSERT INTO purchase_order_items (order_id, flavor_code, ordered_units) VALUES (:poid, :code, :qty);"), {"poid": poid, "code": code, "qty": qty})
+            s.commit()
+        return poid
+    with c1:
+        if st.button("Yes — Place Order", type="primary", use_container_width=True, key="wa_place_order"):
+            try:
+                poid = save_po("Placed")
+                st.session_state.pop("wa_confirmation_payload", None)
+                st.session_state.pop("po_prefill_quantities", None)
+                st.session_state["po_prefill_active"] = False
+                st.session_state["page_nav"] = "Purchase Orders"
+                st.session_state["po_screen_mode"] = "Edit / Track Existing Orders"
+                st.session_state["po_success_message"] = f"Purchase Order #{poid} placed successfully!"
+                st.rerun()
+            except Exception as e: st.error(f"Could not place purchase order: {e}")
+    with c2:
+        if st.button("No — Save as Draft", use_container_width=True, key="wa_save_draft"):
+            try:
+                poid = save_po("Draft")
+                st.session_state.pop("wa_confirmation_payload", None)
+                st.session_state.pop("po_prefill_quantities", None)
+                st.session_state.pop("new_po_editor", None)
+                st.session_state.pop("po_whatsapp_number", None)
+                st.session_state["po_prefill_active"] = False
+                st.session_state["new_po_order_date"] = date.today()
+                st.session_state["new_po_exp_date"] = date.today() + timedelta(days=2)
+                st.session_state["new_po_loc"] = CITY
+                st.session_state["new_po_status"] = "Placed"
+                st.session_state["new_po_discount"] = 0.0
+                st.session_state["new_po_notes"] = ""
+                st.session_state["page_nav"] = "Purchase Orders"
+                st.session_state["po_screen_mode"] = "Create New Order"
+                st.session_state["po_success_message"] = f"Purchase Order #{poid} saved as Draft. A blank Create New Order screen is ready."
+                st.rerun()
+            except Exception as e: st.error(f"Could not save draft purchase order: {e}")
+
 
 @st.dialog("Notification")
 def show_success_modal(message):
@@ -1128,7 +1184,7 @@ else:
         try: st.image("assets/logo.png", use_container_width=True)
         except Exception: st.markdown("## 🍦 Kulfi Ops")
         nav_options = ["Dashboard", "Daily Entry", "Live Cart Tracking", "Purchase Orders", "Freezer Stock", "Freezer Analysis", "Stock Removed", "Expenses", "Staff & Payroll", "Payslip Generator"]
-        page = st.radio("Go to", nav_options, label_visibility="collapsed")
+        page = st.radio("Go to", nav_options, label_visibility="collapsed", key="page_nav")
         st.markdown("---")
         if st.button("Log out", use_container_width=True):
             st.session_state["authenticated"] = False; st.session_state["user_role"] = None; st.rerun()
@@ -1728,6 +1784,9 @@ elif page == "Purchase Orders" and user_role == "admin":
 
     po_mode = st.radio("Mode", ["Create New Order", "Edit / Track Existing Orders"], horizontal=True, key="po_screen_mode")
 
+    if st.session_state.get("po_success_message"):
+        st.success(st.session_state.pop("po_success_message"))
+
     if po_mode == "Create New Order":
         st.write("Enter details and specify quantities per flavor to calculate the estimated purchase cost.")
 
@@ -1737,13 +1796,14 @@ elif page == "Purchase Orders" and user_role == "admin":
         with c3: location = st.text_input("Delivery Location", value=CITY, key="new_po_loc")
 
         c4, c5 = st.columns(2)
-        with c4: order_status = st.selectbox("Order Status", PO_STATUSES, index=0, key="new_po_status")
+        with c4: order_status = st.selectbox("Order Status", PO_STATUSES, index=PO_STATUSES.index("Placed"), key="new_po_status")
         with c5: discount_pct = st.number_input("Overall Discount (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.5, format="%.2f", key="new_po_discount")
 
         grid_rows = []
+        prefill_qty = st.session_state.get("po_prefill_quantities", {}) if st.session_state.get("po_prefill_active", False) else {}
         for code in FLAVOR_CODES:
             f_info = FLAVOR_MAP[code]
-            grid_rows.append({"Flavour": f_info["name"], "Code": code, "Unit Cost (₹)": float(f_info["cost_price"]), "Order Quantity": 0})
+            grid_rows.append({"Flavour": f_info["name"], "Code": code, "Unit Cost (₹)": float(f_info["cost_price"]), "Order Quantity": int(prefill_qty.get(code, 0))})
 
         st.write("Enter order quantities per flavour:")
         po_editor_df = st.data_editor(pd.DataFrame(grid_rows), column_config={"Flavour": st.column_config.TextColumn(disabled=True), "Code": st.column_config.TextColumn(disabled=True), "Unit Cost (₹)": st.column_config.NumberColumn(format="₹%,.2f", disabled=True), "Order Quantity": st.column_config.NumberColumn(min_value=0, step=10, format="%d")}, hide_index=True, use_container_width=True, key="new_po_editor")
@@ -1762,21 +1822,46 @@ elif page == "Purchase Orders" and user_role == "admin":
 
         po_notes = st.text_input("Order Notes / Supplier Remarks (Optional)", key="new_po_notes", placeholder="e.g. Regular weekly replenishment order...")
 
-        if st.button("🚀 Submit Purchase Order", type="primary", use_container_width=True):
-            if total_units <= 0: st.error("Please enter a quantity greater than 0 for at least one flavour before placing the order.")
+        if st.session_state.get("po_prefill_active", False):
+            st.markdown("#### WhatsApp Order Message")
+            whatsapp_number = st.text_input("WhatsApp Number", placeholder="e.g. 9876543210 or +91 9876543210", key="po_whatsapp_number")
+            whatsapp_rows = [(str(row["Flavour"]), int(row["Order Quantity"])) for _, row in po_editor_df.iterrows() if int(row["Order Quantity"]) > 0]
+            wa_lines = ["KULFI ORDER", "", "Flavour                  Qty", "----------------------------"]
+            for flavour, qty in whatsapp_rows:
+                wa_lines.append(f"{flavour:<24} {qty:>3}")
+            wa_lines.extend(["----------------------------", f"Overall Units             {total_units}"])
+            whatsapp_message = "\n".join(wa_lines)
+            if total_units > 0:
+                wa_digits = re.sub(r"\D", "", whatsapp_number or "")
+                if len(wa_digits) == 10: wa_digits = "91" + wa_digits
+                st.text(whatsapp_message)
+                if len(wa_digits) >= 10:
+                    st.link_button("📲 Send Order to WhatsApp", f"https://wa.me/{wa_digits}?text={quote(whatsapp_message)}", use_container_width=True)
+                    st.caption("WhatsApp will open with the order message. After sending it, click the confirmation button below.")
+                    if st.button("✅ WhatsApp sent — Continue", use_container_width=True, key="wa_sent_continue"):
+                        st.session_state["wa_confirmation_payload"] = {"order_date": order_date, "expected_date": expected_date, "location": location, "discount_pct": float(discount_pct), "notes": po_notes.strip(), "total_units": total_units, "final_amount": final_amount, "items": [(str(row["Code"]), int(row["Order Quantity"])) for _, row in po_editor_df.iterrows() if int(row["Order Quantity"]) > 0]}
+                        show_whatsapp_order_confirmation()
+                else:
+                    st.caption("Enter a valid WhatsApp number to enable the WhatsApp button.")
             else:
-                try:
-                    combined_notes = po_notes.strip()
-                    if discount_pct > 0: combined_notes = f"[Discount: {discount_pct:.2f}% | Final: ₹{final_amount:,.2f}] {combined_notes}".strip()
-                    with db_conn.session as s:
-                        res = s.execute(text("INSERT INTO purchase_orders (order_date, expected_date, location, order_status, notes) VALUES (:od, :ed, :loc, :stat, :notes) RETURNING id;"), {"od": order_date, "ed": expected_date, "loc": location, "stat": order_status, "notes": combined_notes})
-                        new_poid = res.scalar()
-                        for _, row in po_editor_df.iterrows():
-                            qty = int(row["Order Quantity"])
-                            if qty > 0: s.execute(text("INSERT INTO purchase_order_items (order_id, flavor_code, ordered_units) VALUES (:poid, :code, :qty);"), {"poid": new_poid, "code": row["Code"], "qty": qty})
-                        s.commit()
-                    show_success_modal(f"Purchase Order #{new_poid} created successfully! Total: {total_units} units | Final Amount: ₹{final_amount:,.2f} ({discount_pct:.1f}% off).")
-                except Exception as e: st.error(f"Could not save purchase order to database: {e}")
+                st.info("There are no suggested/entered quantities to send. Please enter at least one quantity.")
+        else:
+            if st.button("🚀 Submit Purchase Order", type="primary", use_container_width=True):
+                if total_units <= 0: st.error("Please enter a quantity greater than 0 for at least one flavour before placing the order.")
+                else:
+                    try:
+                        combined_notes = po_notes.strip()
+                        if discount_pct > 0: combined_notes = f"[Discount: {discount_pct:.2f}% | Final: ₹{final_amount:,.2f}] {combined_notes}".strip()
+                        with db_conn.session as s:
+                            res = s.execute(text("INSERT INTO purchase_orders (order_date, expected_date, location, order_status, notes) VALUES (:od, :ed, :loc, :stat, :notes) RETURNING id;"), {"od": order_date, "ed": expected_date, "loc": location, "stat": order_status, "notes": combined_notes})
+                            new_poid = res.scalar()
+                            for _, row in po_editor_df.iterrows():
+                                qty = int(row["Order Quantity"])
+                                if qty > 0: s.execute(text("INSERT INTO purchase_order_items (order_id, flavor_code, ordered_units) VALUES (:poid, :code, :qty);"), {"poid": new_poid, "code": row["Code"], "qty": qty})
+                            s.commit()
+                        show_success_modal(f"Purchase Order #{new_poid} created successfully! Total: {total_units} units | Final Amount: ₹{final_amount:,.2f} ({discount_pct:.1f}% off).")
+                    except Exception as e: st.error(f"Could not save purchase order to database: {e}")
+
 
     elif po_mode == "Edit / Track Existing Orders":
         po_query_df = db_conn.query("SELECT p.id, p.order_date, p.expected_date, p.location, p.order_status, p.notes, json_agg(json_build_object('code', pi.flavor_code, 'qty', pi.ordered_units)) AS items FROM purchase_orders p LEFT JOIN purchase_order_items pi ON p.id = pi.order_id GROUP BY p.id ORDER BY p.order_date DESC, p.id DESC;", ttl="0s")
@@ -2140,6 +2225,20 @@ elif page == "Freezer Analysis" and user_role == "admin":
     reorder_df = pd.DataFrame(reorder_rows)
     reorder_df = pd.concat([reorder_df, pd.DataFrame([{"Flavour": "🔥 OVERALL TOTAL", "Physical-Base Stock": tot_calc_active, "Daily Pace": f"{tot_rate:.1f} /d", "Runway": f"{(tot_calc_active / tot_rate):.0f} days" if tot_rate > 0 else "—", "Target Buffer": int(round(tot_rate * (buffer_days + cover_days))), "Suggested Order": tot_suggested_units, "Urgency": "🔴 Order Now" if overall_order_date and overall_order_date <= today_fa else "🟢 Stable", "Rationale": f"Est Cost: ₹{tot_order_cost:,.0f}"}])], ignore_index=True)
     st.dataframe(reorder_df, hide_index=True, use_container_width=True)
+
+    if st.button("📝 Create Order", type="primary", use_container_width=True, key="fa_create_order"):
+        st.session_state["po_prefill_quantities"] = {code: int(reorder_rows[i]["Suggested Order"]) for i, code in enumerate(FLAVOR_CODES)}
+        st.session_state["po_prefill_active"] = True
+        st.session_state["new_po_order_date"] = date.today()
+        st.session_state["new_po_exp_date"] = date.today() + timedelta(days=2)
+        st.session_state["new_po_loc"] = "HOSUR"
+        st.session_state["new_po_status"] = "Draft"
+        st.session_state["new_po_discount"] = 2.0
+        st.session_state["new_po_notes"] = ""
+        st.session_state.pop("new_po_editor", None)
+        st.session_state["page_nav"] = "Purchase Orders"
+        st.session_state["po_screen_mode"] = "Create New Order"
+        st.rerun()
 
     st.markdown("---"); st.markdown("### 4. Detailed Stock Movement Logs")
     m_tab1, m_tab2, m_tab3, m_tab4 = st.tabs(["📋 Purchase Orders", "📦 Received Deliveries", "🔍 Physical Stock Audits", "🗑️ Stock Removed"])
