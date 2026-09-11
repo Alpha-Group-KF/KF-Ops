@@ -1394,72 +1394,360 @@ elif page == "Payslip Generator" and user_role == "admin":
 # ======================================================================
 elif page == "Live Cart Tracking" and user_role == "admin":
     st.subheader("Live Cart Operations & Sales Map")
-    st.caption("Monitor real-time sales and geographical hotspots pouring in from the mobile cart apps.")
+    st.caption("Monitor live sales, cart activity and geographical hotspots from the mobile cart apps.")
 
+    # Manual refresh only — no automatic refresh
     if st.button("🔄 Manual Refresh Live Data"):
         st.rerun()
-    
+
     st.markdown("---")
 
-    # --- MAP VISUALIZATION ---
+    # ------------------------------------------------------------------
+    # TODAY'S LIVE DATA
+    #
+    # This follows the mobile App.js logic:
+    #   - Today's shifts: created_at >= start of today
+    #   - Today's transactions: created_at >= start of today
+    #   - Active shift: status = 'Open'
+    #
+    # PostgreSQL CURRENT_DATE is used here so the filtering is performed
+    # by the database consistently.
+    # ------------------------------------------------------------------
+
+    # ------------------------------------------------------------------
+    # LIVE SALES MAP
+    #
+    # 1. Show every GPS-tagged transaction made today.
+    # 2. Also show cart login location when a cart has logged in but
+    #    has not yet generated a GPS-tagged sale.
+    # ------------------------------------------------------------------
     st.markdown("#### 📍 Live Sales Map (Today)")
+
     map_query = """
-        SELECT t.txn_lat AS lat, t.txn_lng AS lon, s.cart_name, t.total_amount
-        FROM live_cart_transactions t
-        JOIN live_cart_shifts s ON t.shift_id = s.id
-        WHERE s.shift_date = CURRENT_DATE 
-        AND t.txn_lat IS NOT NULL 
-        AND t.txn_lng IS NOT NULL;
+        WITH today_transactions AS (
+            SELECT
+                t.id,
+                t.txn_lat AS lat,
+                t.txn_lng AS lon,
+                s.cart_name,
+                t.total_amount,
+                t.created_at
+            FROM live_cart_transactions t
+            JOIN live_cart_shifts s
+                ON t.shift_id = s.id
+            WHERE t.created_at >= CURRENT_DATE
+              AND t.txn_lat IS NOT NULL
+              AND t.txn_lng IS NOT NULL
+        ),
+
+        today_shifts AS (
+            SELECT
+                s.id,
+                s.cart_name,
+                s.staff_name,
+                s.login_lat AS lat,
+                s.login_lng AS lon
+            FROM live_cart_shifts s
+            WHERE s.created_at >= CURRENT_DATE
+              AND s.login_lat IS NOT NULL
+              AND s.login_lng IS NOT NULL
+        ),
+
+        -- Only add login locations for carts which do not already
+        -- have a GPS-tagged sale today.
+        login_locations AS (
+            SELECT
+                'login_' || s.id::text AS id,
+                s.lat,
+                s.lon,
+                s.cart_name,
+                0::numeric AS total_amount,
+                NULL::timestamptz AS created_at
+            FROM today_shifts s
+            WHERE NOT EXISTS (
+                SELECT 1
+                FROM today_transactions t
+                WHERE t.cart_name = s.cart_name
+            )
+        )
+
+        SELECT
+            id,
+            lat,
+            lon,
+            cart_name,
+            total_amount,
+            created_at
+        FROM today_transactions
+
+        UNION ALL
+
+        SELECT
+            id,
+            lat,
+            lon,
+            cart_name,
+            total_amount,
+            created_at
+        FROM login_locations;
     """
+
     map_df = db_conn.query(map_query, ttl="0s")
-    
+
     if not map_df.empty:
-        st.map(map_df, size=40, color="#E8542A")
+        # Streamlit map requires lat/lon columns.
+        st.map(
+            map_df,
+            size=40,
+            color="#E8542A"
+        )
     else:
-        st.info("No GPS-tagged transactions recorded yet today.")
+        st.info("No GPS-tagged live cart activity recorded yet today.")
 
     st.markdown("---")
-    st.markdown("#### 🛒 Active Shifts Breakdown")
 
-    # --- SHIFTS BREAKDOWN ---
+    # ------------------------------------------------------------------
+    # TODAY'S SHIFT BREAKDOWN
+    #
+    # IMPORTANT:
+    # We intentionally show ALL shifts created today, both Open and
+    # Closed, because this mirrors the mobile app's shift retrieval.
+    #
+    # Active carts are identified separately using status = 'Open'.
+    # ------------------------------------------------------------------
+    st.markdown("#### 🛒 Today's Cart Shifts")
+
     active_shifts_df = db_conn.query("""
-        SELECT s.id, s.cart_name, s.staff_name, s.started_at, s.status,
-               COALESCE(SUM(t.total_amount), 0) AS gross_sales,
-               COALESCE(SUM(t.cash_amount), 0) AS total_cash,
-               COALESCE(SUM(t.phonepe_amount), 0) AS total_phonepe,
-               COUNT(t.id) AS transaction_count
+        SELECT
+            s.id,
+            s.cart_name,
+            s.staff_name,
+            s.started_at,
+            s.closed_at,
+            s.status,
+
+            COALESCE(SUM(t.total_amount), 0) AS gross_sales,
+            COALESCE(SUM(t.cash_amount), 0) AS total_cash,
+            COALESCE(SUM(t.phonepe_amount), 0) AS total_phonepe,
+            COUNT(t.id) AS transaction_count
+
         FROM live_cart_shifts s
-        LEFT JOIN live_cart_transactions t ON s.id = t.shift_id
-        WHERE s.shift_date = CURRENT_DATE
-        GROUP BY s.id ORDER BY s.started_at DESC;
+
+        LEFT JOIN live_cart_transactions t
+            ON s.id = t.shift_id
+            AND t.created_at >= CURRENT_DATE
+
+        WHERE s.created_at >= CURRENT_DATE
+
+        GROUP BY
+            s.id,
+            s.cart_name,
+            s.staff_name,
+            s.started_at,
+            s.closed_at,
+            s.status
+
+        ORDER BY s.started_at DESC;
     """, ttl="0s")
 
-    if active_shifts_df.empty:
-        st.info("No active shifts or live carts operating today yet.")
-    else:
-        for _, shift in active_shifts_df.iterrows():
-            with st.container(border=True):
-                status_color = "🟢" if shift["status"] == "Active" else "🔴"
-                st.markdown(f"#### {status_color} {shift['cart_name']} &nbsp;|&nbsp; Staff: {shift['staff_name']} &nbsp;|&nbsp; Status: {shift['status']}")
-                
-                c1, c2, c3, c4 = st.columns(4)
-                c1.metric("Gross Live Sales", f"₹{float(shift['gross_sales']):,.2f}")
-                c2.metric("Total PhonePe", f"₹{float(shift['total_phonepe']):,.2f}")
-                c3.metric("Total Cash", f"₹{float(shift['total_cash']):,.2f}")
-                c4.metric("Transactions Today", int(shift["transaction_count"]))
+    # ------------------------------------------------------------------
+    # OVERALL LIVE SUMMARY
+    #
+    # This follows the mobile App.js totals:
+    #   total  = sum(total_amount)
+    #   cash   = sum(cash_amount)
+    #   phonepe = sum(phonepe_amount)
+    #   txns   = transaction count
+    #   active carts = shifts with status Open
+    # ------------------------------------------------------------------
+    summary_df = db_conn.query("""
+        SELECT
+            COALESCE(SUM(t.total_amount), 0) AS total_sales,
+            COALESCE(SUM(t.cash_amount), 0) AS total_cash,
+            COALESCE(SUM(t.phonepe_amount), 0) AS total_phonepe,
+            COUNT(t.id) AS transaction_count
+        FROM live_cart_transactions t
+        WHERE t.created_at >= CURRENT_DATE;
+    """, ttl="0s")
 
+    active_count_df = db_conn.query("""
+        SELECT COUNT(*) AS active_carts
+        FROM live_cart_shifts
+        WHERE created_at >= CURRENT_DATE
+          AND status = 'Open';
+    """, ttl="0s")
+
+    total_sales = 0.0
+    total_cash = 0.0
+    total_phonepe = 0.0
+    transaction_count = 0
+    active_carts = 0
+
+    if not summary_df.empty:
+        total_sales = float(summary_df.iloc[0]["total_sales"] or 0)
+        total_cash = float(summary_df.iloc[0]["total_cash"] or 0)
+        total_phonepe = float(summary_df.iloc[0]["total_phonepe"] or 0)
+        transaction_count = int(summary_df.iloc[0]["transaction_count"] or 0)
+
+    if not active_count_df.empty:
+        active_carts = int(active_count_df.iloc[0]["active_carts"] or 0)
+
+    # ------------------------------------------------------------------
+    # LIVE SUMMARY CARDS
+    # ------------------------------------------------------------------
+    m1, m2, m3, m4, m5 = st.columns(5)
+
+    m1.metric(
+        "Live Sales Today",
+        f"₹{total_sales:,.2f}"
+    )
+
+    m2.metric(
+        "Cash",
+        f"₹{total_cash:,.2f}"
+    )
+
+    m3.metric(
+        "PhonePe",
+        f"₹{total_phonepe:,.2f}"
+    )
+
+    m4.metric(
+        "Transactions",
+        transaction_count
+    )
+
+    m5.metric(
+        "Active Carts",
+        active_carts
+    )
+
+    st.markdown("---")
+
+    # ------------------------------------------------------------------
+    # SHIFT DETAILS
+    # ------------------------------------------------------------------
+    if active_shifts_df.empty:
+        st.info("No cart shifts recorded today yet.")
+    else:
+
+        for _, shift in active_shifts_df.iterrows():
+
+            # Mobile App.js uses:
+            #   Open   = active
+            #   Closed = closed
+            is_open = str(shift["status"]).strip().lower() == "open"
+
+            status_color = "🟢" if is_open else "🔴"
+
+            status_text = "OPEN" if is_open else "CLOSED"
+
+            started_at = shift["started_at"]
+
+            if pd.notna(started_at):
+                try:
+                    started_display = pd.to_datetime(
+                        started_at
+                    ).strftime("%I:%M %p")
+                except Exception:
+                    started_display = str(started_at)
+            else:
+                started_display = "—"
+
+            with st.container(border=True):
+
+                st.markdown(
+                    f"#### {status_color} "
+                    f"{shift['cart_name']} "
+                    f"&nbsp;|&nbsp; Staff: {shift['staff_name']} "
+                    f"&nbsp;|&nbsp; Status: {status_text}"
+                )
+
+                st.caption(
+                    f"Shift started: {started_display}"
+                )
+
+                c1, c2, c3, c4 = st.columns(4)
+
+                c1.metric(
+                    "Gross Live Sales",
+                    f"₹{float(shift['gross_sales'] or 0):,.2f}"
+                )
+
+                c2.metric(
+                    "Total PhonePe",
+                    f"₹{float(shift['total_phonepe'] or 0):,.2f}"
+                )
+
+                c3.metric(
+                    "Total Cash",
+                    f"₹{float(shift['total_cash'] or 0):,.2f}"
+                )
+
+                c4.metric(
+                    "Transactions Today",
+                    int(shift["transaction_count"] or 0)
+                )
+
+                # ------------------------------------------------------
+                # FLAVOUR BREAKDOWN
+                #
+                # Same underlying tables as App.js:
+                # live_transaction_items
+                #   -> live_cart_transactions
+                #   -> flavors
+                # ------------------------------------------------------
                 items_df = db_conn.query("""
-                    SELECT f.name AS flavor_name, SUM(i.quantity) as qty_sold, SUM(i.subtotal) as rev
+                    SELECT
+                        f.name AS flavor_name,
+                        SUM(i.quantity) AS qty_sold,
+                        SUM(i.subtotal) AS rev
+
                     FROM live_transaction_items i
-                    JOIN live_cart_transactions t ON i.transaction_id = t.id
-                    JOIN flavors f ON i.flavor_code = f.code
+
+                    JOIN live_cart_transactions t
+                        ON i.transaction_id = t.id
+
+                    JOIN flavors f
+                        ON i.flavor_code = f.code
+
                     WHERE t.shift_id = :sid
-                    GROUP BY f.name ORDER BY qty_sold DESC;
-                """, params={"sid": int(shift["id"])}, ttl="0s")
+                      AND t.created_at >= CURRENT_DATE
+
+                    GROUP BY f.name
+
+                    ORDER BY qty_sold DESC;
+                """,
+                params={
+                    "sid": int(shift["id"])
+                },
+                ttl="0s")
 
                 if not items_df.empty:
-                    with st.expander("View Flavour Breakdown"):
-                        st.dataframe(items_df.rename(columns={"flavor_name": "Flavour", "qty_sold": "Units Sold", "rev": "Revenue (₹)"}), hide_index=True, use_container_width=True)
+
+                    with st.expander(
+                        "View Flavour Breakdown"
+                    ):
+
+                        display_items_df = items_df.rename(
+                            columns={
+                                "flavor_name": "Flavour",
+                                "qty_sold": "Units Sold",
+                                "rev": "Revenue (₹)"
+                            }
+                        ).copy()
+
+                        display_items_df["Revenue (₹)"] = (
+                            display_items_df["Revenue (₹)"]
+                            .astype(float)
+                            .map(lambda x: f"₹{x:,.2f}")
+                        )
+
+                        st.dataframe(
+                            display_items_df,
+                            hide_index=True,
+                            use_container_width=True
+                        )
 
 elif page == "Purchase Orders" and user_role == "admin":
     st.subheader("Purchase Order Estimator & Order Management")
