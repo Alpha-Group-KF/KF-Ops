@@ -1837,12 +1837,20 @@ elif page == "Purchase Orders" and user_role == "admin":
             whatsapp_number = st.text_input("WhatsApp Number", placeholder="e.g. 9876543210 or +91 9876543210", key="po_whatsapp_number")
             whatsapp_rows = [(str(row["Flavour"]), int(row["Order Quantity"])) for _, row in po_editor_df.iterrows() if int(row["Order Quantity"]) > 0]
             order_date_text = order_date.strftime("%d-%b-%Y") if hasattr(order_date, "strftime") else str(order_date)
-            wa_lines = [f"KULFI ORDER - {order_date_text}", "", "Flavour                    Qty", "--------------------------------"]
+            # Build a boxed table. WhatsApp renders code blocks in monospace,
+            # so the borders and Qty column remain visually aligned.
+            flavour_width = max(12, max((len(flavour) for flavour, _ in whatsapp_rows), default=0))
+            qty_width = max(3, len(str(total_units)))
+            border = f"┌{'─' * (flavour_width + 2)}┬{'─' * (qty_width + 2)}┐"
+            divider = f"├{'─' * (flavour_width + 2)}┼{'─' * (qty_width + 2)}┤"
+            bottom = f"└{'─' * (flavour_width + 2)}┴{'─' * (qty_width + 2)}┘"
+            wa_lines = [f"KULFI ORDER - {order_date_text}", "", border,
+                        f"│ {'Flavour':<{flavour_width}} │ {'Qty':>{qty_width}} │", divider]
             for flavour, qty in whatsapp_rows:
-                wa_lines.append(f"{flavour:<26}{qty:>4}")
-            wa_lines.extend(["--------------------------------", f"Overall Units{total_units:>20}"])
-            # WhatsApp's normal font is proportional, so wrap the table in a
-            # monospace code block to preserve column alignment.
+                wa_lines.append(f"│ {flavour:<{flavour_width}} │ {qty:>{qty_width}} │")
+            wa_lines.extend([divider,
+                             f"│ {'Overall Units':<{flavour_width}} │ {total_units:>{qty_width}} │",
+                             bottom])
             whatsapp_message = "```\n" + "\n".join(wa_lines) + "\n```"
             if total_units > 0:
                 wa_digits = re.sub(r"\D", "", whatsapp_number or "")
