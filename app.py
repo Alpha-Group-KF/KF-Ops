@@ -1844,7 +1844,7 @@ elif page == "Purchase Orders" and user_role == "admin":
             border = f"┌{'─' * (flavour_width + 2)}┬{'─' * (qty_width + 2)}┐"
             divider = f"├{'─' * (flavour_width + 2)}┼{'─' * (qty_width + 2)}┤"
             bottom = f"└{'─' * (flavour_width + 2)}┴{'─' * (qty_width + 2)}┘"
-            wa_lines = [f"KULFI ORDER - {order_date_text}", "", border,
+            wa_lines = [f"HOSUR:: KULFI ORDER - {order_date_text}", "", border,
                         f"│ {'Flavour':<{flavour_width}} │ {'Qty':>{qty_width}} │", divider]
             for flavour, qty in whatsapp_rows:
                 wa_lines.append(f"│ {flavour:<{flavour_width}} │ {qty:>{qty_width}} │")
