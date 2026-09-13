@@ -2193,27 +2193,27 @@ elif page == "Freezer Analysis" and user_role == "admin":
 
         phys_base_rows.append({
             "Flavour": f_info["name"],
-            "Last Audit Base": base_audit,
-            "Recv (>= Audit)": rec_onward,
-            "Added (>= Audit+1)": added_onward,
-            "Removed (>= Audit)": removed_onward,
-            "Current Physical-Base Stock": current_physical_base_stock
+            "Per Last Audit": base_audit,
+            "Recv post Audit": rec_onward,
+            "Cart Additions": added_onward,
+            "Removed": removed_onward,
+            "Current Stock": current_physical_base_stock
         })
 
     phys_base_df = pd.DataFrame(phys_base_rows)
     phys_base_df = pd.concat([phys_base_df, pd.DataFrame([{
         "Flavour": "🔥 OVERALL TOTAL",
-        "Last Audit Base": tot_base_b,
-        "Recv (>= Audit)": tot_rec_b,
-        "Added (>= Audit+1)": tot_added_b,
-        "Removed (>= Audit)": tot_rem_b,
-        "Current Physical-Base Stock": tot_curr_b
+        "Per Last Audit": tot_base_b,
+        "Recv post Audit": tot_rec_b,
+        "Cart Additions": tot_added_b,
+        "Removed": tot_rem_b,
+        "Current Stock": tot_curr_b
     }])], ignore_index=True)
     st.dataframe(phys_base_df, hide_index=True, use_container_width=True)
 
     # --- SECTION 3: Suggested Orders & Inventory Runway (Based on Physical-Base Stock) ---
     st.markdown("---")
-    st.markdown("### 3. Suggested Orders & Inventory Runway &nbsp; *(Calculated from Physical-Base Stock Today)*")
+    st.markdown("### 3. Suggested Orders & Inventory Runway &nbsp; *(Calculated post Last Physical Audit)*")
     reorder_rows, trigger_dates, tot_calc_active, tot_rate, tot_suggested_units, tot_order_cost = [], [], 0, 0.0, 0, 0.0
 
     for code in FLAVOR_CODES:
@@ -2233,18 +2233,18 @@ elif page == "Freezer Analysis" and user_role == "admin":
             else: status, suggested_qty, reason = "🟢 OK", 0, f"Stock covers {int(round(days_left))} days"
 
         tot_suggested_units += suggested_qty; tot_order_cost += (suggested_qty * f_info["cost_price"])
-        reorder_rows.append({"Flavour": f_info["name"], "Physical-Base Stock": avail_stock, "Daily Pace": f"{rate:.1f} /d", "Runway": f"{int(round(days_left))} days" if days_left is not None else "—", "Target Buffer": target_req, "Suggested Order": int(suggested_qty), "Urgency": status, "Rationale": reason})
+        reorder_rows.append({"Flavour": f_info["name"], "Per Last Audit": avail_stock, "Daily Pace": f"{rate:.1f} /d", "Runway": f"{int(round(days_left))} days" if days_left is not None else "—", "Target Buffer": target_req, "Suggested Order": int(suggested_qty), "Urgency": status, "Rationale": reason})
 
     r_m1, r_m2, r_m3, r_m4 = st.columns(4)
     overall_order_date = min(trigger_dates) if trigger_dates else None
-    r_m1.metric("Physical-Base Active Stock", f"{tot_calc_active} units"); r_m2.metric("Daily Velocity", f"{tot_rate:.1f} units/day"); r_m3.metric("Total Order Quantity", f"{tot_suggested_units} pcs"); r_m4.metric("Estimated PO Cost", f"₹{tot_order_cost:,.2f}")
+    r_m1.metric("Per Last Audit", f"{tot_calc_active} units"); r_m2.metric("Daily Velocity", f"{tot_rate:.1f} units/day"); r_m3.metric("Total Order Quantity", f"{tot_suggested_units} pcs"); r_m4.metric("Estimated PO Cost", f"₹{tot_order_cost:,.2f}")
 
     if overall_order_date is not None:
-        if overall_order_date <= today_fa: st.error(f"🚨 **Action Required:** At least one flavor has breached the safety buffer based on physical-base stock. Place replenishment order today!")
+        if overall_order_date <= today_fa: st.error(f"🚨 **Action Required:** At least one flavor has breached the safety buffer. Place replenishment order today!")
         else: st.info(f"📅 **Next Order Milestone:** Estimated order placement on **{overall_order_date.strftime('%d-%b-%y')}** ({(overall_order_date - today_fa).days} days remaining).")
 
     reorder_df = pd.DataFrame(reorder_rows)
-    reorder_df = pd.concat([reorder_df, pd.DataFrame([{"Flavour": "🔥 OVERALL TOTAL", "Physical-Base Stock": tot_calc_active, "Daily Pace": f"{tot_rate:.1f} /d", "Runway": f"{(tot_calc_active / tot_rate):.0f} days" if tot_rate > 0 else "—", "Target Buffer": int(round(tot_rate * (buffer_days + cover_days))), "Suggested Order": tot_suggested_units, "Urgency": "🔴 Order Now" if overall_order_date and overall_order_date <= today_fa else "🟢 Stable", "Rationale": f"Est Cost: ₹{tot_order_cost:,.0f}"}])], ignore_index=True)
+    reorder_df = pd.concat([reorder_df, pd.DataFrame([{"Flavour": "🔥 OVERALL TOTAL", "Per Last Audit": tot_calc_active, "Daily Pace": f"{tot_rate:.1f} /d", "Runway": f"{(tot_calc_active / tot_rate):.0f} days" if tot_rate > 0 else "—", "Target Buffer": int(round(tot_rate * (buffer_days + cover_days))), "Suggested Order": tot_suggested_units, "Urgency": "🔴 Order Now" if overall_order_date and overall_order_date <= today_fa else "🟢 Stable", "Rationale": f"Est Cost: ₹{tot_order_cost:,.0f}"}])], ignore_index=True)
     st.dataframe(reorder_df, hide_index=True, use_container_width=True)
 
     if st.button("📝 Create Order", type="primary", use_container_width=True, key="fa_create_order"):
