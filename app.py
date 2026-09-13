@@ -2233,11 +2233,11 @@ elif page == "Freezer Analysis" and user_role == "admin":
             else: status, suggested_qty, reason = "🟢 OK", 0, f"Stock covers {int(round(days_left))} days"
 
         tot_suggested_units += suggested_qty; tot_order_cost += (suggested_qty * f_info["cost_price"])
-        reorder_rows.append({"Flavour": f_info["name"], "Per Last Audit": avail_stock, "Daily Pace": f"{rate:.1f} /d", "Runway": f"{int(round(days_left))} days" if days_left is not None else "—", "Target Buffer": target_req, "Suggested Order": int(suggested_qty), "Urgency": status, "Rationale": reason})
+        reorder_rows.append({"Flavour": f_info["name"], "Stock Available": avail_stock, "Daily Pace": f"{rate:.1f} /d", "Runway": f"{int(round(days_left))} days" if days_left is not None else "—", "Target Buffer": target_req, "Suggested Order": int(suggested_qty), "Urgency": status, "Rationale": reason})
 
     r_m1, r_m2, r_m3, r_m4 = st.columns(4)
     overall_order_date = min(trigger_dates) if trigger_dates else None
-    r_m1.metric("Per Last Audit", f"{tot_calc_active} units"); r_m2.metric("Daily Velocity", f"{tot_rate:.1f} units/day"); r_m3.metric("Total Order Quantity", f"{tot_suggested_units} pcs"); r_m4.metric("Estimated PO Cost", f"₹{tot_order_cost:,.2f}")
+    r_m1.metric("Stock Available", f"{tot_calc_active} units"); r_m2.metric("Daily Velocity", f"{tot_rate:.1f} units/day"); r_m3.metric("Total Order Quantity", f"{tot_suggested_units} pcs"); r_m4.metric("Estimated PO Cost", f"₹{tot_order_cost:,.2f}")
 
     if overall_order_date is not None:
         if overall_order_date <= today_fa: st.error(f"🚨 **Action Required:** At least one flavor has breached the safety buffer. Place replenishment order today!")
