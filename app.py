@@ -1189,7 +1189,7 @@ else:
     with st.sidebar:
         try: st.image("assets/logo.png", use_container_width=True)
         except Exception: st.markdown("## 🍦 Kulfi Ops")
-        nav_options = ["Dashboard", "Daily Entry", "Live Cart Tracking", "Purchase Orders", "Freezer Stock", "Freezer Analysis", "Stock Removed", "Expenses", "Staff & Payroll", "Payslip Generator"]
+        nav_options = ["Dashboard", "Daily Entry", "Live Cart Tracking", "Cash Custody", "Purchase Orders", "Freezer Stock", "Freezer Analysis", "Stock Removed", "Expenses", "Staff & Payroll", "Payslip Generator"]
         page = st.radio("Go to", nav_options, label_visibility="collapsed", key="page_nav")
         st.markdown("---")
         if st.button("Log out", use_container_width=True):
@@ -1783,6 +1783,540 @@ elif page == "Live Cart Tracking" and user_role == "admin":
                             hide_index=True,
                             use_container_width=True
                         )
+
+
+# ======================================================================
+# PAGE: CASH CUSTODY (Admin View)
+# ======================================================================
+elif page == "Cash Custody" and user_role == "admin":
+    st.subheader("💰 Cash Custody & Handover")
+    st.caption(
+        "Track physical sales cash from the Ops Coordinator → Yogesh → Srilalitha. "
+        "Daily cash is sourced directly from Daily Entry records."
+    )
+
+    if db_conn is None:
+        st.error("Database connection is unavailable.")
+        st.stop()
+
+    if st.button("🔄 Refresh Cash Position", key="cash_custody_refresh"):
+        st.rerun()
+
+    # ------------------------------------------------------------------
+    # CURRENT CUSTODY SUMMARY
+    # ------------------------------------------------------------------
+    try:
+        custody_summary_df = db_conn.query(
+            "SELECT current_holder, daily_entry_count, total_cash FROM public.v_cash_custody_summary;",
+            ttl="0s"
+        )
+    except Exception as e:
+        st.error(f"Could not load cash custody summary: {e}")
+        st.stop()
+
+    custody_totals = {
+        "OPS_COORDINATOR": 0.0,
+        "YOGESH": 0.0,
+        "SRILALITHA": 0.0,
+    }
+    custody_counts = {
+        "OPS_COORDINATOR": 0,
+        "YOGESH": 0,
+        "SRILALITHA": 0,
+    }
+
+    if not custody_summary_df.empty:
+        for _, r in custody_summary_df.iterrows():
+            holder = str(r["current_holder"] or "").strip().upper()
+            if holder in custody_totals:
+                custody_totals[holder] = float(r["total_cash"] or 0)
+                custody_counts[holder] = int(r["daily_entry_count"] or 0)
+
+    c1, c2, c3 = st.columns(3)
+    c1.metric(
+        "🟠 With Ops Coordinator",
+        f"₹{custody_totals['OPS_COORDINATOR']:,.2f}",
+        help="Cash from daily sales not yet collected by Yogesh."
+    )
+    c2.metric(
+        "🔵 With Yogesh",
+        f"₹{custody_totals['YOGESH']:,.2f}",
+        help="Cash collected from the Ops Coordinator but not yet handed to Srilalitha."
+    )
+    c3.metric(
+        "🟢 Handed to Srilalitha",
+        f"₹{custody_totals['SRILALITHA']:,.2f}",
+        help="Cumulative cash already completed through the handover workflow."
+    )
+
+    st.info(
+        f"**Cash Yogesh needs to collect now: ₹{custody_totals['OPS_COORDINATOR']:,.2f}** "
+        f"across {custody_counts['OPS_COORDINATOR']} daily cart cash record(s)."
+    )
+
+    # Clear the collection-date multiselect only on the next rerun, before
+    # Streamlit instantiates the widget again.
+    if st.session_state.pop("_clear_cash_collect_dates", False):
+        st.session_state.pop("cash_collect_dates", None)
+
+    tab_position, tab_collect, tab_handover, tab_history = st.tabs([
+        "📍 Current Position",
+        "🧾 Collect from Ops Coordinator",
+        "🤝 Handover to Srilalitha",
+        "📚 Handover History",
+    ])
+
+    # ------------------------------------------------------------------
+    # TAB 1: CURRENT POSITION
+    # ------------------------------------------------------------------
+    with tab_position:
+        st.markdown("#### Date-wise Cash Position")
+
+        custody_by_date_df = db_conn.query("""
+            SELECT entry_date, current_holder, cart_count, total_cash
+            FROM public.v_cash_custody_by_date
+            ORDER BY entry_date DESC, current_holder;
+        """, ttl="0s")
+
+        if custody_by_date_df.empty:
+            st.info("No cash sales records are available yet.")
+        else:
+            position_display = custody_by_date_df.copy()
+            position_display["Date"] = pd.to_datetime(position_display["entry_date"]).dt.strftime("%d-%b-%y")
+            holder_labels = {
+                "OPS_COORDINATOR": "Ops Coordinator",
+                "YOGESH": "Yogesh",
+                "SRILALITHA": "Srilalitha",
+            }
+            position_display["Current Holder"] = position_display["current_holder"].map(holder_labels).fillna(position_display["current_holder"])
+            position_display["Cart Records"] = position_display["cart_count"].astype(int)
+            position_display["Cash (₹)"] = position_display["total_cash"].astype(float).map(lambda x: f"₹{x:,.2f}")
+
+            st.dataframe(
+                position_display[["Date", "Current Holder", "Cart Records", "Cash (₹)"]],
+                hide_index=True,
+                use_container_width=True,
+            )
+
+        with st.expander("View cart-level cash details"):
+            custody_detail_df = db_conn.query("""
+                SELECT
+                    entry_date,
+                    cart_name,
+                    cash_amount,
+                    current_holder,
+                    batch_id,
+                    collection_date,
+                    handed_over_date
+                FROM public.v_cash_custody_status
+                ORDER BY entry_date DESC, cart_name;
+            """, ttl="0s")
+
+            if custody_detail_df.empty:
+                st.info("No cart-level cash records found.")
+            else:
+                detail_display = custody_detail_df.copy()
+                detail_display["Date"] = pd.to_datetime(detail_display["entry_date"]).dt.strftime("%d-%b-%y")
+                detail_display["Cash (₹)"] = detail_display["cash_amount"].astype(float).map(lambda x: f"₹{x:,.2f}")
+                detail_display["Current Holder"] = detail_display["current_holder"].map({
+                    "OPS_COORDINATOR": "Ops Coordinator",
+                    "YOGESH": "Yogesh",
+                    "SRILALITHA": "Srilalitha",
+                }).fillna(detail_display["current_holder"])
+                detail_display["Batch"] = detail_display["batch_id"].apply(
+                    lambda x: f"#{int(x)}" if pd.notna(x) else "—"
+                )
+                st.dataframe(
+                    detail_display[["Date", "cart_name", "Cash (₹)", "Current Holder", "Batch"]]
+                    .rename(columns={"cart_name": "Cart"}),
+                    hide_index=True,
+                    use_container_width=True,
+                )
+
+    # ------------------------------------------------------------------
+    # TAB 2: YOGESH COLLECTS FROM OPS COORDINATOR
+    # ------------------------------------------------------------------
+    with tab_collect:
+        st.markdown("#### Cash Available for Yogesh to Collect")
+        st.caption(
+            "Select one or more sales dates. All currently uncollected cart cash for those dates "
+            "will be included in one handover batch."
+        )
+
+        outstanding_df = db_conn.query("""
+            SELECT daily_entry_id, entry_date, cart_name, cash_amount
+            FROM public.v_cash_custody_status
+            WHERE current_holder = 'OPS_COORDINATOR'
+            ORDER BY entry_date ASC, cart_name ASC;
+        """, ttl="0s")
+
+        if outstanding_df.empty:
+            st.success("There is currently no cash pending with the Ops Coordinator.")
+        else:
+            outstanding_df = outstanding_df.copy()
+            outstanding_df["entry_date"] = pd.to_datetime(outstanding_df["entry_date"]).dt.date
+
+            daily_totals = (
+                outstanding_df.groupby("entry_date", as_index=False)
+                .agg(total_cash=("cash_amount", "sum"), cart_count=("daily_entry_id", "count"))
+                .sort_values("entry_date")
+            )
+
+            date_options = daily_totals["entry_date"].tolist()
+            date_total_map = {
+                r["entry_date"]: float(r["total_cash"] or 0)
+                for _, r in daily_totals.iterrows()
+            }
+
+            selected_dates = st.multiselect(
+                "Select sales date(s) to collect",
+                options=date_options,
+                default=[],
+                format_func=lambda d: f"{d.strftime('%d-%b-%y')}  —  ₹{date_total_map.get(d, 0):,.2f}",
+                key="cash_collect_dates",
+            )
+
+            if selected_dates:
+                selected_cash_df = outstanding_df[outstanding_df["entry_date"].isin(selected_dates)].copy()
+                selected_cash_df = selected_cash_df.sort_values(["entry_date", "cart_name"])
+                expected_collection = float(selected_cash_df["cash_amount"].sum())
+
+                preview_df = selected_cash_df.copy()
+                preview_df["Date"] = preview_df["entry_date"].apply(lambda d: d.strftime("%d-%b-%y"))
+                preview_df["Cash (₹)"] = preview_df["cash_amount"].astype(float).map(lambda x: f"₹{x:,.2f}")
+
+                st.dataframe(
+                    preview_df[["Date", "cart_name", "Cash (₹)"]].rename(columns={"cart_name": "Cart"}),
+                    hide_index=True,
+                    use_container_width=True,
+                )
+
+                st.metric("Expected Cash to Collect", f"₹{expected_collection:,.2f}")
+
+                cc1, cc2 = st.columns(2)
+                with cc1:
+                    collection_date = st.date_input(
+                        "Collection Date",
+                        value=date.today(),
+                        format="DD-MM-YYYY",
+                        key="cash_collection_date",
+                    )
+                with cc2:
+                    actual_collection = st.number_input(
+                        "Actual Cash Counted (₹)",
+                        min_value=0.0,
+                        value=float(expected_collection),
+                        step=1.0,
+                        format="%.2f",
+                        key=f"cash_actual_collection_{expected_collection:.2f}_{len(selected_cash_df)}",
+                    )
+
+                latest_selected_sales_date = max(selected_dates)
+                invalid_collection_date = collection_date < latest_selected_sales_date
+                if invalid_collection_date:
+                    st.error(
+                        f"Collection Date cannot be before the latest selected sales date "
+                        f"({latest_selected_sales_date.strftime('%d-%b-%y')})."
+                    )
+
+                collection_difference = float(actual_collection) - expected_collection
+                if abs(collection_difference) > 0.001:
+                    st.error(
+                        f"Difference: ₹{collection_difference:,.2f}. "
+                        "Resolve the difference before confirming so the custody balance remains accurate."
+                    )
+                else:
+                    st.success("Actual cash matches the system amount.")
+
+                collection_notes = st.text_input(
+                    "Notes (optional)",
+                    placeholder="e.g. Cash collected during Hosur visit",
+                    key="cash_collection_notes",
+                )
+
+                if st.button(
+                    f"✅ Confirm Collected by Yogesh — ₹{expected_collection:,.2f}",
+                    type="primary",
+                    use_container_width=True,
+                    disabled=(abs(collection_difference) > 0.001 or invalid_collection_date),
+                    key="confirm_cash_collection",
+                ):
+                    selected_ids = [int(x) for x in selected_cash_df["daily_entry_id"].tolist()]
+
+                    try:
+                        with db_conn.session as s:
+                            # Re-check and lock each selected daily entry. This protects
+                            # against double collection if another admin acts concurrently.
+                            locked_rows = []
+                            for daily_id in selected_ids:
+                                row = s.execute(text("""
+                                    SELECT d.id, d.entry_date, d.cart_name, COALESCE(d.cash, 0) AS cash
+                                    FROM public.daily_cart_entries d
+                                    WHERE d.id = :daily_id
+                                      AND COALESCE(d.cash, 0) > 0
+                                      AND NOT EXISTS (
+                                          SELECT 1
+                                          FROM public.cash_handover_items chi
+                                          WHERE chi.daily_entry_id = d.id
+                                      )
+                                    FOR UPDATE;
+                                """), {"daily_id": daily_id}).fetchone()
+
+                                if row is None:
+                                    raise ValueError(
+                                        "One or more selected cash records were already collected or changed. "
+                                        "Refresh the page and try again."
+                                    )
+                                locked_rows.append(row)
+
+                            locked_expected = sum(float(r.cash or 0) for r in locked_rows)
+
+                            if abs(locked_expected - expected_collection) > 0.001:
+                                raise ValueError(
+                                    f"The expected cash changed from ₹{expected_collection:,.2f} "
+                                    f"to ₹{locked_expected:,.2f}. Refresh and review before collecting."
+                                )
+
+                            if abs(float(actual_collection) - locked_expected) > 0.001:
+                                raise ValueError(
+                                    "Actual cash must match the current system amount before custody can move to Yogesh."
+                                )
+
+                            batch_id = s.execute(text("""
+                                INSERT INTO public.cash_handover_batches
+                                    (collection_date, collected_by, expected_amount,
+                                     actual_collected_amount, status, notes)
+                                VALUES
+                                    (:collection_date, 'Yogesh', :expected_amount,
+                                     :actual_amount, 'WITH_YOGESH', :notes)
+                                RETURNING id;
+                            """), {
+                                "collection_date": collection_date,
+                                "expected_amount": locked_expected,
+                                "actual_amount": float(actual_collection),
+                                "notes": collection_notes.strip() or None,
+                            }).scalar()
+
+                            for row in locked_rows:
+                                s.execute(text("""
+                                    INSERT INTO public.cash_handover_items
+                                        (batch_id, daily_entry_id, cash_amount)
+                                    VALUES (:batch_id, :daily_entry_id, :cash_amount);
+                                """), {
+                                    "batch_id": batch_id,
+                                    "daily_entry_id": int(row.id),
+                                    "cash_amount": float(row.cash or 0),
+                                })
+
+                            s.commit()
+
+                        st.session_state["_clear_cash_collect_dates"] = True
+                        st.success(
+                            f"Batch #{batch_id} created. ₹{expected_collection:,.2f} is now recorded with Yogesh."
+                        )
+                        st.rerun()
+
+                    except Exception as e:
+                        st.error(f"Could not record cash collection: {e}")
+            else:
+                st.info("Select at least one sales date to prepare Yogesh's collection batch.")
+
+    # ------------------------------------------------------------------
+    # TAB 3: YOGESH HANDS CASH TO SRILALITHA
+    # ------------------------------------------------------------------
+    with tab_handover:
+        st.markdown("#### Cash Currently with Yogesh")
+
+        yogesh_batches_df = db_conn.query("""
+            SELECT
+                b.id,
+                b.collection_date,
+                b.expected_amount,
+                b.actual_collected_amount,
+                b.notes,
+                COUNT(i.id) AS item_count,
+                MIN(d.entry_date) AS first_sales_date,
+                MAX(d.entry_date) AS last_sales_date
+            FROM public.cash_handover_batches b
+            JOIN public.cash_handover_items i ON i.batch_id = b.id
+            JOIN public.daily_cart_entries d ON d.id = i.daily_entry_id
+            WHERE b.status = 'WITH_YOGESH'
+            GROUP BY
+                b.id, b.collection_date, b.expected_amount,
+                b.actual_collected_amount, b.notes
+            ORDER BY b.collection_date DESC, b.id DESC;
+        """, ttl="0s")
+
+        if yogesh_batches_df.empty:
+            st.info("No cash batches are currently with Yogesh.")
+        else:
+            batch_rows = {
+                int(r["id"]): r
+                for _, r in yogesh_batches_df.iterrows()
+            }
+            batch_options = list(batch_rows.keys())
+
+            selected_batch_id = st.selectbox(
+                "Select Yogesh batch",
+                options=batch_options,
+                format_func=lambda bid: (
+                    f"Batch #{bid} — "
+                    f"₹{float(batch_rows[bid]['actual_collected_amount'] or batch_rows[bid]['expected_amount'] or 0):,.2f} — "
+                    f"Collected {pd.to_datetime(batch_rows[bid]['collection_date']).strftime('%d-%b-%y')}"
+                ),
+                key="cash_yogesh_batch",
+            )
+
+            selected_batch = batch_rows[int(selected_batch_id)]
+            batch_amount = float(
+                selected_batch["actual_collected_amount"]
+                if pd.notna(selected_batch["actual_collected_amount"])
+                else selected_batch["expected_amount"] or 0
+            )
+
+            hb1, hb2, hb3 = st.columns(3)
+            hb1.metric("Batch", f"#{int(selected_batch_id)}")
+            hb2.metric("Cash with Yogesh", f"₹{batch_amount:,.2f}")
+            hb3.metric("Daily Cart Records", int(selected_batch["item_count"] or 0))
+
+            first_dt = pd.to_datetime(selected_batch["first_sales_date"]).strftime("%d-%b-%y")
+            last_dt = pd.to_datetime(selected_batch["last_sales_date"]).strftime("%d-%b-%y")
+            st.caption(
+                f"Sales covered: {first_dt}" + (f" to {last_dt}" if first_dt != last_dt else "")
+            )
+
+            batch_items_df = db_conn.query("""
+                SELECT d.entry_date, d.cart_name, i.cash_amount
+                FROM public.cash_handover_items i
+                JOIN public.daily_cart_entries d ON d.id = i.daily_entry_id
+                WHERE i.batch_id = :batch_id
+                ORDER BY d.entry_date, d.cart_name;
+            """, params={"batch_id": int(selected_batch_id)}, ttl="0s")
+
+            if not batch_items_df.empty:
+                handover_preview = batch_items_df.copy()
+                handover_preview["Date"] = pd.to_datetime(handover_preview["entry_date"]).dt.strftime("%d-%b-%y")
+                handover_preview["Cash (₹)"] = handover_preview["cash_amount"].astype(float).map(lambda x: f"₹{x:,.2f}")
+                st.dataframe(
+                    handover_preview[["Date", "cart_name", "Cash (₹)"]].rename(columns={"cart_name": "Cart"}),
+                    hide_index=True,
+                    use_container_width=True,
+                )
+
+            handover_date = st.date_input(
+                "Handover Date to Srilalitha",
+                value=date.today(),
+                format="DD-MM-YYYY",
+                key=f"cash_handover_date_{selected_batch_id}",
+            )
+
+            batch_collection_date = pd.to_datetime(selected_batch["collection_date"]).date()
+            invalid_handover_date = handover_date < batch_collection_date
+            if invalid_handover_date:
+                st.error(
+                    f"Handover Date cannot be before Yogesh's collection date "
+                    f"({batch_collection_date.strftime('%d-%b-%y')})."
+                )
+
+            confirm_handover = st.checkbox(
+                f"I confirm Yogesh handed ₹{batch_amount:,.2f} to Srilalitha.",
+                key=f"cash_handover_confirm_{selected_batch_id}",
+            )
+
+            if st.button(
+                f"✅ Confirm Handover to Srilalitha — ₹{batch_amount:,.2f}",
+                type="primary",
+                use_container_width=True,
+                disabled=(not confirm_handover or invalid_handover_date),
+                key=f"cash_handover_button_{selected_batch_id}",
+            ):
+                try:
+                    with db_conn.session as s:
+                        updated = s.execute(text("""
+                            UPDATE public.cash_handover_batches
+                            SET status = 'HANDED_TO_SRILALITHA',
+                                handed_over_date = :handover_date,
+                                handed_over_to = 'Srilalitha'
+                            WHERE id = :batch_id
+                              AND status = 'WITH_YOGESH'
+                            RETURNING id;
+                        """), {
+                            "handover_date": handover_date,
+                            "batch_id": int(selected_batch_id),
+                        }).fetchone()
+
+                        if updated is None:
+                            raise ValueError(
+                                "This batch is no longer with Yogesh. Refresh and review its current status."
+                            )
+                        s.commit()
+
+                    st.success(
+                        f"Batch #{int(selected_batch_id)} completed. ₹{batch_amount:,.2f} is now recorded with Srilalitha."
+                    )
+                    st.rerun()
+
+                except Exception as e:
+                    st.error(f"Could not complete handover: {e}")
+
+    # ------------------------------------------------------------------
+    # TAB 4: FULL HANDOVER HISTORY
+    # ------------------------------------------------------------------
+    with tab_history:
+        st.markdown("#### Cash Handover Batch History")
+
+        history_df = db_conn.query("""
+            SELECT
+                b.id AS batch_id,
+                b.collection_date,
+                b.collected_by,
+                b.expected_amount,
+                b.actual_collected_amount,
+                b.status,
+                b.handed_over_date,
+                b.handed_over_to,
+                b.notes,
+                COUNT(i.id) AS cart_records,
+                MIN(d.entry_date) AS first_sales_date,
+                MAX(d.entry_date) AS last_sales_date
+            FROM public.cash_handover_batches b
+            LEFT JOIN public.cash_handover_items i ON i.batch_id = b.id
+            LEFT JOIN public.daily_cart_entries d ON d.id = i.daily_entry_id
+            GROUP BY
+                b.id, b.collection_date, b.collected_by, b.expected_amount,
+                b.actual_collected_amount, b.status, b.handed_over_date,
+                b.handed_over_to, b.notes
+            ORDER BY b.collection_date DESC, b.id DESC;
+        """, ttl="0s")
+
+        if history_df.empty:
+            st.info("No cash handover batches have been created yet.")
+        else:
+            hist = history_df.copy()
+            hist["Batch"] = hist["batch_id"].apply(lambda x: f"#{int(x)}")
+            hist["Collected"] = pd.to_datetime(hist["collection_date"]).dt.strftime("%d-%b-%y")
+            hist["Sales From"] = pd.to_datetime(hist["first_sales_date"], errors="coerce").dt.strftime("%d-%b-%y").fillna("—")
+            hist["Sales To"] = pd.to_datetime(hist["last_sales_date"], errors="coerce").dt.strftime("%d-%b-%y").fillna("—")
+            hist["Amount (₹)"] = hist.apply(
+                lambda r: f"₹{float(r['actual_collected_amount'] if pd.notna(r['actual_collected_amount']) else r['expected_amount'] or 0):,.2f}",
+                axis=1,
+            )
+            hist["Status"] = hist["status"].map({
+                "WITH_YOGESH": "With Yogesh",
+                "HANDED_TO_SRILALITHA": "Handed to Srilalitha",
+            }).fillna(hist["status"])
+            hist["Handed Over"] = pd.to_datetime(hist["handed_over_date"], errors="coerce").dt.strftime("%d-%b-%y").fillna("—")
+            hist["Records"] = hist["cart_records"].fillna(0).astype(int)
+            hist["Notes"] = hist["notes"].fillna("")
+
+            st.dataframe(
+                hist[[
+                    "Batch", "Sales From", "Sales To", "Collected", "Amount (₹)",
+                    "Records", "Status", "Handed Over", "Notes"
+                ]],
+                hide_index=True,
+                use_container_width=True,
+            )
 
 elif page == "Purchase Orders" and user_role == "admin":
     st.subheader("Purchase Order Estimator & Order Management")
