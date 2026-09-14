@@ -1790,11 +1790,6 @@ elif page == "Live Cart Tracking" and user_role == "admin":
 # ======================================================================
 elif page == "Cash Custody" and user_role == "admin":
     st.subheader("💰 Cash Custody & Handover")
-    st.caption(
-        "Track physical sales cash from the Ops Coordinator → Yogesh → Srilalitha. "
-        "Daily cash is sourced directly from Daily Entry records."
-    )
-
     if db_conn is None:
         st.error("Database connection is unavailable.")
         st.stop()
@@ -1832,22 +1827,72 @@ elif page == "Cash Custody" and user_role == "admin":
                 custody_totals[holder] = float(r["total_cash"] or 0)
                 custody_counts[holder] = int(r["daily_entry_count"] or 0)
 
-    c1, c2, c3 = st.columns(3)
-    c1.metric(
-        "🟠 With Ops Coordinator",
-        f"₹{custody_totals['OPS_COORDINATOR']:,.2f}",
-        help="Cash from daily sales not yet collected by Yogesh."
+    # Sales-date ranges for cash currently held by Ops Coordinator / Yogesh
+    holder_date_ranges = {"OPS_COORDINATOR": None, "YOGESH": None}
+    try:
+        holder_dates_df = db_conn.query("""
+            SELECT current_holder, MIN(entry_date) AS first_sales_date, MAX(entry_date) AS last_sales_date
+            FROM public.v_cash_custody_status
+            WHERE current_holder IN ('OPS_COORDINATOR', 'YOGESH')
+            GROUP BY current_holder;
+        """, ttl="0s")
+        for _, r in holder_dates_df.iterrows():
+            holder = str(r["current_holder"] or "").strip().upper()
+            if holder in holder_date_ranges and pd.notna(r["first_sales_date"]):
+                holder_date_ranges[holder] = (
+                    pd.to_datetime(r["first_sales_date"]).strftime("%d-%b-%y"),
+                    pd.to_datetime(r["last_sales_date"]).strftime("%d-%b-%y"),
+                )
+    except Exception:
+        pass
+
+    def _cash_date_caption(holder):
+        rng = holder_date_ranges.get(holder)
+        if not rng:
+            return "No cash currently held"
+        return f"From sales date {rng[0]} till {rng[1]}"
+
+    # Actual cash payments made from central cash. Daily cart Staff Advance and
+    # Food & Tea are excluded because Daily Entry cash is already net of them.
+    try:
+        cash_payments_df = db_conn.query("""
+            SELECT
+                p.id, p.payment_date, p.amount_paid, p.payment_mode, p.ref_no,
+                p.paid_to, p.paid_by, p.notes, e.category, e.sub_category,
+                e.description AS expense_desc
+            FROM public.expense_payments p
+            JOIN public.expenses e ON e.id = p.expense_id
+            WHERE LOWER(TRIM(COALESCE(p.payment_mode, ''))) = 'cash'
+              AND NOT (
+                    LOWER(TRIM(COALESCE(e.category, ''))) = 'labour charges'
+                AND LOWER(TRIM(COALESCE(e.sub_category, ''))) IN ('food & tea', 'staff advance')
+              )
+            ORDER BY p.payment_date DESC, p.id DESC;
+        """, ttl="0s")
+    except Exception as e:
+        cash_payments_df = pd.DataFrame()
+        st.warning(f"Could not load cash payment summary: {e}")
+
+    total_cash_payments = (
+        float(cash_payments_df["amount_paid"].fillna(0).astype(float).sum())
+        if not cash_payments_df.empty else 0.0
     )
-    c2.metric(
-        "🔵 With Yogesh",
-        f"₹{custody_totals['YOGESH']:,.2f}",
-        help="Cash collected from the Ops Coordinator but not yet handed to Srilalitha."
-    )
-    c3.metric(
-        "🟢 Handed to Srilalitha",
-        f"₹{custody_totals['SRILALITHA']:,.2f}",
-        help="Cumulative cash already completed through the handover workflow."
-    )
+
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        st.metric("🟠 With Ops Coordinator", f"₹{custody_totals['OPS_COORDINATOR']:,.2f}",
+                  help="Cash from daily sales not yet collected by Yogesh.")
+        st.caption(_cash_date_caption("OPS_COORDINATOR"))
+    with c2:
+        st.metric("🔵 With Yogesh", f"₹{custody_totals['YOGESH']:,.2f}",
+                  help="Cash collected from the Ops Coordinator but not yet handed to Srilalitha.")
+        st.caption(_cash_date_caption("YOGESH"))
+    with c3:
+        st.metric("🟢 Handed to Srilalitha", f"₹{custody_totals['SRILALITHA']:,.2f}",
+                  help="Cumulative cash already completed through the handover workflow.")
+    with c4:
+        st.metric("💵 Cash Payments", f"₹{total_cash_payments:,.2f}",
+                  help="All recorded Cash-mode payments excluding cart Food & Tea and Staff Advance payments, because those are paid before Daily Entry cash is determined.")
 
     st.info(
         f"**Cash Yogesh needs to collect now: ₹{custody_totals['OPS_COORDINATOR']:,.2f}** "
@@ -1859,11 +1904,12 @@ elif page == "Cash Custody" and user_role == "admin":
     if st.session_state.pop("_clear_cash_collect_dates", False):
         st.session_state.pop("cash_collect_dates", None)
 
-    tab_position, tab_collect, tab_handover, tab_history = st.tabs([
+    tab_position, tab_collect, tab_handover, tab_history, tab_cash_payments = st.tabs([
         "📍 Current Position",
         "🧾 Collect from Ops Coordinator",
         "🤝 Handover to Srilalitha",
         "📚 Handover History",
+        "💵 All Cash Payments",
     ])
 
     # ------------------------------------------------------------------
@@ -2313,6 +2359,38 @@ elif page == "Cash Custody" and user_role == "admin":
                 hist[[
                     "Batch", "Sales From", "Sales To", "Collected", "Amount (₹)",
                     "Records", "Status", "Handed Over", "Notes"
+                ]],
+                hide_index=True,
+                use_container_width=True,
+            )
+
+
+    # ------------------------------------------------------------------
+    # TAB 5: ALL CASH PAYMENTS
+    # ------------------------------------------------------------------
+    with tab_cash_payments:
+        st.markdown("#### All Cash Payments")
+        st.caption("Excludes cart-staff Food & Tea and Staff Advance payments already deducted before Daily Entry cash is recorded.")
+
+        if cash_payments_df.empty:
+            st.info("No qualifying cash payments have been recorded yet.")
+        else:
+            cash_display = cash_payments_df.copy()
+            cash_display["Payment Date"] = pd.to_datetime(cash_display["payment_date"]).dt.strftime("%d-%b-%y")
+            cash_display["Amount (₹)"] = cash_display["amount_paid"].astype(float).map(lambda x: f"₹{x:,.2f}")
+            cash_display["Category"] = cash_display["category"].fillna("")
+            cash_display["Sub Category"] = cash_display["sub_category"].fillna("")
+            cash_display["Description"] = cash_display["expense_desc"].fillna("")
+            cash_display["Paid To"] = cash_display["paid_to"].fillna("")
+            cash_display["Paid By"] = cash_display["paid_by"].fillna("")
+            cash_display["Reference"] = cash_display["ref_no"].fillna("")
+            cash_display["Notes"] = cash_display["notes"].fillna("")
+
+            st.metric("Total Cash Payments", f"₹{total_cash_payments:,.2f}")
+            st.dataframe(
+                cash_display[[
+                    "Payment Date", "Amount (₹)", "Category", "Sub Category",
+                    "Description", "Paid To", "Paid By", "Reference", "Notes"
                 ]],
                 hide_index=True,
                 use_container_width=True,
