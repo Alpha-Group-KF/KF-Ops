@@ -2717,39 +2717,9 @@ elif page == "Freezer Analysis" and user_role == "admin":
         st.error(f"Could not load analysis transactions from database: {e}")
         sales_pace_map, rec_map, added_map, rem_map, audit_map, rec_map_audit, added_map_audit, rem_map_audit, audit_date_str = {}, {}, {}, {}, {}, {}, {}, {}, "N/A"
 
-    # --- TABLE 1: Audit Date Variance Comparison ---
+    # --- TABLE 1: Physical-Base Current Stock Position ---
     st.markdown("---")
-    st.markdown(f"### 1. Audit Date Variance Comparison &nbsp; *(As on Audit Date: {audit_date_str})*")
-    comparison_rows = []
-    tot_rec_a, tot_issued_a, tot_removed_a, tot_calc_a, tot_phys, has_audit = 0, 0, 0, 0, 0, bool(audit_map)
-
-    for code in FLAVOR_CODES:
-        f_info = FLAVOR_MAP[code]
-        recv_units, issued_units, removed_units = int(rec_map_audit.get(code, 0)), int(added_map_audit.get(code, 0)), int(rem_map_audit.get(code, 0))
-        calc_stock = recv_units - issued_units - removed_units
-        tot_rec_a += recv_units; tot_issued_a += issued_units; tot_removed_a += removed_units; tot_calc_a += calc_stock
-
-        phys_stock = audit_map.get(code, None)
-        if phys_stock is not None:
-            phys_stock = int(phys_stock); tot_phys += phys_stock; var_qty = phys_stock - calc_stock
-            var_status = "✅ Match" if var_qty == 0 else (f"🟢 +{var_qty}" if var_qty > 0 else f"🔴 {var_qty}")
-            phys_display, var_display = str(phys_stock), str(var_qty)
-        else: phys_display, var_display, var_status = "—", "—", "⚪ Missing"
-
-        comparison_rows.append({"Flavour": f_info["name"], "Received (In)": recv_units, "Issued (Carts)": issued_units, "Removed": removed_units, "Calc. Stock (Audit)": calc_stock, "Physical Audit Count": phys_display, "Variance": var_display, "Audit Status": var_status})
-
-    c_m1, c_m2, c_m3, c_m4, c_m5, c_m6 = st.columns(6)
-    c_m1.metric("Inward (at Audit)", f"{tot_rec_a} pcs"); c_m2.metric("Issued (at Audit)", f"{tot_issued_a} pcs"); c_m3.metric("Removed (at Audit)", f"{tot_removed_a} pcs"); c_m4.metric("Calc. Stock (at Audit)", f"{tot_calc_a} pcs"); c_m5.metric("Physical Audited", f"{tot_phys} pcs" if has_audit else "Not Available")
-    net_var = tot_phys - tot_calc_a if has_audit else 0
-    c_m6.metric("Net Variance", f"{net_var:+d} pcs" if has_audit else "N/A")
-
-    comp_df = pd.DataFrame(comparison_rows)
-    comp_df = pd.concat([comp_df, pd.DataFrame([{"Flavour": "🔥 OVERALL TOTAL", "Received (In)": tot_rec_a, "Issued (Carts)": tot_issued_a, "Removed": tot_removed_a, "Calc. Stock (Audit)": tot_calc_a, "Physical Audit Count": str(tot_phys) if has_audit else "—", "Variance": f"{net_var:+d}" if has_audit else "—", "Audit Status": "✅ Match" if net_var == 0 and has_audit else (f"⚠️ {net_var:+d}" if has_audit else "—")}])], ignore_index=True)
-    st.dataframe(comp_df, hide_index=True, use_container_width=True)
-
-    # --- TABLE 2: Physical-Base Current Stock Position ---
-    st.markdown("---")
-    st.markdown(f"### 2. Physical-Base Current Stock Position &nbsp; *(Base Audit Date: {audit_date_str})*")
+    st.markdown(f"### 1. Current Stock Position &nbsp; *(Per Last Audit Date: {audit_date_str})*")
     st.caption("Calculated using: Last Physical Audit Base + Stock Received (>= Audit Date) - Added to Carts (>= Audit Date + 1) - Stock Removed (>= Audit Date)")
 
     audit_next_dt_t2 = audit_date_val + timedelta(days=1) if audit_date_val else None
@@ -2823,9 +2793,9 @@ elif page == "Freezer Analysis" and user_role == "admin":
     }])], ignore_index=True)
     st.dataframe(phys_base_df, hide_index=True, use_container_width=True)
 
-    # --- SECTION 3: Suggested Orders & Inventory Runway (Based on Physical-Base Stock) ---
+    # --- SECTION 2: Suggested Orders & Inventory Runway (Based on Physical-Base Stock) ---
     st.markdown("---")
-    st.markdown("### 3. Suggested Orders & Inventory Runway &nbsp; *(Calculated post Last Physical Audit)*")
+    st.markdown("### 2. Suggested Orders & Inventory Runway &nbsp; *(Calculated post Last Physical Audit)*")
     reorder_rows, trigger_dates, tot_calc_active, tot_rate, tot_suggested_units, tot_order_cost = [], [], 0, 0.0, 0, 0.0
 
     for code in FLAVOR_CODES:
@@ -2872,6 +2842,36 @@ elif page == "Freezer Analysis" and user_role == "admin":
         st.session_state["_pending_page_nav"] = "Purchase Orders"
         st.session_state["_pending_po_screen_mode"] = "Create New Order"
         st.rerun()
+
+# --- TABLE 3: Audit Date Variance Comparison ---
+    st.markdown("---")
+    st.markdown(f"### 3. Audit Date Variance Comparison &nbsp; *(As on Audit Date: {audit_date_str})*")
+    comparison_rows = []
+    tot_rec_a, tot_issued_a, tot_removed_a, tot_calc_a, tot_phys, has_audit = 0, 0, 0, 0, 0, bool(audit_map)
+
+    for code in FLAVOR_CODES:
+        f_info = FLAVOR_MAP[code]
+        recv_units, issued_units, removed_units = int(rec_map_audit.get(code, 0)), int(added_map_audit.get(code, 0)), int(rem_map_audit.get(code, 0))
+        calc_stock = recv_units - issued_units - removed_units
+        tot_rec_a += recv_units; tot_issued_a += issued_units; tot_removed_a += removed_units; tot_calc_a += calc_stock
+
+        phys_stock = audit_map.get(code, None)
+        if phys_stock is not None:
+            phys_stock = int(phys_stock); tot_phys += phys_stock; var_qty = phys_stock - calc_stock
+            var_status = "✅ Match" if var_qty == 0 else (f"🟢 +{var_qty}" if var_qty > 0 else f"🔴 {var_qty}")
+            phys_display, var_display = str(phys_stock), str(var_qty)
+        else: phys_display, var_display, var_status = "—", "—", "⚪ Missing"
+
+        comparison_rows.append({"Flavour": f_info["name"], "Received (In)": recv_units, "Issued (Carts)": issued_units, "Removed": removed_units, "Calc. Stock (Audit)": calc_stock, "Physical Audit Count": phys_display, "Variance": var_display, "Audit Status": var_status})
+
+    c_m1, c_m2, c_m3, c_m4, c_m5, c_m6 = st.columns(6)
+    c_m1.metric("Inward (at Audit)", f"{tot_rec_a} pcs"); c_m2.metric("Issued (at Audit)", f"{tot_issued_a} pcs"); c_m3.metric("Removed (at Audit)", f"{tot_removed_a} pcs"); c_m4.metric("Calc. Stock (at Audit)", f"{tot_calc_a} pcs"); c_m5.metric("Physical Audited", f"{tot_phys} pcs" if has_audit else "Not Available")
+    net_var = tot_phys - tot_calc_a if has_audit else 0
+    c_m6.metric("Net Variance", f"{net_var:+d} pcs" if has_audit else "N/A")
+
+    comp_df = pd.DataFrame(comparison_rows)
+    comp_df = pd.concat([comp_df, pd.DataFrame([{"Flavour": "🔥 OVERALL TOTAL", "Received (In)": tot_rec_a, "Issued (Carts)": tot_issued_a, "Removed": tot_removed_a, "Calc. Stock (Audit)": tot_calc_a, "Physical Audit Count": str(tot_phys) if has_audit else "—", "Variance": f"{net_var:+d}" if has_audit else "—", "Audit Status": "✅ Match" if net_var == 0 and has_audit else (f"⚠️ {net_var:+d}" if has_audit else "—")}])], ignore_index=True)
+    st.dataframe(comp_df, hide_index=True, use_container_width=True)
 
     st.markdown("---"); st.markdown("### 4. Detailed Stock Movement Logs")
     m_tab1, m_tab2, m_tab3, m_tab4 = st.tabs(["📋 Purchase Orders", "📦 Received Deliveries", "🔍 Physical Stock Audits", "🗑️ Stock Removed"])
