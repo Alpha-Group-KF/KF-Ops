@@ -2674,8 +2674,7 @@ elif page == "Freezer Stock" and user_role == "admin":
 
 elif page == "Freezer Analysis" and user_role == "admin":
     st.subheader("Freezer Stock Analysis & Reorder Planner")
-    st.caption("Live comparison of Physical Audit vs Calculated Stock with velocity-based reorder recommendations.")
-
+    
     ac1, ac2, ac3 = st.columns(3)
     with ac1: lookback_days = st.number_input("Sales Velocity Window (days)", min_value=3, max_value=90, value=14, step=1)
     with ac2: buffer_days = st.number_input("Safety Buffer Threshold (days)", min_value=0, max_value=14, value=3, step=1)
@@ -2720,7 +2719,6 @@ elif page == "Freezer Analysis" and user_role == "admin":
     # --- TABLE 1: Physical-Base Current Stock Position ---
     st.markdown("---")
     st.markdown(f"### 1. Current Stock Position &nbsp; *(Per Last Audit Date: {audit_date_str})*")
-    st.caption("Calculated using: Last Physical Audit Base + Stock Received (>= Audit Date) - Added to Carts (>= Audit Date + 1) - Stock Removed (>= Audit Date)")
 
     audit_next_dt_t2 = audit_date_val + timedelta(days=1) if audit_date_val else None
 
@@ -2795,7 +2793,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
 
     # --- SECTION 2: Suggested Orders & Inventory Runway (Based on Physical-Base Stock) ---
     st.markdown("---")
-    st.markdown("### 2. Suggested Orders & Inventory Runway &nbsp; *(Calculated post Last Physical Audit)*")
+    st.markdown("### 2. Suggested Orders & Inventory Runway")
     reorder_rows, trigger_dates, tot_calc_active, tot_rate, tot_suggested_units, tot_order_cost = [], [], 0, 0.0, 0, 0.0
 
     for code in FLAVOR_CODES:
