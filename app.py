@@ -1282,10 +1282,24 @@ if page == "Daily Entry":
 
                     if any(s < 0 for s in sold_map.values()): st.error(f"Sales negative for at least one flavour on {entry_date.strftime('%d-%b-%y')} - check closing count.")
 
-                    calculated_mrp_total = float(sum(sold_map[code] * FLAVOR_MAP[code]["mrp"] for code in FLAVOR_CODES))
-                    k_tot, k_prev_calc = f"daily_total{data_key_suffix}", f"daily_prev_calc{data_key_suffix}"
-                    if k_tot not in st.session_state or st.session_state.get(k_prev_calc) != calculated_mrp_total:
-                        st.session_state[k_tot] = f"{loaded['total']:.2f}" if (loaded["total"] > 0 and not loaded.get("is_prefill")) else f"{calculated_mrp_total:.2f}"
+                    calculated_mrp_total = float(
+                        sum(sold_map[code] * FLAVOR_MAP[code]["mrp"] for code in FLAVOR_CODES)
+                    )
+                    k_tot = f"daily_total{data_key_suffix}"
+                    k_prev_calc = f"daily_prev_calc{data_key_suffix}"
+
+                    # On first load, preserve the total already saved in the database.
+                    # If Added/Closing quantities are subsequently changed, Sold changes
+                    # and Total Collection is automatically recalculated as Sold x MRP.
+                    if k_tot not in st.session_state:
+                        st.session_state[k_tot] = (
+                            f"{loaded['total']:.2f}"
+                            if (loaded["total"] > 0 and not loaded.get("is_prefill"))
+                            else f"{calculated_mrp_total:.2f}"
+                        )
+                        st.session_state[k_prev_calc] = calculated_mrp_total
+                    elif st.session_state.get(k_prev_calc) != calculated_mrp_total:
+                        st.session_state[k_tot] = f"{calculated_mrp_total:.2f}"
                         st.session_state[k_prev_calc] = calculated_mrp_total
                     if f"daily_phonepe{data_key_suffix}" not in st.session_state: st.session_state[f"daily_phonepe{data_key_suffix}"] = f"{loaded['phonepe']:.2f}"
                     if f"daily_adv{data_key_suffix}" not in st.session_state: st.session_state[f"daily_adv{data_key_suffix}"] = f"{loaded['staff_advance']:.2f}" if "staff_advance" in loaded else "0.00"
