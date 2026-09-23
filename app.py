@@ -1481,7 +1481,16 @@ elif page == "Payslip Generator" and user_role == "admin":
                     hide_index=True, 
                     use_container_width=True,
                     column_config={
-                        "Cart": st.column_config.TextColumn(width="medium")
+                        "Date": st.column_config.TextColumn(width="small"),
+                        "Type": st.column_config.TextColumn(width="small"),
+                        "Cart": st.column_config.TextColumn(width="small"),
+                        "Collection (₹)": st.column_config.TextColumn(width="small"),
+                        "Salary (₹)": st.column_config.TextColumn(width="small"),
+                        "Commission (₹)": st.column_config.TextColumn(width="small"),
+                        "Allowance (₹)": st.column_config.TextColumn(width="small"),
+                        "Advance Taken (₹)": st.column_config.TextColumn(width="small"),
+                        "Allow. Taken (₹)": st.column_config.TextColumn(width="small"),
+                        "Leakage": st.column_config.TextColumn(width="small")
                     }
                 )
             else:
@@ -3181,7 +3190,14 @@ elif page == "Expenses" and user_role == "admin":
                 display_exp["PO Link"] = display_exp["purchase_order_id"].apply(lambda p: f"PO #{int(p)}" if pd.notna(p) else "—")
                 display_exp = display_exp[["id", "expense_date", "month", "expense_type", "category", "sub_category", "description", "total_amount", "total_paid", "balance_due", "status", "attributed_to", "vendor_name", "staff_name", "PO Link"]].rename(columns={"id": "ID", "expense_date": "Date", "month": "Month", "expense_type": "Type", "category": "Category", "sub_category": "Sub-Category", "description": "Description", "total_amount": "Total (₹)", "total_paid": "Paid (₹)", "balance_due": "Balance (₹)", "status": "Status", "attributed_to": "Attributed To", "vendor_name": "Vendor", "staff_name": "Staff Name"})
                 display_exp = apply_smart_filters(display_exp, ["Month", "Category", "Status", "Staff Name"], "expense_filters")
-                st.dataframe(display_exp, hide_index=True, use_container_width=True, column_config={"Total (₹)": st.column_config.NumberColumn(format="₹%,.2f"), "Paid (₹)": st.column_config.NumberColumn(format="₹%,.2f"), "Balance (₹)": st.column_config.NumberColumn(format="₹%,.2f")})
+                st.dataframe(display_exp, hide_index=True, use_container_width=True, column_config={
+                    **{col: st.column_config.TextColumn(width="small") for col in display_exp.columns if col not in ("ID", "Total (₹)", "Paid (₹)", "Balance (₹)", "Description")},
+                    "ID": st.column_config.NumberColumn(width="small"),
+                    "Description": st.column_config.TextColumn(width="medium"),
+                    "Total (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
+                    "Paid (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
+                    "Balance (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small")
+                })
 
         elif e_sub_mode == "Edit Past Expense":
             if expenses_summary_df.empty: st.info("No expenses found to edit.")
