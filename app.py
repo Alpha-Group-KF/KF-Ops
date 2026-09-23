@@ -4508,8 +4508,8 @@ elif page == "Dashboard" and user_role == "admin":
                         day_cols = [d for d in day_order if d in units_pivot.columns]
                         units_pivot = units_pivot.reindex(columns=day_cols)
                         overall_units = units_df.groupby("Day")["Sold_Total"].mean().reindex(day_cols)
-                        units_pivot.loc["Overall Average"] = overall_units
-                        units_pivot = units_pivot.reindex(["Overall Average"] + [cart for cart in units_pivot.index if cart != "Overall Average"])
+                        units_pivot.loc["Overall Average (per cart)"] = overall_units
+                        units_pivot = units_pivot.reindex(["Overall Average (per cart)"] + [cart for cart in units_pivot.index if cart != "Overall Average (per cart)"])
                         st.dataframe(units_pivot.round(0).astype(int), use_container_width=True)
                     else:
                         st.caption("No units sold in this range.")
@@ -4519,8 +4519,8 @@ elif page == "Dashboard" and user_role == "admin":
                     rev_day_cols = [d for d in day_order if d in rev_pivot.columns]
                     rev_pivot = rev_pivot.reindex(columns=rev_day_cols)
                     overall_rev = dow_df.groupby("Day")["Total_Collection"].mean().reindex(rev_day_cols)
-                    rev_pivot.loc["Overall Average"] = overall_rev
-                    rev_pivot = rev_pivot.reindex(["Overall Average"] + [cart for cart in rev_pivot.index if cart != "Overall Average"])
+                    rev_pivot.loc["Overall Average (per cart)"] = overall_rev
+                    rev_pivot = rev_pivot.reindex(["Overall Average (per cart)"] + [cart for cart in rev_pivot.index if cart != "Overall Average (per cart)"])
                     st.dataframe(rev_pivot.round(0).astype(int), use_container_width=True)
 
                 max1, max2 = st.columns(2)
@@ -4529,15 +4529,11 @@ elif page == "Dashboard" and user_role == "admin":
                     if not dow_df.empty:
                         max_units = dow_df.pivot_table(index="Cart", columns="Day", values="Sold_Total", aggfunc="max", fill_value=0)
                         max_units = max_units.reindex(columns=[d for d in day_order if d in max_units.columns])
-                        max_units.loc["Overall Maximum"] = dow_df.groupby("Day")["Sold_Total"].max().reindex(max_units.columns)
-                        max_units = max_units.reindex(["Overall Maximum"] + [cart for cart in max_units.index if cart != "Overall Maximum"])
                         st.dataframe(max_units.round(0).astype(int), use_container_width=True)
                 with max2:
                     st.write("**Maximum Revenue (₹) per Day of Week**")
                     max_rev = dow_df.pivot_table(index="Cart", columns="Day", values="Total_Collection", aggfunc="max", fill_value=0)
                     max_rev = max_rev.reindex(columns=[d for d in day_order if d in max_rev.columns])
-                    max_rev.loc["Overall Maximum"] = dow_df.groupby("Day")["Total_Collection"].max().reindex(max_rev.columns)
-                    max_rev = max_rev.reindex(["Overall Maximum"] + [cart for cart in max_rev.index if cart != "Overall Maximum"])
                     st.dataframe(max_rev.round(0).astype(int), use_container_width=True)
             else: 
                 st.caption("No cart entries found in this range.")
