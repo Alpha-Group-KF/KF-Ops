@@ -1442,7 +1442,7 @@ elif page == "Payslip Generator" and user_role == "admin":
                 ["Monthly Fixed Salary", "Standard Monthly Base Plan", f"₹{staff_data['monthly_fixed_salary']:,.2f}"],
                 ["Total Days Worked", f"{staff_data['days_worked']} days worked + {staff_data['paid_leaves']} paid leaves", f"{staff_data['days_worked'] + staff_data['paid_leaves']} days"],
                 ["Pro-rata Fixed Salary", f"({staff_data['days_worked']} + {staff_data['paid_leaves']}) days @ ₹{staff_data.get('daily_rate', 600):.0f}/day", f"₹{staff_data['salary']:,.2f}"],
-                ["Sales Commissions", "15% on daily collections exceeding threshold", f"₹{staff_data['commissions']:,.2f}"],
+                ["Sales Commissions", "10% on daily collections exceeding threshold", f"₹{staff_data['commissions']:,.2f}"],
                 ["Food & Tea Allowances", "Entitled weekday & Sunday daily allowances", f"₹{staff_data['allowances']:,.2f}"],
                 ["Gross Payable Earnings", "Total entitled earnings for the period", f"₹{staff_data['incurred']:,.2f}"],
                 ["Already Paid / Disbursed", "Cash advances & direct payments recorded", f"-₹{staff_data['paid']:,.2f}"],
