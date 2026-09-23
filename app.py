@@ -817,7 +817,7 @@ def load_staff_attendance_df(start_date=None, end_date=None):
     try: return db_conn.query(f"SELECT a.id, a.staff_id, s.name AS staff_name, a.attendance_date, a.status, a.leave_type, a.reason, a.recorded_by, a.created_at FROM staff_attendance a JOIN staff s ON a.staff_id = s.id {where_sql} ORDER BY a.attendance_date DESC, a.id DESC;", params=params, ttl="0s")
     except Exception: return pd.DataFrame()
 
-def calculate_incurred_labour_for_range(start_date, end_date):
+def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leakage=False):
     if db_conn is None: return 0.0, 0.0, 0.0, {}
     staff_df = load_full_staff_df()
     if staff_df.empty: return 0.0, 0.0, 0.0, {}
@@ -849,6 +849,36 @@ def calculate_incurred_labour_for_range(start_date, end_date):
               OR LOWER(TRIM(COALESCE(month, ''))) = LOWER(:salary_month)
           );
     """, params={"sdate": start_date, "edate": end_date, "salary_month": start_date.strftime('%B')}, ttl="0s")
+
+    leakage_df = pd.DataFrame()
+    if include_cash_leakage:
+        leakage_df = db_conn.query("""
+            SELECT expense_date, staff_name, total_amount
+            FROM expenses
+            WHERE LOWER(TRIM(COALESCE(sub_category, ''))) = 'cash leakage'
+              AND expense_date >= :sdate AND expense_date <= :edate
+              AND staff_name IS NOT NULL;
+        """, params={"sdate": start_date, "edate": end_date}, ttl="0s")
+
+    def attach_staff_leakage(staff_name, ledger):
+        if leakage_df.empty:
+            return 0.0
+        staff_leakage = leakage_df[leakage_df["staff_name"].astype(str).str.strip() == staff_name]
+        by_date = {}
+        for _, entry in staff_leakage.iterrows():
+            day = pd.to_datetime(entry["expense_date"]).date()
+            by_date[day] = by_date.get(day, 0.0) + float(_num(entry["total_amount"]))
+        for day, amount in by_date.items():
+            existing = next((row for row in ledger if row["date"] == day), None)
+            if existing is not None:
+                existing["leakage"] = amount
+            else:
+                ledger.append({"date": day, "type": "Cash Leakage", "cart": "—",
+                               "collection": 0.0, "fixed_salary": 0.0, "commission": 0.0,
+                               "allowance": 0.0, "advance_taken": 0.0, "food_taken": 0.0,
+                               "leakage": amount})
+        ledger.sort(key=lambda row: row["date"])
+        return sum(by_date.values())
     
     total_labour_incurred, total_labour_paid, breakdown_by_staff = 0.0, 0.0, {}
     
@@ -909,6 +939,9 @@ def calculate_incurred_labour_for_range(start_date, end_date):
                     "commission": 0.0, "allowance": 0.0,
                     "advance_taken": 0.0, "food_taken": 0.0
                 })
+
+            staff_paid += attach_staff_leakage(st_name, detailed_ledger)
+            staff_due = staff_incurred - staff_paid
 
             total_labour_incurred += staff_incurred
             total_labour_paid += staff_paid
@@ -1041,7 +1074,7 @@ def calculate_incurred_labour_for_range(start_date, end_date):
         detailed_ledger.sort(key=lambda x: x["date"])
         
         staff_incurred = shift_sal + shift_comm + shift_allow
-        staff_paid = float(st_pay["amount_paid"].sum()) if not st_pay.empty else 0.0
+        staff_paid = (float(st_pay["amount_paid"].sum()) if not st_pay.empty else 0.0) + attach_staff_leakage(st_name, detailed_ledger)
         staff_due = staff_incurred - staff_paid
         total_labour_incurred += staff_incurred
         total_labour_paid += staff_paid
@@ -1112,7 +1145,7 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
     story.append(line_t)
     story.append(Spacer(1, 6))
     
-    ledger_rows = [["Date", "Type", "Cart", "Sales", "Salary", "Comm.", "Allow.", "Adv. Taken", "Allow. Taken"]]
+    ledger_rows = [["Date", "Type", "Cart", "Sales", "Salary", "Comm.", "Allow.", "Adv. Taken", "Allow. Taken", "Leakage"]]
     for item in data_dict.get("detailed_ledger", []):
         ledger_rows.append([
             item["date"].strftime("%d-%b-%y"), item["type"], item["cart"],
@@ -1121,11 +1154,12 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
             f"{item['commission']:,.0f}" if item['commission'] > 0 else "—",
             f"{item['allowance']:,.0f}" if item['allowance'] > 0 else "—",
             f"{item['advance_taken']:,.0f}" if item.get('advance_taken', 0) > 0 else "—",
-            f"{item['food_taken']:,.0f}" if item.get('food_taken', 0) > 0 else "—"
+            f"{item['food_taken']:,.0f}" if item.get('food_taken', 0) > 0 else "—",
+            f"{item['leakage']:,.0f}" if item.get('leakage', 0) > 0 else "—"
         ])
-    if len(ledger_rows) == 1: ledger_rows.append(["No records", "—", "—", "—", "—", "—", "—", "—", "—"])
+    if len(ledger_rows) == 1: ledger_rows.append(["No records", "—", "—", "—", "—", "—", "—", "—", "—", "—"])
     
-    t_ledger = Table(ledger_rows, colWidths=[55, 65, 100, 45, 45, 45, 45, 60, 60])
+    t_ledger = Table(ledger_rows, colWidths=[52, 60, 82, 42, 42, 42, 42, 50, 50, 50])
     t_ledger.hAlign = 'LEFT'
     t_ledger.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#124A1D')), ('TEXTCOLOR', (0,0), (-1,0), colors.white), ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'), ('FONTSIZE', (0,0), (-1,0), 8.5),
@@ -1389,7 +1423,7 @@ elif page == "Payslip Generator" and user_role == "admin":
 
         if payslip_start > payslip_end: st.error("Start date must be before or equal to end date.")
         else:
-            _, _, _, breakdown_dict = calculate_incurred_labour_for_range(payslip_start, payslip_end)
+            _, _, _, breakdown_dict = calculate_incurred_labour_for_range(payslip_start, payslip_end, include_cash_leakage=True)
             staff_data = breakdown_dict.get(sel_staff_payslip, {
                 "monthly_fixed_salary": 18000.0, "days_worked": 0, "paid_leaves": 0, "salary": 0.0,
                 "commissions": 0.0, "allowances": 0.0, "incurred": 0.0, "paid": 0.0, "due": 0.0, "detailed_ledger": [], "doj": None
@@ -1440,9 +1474,10 @@ elif page == "Payslip Generator" and user_role == "admin":
                 ledger_df["Allowance (₹)"] = ledger_df["allowance"].apply(lambda v: f"₹{v:,.2f}" if v > 0 else "—")
                 ledger_df["Advance Taken (₹)"] = ledger_df["advance_taken"].apply(lambda v: f"₹{v:,.2f}" if v > 0 else "—")
                 ledger_df["Allow. Taken (₹)"] = ledger_df["food_taken"].apply(lambda v: f"₹{v:,.2f}" if v > 0 else "—")
+                ledger_df["Leakage"] = ledger_df["leakage"].fillna(0).apply(lambda v: f"₹{v:,.2f}" if v > 0 else "—") if "leakage" in ledger_df else "—"
                 
                 st.dataframe(
-                    ledger_df[["Date", "Type", "Cart", "Collection (₹)", "Salary (₹)", "Commission (₹)", "Allowance (₹)", "Advance Taken (₹)", "Allow. Taken (₹)"]], 
+                    ledger_df[["Date", "Type", "Cart", "Collection (₹)", "Salary (₹)", "Commission (₹)", "Allowance (₹)", "Advance Taken (₹)", "Allow. Taken (₹)", "Leakage"]], 
                     hide_index=True, 
                     use_container_width=True,
                     column_config={
