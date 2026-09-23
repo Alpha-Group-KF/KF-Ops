@@ -22,6 +22,7 @@ import re
 import calendar
 import os
 import io
+from html import escape
 from urllib.parse import quote
 from urllib.parse import quote
 from datetime import date, datetime, timedelta
@@ -4499,6 +4500,25 @@ elif page == "Dashboard" and user_role == "admin":
             dow_df["Day"] = dow_df["Date"].dt.day_name().str[:3]
             
             if not dow_df.empty:
+                def show_compact_average_table(pivot):
+                    """Fit cart names and all weekday values inside the available column."""
+                    headers = "".join(f"<th>{escape(str(day))}</th>" for day in pivot.columns)
+                    rows = []
+                    for cart, values in pivot.iterrows():
+                        cells = "".join(f"<td>{int(round(value)):,}</td>" for value in values)
+                        rows.append(f"<tr><th scope='row'>{escape(str(cart))}</th>{cells}</tr>")
+                    st.html(
+                        "<style>"
+                        ".compact-dow-table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:clamp(8px,.75vw,11px);line-height:1.3}"
+                        ".compact-dow-table th,.compact-dow-table td{padding:6px 2px;border-bottom:1px solid #e8e2d9;text-align:right;overflow-wrap:anywhere}"
+                        ".compact-dow-table thead th{font-weight:700;background:#f7f3ea}"
+                        ".compact-dow-table th:first-child{width:29%;text-align:left}"
+                        ".compact-dow-table tbody tr:first-child{font-weight:700;background:#faf5e8}"
+                        "</style>"
+                        f"<table class='compact-dow-table'><thead><tr><th scope='col'>Cart</th>{headers}</tr></thead>"
+                        f"<tbody>{''.join(rows)}</tbody></table>"
+                    )
+
                 dw1, dw2 = st.columns(2)
                 with dw1: 
                     st.write("**Average Units Sold per Day of Week**")
@@ -4510,7 +4530,7 @@ elif page == "Dashboard" and user_role == "admin":
                         overall_units = units_df.groupby("Day")["Sold_Total"].mean().reindex(day_cols)
                         units_pivot.loc["Overall Average (per cart)"] = overall_units
                         units_pivot = units_pivot.reindex(["Overall Average (per cart)"] + [cart for cart in units_pivot.index if cart != "Overall Average (per cart)"])
-                        st.dataframe(units_pivot.round(0).astype(int), use_container_width=True)
+                        show_compact_average_table(units_pivot)
                     else:
                         st.caption("No units sold in this range.")
                 with dw2: 
@@ -4521,7 +4541,7 @@ elif page == "Dashboard" and user_role == "admin":
                     overall_rev = dow_df.groupby("Day")["Total_Collection"].mean().reindex(rev_day_cols)
                     rev_pivot.loc["Overall Average (per cart)"] = overall_rev
                     rev_pivot = rev_pivot.reindex(["Overall Average (per cart)"] + [cart for cart in rev_pivot.index if cart != "Overall Average (per cart)"])
-                    st.dataframe(rev_pivot.round(0).astype(int), use_container_width=True)
+                    show_compact_average_table(rev_pivot)
 
                 max1, max2 = st.columns(2)
                 with max1:
