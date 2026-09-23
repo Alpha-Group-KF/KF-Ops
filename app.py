@@ -3144,8 +3144,8 @@ elif page == "Expenses" and user_role == "admin":
                 display_exp = expenses_summary_df.copy()
                 display_exp["expense_date"] = pd.to_datetime(display_exp["expense_date"]).dt.strftime("%d-%b-%y")
                 display_exp["PO Link"] = display_exp["purchase_order_id"].apply(lambda p: f"PO #{int(p)}" if pd.notna(p) else "—")
-                display_exp = display_exp[["id", "expense_date", "month", "expense_type", "category", "sub_category", "description", "total_amount", "total_paid", "balance_due", "status", "attributed_to", "vendor_name", "PO Link"]].rename(columns={"id": "ID", "expense_date": "Date", "month": "Month", "expense_type": "Type", "category": "Category", "sub_category": "Sub-Category", "description": "Description", "total_amount": "Total (₹)", "total_paid": "Paid (₹)", "balance_due": "Balance (₹)", "status": "Status", "attributed_to": "Attributed To", "vendor_name": "Vendor"})
-                display_exp = apply_smart_filters(display_exp, ["Month", "Category", "Status", "Attributed To"], "expense_filters")
+                display_exp = display_exp[["id", "expense_date", "month", "expense_type", "category", "sub_category", "description", "total_amount", "total_paid", "balance_due", "status", "attributed_to", "vendor_name", "staff_name", "PO Link"]].rename(columns={"id": "ID", "expense_date": "Date", "month": "Month", "expense_type": "Type", "category": "Category", "sub_category": "Sub-Category", "description": "Description", "total_amount": "Total (₹)", "total_paid": "Paid (₹)", "balance_due": "Balance (₹)", "status": "Status", "attributed_to": "Attributed To", "vendor_name": "Vendor", "staff_name": "Staff Name"})
+                display_exp = apply_smart_filters(display_exp, ["Month", "Category", "Status", "Staff Name"], "expense_filters")
                 st.dataframe(display_exp, hide_index=True, use_container_width=True, column_config={"Total (₹)": st.column_config.NumberColumn(format="₹%,.2f"), "Paid (₹)": st.column_config.NumberColumn(format="₹%,.2f"), "Balance (₹)": st.column_config.NumberColumn(format="₹%,.2f")})
 
         elif e_sub_mode == "Edit Past Expense":
