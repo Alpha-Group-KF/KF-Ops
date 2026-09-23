@@ -1120,7 +1120,7 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
         ["Monthly Fixed Salary", "Standard Monthly Base Plan", f"Rs. {data_dict['monthly_fixed_salary']:,.2f}"],
         ["Total Days Worked", f"{data_dict['days_worked']} days worked + {data_dict['paid_leaves']} paid leaves", f"{data_dict['days_worked'] + data_dict['paid_leaves']} days"],
         ["Pro-rata Fixed Salary", f"({data_dict['days_worked']} + {data_dict['paid_leaves']}) days @ Rs. {data_dict.get('daily_rate', 600):.0f}/day", f"Rs. {data_dict['salary']:,.2f}"],
-        ["Sales Commissions", "15% on daily collections exceeding threshold", f"Rs. {data_dict['commissions']:,.2f}"],
+        ["Sales Commissions", "10% on daily collections exceeding threshold", f"Rs. {data_dict['commissions']:,.2f}"],
         ["Food & Tea Allowances", "Entitled weekday & Sunday daily allowances", f"Rs. {data_dict['allowances']:,.2f}"],
         ["Gross Payable Earnings", "Total entitled earnings for the period", f"Rs. {data_dict['incurred']:,.2f}"],
         ["Already Paid / Disbursed", "Cash advances & direct payments recorded", f"-Rs. {data_dict['paid']:,.2f}"],
