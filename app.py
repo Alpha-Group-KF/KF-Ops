@@ -342,7 +342,7 @@ def show_whatsapp_order_confirmation():
             s.commit()
         return poid
     with c1:
-        if st.button("Yes â€” Place Order", type="primary", use_container_width=True, key="wa_place_order"):
+        if st.button("Yes — Place Order", type="primary", use_container_width=True, key="wa_place_order"):
             try:
                 poid = save_po("Placed")
                 st.session_state.pop("wa_confirmation_payload", None)
@@ -354,7 +354,7 @@ def show_whatsapp_order_confirmation():
                 st.rerun()
             except Exception as e: st.error(f"Could not place purchase order: {e}")
     with c2:
-        if st.button("No â€” Save as Draft", use_container_width=True, key="wa_save_draft"):
+        if st.button("No — Save as Draft", use_container_width=True, key="wa_save_draft"):
             try:
                 poid = save_po("Draft")
                 st.session_state.pop("wa_confirmation_payload", None)
@@ -654,7 +654,7 @@ def apply_smart_filters(df, filter_columns, key_prefix):
     valid = [c for c in filter_columns if c in df.columns]
     if not valid:
         return df
-    with st.expander("ðŸ”Ž Filters", expanded=False):
+    with st.expander("🔎 Filters", expanded=False):
         cols = st.columns(len(valid))
         filtered = df.copy()
         for i, col in enumerate(valid):
@@ -903,7 +903,7 @@ def calculate_incurred_labour_for_range(start_date, end_date):
                     row_type = "Daily Salary"
                     day_salary = daily_rate
                 detailed_ledger.append({
-                    "date": d, "type": row_type, "cart": "â€”",
+                    "date": d, "type": row_type, "cart": "—",
                     "collection": 0.0, "fixed_salary": day_salary,
                     "commission": 0.0, "allowance": 0.0,
                     "advance_taken": 0.0, "food_taken": 0.0
@@ -974,7 +974,7 @@ def calculate_incurred_labour_for_range(start_date, end_date):
                     shift_sal += daily_rate
                     shift_allow += day_allow_rate
                     detailed_ledger.append({
-                        "date": d, "type": "Paid Leave", "cart": "â€”", 
+                        "date": d, "type": "Paid Leave", "cart": "—", 
                         "collection": 0.0, "fixed_salary": daily_rate, 
                         "commission": 0.0, "allowance": day_allow_rate,
                         "advance_taken": day_adv, "food_taken": day_food
@@ -982,7 +982,7 @@ def calculate_incurred_labour_for_range(start_date, end_date):
                     exp_attached = True
                 else:
                     detailed_ledger.append({
-                        "date": d, "type": "Unpaid Leave", "cart": "â€”", 
+                        "date": d, "type": "Unpaid Leave", "cart": "—", 
                         "collection": 0.0, "fixed_salary": 0.0, 
                         "commission": 0.0, "allowance": 0.0,
                         "advance_taken": day_adv, "food_taken": day_food
@@ -1031,7 +1031,7 @@ def calculate_incurred_labour_for_range(start_date, end_date):
                         })
             else:
                 detailed_ledger.append({
-                    "date": d, "type": "Expense Recorded", "cart": "â€”", 
+                    "date": d, "type": "Expense Recorded", "cart": "—", 
                     "collection": 0.0, "fixed_salary": 0.0, 
                     "commission": 0.0, "allowance": 0.0,
                     "advance_taken": day_adv, "food_taken": day_food
@@ -1115,14 +1115,14 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
     for item in data_dict.get("detailed_ledger", []):
         ledger_rows.append([
             item["date"].strftime("%d-%b-%y"), item["type"], item["cart"],
-            f"{item['collection']:,.0f}" if item['collection'] > 0 else "â€”",
+            f"{item['collection']:,.0f}" if item['collection'] > 0 else "—",
             f"{item['fixed_salary']:,.0f}",
-            f"{item['commission']:,.0f}" if item['commission'] > 0 else "â€”",
-            f"{item['allowance']:,.0f}" if item['allowance'] > 0 else "â€”",
-            f"{item['advance_taken']:,.0f}" if item.get('advance_taken', 0) > 0 else "â€”",
-            f"{item['food_taken']:,.0f}" if item.get('food_taken', 0) > 0 else "â€”"
+            f"{item['commission']:,.0f}" if item['commission'] > 0 else "—",
+            f"{item['allowance']:,.0f}" if item['allowance'] > 0 else "—",
+            f"{item['advance_taken']:,.0f}" if item.get('advance_taken', 0) > 0 else "—",
+            f"{item['food_taken']:,.0f}" if item.get('food_taken', 0) > 0 else "—"
         ])
-    if len(ledger_rows) == 1: ledger_rows.append(["No records", "â€”", "â€”", "â€”", "â€”", "â€”", "â€”", "â€”", "â€”"])
+    if len(ledger_rows) == 1: ledger_rows.append(["No records", "—", "—", "—", "—", "—", "—", "—", "—"])
     
     t_ledger = Table(ledger_rows, colWidths=[55, 65, 100, 45, 45, 45, 45, 60, 60])
     t_ledger.hAlign = 'LEFT'
@@ -1144,7 +1144,7 @@ def check_login():
     _, col_form, _ = st.columns([1, 1.2, 1])
     with col_form:
         try: st.image("assets/logo.png", width=220)
-        except Exception: st.title("ðŸ¦ Kulfi Ops")
+        except Exception: st.title("🍦 Kulfi Ops")
         st.subheader("Sign in")
         with st.form("login_form"):
             username = st.text_input("Username")
@@ -1161,7 +1161,7 @@ def check_login():
                 st.session_state["authenticated"] = True; st.session_state["user_role"] = "admin"; st.rerun()
             elif entry_pass and hmac.compare_digest(user_clean, entry_user) and hmac.compare_digest(pass_clean, entry_pass):
                 st.session_state["authenticated"] = True; st.session_state["user_role"] = "entry"; st.rerun()
-            else: st.error("Incorrect username or password â€” try again.")
+            else: st.error("Incorrect username or password — try again.")
     return False
 
 if not check_login(): st.stop()
@@ -1174,10 +1174,10 @@ user_role = st.session_state.get("user_role", "admin")
 if user_role == "entry":
     page = "Daily Entry"
     top_nav_c1, top_nav_c2 = st.columns([6, 1])
-    with top_nav_c1: st.title("ðŸ¦ Kulfi Ops â€” Daily Entry")
+    with top_nav_c1: st.title("🍦 Kulfi Ops — Daily Entry")
     with top_nav_c2:
         st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-        if st.button("ðŸšª Log out", type="secondary", use_container_width=True):
+        if st.button("🚪 Log out", type="secondary", use_container_width=True):
             st.session_state["authenticated"] = False; st.session_state["user_role"] = None; st.rerun()
 else:
     # Apply navigation requested by a button on another page BEFORE the
@@ -1188,13 +1188,13 @@ else:
 
     with st.sidebar:
         try: st.image("assets/logo.png", use_container_width=True)
-        except Exception: st.markdown("## ðŸ¦ Kulfi Ops")
+        except Exception: st.markdown("## 🍦 Kulfi Ops")
         nav_options = ["Dashboard", "Daily Entry", "Live Cart Tracking", "Cash Custody", "Purchase Orders", "Freezer Stock", "Freezer Analysis", "Stock Removed", "Expenses", "Staff & Payroll", "Payslip Generator"]
         page = st.radio("Go to", nav_options, label_visibility="collapsed", key="page_nav")
         st.markdown("---")
         if st.button("Log out", use_container_width=True):
             st.session_state["authenticated"] = False; st.session_state["user_role"] = None; st.rerun()
-    st.title(f"ðŸ¦ Kulfi Ops â€” {page}")
+    st.title(f"🍦 Kulfi Ops — {page}")
 
 # ======================================================================
 # PAGE ROUTING
@@ -1211,16 +1211,16 @@ if page == "Daily Entry":
         c_btn1, c_btn2, c_btn3 = st.columns(3, gap="medium")
         for i, cart_name in enumerate(CARTS):
             with [c_btn1, c_btn2, c_btn3][i]:
-                if st.button(f"ðŸ›’ {cart_name}", use_container_width=True, type="primary"):
+                if st.button(f"🛒 {cart_name}", use_container_width=True, type="primary"):
                     st.session_state["active_daily_cart"] = cart_name; st.rerun()
     else:
         cart_name = st.session_state["active_daily_cart"]
         
-        if st.button("â¬… Back to Cart Selection", type="primary", use_container_width=False):
+        if st.button("⬅ Back to Cart Selection", type="primary", use_container_width=False):
             st.session_state["active_daily_cart"] = None; st.rerun()
 
         st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
-        st.subheader(f"Cart Restock & Daily Sales â€” {cart_name}")
+        st.subheader(f"Cart Restock & Daily Sales — {cart_name}")
 
         try:
             all_entries = list_daily_entries_with_prefill()
@@ -1258,7 +1258,7 @@ if page == "Daily Entry":
             opening_map = {code: loaded["by_code"][code]["opening"] for code in FLAVOR_CODES}
 
             with col_box_left:
-                st.markdown(f"<div class='header-box-sales'><span>ðŸ“… 1. Sales & Closing Entry â€” {entry_date.strftime('%a, %d-%b-%y')}</span><span><b>{cart_name}</b></span></div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='header-box-sales'><span>📅 1. Sales & Closing Entry — {entry_date.strftime('%a, %d-%b-%y')}</span><span><b>{cart_name}</b></span></div>", unsafe_allow_html=True)
                 with st.container(border=True):
                     st.caption(f"Record **closing counts** and daytime stock additions for **{entry_date.strftime('%d-%b-%y')}**:")
                     for code in FLAVOR_CODES:
@@ -1319,13 +1319,13 @@ if page == "Daily Entry":
 
                     cash_leakage = total_collection_val - phonepe_val - staff_advance_val - food_tea_val - cash_val
                     has_leakage = cash_leakage > 0.001
-                    if has_leakage: st.markdown(f"<div style='margin-top:2px;'><label style='font-size:11px; font-weight:700;'>Cash Leakage:</label> <b style='color:#C41C1C; font-size:14px;'>₹{cash_leakage:,.2f}</b></div><p style='color:#C41C1C; font-weight:bold; font-size:11.5px; margin: 2px 0 !important;'>âš ï¸ Cash leakage detected - enter reason in remarks</p>", unsafe_allow_html=True)
+                    if has_leakage: st.markdown(f"<div style='margin-top:2px;'><label style='font-size:11px; font-weight:700;'>Cash Leakage:</label> <b style='color:#C41C1C; font-size:14px;'>₹{cash_leakage:,.2f}</b></div><p style='color:#C41C1C; font-weight:bold; font-size:11.5px; margin: 2px 0 !important;'>⚠️ Cash leakage detected - enter reason in remarks</p>", unsafe_allow_html=True)
                     else: st.markdown(f"<div style='margin-top:2px;'><label style='font-size:11px; font-weight:700;'>Cash Leakage:</label> <b style='color:#2A1B10; font-size:13px;'>₹{cash_leakage:,.2f}</b></div>", unsafe_allow_html=True)
                     remarks = st.text_input("Remarks", value=loaded["remarks"], key=f"daily_remarks{data_key_suffix}", placeholder="Enter remarks (mandatory if cash leakage)...")
 
             today_added_map, today_opening_map, today_db_opening_map = {}, {}, {}
             with col_box_right:
-                st.markdown(f"<div class='header-box-restock'><span>ðŸš€ 2. Today's Restock & Opening â€” {today_val.strftime('%a, %d-%b-%y')}</span><span><b>{cart_name}</b></span></div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='header-box-restock'><span>🚀 2. Today's Restock & Opening — {today_val.strftime('%a, %d-%b-%y')}</span><span><b>{cart_name}</b></span></div>", unsafe_allow_html=True)
                 with st.container(border=True):
                     st.caption(f"Enter **stock added for today ({today_val.strftime('%d-%b')})**.")
                     for code in FLAVOR_CODES:
@@ -1355,7 +1355,7 @@ if page == "Daily Entry":
                     tm2.metric("Today's Total Opening (Display)", f"{tot_today_open_display} pcs")
 
             st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-            if st.button("ðŸ’¾ Submit Daily Sales & Today's Restock Entry", type="primary", use_container_width=True):
+            if st.button("💾 Submit Daily Sales & Today's Restock Entry", type="primary", use_container_width=True):
                 if any(s < 0 for s in sold_map.values()): st.error("Sales works out negative for at least one flavour on previous day - fix closing count before saving.")
                 elif has_leakage and not remarks.strip(): st.error("Remarks is mandatory when there is a cash leakage. Please enter a reason.")
                 else:
@@ -1399,7 +1399,7 @@ elif page == "Payslip Generator" and user_role == "admin":
             month_str = payslip_start.strftime('%B %Y')
 
             st.markdown("---")
-            st.markdown(f"#### Salary Statement Summary â€” {sel_staff_payslip}")
+            st.markdown(f"#### Salary Statement Summary — {sel_staff_payslip}")
             st.markdown(f"**Date of Joining:** {doj_str} &nbsp;|&nbsp; **Payslip for the month:** {month_str}")
             
             summary_table_data = [
@@ -1433,12 +1433,12 @@ elif page == "Payslip Generator" and user_role == "admin":
                 ledger_df["Date"] = pd.to_datetime(ledger_df["date"]).dt.strftime("%d-%b-%y")
                 ledger_df["Type"] = ledger_df["type"]
                 ledger_df["Cart"] = ledger_df["cart"]
-                ledger_df["Collection (₹)"] = ledger_df["collection"].apply(lambda v: f"₹{v:,.2f}" if v > 0 else "â€”")
+                ledger_df["Collection (₹)"] = ledger_df["collection"].apply(lambda v: f"₹{v:,.2f}" if v > 0 else "—")
                 ledger_df["Salary (₹)"] = ledger_df["fixed_salary"].apply(lambda v: f"₹{v:,.2f}")
-                ledger_df["Commission (₹)"] = ledger_df["commission"].apply(lambda v: f"₹{v:,.2f}" if v > 0 else "â€”")
-                ledger_df["Allowance (₹)"] = ledger_df["allowance"].apply(lambda v: f"₹{v:,.2f}" if v > 0 else "â€”")
-                ledger_df["Advance Taken (₹)"] = ledger_df["advance_taken"].apply(lambda v: f"₹{v:,.2f}" if v > 0 else "â€”")
-                ledger_df["Allow. Taken (₹)"] = ledger_df["food_taken"].apply(lambda v: f"₹{v:,.2f}" if v > 0 else "â€”")
+                ledger_df["Commission (₹)"] = ledger_df["commission"].apply(lambda v: f"₹{v:,.2f}" if v > 0 else "—")
+                ledger_df["Allowance (₹)"] = ledger_df["allowance"].apply(lambda v: f"₹{v:,.2f}" if v > 0 else "—")
+                ledger_df["Advance Taken (₹)"] = ledger_df["advance_taken"].apply(lambda v: f"₹{v:,.2f}" if v > 0 else "—")
+                ledger_df["Allow. Taken (₹)"] = ledger_df["food_taken"].apply(lambda v: f"₹{v:,.2f}" if v > 0 else "—")
                 
                 st.dataframe(
                     ledger_df[["Date", "Type", "Cart", "Collection (₹)", "Salary (₹)", "Commission (₹)", "Allowance (₹)", "Advance Taken (₹)", "Allow. Taken (₹)"]], 
@@ -1457,7 +1457,7 @@ elif page == "Payslip Generator" and user_role == "admin":
                 pdf_bytes = generate_payslip_pdf(sel_staff_payslip, payslip_start, payslip_end, staff_data)
                 if pdf_bytes:
                     st.download_button(
-                        label="ðŸ“¥ Download Official Payslip as PDF",
+                        label="📥 Download Official Payslip as PDF",
                         data=pdf_bytes,
                         file_name=f"Payslip_{sel_staff_payslip.replace(' ', '_')}_{month_str.replace(' ', '_')}.pdf",
                         mime="application/pdf", type="primary", use_container_width=True
@@ -1472,8 +1472,8 @@ elif page == "Live Cart Tracking" and user_role == "admin":
     st.subheader("Live Cart Operations & Sales Map")
     st.caption("Monitor live sales, cart activity and geographical hotspots from the mobile cart apps.")
 
-    # Manual refresh only â€” no automatic refresh
-    if st.button("ðŸ”„ Manual Refresh Live Data"):
+    # Manual refresh only — no automatic refresh
+    if st.button("🔄 Manual Refresh Live Data"):
         st.rerun()
 
     st.markdown("---")
@@ -1497,7 +1497,7 @@ elif page == "Live Cart Tracking" and user_role == "admin":
     # 2. Also show cart login location when a cart has logged in but
     #    has not yet generated a GPS-tagged sale.
     # ------------------------------------------------------------------
-    st.markdown("#### ðŸ“ Live Sales Map (Today)")
+    st.markdown("#### 📍 Live Sales Map (Today)")
 
     map_query = """
         WITH today_transactions AS (
@@ -1564,7 +1564,7 @@ elif page == "Live Cart Tracking" and user_role == "admin":
     #
     # Active carts are identified separately using status = 'Open'.
     # ------------------------------------------------------------------
-    st.markdown("#### ðŸ›’ Today's Cart Shifts")
+    st.markdown("#### 🛒 Today's Cart Shifts")
 
     active_shifts_df = db_conn.query("""
         SELECT
@@ -1687,7 +1687,7 @@ elif page == "Live Cart Tracking" and user_role == "admin":
             #   Closed = closed
             is_open = str(shift["status"]).strip().lower() == "open"
 
-            status_color = "ðŸŸ¢" if is_open else "ðŸ”´"
+            status_color = "🟢" if is_open else "🔴"
 
             status_text = "OPEN" if is_open else "CLOSED"
 
@@ -1701,7 +1701,7 @@ elif page == "Live Cart Tracking" and user_role == "admin":
                 except Exception:
                     started_display = str(started_at)
             else:
-                started_display = "â€”"
+                started_display = "—"
 
             with st.container(border=True):
 
@@ -1803,12 +1803,12 @@ elif page == "Live Cart Tracking" and user_role == "admin":
 # PAGE: CASH CUSTODY (Admin View)
 # ======================================================================
 elif page == "Cash Custody" and user_role == "admin":
-    st.subheader("ðŸ’° Cash Custody & Handover")
+    st.subheader("💰 Cash Custody & Handover")
     if db_conn is None:
         st.error("Database connection is unavailable.")
         st.stop()
 
-    if st.button("ðŸ”„ Refresh Cash Position", key="cash_custody_refresh"):
+    if st.button("🔄 Refresh Cash Position", key="cash_custody_refresh"):
         st.rerun()
 
     # ------------------------------------------------------------------
@@ -1894,18 +1894,18 @@ elif page == "Cash Custody" and user_role == "admin":
 
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        st.metric("ðŸŸ  With Ops Coordinator", f"₹{custody_totals['OPS_COORDINATOR']:,.2f}",
+        st.metric("🟠 With Ops Coordinator", f"₹{custody_totals['OPS_COORDINATOR']:,.2f}",
                   help="Cash from daily sales not yet collected by Yogesh.")
         st.caption(_cash_date_caption("OPS_COORDINATOR"))
     with c2:
-        st.metric("ðŸ”µ With Yogesh", f"₹{custody_totals['YOGESH']:,.2f}",
+        st.metric("🔵 With Yogesh", f"₹{custody_totals['YOGESH']:,.2f}",
                   help="Cash collected from the Ops Coordinator but not yet handed to Srilalitha.")
         st.caption(_cash_date_caption("YOGESH"))
     with c3:
-        st.metric("ðŸŸ¢ Handed to Srilalitha", f"₹{custody_totals['SRILALITHA']:,.2f}",
+        st.metric("🟢 Handed to Srilalitha", f"₹{custody_totals['SRILALITHA']:,.2f}",
                   help="Cumulative cash already completed through the handover workflow.")
     with c4:
-        st.metric("ðŸ’µ Cash Payments", f"₹{total_cash_payments:,.2f}",
+        st.metric("💵 Cash Payments", f"₹{total_cash_payments:,.2f}",
                   help="All recorded Cash-mode payments excluding cart Food & Tea and Staff Advance payments, because those are paid before Daily Entry cash is determined.")
 
     st.info(
@@ -1919,11 +1919,11 @@ elif page == "Cash Custody" and user_role == "admin":
         st.session_state.pop("cash_collect_dates", None)
 
     tab_position, tab_collect, tab_handover, tab_history, tab_cash_payments = st.tabs([
-        "ðŸ“ Current Position",
-        "ðŸ§¾ Collect from Ops Coordinator",
-        "ðŸ¤ Handover to Srilalitha",
-        "ðŸ“š Handover History",
-        "ðŸ’µ All Cash Payments",
+        "📍 Current Position",
+        "🧾 Collect from Ops Coordinator",
+        "🤝 Handover to Srilalitha",
+        "📚 Handover History",
+        "💵 All Cash Payments",
     ])
 
     # ------------------------------------------------------------------
@@ -1984,7 +1984,7 @@ elif page == "Cash Custody" and user_role == "admin":
                     "SRILALITHA": "Srilalitha",
                 }).fillna(detail_display["current_holder"])
                 detail_display["Batch"] = detail_display["batch_id"].apply(
-                    lambda x: f"#{int(x)}" if pd.notna(x) else "â€”"
+                    lambda x: f"#{int(x)}" if pd.notna(x) else "—"
                 )
                 st.dataframe(
                     detail_display[["Date", "cart_name", "Cash (₹)", "Current Holder", "Batch"]]
@@ -2032,7 +2032,7 @@ elif page == "Cash Custody" and user_role == "admin":
                 "Select sales date(s) to collect",
                 options=date_options,
                 default=[],
-                format_func=lambda d: f"{d.strftime('%d-%b-%y')}  â€”  ₹{date_total_map.get(d, 0):,.2f}",
+                format_func=lambda d: f"{d.strftime('%d-%b-%y')}  —  ₹{date_total_map.get(d, 0):,.2f}",
                 key="cash_collect_dates",
             )
 
@@ -2095,7 +2095,7 @@ elif page == "Cash Custody" and user_role == "admin":
                 )
 
                 if st.button(
-                    f"âœ… Confirm Collected by Yogesh â€” ₹{expected_collection:,.2f}",
+                    f"✅ Confirm Collected by Yogesh — ₹{expected_collection:,.2f}",
                     type="primary",
                     use_container_width=True,
                     disabled=(abs(collection_difference) > 0.001 or invalid_collection_date),
@@ -2220,8 +2220,8 @@ elif page == "Cash Custody" and user_role == "admin":
                 "Select Yogesh batch",
                 options=batch_options,
                 format_func=lambda bid: (
-                    f"Batch #{bid} â€” "
-                    f"₹{float(batch_rows[bid]['actual_collected_amount'] or batch_rows[bid]['expected_amount'] or 0):,.2f} â€” "
+                    f"Batch #{bid} — "
+                    f"₹{float(batch_rows[bid]['actual_collected_amount'] or batch_rows[bid]['expected_amount'] or 0):,.2f} — "
                     f"Collected {pd.to_datetime(batch_rows[bid]['collection_date']).strftime('%d-%b-%y')}"
                 ),
                 key="cash_yogesh_batch",
@@ -2284,7 +2284,7 @@ elif page == "Cash Custody" and user_role == "admin":
             )
 
             if st.button(
-                f"âœ… Confirm Handover to Srilalitha â€” ₹{batch_amount:,.2f}",
+                f"✅ Confirm Handover to Srilalitha — ₹{batch_amount:,.2f}",
                 type="primary",
                 use_container_width=True,
                 disabled=(not confirm_handover or invalid_handover_date),
@@ -2355,8 +2355,8 @@ elif page == "Cash Custody" and user_role == "admin":
             hist = history_df.copy()
             hist["Batch"] = hist["batch_id"].apply(lambda x: f"#{int(x)}")
             hist["Collected"] = pd.to_datetime(hist["collection_date"]).dt.strftime("%d-%b-%y")
-            hist["Sales From"] = pd.to_datetime(hist["first_sales_date"], errors="coerce").dt.strftime("%d-%b-%y").fillna("â€”")
-            hist["Sales To"] = pd.to_datetime(hist["last_sales_date"], errors="coerce").dt.strftime("%d-%b-%y").fillna("â€”")
+            hist["Sales From"] = pd.to_datetime(hist["first_sales_date"], errors="coerce").dt.strftime("%d-%b-%y").fillna("—")
+            hist["Sales To"] = pd.to_datetime(hist["last_sales_date"], errors="coerce").dt.strftime("%d-%b-%y").fillna("—")
             hist["Amount (₹)"] = hist.apply(
                 lambda r: f"₹{float(r['actual_collected_amount'] if pd.notna(r['actual_collected_amount']) else r['expected_amount'] or 0):,.2f}",
                 axis=1,
@@ -2365,7 +2365,7 @@ elif page == "Cash Custody" and user_role == "admin":
                 "WITH_YOGESH": "With Yogesh",
                 "HANDED_TO_SRILALITHA": "Handed to Srilalitha",
             }).fillna(hist["status"])
-            hist["Handed Over"] = pd.to_datetime(hist["handed_over_date"], errors="coerce").dt.strftime("%d-%b-%y").fillna("â€”")
+            hist["Handed Over"] = pd.to_datetime(hist["handed_over_date"], errors="coerce").dt.strftime("%d-%b-%y").fillna("—")
             hist["Records"] = hist["cart_records"].fillna(0).astype(int)
             hist["Notes"] = hist["notes"].fillna("")
 
@@ -2467,15 +2467,15 @@ elif page == "Purchase Orders" and user_role == "admin":
             # so the borders and Qty column remain visually aligned.
             flavour_width = max(12, max((len(flavour) for flavour, _ in whatsapp_rows), default=0))
             qty_width = max(3, len(str(total_units)))
-            border = f"â”Œ{'â”€' * (flavour_width + 2)}â”¬{'â”€' * (qty_width + 2)}â”"
-            divider = f"â”œ{'â”€' * (flavour_width + 2)}â”¼{'â”€' * (qty_width + 2)}â”¤"
-            bottom = f"â””{'â”€' * (flavour_width + 2)}â”´{'â”€' * (qty_width + 2)}â”˜"
+            border = f"┌{'─' * (flavour_width + 2)}┬{'─' * (qty_width + 2)}┐"
+            divider = f"├{'─' * (flavour_width + 2)}┼{'─' * (qty_width + 2)}┤"
+            bottom = f"└{'─' * (flavour_width + 2)}┴{'─' * (qty_width + 2)}┘"
             wa_lines = [f"HOSUR:: KULFI ORDER - {order_date_text}", "", border,
-                        f"â”‚ {'Flavour':<{flavour_width}} â”‚ {'Qty':>{qty_width}} â”‚", divider]
+                        f"│ {'Flavour':<{flavour_width}} │ {'Qty':>{qty_width}} │", divider]
             for flavour, qty in whatsapp_rows:
-                wa_lines.append(f"â”‚ {flavour:<{flavour_width}} â”‚ {qty:>{qty_width}} â”‚")
+                wa_lines.append(f"│ {flavour:<{flavour_width}} │ {qty:>{qty_width}} │")
             wa_lines.extend([divider,
-                             f"â”‚ {'Overall Units':<{flavour_width}} â”‚ {total_units:>{qty_width}} â”‚",
+                             f"│ {'Overall Units':<{flavour_width}} │ {total_units:>{qty_width}} │",
                              bottom])
             whatsapp_message = "```\n" + "\n".join(wa_lines) + "\n```"
             if total_units > 0:
@@ -2483,9 +2483,9 @@ elif page == "Purchase Orders" and user_role == "admin":
                 if len(wa_digits) == 10: wa_digits = "91" + wa_digits
                 st.text(whatsapp_message)
                 if len(wa_digits) >= 10:
-                    st.link_button("ðŸ“² Send Order to WhatsApp", f"https://wa.me/{wa_digits}?text={quote(whatsapp_message)}", use_container_width=True)
+                    st.link_button("📲 Send Order to WhatsApp", f"https://wa.me/{wa_digits}?text={quote(whatsapp_message)}", use_container_width=True)
                     st.caption("WhatsApp will open with the order message. After sending it, click the confirmation button below.")
-                    if st.button("âœ… WhatsApp sent â€” Continue", use_container_width=True, key="wa_sent_continue"):
+                    if st.button("✅ WhatsApp sent — Continue", use_container_width=True, key="wa_sent_continue"):
                         st.session_state["wa_confirmation_payload"] = {"order_date": order_date, "expected_date": expected_date, "location": location, "discount_pct": float(discount_pct), "notes": po_notes.strip(), "total_units": total_units, "final_amount": final_amount, "items": [(str(row["Code"]), int(row["Order Quantity"])) for _, row in po_editor_df.iterrows() if int(row["Order Quantity"]) > 0]}
                         show_whatsapp_order_confirmation()
                 else:
@@ -2493,7 +2493,7 @@ elif page == "Purchase Orders" and user_role == "admin":
             else:
                 st.info("There are no suggested/entered quantities to send. Please enter at least one quantity.")
         else:
-            if st.button("ðŸš€ Submit Purchase Order", type="primary", use_container_width=True):
+            if st.button("🚀 Submit Purchase Order", type="primary", use_container_width=True):
                 if total_units <= 0: st.error("Please enter a quantity greater than 0 for at least one flavour before placing the order.")
                 else:
                     try:
@@ -2515,7 +2515,7 @@ elif page == "Purchase Orders" and user_role == "admin":
         if po_query_df.empty: st.info("No purchase orders found in the database.")
         else:
             po_records = po_query_df.to_dict("records")
-            po_labels = [f"PO #{r['id']} â€” {pd.to_datetime(r['order_date']).strftime('%d-%b-%y')} ({r['location']}) â€” Status: {r['order_status']}" for r in po_records]
+            po_labels = [f"PO #{r['id']} — {pd.to_datetime(r['order_date']).strftime('%d-%b-%y')} ({r['location']}) — Status: {r['order_status']}" for r in po_records]
             selected_po_label = st.selectbox("Select Purchase Order to edit", po_labels, key="edit_po_select")
             loaded_po = po_records[po_labels.index(selected_po_label)]
             loaded_po_id = loaded_po["id"]
@@ -2551,7 +2551,7 @@ elif page == "Purchase Orders" and user_role == "admin":
             em1.metric("Total Ordered Units", f"{e_total_units} units"); em2.metric("Gross Cost", f"₹{e_gross_cost:,.2f}"); em3.metric(f"Discount ({e_discount_pct:.1f}%)", f"-₹{e_discount_amount:,.2f}"); em4.metric("Final Amount to Pay", f"₹{e_final_amount:,.2f}")
             e_notes = st.text_input("Order Notes", value=clean_notes, key=f"edit_po_notes_{loaded_po_id}")
 
-            if st.button("ðŸ’¾ Update Purchase Order", type="primary", use_container_width=True):
+            if st.button("💾 Update Purchase Order", type="primary", use_container_width=True):
                 if e_total_units <= 0: st.error("Please specify at least one quantity for the order.")
                 else:
                     try:
@@ -2582,7 +2582,7 @@ elif page == "Freezer Stock" and user_role == "admin":
         if stock_mode == "Edit past entry":
             if not past_receipts: st.info("No past delivery receipts found in database.")
             else:
-                labels = [f"Receipt #{r['id']} â€” {pd.to_datetime(r['received_date']).strftime('%d-%b-%y')} ({r['location']})" for r in past_receipts]
+                labels = [f"Receipt #{r['id']} — {pd.to_datetime(r['received_date']).strftime('%d-%b-%y')} ({r['location']})" for r in past_receipts]
                 selected_rec = st.selectbox("Select delivery receipt to edit", labels, key="db_stock_select")
                 stock_loaded = past_receipts[labels.index(selected_rec)]; loaded_id = stock_loaded["id"]
 
@@ -2795,7 +2795,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
 
     phys_base_df = pd.DataFrame(phys_base_rows)
     phys_base_df = pd.concat([phys_base_df, pd.DataFrame([{
-        "Flavour": "ðŸ”¥ OVERALL TOTAL",
+        "Flavour": "🔥 OVERALL TOTAL",
         "Per Last Audit": tot_base_b,
         "Recv post Audit": tot_rec_b,
         "Cart Additions": tot_added_b,
@@ -2817,30 +2817,30 @@ elif page == "Freezer Analysis" and user_role == "admin":
         tot_rate += rate
         target_req = int(round(rate * (buffer_days + cover_days)))
 
-        if rate <= 0: status, days_left, suggested_qty, reason = "âšª No Sales", None, 0, "No active sales logged"
+        if rate <= 0: status, days_left, suggested_qty, reason = "⚪ No Sales", None, 0, "No active sales logged"
         else:
             days_left = avail_stock / rate
             trigger_dates.append(today_fa + timedelta(days=max(0, int(days_left - buffer_days))))
-            if avail_stock <= (rate * buffer_days): status, suggested_qty, reason = "ðŸ”´ Order Now", max(0, int(round((target_req - avail_stock) / 10.0)) * 10), f"Stock below {buffer_days}d buffer"
-            elif avail_stock <= (rate * (buffer_days + 2)): status, suggested_qty, reason = "ðŸŸ¡ Order Soon", max(0, int(round((target_req - avail_stock) / 10.0)) * 10), f"Reaches buffer in < 2 days"
-            else: status, suggested_qty, reason = "ðŸŸ¢ OK", 0, f"Stock covers {int(round(days_left))} days"
+            if avail_stock <= (rate * buffer_days): status, suggested_qty, reason = "🔴 Order Now", max(0, int(round((target_req - avail_stock) / 10.0)) * 10), f"Stock below {buffer_days}d buffer"
+            elif avail_stock <= (rate * (buffer_days + 2)): status, suggested_qty, reason = "🟡 Order Soon", max(0, int(round((target_req - avail_stock) / 10.0)) * 10), f"Reaches buffer in < 2 days"
+            else: status, suggested_qty, reason = "🟢 OK", 0, f"Stock covers {int(round(days_left))} days"
 
         tot_suggested_units += suggested_qty; tot_order_cost += (suggested_qty * f_info["cost_price"])
-        reorder_rows.append({"Flavour": f_info["name"], "Stock Available": avail_stock, "Daily Pace": f"{rate:.1f} /d", "Runway": f"{int(round(days_left))} days" if days_left is not None else "â€”", "Target Buffer": target_req, "Suggested Order": int(suggested_qty), "Urgency": status, "Rationale": reason})
+        reorder_rows.append({"Flavour": f_info["name"], "Stock Available": avail_stock, "Daily Pace": f"{rate:.1f} /d", "Runway": f"{int(round(days_left))} days" if days_left is not None else "—", "Target Buffer": target_req, "Suggested Order": int(suggested_qty), "Urgency": status, "Rationale": reason})
 
     r_m1, r_m2, r_m3, r_m4 = st.columns(4)
     overall_order_date = min(trigger_dates) if trigger_dates else None
     r_m1.metric("Stock Available", f"{tot_calc_active} units"); r_m2.metric("Daily Velocity", f"{tot_rate:.1f} units/day"); r_m3.metric("Total Order Quantity", f"{tot_suggested_units} pcs"); r_m4.metric("Estimated PO Cost", f"₹{tot_order_cost:,.2f}")
 
     if overall_order_date is not None:
-        if overall_order_date <= today_fa: st.error(f"ðŸš¨ **Action Required:** At least one flavor has breached the safety buffer. Place replenishment order today!")
-        else: st.info(f"ðŸ“… **Next Order Milestone:** Estimated order placement on **{overall_order_date.strftime('%d-%b-%y')}** ({(overall_order_date - today_fa).days} days remaining).")
+        if overall_order_date <= today_fa: st.error(f"🚨 **Action Required:** At least one flavor has breached the safety buffer. Place replenishment order today!")
+        else: st.info(f"📅 **Next Order Milestone:** Estimated order placement on **{overall_order_date.strftime('%d-%b-%y')}** ({(overall_order_date - today_fa).days} days remaining).")
 
     reorder_df = pd.DataFrame(reorder_rows)
-    reorder_df = pd.concat([reorder_df, pd.DataFrame([{"Flavour": "ðŸ”¥ OVERALL TOTAL", "Stock Available": tot_calc_active, "Daily Pace": f"{tot_rate:.1f} /d", "Runway": f"{(tot_calc_active / tot_rate):.0f} days" if tot_rate > 0 else "â€”", "Target Buffer": int(round(tot_rate * (buffer_days + cover_days))), "Suggested Order": tot_suggested_units, "Urgency": "ðŸ”´ Order Now" if overall_order_date and overall_order_date <= today_fa else "ðŸŸ¢ Stable", "Rationale": f"Est Cost: ₹{tot_order_cost:,.0f}"}])], ignore_index=True)
+    reorder_df = pd.concat([reorder_df, pd.DataFrame([{"Flavour": "🔥 OVERALL TOTAL", "Stock Available": tot_calc_active, "Daily Pace": f"{tot_rate:.1f} /d", "Runway": f"{(tot_calc_active / tot_rate):.0f} days" if tot_rate > 0 else "—", "Target Buffer": int(round(tot_rate * (buffer_days + cover_days))), "Suggested Order": tot_suggested_units, "Urgency": "🔴 Order Now" if overall_order_date and overall_order_date <= today_fa else "🟢 Stable", "Rationale": f"Est Cost: ₹{tot_order_cost:,.0f}"}])], ignore_index=True)
     st.dataframe(reorder_df, hide_index=True, use_container_width=True)
 
-    if st.button("ðŸ“ Create Order", type="primary", use_container_width=True, key="fa_create_order"):
+    if st.button("📝 Create Order", type="primary", use_container_width=True, key="fa_create_order"):
         st.session_state["po_prefill_quantities"] = {code: int(reorder_rows[i]["Suggested Order"]) for i, code in enumerate(FLAVOR_CODES)}
         st.session_state["po_prefill_active"] = True
         st.session_state["new_po_order_date"] = date.today()
@@ -2869,9 +2869,9 @@ elif page == "Freezer Analysis" and user_role == "admin":
         phys_stock = audit_map.get(code, None)
         if phys_stock is not None:
             phys_stock = int(phys_stock); tot_phys += phys_stock; var_qty = phys_stock - calc_stock
-            var_status = "âœ… Match" if var_qty == 0 else (f"ðŸŸ¢ +{var_qty}" if var_qty > 0 else f"ðŸ”´ {var_qty}")
+            var_status = "✅ Match" if var_qty == 0 else (f"🟢 +{var_qty}" if var_qty > 0 else f"🔴 {var_qty}")
             phys_display, var_display = str(phys_stock), str(var_qty)
-        else: phys_display, var_display, var_status = "â€”", "â€”", "âšª Missing"
+        else: phys_display, var_display, var_status = "—", "—", "⚪ Missing"
 
         comparison_rows.append({"Flavour": f_info["name"], "Received (In)": recv_units, "Issued (Carts)": issued_units, "Removed": removed_units, "Calc. Stock (Audit)": calc_stock, "Physical Audit Count": phys_display, "Variance": var_display, "Audit Status": var_status})
 
@@ -2881,11 +2881,11 @@ elif page == "Freezer Analysis" and user_role == "admin":
     c_m6.metric("Net Variance", f"{net_var:+d} pcs" if has_audit else "N/A")
 
     comp_df = pd.DataFrame(comparison_rows)
-    comp_df = pd.concat([comp_df, pd.DataFrame([{"Flavour": "ðŸ”¥ OVERALL TOTAL", "Received (In)": tot_rec_a, "Issued (Carts)": tot_issued_a, "Removed": tot_removed_a, "Calc. Stock (Audit)": tot_calc_a, "Physical Audit Count": str(tot_phys) if has_audit else "â€”", "Variance": f"{net_var:+d}" if has_audit else "â€”", "Audit Status": "âœ… Match" if net_var == 0 and has_audit else (f"âš ï¸ {net_var:+d}" if has_audit else "â€”")}])], ignore_index=True)
+    comp_df = pd.concat([comp_df, pd.DataFrame([{"Flavour": "🔥 OVERALL TOTAL", "Received (In)": tot_rec_a, "Issued (Carts)": tot_issued_a, "Removed": tot_removed_a, "Calc. Stock (Audit)": tot_calc_a, "Physical Audit Count": str(tot_phys) if has_audit else "—", "Variance": f"{net_var:+d}" if has_audit else "—", "Audit Status": "✅ Match" if net_var == 0 and has_audit else (f"⚠️ {net_var:+d}" if has_audit else "—")}])], ignore_index=True)
     st.dataframe(comp_df, hide_index=True, use_container_width=True)
 
     st.markdown("---"); st.markdown("### 4. Detailed Stock Movement Logs")
-    m_tab1, m_tab2, m_tab3, m_tab4 = st.tabs(["ðŸ“‹ Purchase Orders", "ðŸ“¦ Received Deliveries", "ðŸ” Physical Stock Audits", "ðŸ—‘ï¸ Stock Removed"])
+    m_tab1, m_tab2, m_tab3, m_tab4 = st.tabs(["📋 Purchase Orders", "📦 Received Deliveries", "🔍 Physical Stock Audits", "🗑️ Stock Removed"])
 
     with m_tab1:
         po_query_df = db_conn.query("SELECT p.id AS \"PO #\", p.order_date AS \"Order Date\", p.expected_date AS \"Expected Date\", p.location AS \"Location\", p.order_status AS \"Status\", json_agg(json_build_object('code', pi.flavor_code, 'qty', pi.ordered_units)) AS items FROM purchase_orders p LEFT JOIN purchase_order_items pi ON p.id = pi.order_id GROUP BY p.id ORDER BY p.order_date DESC;", ttl="0s")
@@ -2893,7 +2893,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
             po_display = []
             for _, r in po_query_df.iterrows():
                 items_dict = {itm['code']: itm['qty'] for itm in r['items']} if r['items'] else {}
-                row_data = {"PO #": f"PO #{r['PO #']}", "Order Date": pd.to_datetime(r['Order Date']).strftime("%d-%b-%y"), "Expected": pd.to_datetime(r['Expected Date']).strftime("%d-%b-%y") if pd.notna(r['Expected Date']) else "â€”", "Location": r['Location'], "Status": r['Status'], "Total Qty": sum(int(q or 0) for q in items_dict.values())}
+                row_data = {"PO #": f"PO #{r['PO #']}", "Order Date": pd.to_datetime(r['Order Date']).strftime("%d-%b-%y"), "Expected": pd.to_datetime(r['Expected Date']).strftime("%d-%b-%y") if pd.notna(r['Expected Date']) else "—", "Location": r['Location'], "Status": r['Status'], "Total Qty": sum(int(q or 0) for q in items_dict.values())}
                 for code in FLAVOR_CODES: row_data[code] = items_dict.get(code, 0)
                 po_display.append(row_data)
             st.dataframe(pd.DataFrame(po_display), hide_index=True, use_container_width=True)
@@ -2960,7 +2960,7 @@ elif page == "Stock Removed" and user_role == "admin":
         m1, m2, m3 = st.columns(3)
         m1.metric("Total Units Removed", f"{tot_rem_units} units"); m2.metric("Total Cost Value", f"₹{tot_rem_cost:,.2f}"); m3.metric("Date of Removal", removal_date.strftime("%d-%b-%y"))
 
-        if st.button("ðŸ—‘ï¸ Save Stock Removal", type="primary", use_container_width=True):
+        if st.button("🗑️ Save Stock Removal", type="primary", use_container_width=True):
             if tot_rem_units <= 0: st.error("Please enter at least one quantity greater than 0 before saving.")
             elif not reason_for_removal.strip(): st.error("Reason for removal is mandatory. Please provide a brief explanation.")
             else:
@@ -2997,7 +2997,7 @@ elif page == "Stock Removed" and user_role == "admin":
         if rem_query_df.empty: st.info("No past stock removals found in database.")
         else:
             rem_records = rem_query_df.to_dict("records")
-            rem_labels = [f"Removal #{r['id']} â€” {pd.to_datetime(r['removal_date']).strftime('%d-%b-%y')} ({r['location']}) â€” {str(r['reason_for_removal'])[:25]} (₹{float(r['cost_price_of_removed_items']):,.0f})" for r in rem_records]
+            rem_labels = [f"Removal #{r['id']} — {pd.to_datetime(r['removal_date']).strftime('%d-%b-%y')} ({r['location']}) — {str(r['reason_for_removal'])[:25]} (₹{float(r['cost_price_of_removed_items']):,.0f})" for r in rem_records]
             sel_rem_label = st.selectbox("Select removal entry to edit", rem_labels, key="edit_rem_select")
             loaded_rem = rem_records[rem_labels.index(sel_rem_label)]
             loaded_rem_id = loaded_rem["id"]
@@ -3021,7 +3021,7 @@ elif page == "Stock Removed" and user_role == "admin":
             em1, em2, em3 = st.columns(3)
             em1.metric("Total Units Removed", f"{e_tot_rem_units} units"); em2.metric("Total Cost Value", f"₹{e_tot_rem_cost:,.2f}"); em3.metric("Date", e_rem_date.strftime("%d-%b-%y"))
 
-            if st.button("ðŸ’¾ Update Stock Removal", type="primary", use_container_width=True):
+            if st.button("💾 Update Stock Removal", type="primary", use_container_width=True):
                 if e_tot_rem_units <= 0: st.error("Please enter at least one quantity greater than 0.")
                 elif not e_rem_reason.strip(): st.error("Reason for removal cannot be empty.")
                 else:
@@ -3036,9 +3036,9 @@ elif page == "Stock Removed" and user_role == "admin":
 elif page == "Expenses" and user_role == "admin":
     st.subheader("Expenses & Payments Management")
     st.caption("Manage supplier bills, operating expenses, payments (Cash vs UPI), and settlement balances.")
-    exp_nav = st.radio("Section", ["ðŸ“‹ Expenses (Bills / Invoices)", "ðŸ’³ Payments (Cash Outflows)", "ðŸ“Š Summary & Date Reports"], horizontal=True, key="exp_nav_sec")
+    exp_nav = st.radio("Section", ["📋 Expenses (Bills / Invoices)", "💳 Payments (Cash Outflows)", "📊 Summary & Date Reports"], horizontal=True, key="exp_nav_sec")
 
-    if exp_nav == "ðŸ“‹ Expenses (Bills / Invoices)":
+    if exp_nav == "📋 Expenses (Bills / Invoices)":
         e_sub_mode = st.radio("Action", ["View Expenses", "Add New Expense", "Edit Past Expense"], horizontal=True, key="e_sub_mode_rad")
         expenses_summary_df = load_db_expenses_summary_df()
 
@@ -3087,7 +3087,7 @@ elif page == "Expenses" and user_role == "admin":
                 with p5: p_to = st.text_input("Paid To", value=e_vendor, key="add_p_to")
                 p_notes = st.text_input("Payment Notes", placeholder="Optional payment note...", key="add_p_notes")
 
-            if st.button("ðŸ’¾ Save Expense Entry", type="primary", use_container_width=True):
+            if st.button("💾 Save Expense Entry", type="primary", use_container_width=True):
                 if e_amount <= 0: st.error("Please enter an expense amount greater than 0.")
                 else:
                     try:
@@ -3142,7 +3142,7 @@ elif page == "Expenses" and user_role == "admin":
                 ek1.metric("Total Expenses Incurred", f"₹{float(expenses_summary_df['total_amount'].sum()):,.2f}"); ek2.metric("Total Amount Paid", f"₹{float(expenses_summary_df['total_paid'].sum()):,.2f}"); ek3.metric("Outstanding Balance Due", f"₹{float(expenses_summary_df['balance_due'].sum()):,.2f}")
                 display_exp = expenses_summary_df.copy()
                 display_exp["expense_date"] = pd.to_datetime(display_exp["expense_date"]).dt.strftime("%d-%b-%y")
-                display_exp["PO Link"] = display_exp["purchase_order_id"].apply(lambda p: f"PO #{int(p)}" if pd.notna(p) else "â€”")
+                display_exp["PO Link"] = display_exp["purchase_order_id"].apply(lambda p: f"PO #{int(p)}" if pd.notna(p) else "—")
                 display_exp = display_exp[["id", "expense_date", "month", "expense_type", "category", "sub_category", "description", "total_amount", "total_paid", "balance_due", "status", "attributed_to", "vendor_name", "PO Link"]].rename(columns={"id": "ID", "expense_date": "Date", "month": "Month", "expense_type": "Type", "category": "Category", "sub_category": "Sub-Category", "description": "Description", "total_amount": "Total (₹)", "total_paid": "Paid (₹)", "balance_due": "Balance (₹)", "status": "Status", "attributed_to": "Attributed To", "vendor_name": "Vendor"})
                 display_exp = apply_smart_filters(display_exp, ["Month", "Category", "Status", "Attributed To"], "expense_filters")
                 st.dataframe(display_exp, hide_index=True, use_container_width=True, column_config={"Total (₹)": st.column_config.NumberColumn(format="₹%,.2f"), "Paid (₹)": st.column_config.NumberColumn(format="₹%,.2f"), "Balance (₹)": st.column_config.NumberColumn(format="₹%,.2f")})
@@ -3151,7 +3151,7 @@ elif page == "Expenses" and user_role == "admin":
             if expenses_summary_df.empty: st.info("No expenses found to edit.")
             else:
                 exp_records = expenses_summary_df.to_dict("records")
-                exp_labels = [f"#{r['id']} â€” {pd.to_datetime(r['expense_date']).strftime('%d-%b-%y')} â€” {r['category']} (Total: ₹{float(r['total_amount']):,.0f} | Due: ₹{float(r['balance_due']):,.0f})" for r in exp_records]
+                exp_labels = [f"#{r['id']} — {pd.to_datetime(r['expense_date']).strftime('%d-%b-%y')} — {r['category']} (Total: ₹{float(r['total_amount']):,.0f} | Due: ₹{float(r['balance_due']):,.0f})" for r in exp_records]
                 sel_exp_label = st.selectbox("Select Expense to Edit", exp_labels, key="edit_exp_select")
                 loaded_exp = exp_records[exp_labels.index(sel_exp_label)]; loaded_exp_id = loaded_exp["id"]
                 pos_df = db_conn.query("SELECT id, order_date, location FROM purchase_orders ORDER BY order_date DESC;", ttl="0s") if db_conn else pd.DataFrame()
@@ -3184,7 +3184,7 @@ elif page == "Expenses" and user_role == "admin":
                 e_edit_desc = st.text_input("Description", value=str(loaded_exp.get("description") or ""), key=f"ee_desc_{loaded_exp_id}")
                 e_edit_remarks = st.text_input("Remarks", value=str(loaded_exp.get("remarks") or ""), key=f"ee_rem_{loaded_exp_id}")
 
-                if st.button("ðŸ’¾ Update Expense", type="primary", use_container_width=True):
+                if st.button("💾 Update Expense", type="primary", use_container_width=True):
                     if e_edit_amount <= 0: st.error("Amount must be greater than 0.")
                     else:
                         try:
@@ -3221,7 +3221,7 @@ elif page == "Expenses" and user_role == "admin":
                             show_success_modal(f"Expense #{loaded_exp_id} updated successfully!")
                         except Exception as e: st.error(f"Could not update expense: {e}")
 
-    elif exp_nav == "ðŸ’³ Payments (Cash Outflows)":
+    elif exp_nav == "💳 Payments (Cash Outflows)":
         p_sub_mode = st.radio("Action", ["Record New Payment", "View Payments", "Edit Past Payment"], horizontal=True, key="p_sub_mode_rad")
         payments_df, expenses_summary_df = load_db_payments_df(), load_db_expenses_summary_df()
 
@@ -3231,10 +3231,10 @@ elif page == "Expenses" and user_role == "admin":
             else:
                 unpaid_filter = st.checkbox("Show only expenses with pending balance", value=True, key="filter_unpaid_exp")
                 filtered_exp = expenses_summary_df[expenses_summary_df["balance_due"] > 0] if unpaid_filter else expenses_summary_df
-                if filtered_exp.empty: st.success("ðŸŽ‰ All logged expenses are fully settled!")
+                if filtered_exp.empty: st.success("🎉 All logged expenses are fully settled!")
                 else:
                     f_records = filtered_exp.to_dict("records")
-                    f_labels = [f"Expense #{r['id']} â€” {r['category']} â€” {r['description'] or r['vendor_name']} (Total: ₹{float(r['total_amount']):,.0f} | Due: ₹{float(r['balance_due']):,.0f})" for r in f_records]
+                    f_labels = [f"Expense #{r['id']} — {r['category']} — {r['description'] or r['vendor_name']} (Total: ₹{float(r['total_amount']):,.0f} | Due: ₹{float(r['balance_due']):,.0f})" for r in f_records]
                     target_exp = f_records[f_labels.index(st.selectbox("Select Expense to Pay", f_labels, key="pay_target_select"))]; target_exp_id, curr_due = target_exp["id"], float(target_exp["balance_due"])
 
                     m1, m2, m3 = st.columns(3)
@@ -3250,7 +3250,7 @@ elif page == "Expenses" and user_role == "admin":
                     with c5: new_p_to = st.text_input("Paid To", value=str(target_exp.get("vendor_name") or ""), key="rec_p_to")
                     new_p_notes = st.text_input("Payment Notes / Remarks", placeholder="e.g. Part payment tranche 1...", key="rec_p_notes")
 
-                    if st.button("ðŸ’³ Disburse Payment", type="primary", use_container_width=True):
+                    if st.button("💳 Disburse Payment", type="primary", use_container_width=True):
                         if new_p_amount <= 0: st.error("Please enter a payment amount greater than 0.")
                         else:
                             try:
@@ -3307,7 +3307,7 @@ elif page == "Expenses" and user_role == "admin":
             if payments_df.empty: st.info("No payment transactions found in database.")
             else:
                 st.metric("Total Payments Disbursed", f"₹{float(payments_df['amount_paid'].sum()):,.2f}")
-                disp_pay = payments_df.copy(); disp_pay["payment_date"] = pd.to_datetime(disp_pay["payment_date"]).dt.strftime("%d-%b-%y"); disp_pay["Expense Link"] = disp_pay.apply(lambda r: f"#{r['expense_id']} â€” {r['category']} (₹{float(r['expense_total']):,.0f})", axis=1)
+                disp_pay = payments_df.copy(); disp_pay["payment_date"] = pd.to_datetime(disp_pay["payment_date"]).dt.strftime("%d-%b-%y"); disp_pay["Expense Link"] = disp_pay.apply(lambda r: f"#{r['expense_id']} — {r['category']} (₹{float(r['expense_total']):,.0f})", axis=1)
                 disp_pay = disp_pay[["id", "payment_date", "Expense Link", "amount_paid", "payment_mode", "ref_no", "paid_to", "paid_by", "notes"]].rename(columns={"id": "Payment ID", "payment_date": "Date", "amount_paid": "Amount (₹)", "payment_mode": "Mode", "ref_no": "Ref / UTR", "paid_to": "Paid To", "paid_by": "Paid By", "notes": "Notes"})
                 disp_pay = apply_smart_filters(disp_pay, ["Mode", "Paid To"], "payment_filters")
                 st.dataframe(disp_pay, hide_index=True, use_container_width=True, column_config={"Amount (₹)": st.column_config.NumberColumn(format="₹%,.2f")})
@@ -3316,7 +3316,7 @@ elif page == "Expenses" and user_role == "admin":
             if payments_df.empty: st.info("No payments recorded to edit.")
             else:
                 pay_records = payments_df.to_dict("records")
-                pay_labels = [f"Payment #{r['id']} â€” {pd.to_datetime(r['payment_date']).strftime('%d-%b-%y')} â€” For Expense #{r['expense_id']} ({r['category']}) (₹{float(r['amount_paid']):,.2f})" for r in pay_records]
+                pay_labels = [f"Payment #{r['id']} — {pd.to_datetime(r['payment_date']).strftime('%d-%b-%y')} — For Expense #{r['expense_id']} ({r['category']}) (₹{float(r['amount_paid']):,.2f})" for r in pay_records]
                 loaded_pay = pay_records[pay_labels.index(st.selectbox("Select Payment to Edit", pay_labels, key="edit_pay_select"))]; loaded_pay_id = loaded_pay["id"]
 
                 c1, c2, c3 = st.columns(3)
@@ -3329,7 +3329,7 @@ elif page == "Expenses" and user_role == "admin":
                 with c5: ep_to = st.text_input("Paid To", value=str(loaded_pay.get("paid_to") or ""), key=f"ep_to_{loaded_pay_id}")
                 ep_notes = st.text_input("Payment Notes", value=str(loaded_pay.get("notes") or ""), key=f"ep_notes_{loaded_pay_id}")
 
-                if st.button("ðŸ’¾ Update Payment", type="primary", use_container_width=True):
+                if st.button("💾 Update Payment", type="primary", use_container_width=True):
                     if ep_amt <= 0: st.error("Amount must be greater than 0.")
                     else:
                         try:
@@ -3355,7 +3355,7 @@ elif page == "Expenses" and user_role == "admin":
                             show_success_modal(f"Payment #{loaded_pay_id} updated successfully!")
                         except Exception as e: st.error(f"Could not update payment: {e}")
 
-    elif exp_nav == "ðŸ“Š Summary & Date Reports":
+    elif exp_nav == "📊 Summary & Date Reports":
         st.write("Analyze expense obligations, actual disbursements, and settlement ratios over any time window:")
         expenses_summary_df, payments_df = load_db_expenses_summary_df(), load_db_payments_df()
 
@@ -3402,14 +3402,14 @@ elif page == "Staff & Payroll" and user_role == "admin":
 
     staff_tab_sel = st.radio(
         "Section", 
-        ["ðŸ‘¥ Staff Directory & KYC", "ðŸ“… Attendance & Leave", "âš™ï¸ Compensation Plans", "ðŸ’µ Monthly Dues & Settlement"], 
+        ["👥 Staff Directory & KYC", "📅 Attendance & Leave", "⚙️ Compensation Plans", "💵 Monthly Dues & Settlement"], 
         horizontal=True, 
         key="staff_top_nav"
     )
 
     staff_df = load_full_staff_df()
 
-    if staff_tab_sel == "ðŸ‘¥ Staff Directory & KYC":
+    if staff_tab_sel == "👥 Staff Directory & KYC":
         st_mode = st.radio("Mode", ["View All Staff", "Add New Staff", "Edit Staff Profile & KYC"], horizontal=True, key="staff_dir_mode")
 
         if st_mode == "Add New Staff":
@@ -3473,7 +3473,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
 
                 new_s_notes = st.text_input("Notes / Background Remarks (Optional)", key="add_s_notes")
 
-                submit_staff = st.form_submit_button("ðŸ‘¤ Register Staff Member", type="primary", use_container_width=True)
+                submit_staff = st.form_submit_button("👤 Register Staff Member", type="primary", use_container_width=True)
 
             if submit_staff:
                 if not new_s_name.strip():
@@ -3536,7 +3536,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
 
                 disp_staff = staff_df.copy()
                 disp_staff["Role"] = disp_staff["role"].fillna("Cart Operator")
-                disp_staff["Gender"] = disp_staff["gender"].fillna("â€”")
+                disp_staff["Gender"] = disp_staff["gender"].fillna("—")
                 disp_staff["Daily Fixed Rate"] = disp_staff["monthly_fixed_salary"].apply(lambda v: f"₹600/day (₹{_num(v):,.0f}/mo)")
                 disp_staff["Commission"] = disp_staff.apply(lambda r: f"{_num(r['commission_percentage']):.0f}% > ₹{_num(r['commission_threshold_daily']):,.0f}", axis=1)
                 disp_staff["Joined"] = pd.to_datetime(disp_staff["date_of_joining"]).dt.strftime("%d-%b-%y")
@@ -3556,18 +3556,18 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 s_row = staff_df[staff_df["name"] == sel_inspect].iloc[0]
 
                 k1, k2, k3 = st.columns(3)
-                k1.write(f"**Full Legal Name:** {s_row.get('full_name') or 'â€”'}")
+                k1.write(f"**Full Legal Name:** {s_row.get('full_name') or '—'}")
                 k1.write(f"**Role:** {s_row.get('role') or 'Cart Operator'}")
-                k1.write(f"**Gender:** {s_row.get('gender') or 'â€”'}")
+                k1.write(f"**Gender:** {s_row.get('gender') or '—'}")
                 
-                k2.write(f"**Date of Birth:** {pd.to_datetime(s_row['date_of_birth']).strftime('%d-%b-%y') if pd.notna(s_row['date_of_birth']) else 'â€”'}")
-                k2.write(f"**PAN Number:** {s_row['pan_number'] or 'â€”'}")
+                k2.write(f"**Date of Birth:** {pd.to_datetime(s_row['date_of_birth']).strftime('%d-%b-%y') if pd.notna(s_row['date_of_birth']) else '—'}")
+                k2.write(f"**PAN Number:** {s_row['pan_number'] or '—'}")
                 
-                k3.write(f"**Emergency Contact:** {s_row['emergency_contact_name'] or 'â€”'} ({s_row['emergency_contact_phone'] or 'â€”'})")
-                k3.write(f"**Last Working Day:** {pd.to_datetime(s_row['date_of_leaving']).strftime('%d-%b-%y') if pd.notna(s_row['date_of_leaving']) else 'â€”'}")
+                k3.write(f"**Emergency Contact:** {s_row['emergency_contact_name'] or '—'} ({s_row['emergency_contact_phone'] or '—'})")
+                k3.write(f"**Last Working Day:** {pd.to_datetime(s_row['date_of_leaving']).strftime('%d-%b-%y') if pd.notna(s_row['date_of_leaving']) else '—'}")
 
-                st.write(f"**Current Address:** {s_row['current_address'] or 'â€”'}")
-                st.write(f"**Permanent Address:** {s_row['permanent_address'] or 'â€”'}")
+                st.write(f"**Current Address:** {s_row['current_address'] or '—'}")
+                st.write(f"**Permanent Address:** {s_row['permanent_address'] or '—'}")
                 if s_row.get("notes"):
                     st.caption(f"Remarks: {s_row['notes']}")
 
@@ -3635,7 +3635,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
 
                     e_notes = st.text_input("Notes", value=str(s_edit.get("notes") or ""), key=f"e_notes_{s_id}")
 
-                    save_edit_staff = st.form_submit_button("ðŸ’¾ Save Profile Changes", type="primary", use_container_width=True)
+                    save_edit_staff = st.form_submit_button("💾 Save Profile Changes", type="primary", use_container_width=True)
 
                 if save_edit_staff:
                     if not e_name.strip():
@@ -3676,7 +3676,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                         except Exception as e:
                             st.error(f"Could not update staff profile: {e}")
 
-    elif staff_tab_sel == "ðŸ“… Attendance & Leave":
+    elif staff_tab_sel == "📅 Attendance & Leave":
         st.write("Record and manage staff leaves and absences for payroll deductions and day-wise attendance:")
 
         att_mode = st.radio("Action", ["Record Staff Leave / Absence", "View Attendance & Leaves", "Edit Past Leave Entry"], horizontal=True, key="att_sub_nav")
@@ -3701,7 +3701,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
 
                     att_reason = st.text_input("Reason / Observation", placeholder="e.g. Family function, unwell, uninformed absence...", key="leave_reason")
 
-                    submit_leave = st.form_submit_button("ðŸ“ Record Leave Entry", type="primary", use_container_width=True)
+                    submit_leave = st.form_submit_button("📝 Record Leave Entry", type="primary", use_container_width=True)
 
                 if submit_leave:
                     try:
@@ -3755,7 +3755,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
             else:
                 att_records = att_df.to_dict("records")
                 att_labels = [
-                    f"#{r['id']} â€” {r['staff_name']} on {pd.to_datetime(r['attendance_date']).strftime('%d-%b-%y')} ({r['status']} - {r['leave_type']})"
+                    f"#{r['id']} — {r['staff_name']} on {pd.to_datetime(r['attendance_date']).strftime('%d-%b-%y')} ({r['status']} - {r['leave_type']})"
                     for r in att_records
                 ]
                 sel_att_label = st.selectbox("Select Leave Entry to Edit", att_labels, key="edit_att_select")
@@ -3774,7 +3774,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 with c4:
                     e_att_reason = st.text_input("Reason", value=str(loaded_att.get("reason") or ""), key=f"e_att_rs_{loaded_att_id}")
 
-                if st.button("ðŸ’¾ Update Leave Entry", type="primary", use_container_width=True):
+                if st.button("💾 Update Leave Entry", type="primary", use_container_width=True):
                     try:
                         with db_conn.session as s:
                             s.execute(
@@ -3794,7 +3794,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                     except Exception as e:
                         st.error(f"Could not update attendance: {e}")
 
-    elif staff_tab_sel == "âš™ï¸ Compensation Plans":
+    elif staff_tab_sel == "⚙️ Compensation Plans":
         st.write("View and assign effective-dated salary, commission slabs, and food/tea allowances:")
 
         if staff_df.empty:
@@ -3834,7 +3834,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 with cp6:
                     plan_allow_sun = st.number_input("Food & Tea Allowance: Sunday (₹/day)", min_value=0.0, value=float(_num(target_s_row['allowance_sunday']) or 250.0), step=10.0)
 
-                submit_plan = st.form_submit_button("ðŸ’¾ Save & Activate Compensation Plan", type="primary", use_container_width=True)
+                submit_plan = st.form_submit_button("💾 Save & Activate Compensation Plan", type="primary", use_container_width=True)
 
             if submit_plan:
                 try:
@@ -3885,7 +3885,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                     use_container_width=True
                 )
 
-    elif staff_tab_sel == "ðŸ’µ Monthly Dues & Settlement":
+    elif staff_tab_sel == "💵 Monthly Dues & Settlement":
         st.write("Calculate monthly dues with fixed salary apportioned at **Rs 600/day worked**, commissions (15% > Rs 3,000), daily food/tea allowances, and deductions backed by the Payments table:")
 
         now = date.today()
@@ -4015,7 +4015,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                             day_salary = daily_rate
                         staff_shift_records.append({
                             "Date": d.strftime("%d-%b-%y"), "Day": d.strftime("%A"),
-                            "Staff Name": st_name, "Cart Operated": "â€”",
+                            "Staff Name": st_name, "Cart Operated": "—",
                             "Shift Status": row_type, "Daily Sales (₹)": 0.0,
                             "Salary Apportioned (₹)": day_salary, "Commission (₹)": 0.0,
                             "Allowance Entitled (₹)": 0.0, "Advance Taken (₹)": 0.0,
@@ -4106,7 +4106,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                             "Date": l_dt.strftime("%d-%b-%y"),
                             "Day": l_dt.strftime("%A"),
                             "Staff Name": st_name,
-                            "Cart Operated": "â€” (On Leave)",
+                            "Cart Operated": "— (On Leave)",
                             "Shift Status": f"{l_row['status']} ({l_type})",
                             "Daily Sales (₹)": 0.0,
                             "Salary Apportioned (₹)": day_sal,
@@ -4122,7 +4122,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                         "Date": d.strftime("%d-%b-%y"),
                         "Day": d.strftime("%A"),
                         "Staff Name": st_name,
-                        "Cart Operated": "â€” (Expense)",
+                        "Cart Operated": "— (Expense)",
                         "Shift Status": "Manual Entry",
                         "Daily Sales (₹)": 0.0,
                         "Salary Apportioned (₹)": 0.0,
@@ -4198,7 +4198,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
             target_staff_log = detailed_staff_logs.get(sel_staff_drill, pd.DataFrame())
             target_staff_pay = detailed_staff_payments.get(sel_staff_drill, pd.DataFrame())
 
-            tab_drill1, tab_drill2 = st.tabs(["ðŸ“‹ Day-Wise Shifts & Attendance", "ðŸ’³ Labour Payments & Deductions Disbursed"])
+            tab_drill1, tab_drill2 = st.tabs(["📋 Day-Wise Shifts & Attendance", "💳 Labour Payments & Deductions Disbursed"])
 
             with tab_drill1:
                 st.write(f"Itemized daily shifts and attendance records for **{sel_staff_drill}**:")
@@ -4334,7 +4334,7 @@ elif page == "Dashboard" and user_role == "admin":
             st.error("'From' date is after 'To' date - swap them and click Apply again.")
             range_start, range_end = range_end, range_start
             
-        st.caption(f"Showing performance for: **{range_start.strftime('%d-%b-%y')}** â€“ **{range_end.strftime('%d-%b-%y')}**")
+        st.caption(f"Showing performance for: **{range_start.strftime('%d-%b-%y')}** – **{range_end.strftime('%d-%b-%y')}**")
 
         range_df = daily_df[(daily_df["Date"].dt.date >= range_start) & (daily_df["Date"].dt.date <= range_end)] if not daily_df.empty else daily_df
         range_exp = exp_df[(exp_df["Date"].dt.date >= range_start) & (exp_df["Date"].dt.date <= range_end)] if not exp_df.empty else exp_df
@@ -4389,7 +4389,7 @@ elif page == "Dashboard" and user_role == "admin":
                 "Amount (₹)": [total_rev, -exact_cogs_sold, gross_profit, -tot_labour_incurred, -other_opex_total, -total_incurred_opex, net_profit]
             })
             st.dataframe(pnl_df, hide_index=True, use_container_width=True, column_config={"Amount (₹)": st.column_config.NumberColumn(format="₹%,.2f")})
-            st.caption(f"â„¹ï¸ **Labour breakdown:** ₹{tot_labour_paid:,.0f} disbursed / paid + ₹{tot_labour_due:,.0f} accrued / yet to be paid.")
+            st.caption(f"ℹ️ **Labour breakdown:** ₹{tot_labour_paid:,.0f} disbursed / paid + ₹{tot_labour_due:,.0f} accrued / yet to be paid.")
 
         with pl_c2:
             st.markdown("#### Cost Distribution: COGS, OPEX & CAPEX")
