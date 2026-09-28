@@ -817,7 +817,7 @@ def load_staff_attendance_df(start_date=None, end_date=None):
     try: return db_conn.query(f"SELECT a.id, a.staff_id, s.name AS staff_name, a.attendance_date, a.status, a.leave_type, a.reason, a.recorded_by, a.created_at FROM staff_attendance a JOIN staff s ON a.staff_id = s.id {where_sql} ORDER BY a.attendance_date DESC, a.id DESC;", params=params, ttl="0s")
     except Exception: return pd.DataFrame()
 
-def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leakage=False):
+def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leakage=False, limit_to_employment=False):
     if db_conn is None: return 0.0, 0.0, 0.0, {}
     staff_df = load_full_staff_df()
     if staff_df.empty: return 0.0, 0.0, 0.0, {}
@@ -886,6 +886,15 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
         st_name = str(s_row["name"]).strip()
         staff_role = str(s_row.get("role") or "Cart Operator").strip()
         doj = s_row.get("date_of_joining")
+        employment_start, employment_end = start_date, end_date
+        if limit_to_employment:
+            leaving = s_row.get("date_of_leaving")
+            if pd.notna(doj) and str(doj).strip():
+                employment_start = max(start_date, pd.to_datetime(doj).date())
+            if pd.notna(leaving) and str(leaving).strip():
+                employment_end = min(end_date, pd.to_datetime(leaving).date())
+            if employment_start > employment_end:
+                continue
         monthly_sal = float(_num(s_row.get("monthly_fixed_salary")) or 18000.0)
         daily_rate = monthly_sal / 30.0
         comm_thresh = float(_num(s_row.get("commission_threshold_daily")) or 3000.0)
@@ -913,8 +922,8 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
                     else:
                         unpaid_leave_dates.add(l_dt)
 
-            period_days = (end_date - start_date).days + 1
-            unpaid_leave_cnt = sum(1 for d in unpaid_leave_dates if start_date <= d <= end_date)
+            period_days = (employment_end - employment_start).days + 1
+            unpaid_leave_cnt = sum(1 for d in unpaid_leave_dates if employment_start <= d <= employment_end)
             payable_days = max(0, period_days - unpaid_leave_cnt)
             staff_salary = payable_days * daily_rate
             staff_paid = float(st_pay["amount_paid"].sum()) if not st_pay.empty else 0.0
@@ -923,7 +932,7 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
 
             detailed_ledger = []
             for offset in range(period_days):
-                d = start_date + timedelta(days=offset)
+                d = employment_start + timedelta(days=offset)
                 if d in unpaid_leave_dates:
                     row_type = "Unpaid Leave"
                     day_salary = 0.0
@@ -991,6 +1000,8 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
                     exp_map[e_dt]["advance"] += amt
 
         all_dates = set(leave_map.keys()).union(set(shift_map.keys())).union(set(exp_map.keys()))
+        if limit_to_employment:
+            all_dates = {d for d in all_dates if employment_start <= d <= employment_end}
         paid_leaves_cnt = 0
 
         for d in sorted(all_dates):
@@ -4402,8 +4413,17 @@ elif page == "Dashboard" and user_role == "admin":
         expense_types = range_exp["Expense_Type"].fillna("").astype(str).str.strip().str.upper() if not range_exp.empty else pd.Series(dtype=str)
         expense_categories = range_exp["Category"].fillna("").astype(str).str.strip().str.casefold() if not range_exp.empty else pd.Series(dtype=str)
         capex_total = float(range_exp.loc[expense_types == "CAPEX", "Amount"].sum()) if not range_exp.empty else 0.0
-        labour_opex_df = range_exp[(expense_types == "OPEX") & (expense_categories == "labour charges")] if not range_exp.empty else pd.DataFrame()
-        tot_labour_incurred = float(labour_opex_df["Amount"].sum()) if not labour_opex_df.empty else 0.0
+        # Use the same gross payable salary/commission/allowance calculation as payslips.
+        # The Dashboard counts only the part of each employment period in the date range.
+        _, _, _, staff_pay_breakdown = calculate_incurred_labour_for_range(
+            range_start, range_end, limit_to_employment=True
+        )
+        staff_salary_total = sum(float(staff["incurred"]) for staff in staff_pay_breakdown.values())
+        unassigned_labour_df = range_exp[
+            (expense_types == "OPEX") & (expense_categories == "labour charges") & range_exp["Staff_Name"].isna()
+        ] if not range_exp.empty else pd.DataFrame()
+        unassigned_labour_total = float(unassigned_labour_df["Amount"].sum()) if not unassigned_labour_df.empty else 0.0
+        tot_labour_incurred = staff_salary_total + unassigned_labour_total
         non_labour_opex_df = range_exp[(expense_types == "OPEX") & (~expense_categories.isin(["labour charges", "cost of goods"]))] if not range_exp.empty else pd.DataFrame()
         other_opex_total = float(non_labour_opex_df["Amount"].sum()) if not non_labour_opex_df.empty else 0.0
 
@@ -4439,11 +4459,10 @@ elif page == "Dashboard" and user_role == "admin":
         with pl_c1:
             st.markdown("#### Profit & Loss Statement (P&L)")
             pnl_df = pd.DataFrame({
-                "Financial Line Item": ["1. Total Revenue in Period", "2. CAPEX", "3. Cost of Goods Sold", "4. Gross Profit (1 - 3)", "5. Labour Charges (OPEX)", "6. Other Operating Costs (OPEX)", "7. Total Operating Costs (5 + 6)", "8. Net Profit (4 - 7)"],
-                "Amount (₹)": [total_rev, capex_total, -exact_cogs_sold, gross_profit, -tot_labour_incurred, -other_opex_total, -total_incurred_opex, net_profit]
+                "Financial Line Item": ["1. Total Revenue in Period", "2. Cost of Goods Sold", "3. Gross Profit (1 - 2)", "4. Labour Charges (OPEX)", "5. Other Operating Costs (OPEX)", "6. Total Operating Costs (4 + 5)", "7. Net Profit (3 - 6)"],
+                "Amount (₹)": [total_rev, -exact_cogs_sold, gross_profit, -tot_labour_incurred, -other_opex_total, -total_incurred_opex, net_profit]
             })
             st.dataframe(pnl_df, hide_index=True, use_container_width=True, column_config={"Amount (₹)": st.column_config.NumberColumn(format="₹%,.2f")})
-            st.caption("CAPEX is shown for reference and is excluded from Gross Profit and Net Profit.")
 
         with pl_c2:
             st.markdown("#### Cost Distribution: COGS, OPEX & CAPEX")
