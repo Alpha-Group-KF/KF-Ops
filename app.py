@@ -4394,14 +4394,17 @@ elif page == "Dashboard" and user_role == "admin":
         total_rev = range_df["Total_Collection"].sum() if not range_df.empty else 0.0
         total_units = int(round(range_df["Sold_Total"].sum())) if not range_df.empty else 0
 
-        # All expense buckets use expense_date within the selected range.
+        # COGS uses sold units in the selected range at each flavour's cost_price.
+        flavor_range_df = load_db_flavor_sales(start_date=range_start, end_date=range_end)
+        exact_cogs_sold = float(flavor_range_df["COGS (₹)"].sum()) if not flavor_range_df.empty else 0.0
+
+        # Expense buckets use expense_date within the selected range.
         expense_types = range_exp["Expense_Type"].fillna("").astype(str).str.strip().str.upper() if not range_exp.empty else pd.Series(dtype=str)
         expense_categories = range_exp["Category"].fillna("").astype(str).str.strip().str.casefold() if not range_exp.empty else pd.Series(dtype=str)
-        exact_cogs_sold = float(range_exp.loc[expense_types == "COGS", "Amount"].sum()) if not range_exp.empty else 0.0
         capex_total = float(range_exp.loc[expense_types == "CAPEX", "Amount"].sum()) if not range_exp.empty else 0.0
         labour_opex_df = range_exp[(expense_types == "OPEX") & (expense_categories == "labour charges")] if not range_exp.empty else pd.DataFrame()
         tot_labour_incurred = float(labour_opex_df["Amount"].sum()) if not labour_opex_df.empty else 0.0
-        non_labour_opex_df = range_exp[(expense_types == "OPEX") & (expense_categories != "labour charges")] if not range_exp.empty else pd.DataFrame()
+        non_labour_opex_df = range_exp[(expense_types == "OPEX") & (~expense_categories.isin(["labour charges", "cost of goods"]))] if not range_exp.empty else pd.DataFrame()
         other_opex_total = float(non_labour_opex_df["Amount"].sum()) if not non_labour_opex_df.empty else 0.0
 
         total_incurred_opex = tot_labour_incurred + other_opex_total
@@ -4416,7 +4419,7 @@ elif page == "Dashboard" and user_role == "admin":
         mc1, mc2, mc3, mc4, mc5, mc6 = st.columns(6)
         mc1.metric("Revenue in Range", f"₹{total_rev:,.0f}")
         mc2.metric("Units Sold", f"{total_units}")
-        mc3.metric("COGS (Expense Records)", f"₹{exact_cogs_sold:,.0f}")
+        mc3.metric("Cost of Goods Sold", f"₹{exact_cogs_sold:,.0f}")
         mc4.metric(f"Gross Profit ({gross_margin:.1f}%)", f"₹{gross_profit:,.0f}")
         mc5.metric(f"Total OPEX ({opex_margin:.1f}%)", f"₹{total_incurred_opex:,.0f}")
         mc6.metric(f"Net Profit ({net_margin:.1f}%)", f"₹{net_profit:,.0f}")
@@ -4436,7 +4439,7 @@ elif page == "Dashboard" and user_role == "admin":
         with pl_c1:
             st.markdown("#### Profit & Loss Statement (P&L)")
             pnl_df = pd.DataFrame({
-                "Financial Line Item": ["1. Total Revenue in Period", "2. CAPEX (Shown Separately)", "3. Cost of Goods (COGS)", "4. Gross Profit (1 - 3)", "5. Labour Charges (OPEX)", "6. Other Operating Costs (OPEX)", "7. Total Operating Costs (5 + 6)", "8. Net Profit (4 - 7)"],
+                "Financial Line Item": ["1. Total Revenue in Period", "2. CAPEX", "3. Cost of Goods Sold", "4. Gross Profit (1 - 3)", "5. Labour Charges (OPEX)", "6. Other Operating Costs (OPEX)", "7. Total Operating Costs (5 + 6)", "8. Net Profit (4 - 7)"],
                 "Amount (₹)": [total_rev, capex_total, -exact_cogs_sold, gross_profit, -tot_labour_incurred, -other_opex_total, -total_incurred_opex, net_profit]
             })
             st.dataframe(pnl_df, hide_index=True, use_container_width=True, column_config={"Amount (₹)": st.column_config.NumberColumn(format="₹%,.2f")})
@@ -4444,8 +4447,8 @@ elif page == "Dashboard" and user_role == "admin":
 
         with pl_c2:
             st.markdown("#### Cost Distribution: COGS, OPEX & CAPEX")
-            cost_dist_df = pd.DataFrame({"Cost Bucket": ["COGS (Expense Records)", "Operating Expenses (OPEX)", "Capital Expenditure (CAPEX)"], "Amount (₹)": [exact_cogs_sold, total_incurred_opex, capex_total]})
-            cost_chart = alt.Chart(cost_dist_df).mark_bar(width=28).encode(x=alt.X("Cost Bucket:N", title="", sort=None, axis=alt.Axis(labelAngle=-15)), y=alt.Y("Amount (₹):Q", title="Amount (₹)"), color=alt.Color("Cost Bucket:N", scale=alt.Scale(domain=["COGS (Expense Records)", "Operating Expenses (OPEX)", "Capital Expenditure (CAPEX)"], range=["#C43D17", "#8A5E17", "#4A2418"]), legend=None), tooltip=[alt.Tooltip("Cost Bucket:N", title="Type"), alt.Tooltip("Amount (₹):Q", format=",.2f", title="Amount")]).properties(height=200)
+            cost_dist_df = pd.DataFrame({"Cost Bucket": ["Cost of Goods Sold", "Operating Expenses (OPEX)", "Capital Expenditure (CAPEX)"], "Amount (₹)": [exact_cogs_sold, total_incurred_opex, capex_total]})
+            cost_chart = alt.Chart(cost_dist_df).mark_bar(width=28).encode(x=alt.X("Cost Bucket:N", title="", sort=None, axis=alt.Axis(labelAngle=-15)), y=alt.Y("Amount (₹):Q", title="Amount (₹)"), color=alt.Color("Cost Bucket:N", scale=alt.Scale(domain=["Cost of Goods Sold", "Operating Expenses (OPEX)", "Capital Expenditure (CAPEX)"], range=["#C43D17", "#8A5E17", "#4A2418"]), legend=None), tooltip=[alt.Tooltip("Cost Bucket:N", title="Type"), alt.Tooltip("Amount (₹):Q", format=",.2f", title="Amount")]).properties(height=200)
             st.altair_chart(cost_chart, use_container_width=True)
 
         st.markdown("#### Revenue in Range - Breakdown")
