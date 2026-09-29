@@ -1275,14 +1275,18 @@ if page == "Daily Entry":
             cart_entries = []; st.warning(f"Could not load entries from database ({e}).")
 
         if user_role == "entry" and cart_entries:
-            allowed_dates = {date.today() - timedelta(days=d) for d in range(1, 4)}
-            cart_entries = [e for e in cart_entries if e["date"].date() in allowed_dates]
+            sale_date = date.today() - timedelta(days=1)
+            cart_entries = [e for e in cart_entries if e["date"].date() == sale_date]
 
         if not cart_entries: st.info(f"No entries found for {cart_name}.")
         else:
             top_c1, top_c2 = st.columns([1.3, 1])
             labels = [f"{e['date'].strftime('%d-%b-%y')}" for e in cart_entries]
-            with top_c1: sel_date_label = st.selectbox("Select entry date to update sales", labels, key=f"date_sel_{cart_name}")
+            if user_role == "entry":
+                sel_date_label = labels[0]
+                with top_c1: st.text_input("Sale date", value=sel_date_label, disabled=True, key=f"fixed_sale_date_{cart_name}")
+            else:
+                with top_c1: sel_date_label = st.selectbox("Select entry date to update sales", labels, key=f"date_sel_{cart_name}")
             loaded = cart_entries[labels.index(sel_date_label)]
             entry_id, entry_date, today_val = loaded["db_id"], loaded["date"].date(), date.today()
             data_key_suffix = f"_{entry_id}"
