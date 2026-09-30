@@ -797,7 +797,7 @@ def get_physical_current_stock_map():
 def load_full_staff_df():
     if db_conn is None: return pd.DataFrame()
     query = """
-    SELECT s.id, s.name, s.full_name, s.status, s.phone_number, s.role, s.gender, s.emergency_contact_name, s.emergency_contact_phone, s.date_of_birth, s.pan_number, s.aadhaar_number, s.current_address, s.permanent_address, s.date_of_joining, s.date_of_leaving, s.notes, c.monthly_fixed_salary, c.commission_threshold_daily, c.commission_percentage, c.allowance_weekday, c.allowance_sunday, c.monthly_food_tea_allowance, c.monthly_fuel_allowance
+    SELECT s.id, s.name, s.full_name, s.status, s.phone_number, s.role, s.gender, s.emergency_contact_name, s.emergency_contact_phone, s.date_of_birth, s.pan_number, s.aadhaar_number, s.current_address, s.permanent_address, s.date_of_joining, s.date_of_leaving, s.notes, c.monthly_fixed_salary, c.commission_threshold_daily, c.commission_percentage, c.allowance_weekday, c.allowance_sunday, c.food_tea_allowance_mode, c.monthly_food_tea_allowance, c.monthly_fuel_allowance
     FROM staff s LEFT JOIN LATERAL (SELECT * FROM staff_compensation_plans WHERE staff_id = s.id ORDER BY effective_from DESC, id DESC LIMIT 1) c ON true ORDER BY s.status ASC, s.name ASC;
     """
     try: return db_conn.query(query, ttl="0s")
@@ -805,7 +805,7 @@ def load_full_staff_df():
 
 def load_staff_compensation_history(staff_id):
     if db_conn is None: return pd.DataFrame()
-    try: return db_conn.query("SELECT id, staff_id, effective_from, effective_to, monthly_fixed_salary, commission_threshold_daily, commission_percentage, allowance_weekday, allowance_sunday, monthly_food_tea_allowance, monthly_fuel_allowance, created_at FROM staff_compensation_plans WHERE staff_id = :sid ORDER BY effective_from DESC, id DESC;", params={"sid": staff_id}, ttl="0s")
+    try: return db_conn.query("SELECT id, staff_id, effective_from, effective_to, monthly_fixed_salary, commission_threshold_daily, commission_percentage, allowance_weekday, allowance_sunday, food_tea_allowance_mode, monthly_food_tea_allowance, monthly_fuel_allowance, created_at FROM staff_compensation_plans WHERE staff_id = :sid ORDER BY effective_from DESC, id DESC;", params={"sid": staff_id}, ttl="0s")
     except Exception: return pd.DataFrame()
 
 def load_staff_attendance_df(start_date=None, end_date=None):
@@ -867,6 +867,14 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
         amount = float(_num(monthly_amount))
         return sum(amount / month_days(d) for d in eligible_dates)
 
+    def food_allowance_for_date(mode, monthly_amount, weekday_amount, sunday_amount, d):
+        if str(mode).strip().lower() == "daily":
+            return float(sunday_amount if d.weekday() == 6 else weekday_amount)
+        return float(monthly_amount) / month_days(d)
+
+    def food_allowance_for_dates(mode, monthly_amount, weekday_amount, sunday_amount, eligible_dates):
+        return sum(food_allowance_for_date(mode, monthly_amount, weekday_amount, sunday_amount, d) for d in eligible_dates)
+
     def attach_staff_leakage(staff_name, ledger=None):
         if leakage_df.empty:
             return 0.0
@@ -910,6 +918,11 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
         standard_daily_rate = monthly_sal / 30.0
         comm_thresh = float(_num(s_row.get("commission_threshold_daily")) or 3000.0)
         comm_pct = float(_num(s_row.get("commission_percentage")) or 15.0)
+        allow_wd = float(_num(s_row.get("allowance_weekday")))
+        allow_sun = float(_num(s_row.get("allowance_sunday")))
+        food_mode = str(s_row.get("food_tea_allowance_mode") or "monthly").strip().lower()
+        if food_mode not in ("daily", "monthly"):
+            food_mode = "monthly"
         monthly_food = float(_num(s_row.get("monthly_food_tea_allowance")))
         monthly_fuel = float(_num(s_row.get("monthly_fuel_allowance")))
 
@@ -958,7 +971,7 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
                 staff_salary = payable_days * standard_daily_rate
                 display_daily_rate = standard_daily_rate
 
-            food_entitled = prorate_monthly(monthly_food, worked_dates)
+            food_entitled = food_allowance_for_dates(food_mode, monthly_food, allow_wd, allow_sun, worked_dates)
             fuel_entitled = prorate_monthly(monthly_fuel, worked_dates)
             allowance_total = food_entitled + fuel_entitled
             staff_paid = float(st_pay["amount_paid"].sum()) if not st_pay.empty else 0.0
@@ -975,7 +988,7 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
                     else:
                         row_type = "Daily Salary"
                         day_salary = standard_daily_rate
-                        day_allow = (monthly_food + monthly_fuel) / month_days(d)
+                        day_allow = food_allowance_for_date(food_mode, monthly_food, allow_wd, allow_sun, d) + (monthly_fuel / month_days(d))
                     detailed_ledger.append({
                         "date": d, "type": row_type, "cart": "—",
                         "collection": 0.0, "fixed_salary": day_salary,
@@ -987,7 +1000,7 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
                 leakage_amount = attach_staff_leakage(st_name, None)
 
             staff_paid += leakage_amount
-            staff_incurred = staff_salary + allowance_total
+            staff_incurred = staff_salary + food_entitled + fuel_entitled
             staff_due = staff_incurred - staff_paid
             total_labour_incurred += staff_incurred
             total_labour_paid += staff_paid
@@ -1001,6 +1014,9 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
                 "payable_days": payable_days,
                 "salary": staff_salary,
                 "commissions": 0.0,
+                "food_tea_allowance_mode": food_mode,
+                "allowance_weekday": allow_wd,
+                "allowance_sunday": allow_sun,
                 "monthly_food_tea_allowance": monthly_food,
                 "monthly_fuel_allowance": monthly_fuel,
                 "food_tea_allowance": food_entitled,
@@ -1101,7 +1117,7 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
                 days_worked += 1
                 worked_dates.add(d)
                 shift_sal += standard_daily_rate
-                day_allow_rate = (monthly_food + monthly_fuel) / month_days(d)
+                day_allow_rate = food_allowance_for_date(food_mode, monthly_food, allow_wd, allow_sun, d) + (monthly_fuel / month_days(d))
 
                 for idx, cart_shift in enumerate(shift_map[d]):
                     s_col = cart_shift["collection"]
@@ -1132,10 +1148,10 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
                 })
 
         detailed_ledger.sort(key=lambda x: x["date"])
-        food_entitled = prorate_monthly(monthly_food, worked_dates)
+        food_entitled = food_allowance_for_dates(food_mode, monthly_food, allow_wd, allow_sun, worked_dates)
         fuel_entitled = prorate_monthly(monthly_fuel, worked_dates)
         allowance_total = food_entitled + fuel_entitled
-        staff_incurred = shift_sal + shift_comm + allowance_total
+        staff_incurred = shift_sal + shift_comm + food_entitled + fuel_entitled
         staff_paid = (float(st_pay["amount_paid"].sum()) if not st_pay.empty else 0.0) + attach_staff_leakage(st_name, detailed_ledger)
         staff_due = staff_incurred - staff_paid
         total_labour_incurred += staff_incurred
@@ -1148,6 +1164,9 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
             "paid_leaves": paid_leaves_cnt,
             "salary": shift_sal,
             "commissions": shift_comm,
+            "food_tea_allowance_mode": food_mode,
+            "allowance_weekday": allow_wd,
+            "allowance_sunday": allow_sun,
             "monthly_food_tea_allowance": monthly_food,
             "monthly_fuel_allowance": monthly_fuel,
             "food_tea_allowance": food_entitled,
@@ -1204,6 +1223,18 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
         pro_rata_basis = f"({data_dict['days_worked']} + {data_dict['paid_leaves']}) days @ Rs. {data_dict.get('daily_rate', 600):.2f}/day"
         days_label = ["Total Days Worked", f"{data_dict['days_worked']} days worked + {data_dict['paid_leaves']} paid leaves", f"{data_dict['days_worked'] + data_dict['paid_leaves']} days"]
 
+    food_mode = str(data_dict.get("food_tea_allowance_mode") or "monthly").strip().lower()
+    if food_mode == "daily":
+        food_component = "Food & Tea Allowance (Daily Plan)"
+        food_basis = f"Weekday Rs. {data_dict.get('allowance_weekday', 0):,.2f}/day | Sunday Rs. {data_dict.get('allowance_sunday', 0):,.2f}/day; based on days worked"
+    else:
+        food_component = "Food & Tea Allowance (Monthly Plan)"
+        food_basis = f"Plan Rs. {data_dict.get('monthly_food_tea_allowance', 0):,.2f}/month; pro-rata for days worked"
+
+    adjustment_amount = float(_num(data_dict.get("adjustment_amount", 0.0)))
+    adjustment_reason = str(data_dict.get("adjustment_reason") or "").strip()
+    final_adjusted = float(_num(data_dict.get("final_payable_adjusted", 0.0)))
+
     summary_data = [
         ["Salary Component", "Basis / Calculation Details", "Amount (Rs.)"],
         ["Monthly Fixed Salary", "Standard Monthly Base Plan", f"Rs. {data_dict['monthly_fixed_salary']:,.2f}"],
@@ -1213,11 +1244,13 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
     if not is_ops_coordinator:
         summary_data.append(["Sales Commissions", "Commission on qualifying daily collections", f"Rs. {data_dict['commissions']:,.2f}"])
     summary_data.extend([
-        ["Monthly Food & Tea Allowance", f"Plan Rs. {data_dict.get('monthly_food_tea_allowance', 0):,.2f}/month; pro-rata for days worked", f"Rs. {data_dict.get('food_tea_allowance', 0):,.2f}"],
+        [food_component, food_basis, f"Rs. {data_dict.get('food_tea_allowance', 0):,.2f}"],
         ["Monthly Fuel Allowance", f"Plan Rs. {data_dict.get('monthly_fuel_allowance', 0):,.2f}/month; pro-rata for days worked", f"Rs. {data_dict.get('fuel_allowance', 0):,.2f}"],
-        ["Gross Payable Earnings", "Total entitled earnings for the period", f"Rs. {data_dict['incurred']:,.2f}"],
+        ["Gross Payable Earnings", "Fixed salary + commission (where applicable) + Food/Tea + Fuel", f"Rs. {data_dict['incurred']:,.2f}"],
         ["Already Paid / Disbursed", "Cash advances & direct payments recorded", f"-Rs. {data_dict['paid']:,.2f}"],
-        ["Net Balance Payable Now", "Final cash settlement due", f"Rs. {data_dict['due']:,.2f}"]
+        ["Calculated Final Payable", "Calculated amount before manual adjustment", f"Rs. {data_dict['due']:,.2f}"],
+        ["Manual Adjustment", adjustment_reason if adjustment_reason else "No adjustment entered", f"Rs. {adjustment_amount:+,.2f}" if abs(adjustment_amount) > 0.0001 else "Rs. 0.00"],
+        ["Final Payable (Adjusted)", "Calculated Final Payable + Manual Adjustment; remains zero until an adjustment is entered", f"Rs. {final_adjusted:,.2f}"]
     ])
 
     t_summary = Table(summary_data, colWidths=[150, 250, 100])
@@ -1527,7 +1560,8 @@ elif page == "Payslip Generator" and user_role == "admin":
             selected_role = str(selected_staff_row.get("role") or "Cart Operator")
             staff_data = breakdown_dict.get(sel_staff_payslip, {
                 "monthly_fixed_salary": 18000.0, "days_worked": 0, "paid_leaves": 0, "payable_days": 0, "salary": 0.0,
-                "commissions": 0.0, "monthly_food_tea_allowance": 0.0, "monthly_fuel_allowance": 0.0,
+                "commissions": 0.0, "food_tea_allowance_mode": "monthly", "allowance_weekday": 0.0, "allowance_sunday": 0.0,
+                "monthly_food_tea_allowance": 0.0, "monthly_fuel_allowance": 0.0,
                 "food_tea_allowance": 0.0, "fuel_allowance": 0.0, "allowances": 0.0,
                 "incurred": 0.0, "paid": 0.0, "due": 0.0, "detailed_ledger": [],
                 "doj": selected_staff_row.get("date_of_joining"), "role": selected_role
@@ -1540,6 +1574,44 @@ elif page == "Payslip Generator" and user_role == "admin":
             month_str = payslip_start.strftime('%B %Y')
             payable_days = int(staff_data.get("payable_days", staff_data.get("days_worked", 0) + staff_data.get("paid_leaves", 0)))
 
+            adjustment_key = f"{int(selected_staff_row['id'])}_{payslip_start.strftime('%Y%m%d')}_{payslip_end.strftime('%Y%m%d')}"
+            adj_c1, adj_c2 = st.columns([1, 2])
+            with adj_c1:
+                adjustment_amount = st.number_input(
+                    "Manual Adjustment (₹)",
+                    value=0.0,
+                    step=100.0,
+                    format="%.2f",
+                    key=f"payslip_adjustment_{adjustment_key}",
+                    help="Use a positive amount to add to payable or a negative amount to reduce it."
+                )
+            adjustment_reason = ""
+            with adj_c2:
+                if abs(float(adjustment_amount)) > 0.0001:
+                    adjustment_reason = st.text_input(
+                        "Adjustment Reason / Remarks *",
+                        key=f"payslip_adjustment_reason_{adjustment_key}",
+                        placeholder="Explain the reason for this manual adjustment"
+                    )
+                else:
+                    st.text_input(
+                        "Adjustment Reason / Remarks",
+                        value="",
+                        disabled=True,
+                        key=f"payslip_adjustment_reason_disabled_{adjustment_key}",
+                        placeholder="Enabled when an adjustment amount is entered"
+                    )
+
+            has_adjustment = abs(float(adjustment_amount)) > 0.0001
+            final_payable_adjusted = (float(staff_data.get("due", 0.0)) + float(adjustment_amount)) if has_adjustment else 0.0
+            staff_data = dict(staff_data)
+            staff_data["adjustment_amount"] = float(adjustment_amount)
+            staff_data["adjustment_reason"] = adjustment_reason.strip()
+            staff_data["final_payable_adjusted"] = final_payable_adjusted
+
+            if has_adjustment and not adjustment_reason.strip():
+                st.warning("Adjustment Reason / Remarks is mandatory when a manual adjustment is entered.")
+
             st.markdown("---")
             st.markdown(f"#### Salary Statement Summary — {sel_staff_payslip}")
             st.markdown(f"**Role:** {role} &nbsp;|&nbsp; **Date of Joining:** {doj_str} &nbsp;|&nbsp; **Payslip for the month:** {month_str}")
@@ -1551,6 +1623,14 @@ elif page == "Payslip Generator" and user_role == "admin":
                 day_row = ["Total Days Worked", f"{staff_data['days_worked']} days worked + {staff_data['paid_leaves']} paid leaves", f"{staff_data['days_worked'] + staff_data['paid_leaves']} days"]
                 salary_basis = f"({staff_data['days_worked']} + {staff_data['paid_leaves']}) days @ ₹{staff_data.get('daily_rate', 600):.2f}/day"
 
+            food_mode = str(staff_data.get("food_tea_allowance_mode") or "monthly").strip().lower()
+            if food_mode == "daily":
+                food_component = "Food & Tea Allowance (Daily Plan)"
+                food_basis = f"Weekday ₹{staff_data.get('allowance_weekday', 0):,.2f}/day | Sunday ₹{staff_data.get('allowance_sunday', 0):,.2f}/day; based on days worked"
+            else:
+                food_component = "Food & Tea Allowance (Monthly Plan)"
+                food_basis = f"Plan ₹{staff_data.get('monthly_food_tea_allowance', 0):,.2f}/month; pro-rata for days worked"
+
             summary_table_data = [
                 ["Salary Component", "Basis / Calculation Details", "Amount (₹)"],
                 ["Monthly Fixed Salary", "Standard Monthly Base Plan", f"₹{staff_data['monthly_fixed_salary']:,.2f}"],
@@ -1560,17 +1640,19 @@ elif page == "Payslip Generator" and user_role == "admin":
             if not is_ops_coordinator:
                 summary_table_data.append(["Sales Commissions", "Commission on qualifying daily collections", f"₹{staff_data['commissions']:,.2f}"])
             summary_table_data.extend([
-                ["Monthly Food & Tea Allowance", f"Plan ₹{staff_data.get('monthly_food_tea_allowance', 0):,.2f}/month; pro-rata for days worked", f"₹{staff_data.get('food_tea_allowance', 0):,.2f}"],
+                [food_component, food_basis, f"₹{staff_data.get('food_tea_allowance', 0):,.2f}"],
                 ["Monthly Fuel Allowance", f"Plan ₹{staff_data.get('monthly_fuel_allowance', 0):,.2f}/month; pro-rata for days worked", f"₹{staff_data.get('fuel_allowance', 0):,.2f}"],
-                ["Gross Payable Earnings", "Total entitled earnings for the period", f"₹{staff_data['incurred']:,.2f}"],
+                ["Gross Payable Earnings", "Fixed salary + commission (where applicable) + Food/Tea + Fuel", f"₹{staff_data['incurred']:,.2f}"],
                 ["Already Paid / Disbursed", "Cash advances & direct payments recorded", f"-₹{staff_data['paid']:,.2f}"],
-                ["Net Balance Payable Now", "Final cash settlement due", f"₹{staff_data['due']:,.2f}"]
+                ["Calculated Final Payable", "Calculated amount before manual adjustment", f"₹{staff_data['due']:,.2f}"],
+                ["Manual Adjustment", adjustment_reason.strip() if adjustment_reason.strip() else "No adjustment entered", f"₹{float(adjustment_amount):+,.2f}" if abs(float(adjustment_amount)) > 0.0001 else "₹0.00"],
+                ["Final Payable (Adjusted)", "Calculated Final Payable + Manual Adjustment; remains zero until an adjustment is entered", f"₹{final_payable_adjusted:,.2f}"]
             ])
 
             summary_df = pd.DataFrame(summary_table_data[1:], columns=summary_table_data[0])
 
             def style_bold_rows(row):
-                if row["Salary Component"] in ["Gross Payable Earnings", "Net Balance Payable Now"]:
+                if row["Salary Component"] in ["Gross Payable Earnings", "Calculated Final Payable", "Final Payable (Adjusted)"]:
                     return ["font-weight: bold;"] * len(row)
                 return [""] * len(row)
 
@@ -1618,7 +1700,9 @@ elif page == "Payslip Generator" and user_role == "admin":
             st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
 
             if REPORTLAB_AVAILABLE:
-                pdf_bytes = generate_payslip_pdf(sel_staff_payslip, payslip_start, payslip_end, staff_data)
+                pdf_bytes = None
+                if (not has_adjustment) or adjustment_reason.strip():
+                    pdf_bytes = generate_payslip_pdf(sel_staff_payslip, payslip_start, payslip_end, staff_data)
                 if pdf_bytes:
                     st.download_button(
                         label="📥 Download Official Payslip as PDF",
@@ -3681,9 +3765,9 @@ elif page == "Staff & Payroll" and user_role == "admin":
                                 INSERT INTO staff_compensation_plans (
                                     staff_id, effective_from, monthly_fixed_salary,
                                     commission_threshold_daily, commission_percentage,
-                                    monthly_food_tea_allowance, monthly_fuel_allowance
+                                    food_tea_allowance_mode, monthly_food_tea_allowance, monthly_fuel_allowance
                                 ) VALUES (
-                                    :sid, :efrom, :sal, :thresh, :comm, :mfood, :mfuel
+                                    :sid, :efrom, :sal, :thresh, :comm, 'monthly', :mfood, :mfuel
                                 );
                                 """),
                                 {
@@ -3966,7 +4050,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                         st.error(f"Could not update attendance: {e}")
 
     elif staff_tab_sel == "⚙️ Compensation Plans":
-        st.write("View and assign effective-dated salary, commission slabs, monthly food/tea allowance, and monthly fuel allowance:")
+        st.write("View and assign effective-dated salary, commission slabs, Food & Tea allowance plan, and monthly fuel allowance:")
 
         if staff_df.empty:
             st.info("No staff records found in database.")
@@ -3974,18 +4058,32 @@ elif page == "Staff & Payroll" and user_role == "admin":
             sel_s_plan = st.selectbox("Select Staff Member", staff_df["name"].tolist(), key="staff_comp_sel")
             target_s_row = staff_df[staff_df["name"] == sel_s_plan].iloc[0]
             target_s_id = int(target_s_row["id"])
+            active_food_mode = str(target_s_row.get("food_tea_allowance_mode") or "monthly").strip().lower()
+            if active_food_mode not in ("daily", "monthly"):
+                active_food_mode = "monthly"
 
             st.markdown(f"#### Active Plan for {sel_s_plan}")
             m1, m2, m3, m4, m5 = st.columns(5)
             m1.metric("Monthly Fixed Salary", f"₹{_num(target_s_row['monthly_fixed_salary']):,.2f}")
             m2.metric("Commission Threshold", f"₹{_num(target_s_row['commission_threshold_daily']):,.2f}/day")
             m3.metric("Commission Rate", f"{_num(target_s_row['commission_percentage']):.1f}%")
-            m4.metric("Food & Tea", f"₹{_num(target_s_row.get('monthly_food_tea_allowance')):,.0f}/month")
+            if active_food_mode == "daily":
+                m4.metric("Food & Tea (Daily)", f"₹{_num(target_s_row.get('allowance_weekday')):,.0f} W | ₹{_num(target_s_row.get('allowance_sunday')):,.0f} Sun")
+            else:
+                m4.metric("Food & Tea (Monthly)", f"₹{_num(target_s_row.get('monthly_food_tea_allowance')):,.0f}/month")
             m5.metric("Fuel", f"₹{_num(target_s_row.get('monthly_fuel_allowance')):,.0f}/month")
 
             st.markdown("---")
             st.markdown("#### Revision / Add New Compensation Plan")
             st.caption("Adding a new plan sets an effective starting date without altering past calculation history.")
+
+            use_monthly_food = st.checkbox(
+                "Use monthly Food & Tea allowance plan",
+                value=(active_food_mode == "monthly"),
+                key=f"comp_food_monthly_mode_{target_s_id}",
+                help="Checked = monthly Food & Tea amount pro-rated for days worked. Unchecked = weekday / Sunday daily rates."
+            )
+            selected_food_mode = "monthly" if use_monthly_food else "daily"
 
             with st.form("new_comp_plan_form"):
                 cp1, cp2 = st.columns(2)
@@ -4000,11 +4098,27 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 with cp4:
                     plan_comm_pct = st.number_input("Commission Rate (%)", min_value=0.0, max_value=100.0, value=float(_num(target_s_row['commission_percentage']) or 15.0), step=0.5)
 
-                cp5, cp6 = st.columns(2)
+                cp5, cp6, cp7 = st.columns(3)
                 with cp5:
-                    plan_monthly_food = st.number_input("Monthly Food & Tea Allowance (₹/month)", min_value=0.0, value=float(_num(target_s_row.get('monthly_food_tea_allowance'))), step=100.0)
+                    plan_allow_wd = st.number_input(
+                        "Food & Tea: Mon to Sat (₹/day)", min_value=0.0,
+                        value=float(_num(target_s_row.get('allowance_weekday'))), step=10.0, disabled=use_monthly_food
+                    )
                 with cp6:
-                    plan_monthly_fuel = st.number_input("Monthly Fuel Allowance (₹/month)", min_value=0.0, value=float(_num(target_s_row.get('monthly_fuel_allowance'))), step=100.0)
+                    plan_allow_sun = st.number_input(
+                        "Food & Tea: Sunday (₹/day)", min_value=0.0,
+                        value=float(_num(target_s_row.get('allowance_sunday'))), step=10.0, disabled=use_monthly_food
+                    )
+                with cp7:
+                    plan_monthly_food = st.number_input(
+                        "Food & Tea (₹/month)", min_value=0.0,
+                        value=float(_num(target_s_row.get('monthly_food_tea_allowance'))), step=100.0, disabled=not use_monthly_food
+                    )
+
+                plan_monthly_fuel = st.number_input(
+                    "Monthly Fuel Allowance (₹/month)", min_value=0.0,
+                    value=float(_num(target_s_row.get('monthly_fuel_allowance'))), step=100.0
+                )
 
                 submit_plan = st.form_submit_button("💾 Save & Activate Compensation Plan", type="primary", use_container_width=True)
 
@@ -4024,14 +4138,18 @@ elif page == "Staff & Payroll" and user_role == "admin":
                             INSERT INTO staff_compensation_plans (
                                 staff_id, effective_from, monthly_fixed_salary,
                                 commission_threshold_daily, commission_percentage,
+                                allowance_weekday, allowance_sunday, food_tea_allowance_mode,
                                 monthly_food_tea_allowance, monthly_fuel_allowance
                             ) VALUES (
-                                :sid, :efrom, :sal, :thresh, :comm, :mfood, :mfuel
+                                :sid, :efrom, :sal, :thresh, :comm,
+                                :awd, :asun, :food_mode, :mfood, :mfuel
                             );
                             """),
                             {
                                 "sid": target_s_id, "efrom": plan_eff_from, "sal": float(plan_salary),
                                 "thresh": float(plan_threshold), "comm": float(plan_comm_pct),
+                                "awd": float(plan_allow_wd), "asun": float(plan_allow_sun),
+                                "food_mode": selected_food_mode,
                                 "mfood": float(plan_monthly_food), "mfuel": float(plan_monthly_fuel)
                             }
                         )
@@ -4048,18 +4166,21 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 disp_hist = hist_df.copy()
                 disp_hist["effective_from"] = pd.to_datetime(disp_hist["effective_from"]).dt.strftime("%d-%b-%y")
                 disp_hist["effective_to"] = disp_hist["effective_to"].apply(lambda d: pd.to_datetime(d).strftime("%d-%b-%y") if pd.notna(d) else "Active Present")
+                disp_hist["food_tea_allowance_mode"] = disp_hist["food_tea_allowance_mode"].fillna("monthly").astype(str).str.title()
                 st.dataframe(
-                    disp_hist[["effective_from", "effective_to", "monthly_fixed_salary", "commission_threshold_daily", "commission_percentage", "monthly_food_tea_allowance", "monthly_fuel_allowance"]].rename(columns={
+                    disp_hist[["effective_from", "effective_to", "monthly_fixed_salary", "commission_threshold_daily", "commission_percentage", "food_tea_allowance_mode", "allowance_weekday", "allowance_sunday", "monthly_food_tea_allowance", "monthly_fuel_allowance"]].rename(columns={
                         "effective_from": "From", "effective_to": "To", "monthly_fixed_salary": "Fixed Salary (₹)",
                         "commission_threshold_daily": "Threshold (₹)", "commission_percentage": "Commission (%)",
-                        "monthly_food_tea_allowance": "Food & Tea / Month (₹)", "monthly_fuel_allowance": "Fuel / Month (₹)"
+                        "food_tea_allowance_mode": "Food/Tea Mode", "allowance_weekday": "Weekday / Day (₹)",
+                        "allowance_sunday": "Sunday / Day (₹)", "monthly_food_tea_allowance": "Food & Tea / Month (₹)",
+                        "monthly_fuel_allowance": "Fuel / Month (₹)"
                     }),
                     hide_index=True,
                     use_container_width=True
                 )
 
     elif staff_tab_sel == "💵 Monthly Dues & Settlement":
-        st.write("Calculate monthly dues with fixed salary, commissions where applicable, monthly Food & Tea / Fuel allowances pro-rated for days worked, and deductions backed by the Payments table:")
+        st.write("Calculate monthly dues with fixed salary, commissions where applicable, selected daily/monthly Food & Tea plan, monthly Fuel allowance, and deductions backed by the Payments table:")
 
         now = date.today()
         m_col1, m_col2 = st.columns(2)
@@ -4128,6 +4249,11 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 daily_rate = monthly_sal / 30.0
                 comm_thresh = float(_num(s_row.get("commission_threshold_daily")) or 3000.0)
                 comm_pct = float(_num(s_row.get("commission_percentage")) or 15.0)
+                allow_wd = float(_num(s_row.get("allowance_weekday")))
+                allow_sun = float(_num(s_row.get("allowance_sunday")))
+                food_mode = str(s_row.get("food_tea_allowance_mode") or "monthly").strip().lower()
+                if food_mode not in ("daily", "monthly"):
+                    food_mode = "monthly"
                 monthly_food = float(_num(s_row.get("monthly_food_tea_allowance")))
                 monthly_fuel = float(_num(s_row.get("monthly_fuel_allowance")))
 
@@ -4174,11 +4300,11 @@ elif page == "Staff & Payroll" and user_role == "admin":
 
                     salary_daily_rate = (monthly_sal / num_days_in_month) if staff_role.lower() == "ops coordinator" else daily_rate
                     apportioned_base_salary = payable_days * salary_daily_rate
-                    food_entitled = worked_days * (monthly_food / num_days_in_month)
+                    food_entitled = sum((allow_sun if d.weekday() == 6 else allow_wd) for d in worked_dates) if food_mode == "daily" else worked_days * (monthly_food / num_days_in_month)
                     fuel_entitled = worked_days * (monthly_fuel / num_days_in_month)
                     total_allow_entitled = food_entitled + fuel_entitled
                     total_payments_disbursed = float(st_payments["amount_paid"].sum()) if not st_payments.empty else 0.0
-                    gross_earnings = apportioned_base_salary + total_allow_entitled
+                    gross_earnings = apportioned_base_salary + food_entitled + fuel_entitled
                     net_payable_due = gross_earnings - total_payments_disbursed
 
                     settlement_summary_rows.append({
@@ -4205,7 +4331,8 @@ elif page == "Staff & Payroll" and user_role == "admin":
                         else:
                             row_type = "Daily Salary"
                             day_salary = salary_daily_rate
-                            day_allow = (monthly_food + monthly_fuel) / num_days_in_month
+                            day_food_allow = (allow_sun if d.weekday() == 6 else allow_wd) if food_mode == "daily" else (monthly_food / num_days_in_month)
+                            day_allow = day_food_allow + (monthly_fuel / num_days_in_month)
                         staff_shift_records.append({
                             "Date": d.strftime("%d-%b-%y"), "Day": d.strftime("%A"),
                             "Staff Name": st_name, "Cart Operated": "—",
@@ -4252,7 +4379,11 @@ elif page == "Staff & Payroll" and user_role == "admin":
                                 sundays_worked += 1
                             else:
                                 weekdays_worked += 1
-                        day_allow = ((monthly_food + monthly_fuel) / num_days_in_month) if first_shift_today else 0.0
+                        if first_shift_today:
+                            day_food_allow = (allow_sun if is_sun else allow_wd) if food_mode == "daily" else (monthly_food / num_days_in_month)
+                            day_allow = day_food_allow + (monthly_fuel / num_days_in_month)
+                        else:
+                            day_allow = 0.0
 
                         s_col = float(_num(shift["total_collection"]))
                         day_comm = max(0.0, s_col - comm_thresh) * (comm_pct / 100.0)
