@@ -321,6 +321,7 @@ def _int_num(x):
 # ----------------------------------------------------------------------
 try:
     db_conn = st.connection("postgresql", type="sql")
+    st.success("DATABASE CONNECTION CREATED")
 
     try:
         db_test = db_conn.query("""
@@ -332,16 +333,17 @@ try:
         """, ttl="0s")
 
         st.error("DATABASE TEST BELOW")
-
         st.dataframe(db_test, hide_index=True)
-
-        st.error(f"DAILY ENTRY COUNT = {int(db_test.iloc[0]['daily_entries'])}")
+        st.error(
+            f"DAILY ENTRY COUNT = {int(db_test.iloc[0]['daily_entries'])}"
+        )
 
     except Exception as e:
-        st.error(f"DB CONNECTION TEST FAILED: {e}")
+        st.error(f"DB QUERY TEST FAILED: {repr(e)}")
 
-except Exception:
+except Exception as e:
     db_conn = None
+    st.error(f"DATABASE CONNECTION FAILED: {repr(e)}")
 
 @st.dialog("WhatsApp Confirmation")
 def show_whatsapp_order_confirmation():
