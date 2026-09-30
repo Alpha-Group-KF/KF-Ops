@@ -797,11 +797,52 @@ def get_physical_current_stock_map():
 def load_full_staff_df():
     if db_conn is None: return pd.DataFrame()
     query = """
-    SELECT s.id, s.name, s.full_name, s.status, s.phone_number, s.role, s.gender, s.emergency_contact_name, s.emergency_contact_phone, s.date_of_birth, s.pan_number, s.aadhaar_number, s.current_address, s.permanent_address, s.date_of_joining, s.date_of_leaving, s.notes, c.monthly_fixed_salary, c.commission_threshold_daily, c.commission_percentage, c.allowance_weekday, c.allowance_sunday, c.food_tea_allowance_mode, c.monthly_food_tea_allowance, c.monthly_fuel_allowance
-    FROM staff s LEFT JOIN LATERAL (SELECT * FROM staff_compensation_plans WHERE staff_id = s.id ORDER BY effective_from DESC, id DESC LIMIT 1) c ON true ORDER BY s.status ASC, s.name ASC;
+    SELECT s.id, s.name, s.full_name, s.status, s.phone_number, s.role, s.gender,
+           s.emergency_contact_name, s.emergency_contact_phone, s.date_of_birth,
+           s.pan_number, s.aadhaar_number, s.current_address, s.permanent_address,
+           s.date_of_joining, s.date_of_leaving, s.notes,
+           c.monthly_fixed_salary, c.commission_threshold_daily, c.commission_percentage,
+           c.allowance_weekday, c.allowance_sunday, c.food_tea_allowance_mode,
+           c.monthly_food_tea_allowance, c.monthly_fuel_allowance
+    FROM staff s
+    LEFT JOIN LATERAL (
+        SELECT *
+        FROM staff_compensation_plans
+        WHERE staff_id = s.id
+          AND effective_from <= CURRENT_DATE
+          AND (effective_to IS NULL OR effective_to >= CURRENT_DATE)
+        ORDER BY effective_from DESC, id DESC
+        LIMIT 1
+    ) c ON true
+    ORDER BY s.status ASC, s.name ASC;
     """
     try: return db_conn.query(query, ttl="0s")
     except Exception: return pd.DataFrame()
+
+def load_staff_comp_plan_as_of(staff_id, as_of_date):
+    """Return the compensation plan actually effective for a staff member on a given date."""
+    if db_conn is None:
+        return None
+    try:
+        df = db_conn.query(
+            """
+            SELECT id, staff_id, effective_from, effective_to, monthly_fixed_salary,
+                   commission_threshold_daily, commission_percentage,
+                   allowance_weekday, allowance_sunday, food_tea_allowance_mode,
+                   monthly_food_tea_allowance, monthly_fuel_allowance, created_at
+            FROM staff_compensation_plans
+            WHERE staff_id = :sid
+              AND effective_from <= :as_of
+              AND (effective_to IS NULL OR effective_to >= :as_of)
+            ORDER BY effective_from DESC, id DESC
+            LIMIT 1;
+            """,
+            params={"sid": int(staff_id), "as_of": as_of_date},
+            ttl="0s"
+        )
+        return None if df.empty else df.iloc[0]
+    except Exception:
+        return None
 
 def load_staff_compensation_history(staff_id):
     if db_conn is None: return pd.DataFrame()
@@ -914,17 +955,22 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
             if employment_start > employment_end:
                 continue
 
-        monthly_sal = float(_num(s_row.get("monthly_fixed_salary")) or 18000.0)
+        # Always use the compensation plan effective for the payroll period rather than
+        # merely the newest plan row. This is important when a future revision exists.
+        plan_row = load_staff_comp_plan_as_of(int(s_row["id"]), end_date)
+        plan_source = plan_row if plan_row is not None else s_row
+
+        monthly_sal = float(_num(plan_source.get("monthly_fixed_salary")) or 18000.0)
         standard_daily_rate = monthly_sal / 30.0
-        comm_thresh = float(_num(s_row.get("commission_threshold_daily")) or 3000.0)
-        comm_pct = float(_num(s_row.get("commission_percentage")) or 15.0)
-        allow_wd = float(_num(s_row.get("allowance_weekday")))
-        allow_sun = float(_num(s_row.get("allowance_sunday")))
-        food_mode = str(s_row.get("food_tea_allowance_mode") or "monthly").strip().lower()
+        comm_thresh = float(_num(plan_source.get("commission_threshold_daily")) or 3000.0)
+        comm_pct = float(_num(plan_source.get("commission_percentage")) or 15.0)
+        allow_wd = float(_num(plan_source.get("allowance_weekday")))
+        allow_sun = float(_num(plan_source.get("allowance_sunday")))
+        food_mode = str(plan_source.get("food_tea_allowance_mode") or "monthly").strip().lower()
         if food_mode not in ("daily", "monthly"):
             food_mode = "monthly"
-        monthly_food = float(_num(s_row.get("monthly_food_tea_allowance")))
-        monthly_fuel = float(_num(s_row.get("monthly_fuel_allowance")))
+        monthly_food = float(_num(plan_source.get("monthly_food_tea_allowance")))
+        monthly_fuel = float(_num(plan_source.get("monthly_fuel_allowance")))
 
         st_shifts = entries_df[entries_df["staff_name"] == st_name] if not entries_df.empty else pd.DataFrame()
         st_leaves = att_df[att_df["staff_name"] == st_name] if not att_df.empty else pd.DataFrame()
@@ -1656,7 +1702,12 @@ elif page == "Payslip Generator" and user_role == "admin":
                     return ["font-weight: bold;"] * len(row)
                 return [""] * len(row)
 
-            st.dataframe(summary_df.style.apply(style_bold_rows, axis=1), hide_index=True, use_container_width=True)
+            st.dataframe(
+                summary_df.style.apply(style_bold_rows, axis=1),
+                hide_index=True,
+                width="stretch",
+                height=500
+            )
 
             if not is_ops_coordinator:
                 st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
@@ -4050,7 +4101,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                         st.error(f"Could not update attendance: {e}")
 
     elif staff_tab_sel == "⚙️ Compensation Plans":
-        st.write("View and assign effective-dated salary, commission slabs, Food & Tea allowance plan, and monthly fuel allowance:")
+        st.write("View compensation history, edit the currently active plan, or add a new effective-dated plan:")
 
         if staff_df.empty:
             st.info("No staff records found in database.")
@@ -4058,126 +4109,317 @@ elif page == "Staff & Payroll" and user_role == "admin":
             sel_s_plan = st.selectbox("Select Staff Member", staff_df["name"].tolist(), key="staff_comp_sel")
             target_s_row = staff_df[staff_df["name"] == sel_s_plan].iloc[0]
             target_s_id = int(target_s_row["id"])
-            active_food_mode = str(target_s_row.get("food_tea_allowance_mode") or "monthly").strip().lower()
-            if active_food_mode not in ("daily", "monthly"):
-                active_food_mode = "monthly"
+            hist_df = load_staff_compensation_history(target_s_id)
 
-            st.markdown(f"#### Active Plan for {sel_s_plan}")
-            m1, m2, m3, m4, m5 = st.columns(5)
-            m1.metric("Monthly Fixed Salary", f"₹{_num(target_s_row['monthly_fixed_salary']):,.2f}")
-            m2.metric("Commission Threshold", f"₹{_num(target_s_row['commission_threshold_daily']):,.2f}/day")
-            m3.metric("Commission Rate", f"{_num(target_s_row['commission_percentage']):.1f}%")
-            if active_food_mode == "daily":
-                m4.metric("Food & Tea (Daily)", f"₹{_num(target_s_row.get('allowance_weekday')):,.0f} W | ₹{_num(target_s_row.get('allowance_sunday')):,.0f} Sun")
+            # --------------------------------------------------------------
+            # HISTORICAL PLANS FIRST
+            # --------------------------------------------------------------
+            st.markdown("#### Historical Plans")
+            active_plan = None
+            if not hist_df.empty:
+                hist_work = hist_df.copy()
+                hist_work["effective_from_dt"] = pd.to_datetime(hist_work["effective_from"]).dt.date
+                hist_work["effective_to_dt"] = hist_work["effective_to"].apply(
+                    lambda d: pd.to_datetime(d).date() if pd.notna(d) else None
+                )
+                today_dt = date.today()
+
+                active_mask = hist_work.apply(
+                    lambda r: r["effective_from_dt"] <= today_dt and
+                              (r["effective_to_dt"] is None or r["effective_to_dt"] >= today_dt),
+                    axis=1
+                )
+                active_rows = hist_work[active_mask].sort_values(["effective_from_dt", "id"], ascending=[False, False])
+                if not active_rows.empty:
+                    active_plan = active_rows.iloc[0]
+
+                def plan_status(row):
+                    if row["effective_from_dt"] > today_dt:
+                        return "Future"
+                    if row["effective_to_dt"] is None or row["effective_to_dt"] >= today_dt:
+                        return "Active"
+                    return "Historical"
+
+                hist_work["Status"] = hist_work.apply(plan_status, axis=1)
+                hist_work["From"] = hist_work["effective_from_dt"].apply(lambda d: d.strftime("%d-%b-%y"))
+                hist_work["To"] = hist_work["effective_to_dt"].apply(lambda d: d.strftime("%d-%b-%y") if d else "Open")
+                hist_work["Salary"] = hist_work["monthly_fixed_salary"].apply(lambda v: f"₹{_num(v):,.0f}")
+                hist_work["Threshold"] = hist_work["commission_threshold_daily"].apply(lambda v: f"₹{_num(v):,.0f}")
+                hist_work["Comm %"] = hist_work["commission_percentage"].apply(lambda v: f"{_num(v):.1f}%")
+                hist_work["Food Mode"] = hist_work["food_tea_allowance_mode"].fillna("monthly").astype(str).str.title()
+                hist_work["Weekday"] = hist_work["allowance_weekday"].apply(lambda v: f"₹{_num(v):,.0f}")
+                hist_work["Sunday"] = hist_work["allowance_sunday"].apply(lambda v: f"₹{_num(v):,.0f}")
+                hist_work["Food/Mth"] = hist_work["monthly_food_tea_allowance"].apply(lambda v: f"₹{_num(v):,.0f}")
+                hist_work["Fuel/Mth"] = hist_work["monthly_fuel_allowance"].apply(lambda v: f"₹{_num(v):,.0f}")
+
+                compact_hist = hist_work[[
+                    "Status", "From", "To", "Salary", "Threshold", "Comm %", "Food Mode",
+                    "Weekday", "Sunday", "Food/Mth", "Fuel/Mth"
+                ]]
+                hist_html = compact_hist.to_html(index=False, border=0, classes="comp-history-table", escape=True)
+                st.markdown(
+                    """
+                    <style>
+                    .comp-history-wrap {width:100%; overflow-x:hidden; margin-bottom:0.7rem;}
+                    .comp-history-table {width:100%; table-layout:fixed; border-collapse:collapse; font-size:9.5px;}
+                    .comp-history-table th {background:#70440E; color:white; font-size:9px; font-weight:800; padding:5px 3px; border:1px solid #E3CBA0; white-space:normal; line-height:1.15;}
+                    .comp-history-table td {font-size:9.5px; padding:5px 3px; border:1px solid #E3CBA0; text-align:center; white-space:normal; overflow-wrap:anywhere; line-height:1.15;}
+                    .comp-history-table tr:nth-child(even) td {background:#FFFBF2;}
+                    </style>
+                    """,
+                    unsafe_allow_html=True
+                )
+                st.markdown(f'<div class="comp-history-wrap">{hist_html}</div>', unsafe_allow_html=True)
             else:
-                m4.metric("Food & Tea (Monthly)", f"₹{_num(target_s_row.get('monthly_food_tea_allowance')):,.0f}/month")
-            m5.metric("Fuel", f"₹{_num(target_s_row.get('monthly_fuel_allowance')):,.0f}/month")
+                st.info("No compensation plans found for this staff member.")
 
+            # --------------------------------------------------------------
+            # ACTIVE PLAN + EDIT
+            # --------------------------------------------------------------
             st.markdown("---")
-            st.markdown("#### Revision / Add New Compensation Plan")
-            st.caption("Adding a new plan sets an effective starting date without altering past calculation history.")
+            st.markdown(f"#### Active Plan for {sel_s_plan}")
+
+            if active_plan is None:
+                st.warning("No compensation plan is currently effective for this staff member. Add a new plan below.")
+            else:
+                active_food_mode = str(active_plan.get("food_tea_allowance_mode") or "monthly").strip().lower()
+                if active_food_mode not in ("daily", "monthly"):
+                    active_food_mode = "monthly"
+
+                m1, m2, m3, m4, m5 = st.columns(5)
+                m1.metric("Monthly Fixed Salary", f"₹{_num(active_plan.get('monthly_fixed_salary')):,.2f}")
+                m2.metric("Commission Threshold", f"₹{_num(active_plan.get('commission_threshold_daily')):,.2f}/day")
+                m3.metric("Commission Rate", f"{_num(active_plan.get('commission_percentage')):.1f}%")
+                if active_food_mode == "daily":
+                    m4.metric("Food & Tea (Daily)", f"₹{_num(active_plan.get('allowance_weekday')):,.0f} W | ₹{_num(active_plan.get('allowance_sunday')):,.0f} Sun")
+                else:
+                    m4.metric("Food & Tea (Monthly)", f"₹{_num(active_plan.get('monthly_food_tea_allowance')):,.0f}/month")
+                m5.metric("Fuel", f"₹{_num(active_plan.get('monthly_fuel_allowance')):,.0f}/month")
+
+                with st.expander("✏️ Edit Existing Active Plan", expanded=False):
+                    st.caption(
+                        f"Active from {active_plan['effective_from_dt'].strftime('%d-%b-%y')}. "
+                        "Editing updates this active plan in place; it does not create a new history row."
+                    )
+                    edit_use_monthly_food = st.checkbox(
+                        "Use monthly Food & Tea allowance plan",
+                        value=(active_food_mode == "monthly"),
+                        key=f"edit_comp_food_monthly_mode_{target_s_id}_{int(active_plan['id'])}",
+                        help="Checked = monthly Food & Tea amount pro-rated for days worked. Unchecked = weekday / Sunday daily rates."
+                    )
+                    edit_food_mode = "monthly" if edit_use_monthly_food else "daily"
+
+                    with st.form(f"edit_active_comp_plan_form_{target_s_id}_{int(active_plan['id'])}"):
+                        ec1, ec2 = st.columns(2)
+                        with ec1:
+                            st.date_input(
+                                "Effective From Date",
+                                value=active_plan["effective_from_dt"],
+                                disabled=True,
+                                format="DD-MM-YYYY",
+                                key=f"edit_plan_eff_from_{target_s_id}_{int(active_plan['id'])}"
+                            )
+                        with ec2:
+                            edit_salary = st.number_input(
+                                "Monthly Fixed Salary (₹)", min_value=0.0,
+                                value=float(_num(active_plan.get("monthly_fixed_salary")) or 18000.0), step=500.0,
+                                key=f"edit_plan_salary_{target_s_id}_{int(active_plan['id'])}"
+                            )
+
+                        ec3, ec4 = st.columns(2)
+                        with ec3:
+                            edit_threshold = st.number_input(
+                                "Daily Sales Threshold (₹)", min_value=0.0,
+                                value=float(_num(active_plan.get("commission_threshold_daily")) or 3000.0), step=100.0,
+                                key=f"edit_plan_threshold_{target_s_id}_{int(active_plan['id'])}"
+                            )
+                        with ec4:
+                            edit_comm_pct = st.number_input(
+                                "Commission Rate (%)", min_value=0.0, max_value=100.0,
+                                value=float(_num(active_plan.get("commission_percentage")) or 15.0), step=0.5,
+                                key=f"edit_plan_comm_{target_s_id}_{int(active_plan['id'])}"
+                            )
+
+                        ec5, ec6, ec7 = st.columns(3)
+                        with ec5:
+                            edit_allow_wd = st.number_input(
+                                "Food & Tea: Mon to Sat (₹/day)", min_value=0.0,
+                                value=float(_num(active_plan.get("allowance_weekday"))), step=10.0,
+                                disabled=edit_use_monthly_food,
+                                key=f"edit_plan_wd_{target_s_id}_{int(active_plan['id'])}"
+                            )
+                        with ec6:
+                            edit_allow_sun = st.number_input(
+                                "Food & Tea: Sunday (₹/day)", min_value=0.0,
+                                value=float(_num(active_plan.get("allowance_sunday"))), step=10.0,
+                                disabled=edit_use_monthly_food,
+                                key=f"edit_plan_sun_{target_s_id}_{int(active_plan['id'])}"
+                            )
+                        with ec7:
+                            edit_monthly_food = st.number_input(
+                                "Food & Tea (₹/month)", min_value=0.0,
+                                value=float(_num(active_plan.get("monthly_food_tea_allowance"))), step=100.0,
+                                disabled=not edit_use_monthly_food,
+                                key=f"edit_plan_mfood_{target_s_id}_{int(active_plan['id'])}"
+                            )
+
+                        edit_monthly_fuel = st.number_input(
+                            "Monthly Fuel Allowance (₹/month)", min_value=0.0,
+                            value=float(_num(active_plan.get("monthly_fuel_allowance"))), step=100.0,
+                            key=f"edit_plan_mfuel_{target_s_id}_{int(active_plan['id'])}"
+                        )
+                        submit_edit_plan = st.form_submit_button(
+                            "💾 Update Active Compensation Plan", type="primary", width="stretch"
+                        )
+
+                    if submit_edit_plan:
+                        try:
+                            with db_conn.session as s:
+                                s.execute(
+                                    text("""
+                                    UPDATE staff_compensation_plans
+                                    SET monthly_fixed_salary = :sal,
+                                        commission_threshold_daily = :thresh,
+                                        commission_percentage = :comm,
+                                        allowance_weekday = :awd,
+                                        allowance_sunday = :asun,
+                                        food_tea_allowance_mode = :food_mode,
+                                        monthly_food_tea_allowance = :mfood,
+                                        monthly_fuel_allowance = :mfuel
+                                    WHERE id = :pid AND staff_id = :sid;
+                                    """),
+                                    {
+                                        "pid": int(active_plan["id"]), "sid": target_s_id,
+                                        "sal": float(edit_salary), "thresh": float(edit_threshold),
+                                        "comm": float(edit_comm_pct), "awd": float(edit_allow_wd),
+                                        "asun": float(edit_allow_sun), "food_mode": edit_food_mode,
+                                        "mfood": float(edit_monthly_food), "mfuel": float(edit_monthly_fuel)
+                                    }
+                                )
+                                s.commit()
+                            st.cache_data.clear()
+                            show_success_modal(f"Active compensation plan updated successfully for {sel_s_plan}!")
+                        except Exception as e:
+                            st.error(f"Could not update active compensation plan: {e}")
+
+            # --------------------------------------------------------------
+            # ADD NEW PLAN BELOW HISTORY / ACTIVE EDIT
+            # --------------------------------------------------------------
+            st.markdown("---")
+            st.markdown("#### Add New Compensation Plan")
+            st.caption("A new plan starts from its Effective From date and preserves the existing plan in history.")
+
+            source_plan = active_plan if active_plan is not None else target_s_row
+            source_food_mode = str(source_plan.get("food_tea_allowance_mode") or "monthly").strip().lower()
+            if source_food_mode not in ("daily", "monthly"):
+                source_food_mode = "monthly"
 
             use_monthly_food = st.checkbox(
                 "Use monthly Food & Tea allowance plan",
-                value=(active_food_mode == "monthly"),
-                key=f"comp_food_monthly_mode_{target_s_id}",
+                value=(source_food_mode == "monthly"),
+                key=f"new_comp_food_monthly_mode_{target_s_id}",
                 help="Checked = monthly Food & Tea amount pro-rated for days worked. Unchecked = weekday / Sunday daily rates."
             )
             selected_food_mode = "monthly" if use_monthly_food else "daily"
 
-            with st.form("new_comp_plan_form"):
+            with st.form(f"new_comp_plan_form_{target_s_id}"):
                 cp1, cp2 = st.columns(2)
                 with cp1:
-                    plan_eff_from = st.date_input("Effective From Date", value=date.today(), format="DD-MM-YYYY")
+                    plan_eff_from = st.date_input("Effective From Date", value=date.today(), format="DD-MM-YYYY", key=f"new_plan_eff_{target_s_id}")
                 with cp2:
-                    plan_salary = st.number_input("Monthly Fixed Salary (₹)", min_value=0.0, value=float(_num(target_s_row['monthly_fixed_salary']) or 18000.0), step=500.0)
+                    plan_salary = st.number_input(
+                        "Monthly Fixed Salary (₹)", min_value=0.0,
+                        value=float(_num(source_plan.get("monthly_fixed_salary")) or 18000.0), step=500.0,
+                        key=f"new_plan_salary_{target_s_id}"
+                    )
 
                 cp3, cp4 = st.columns(2)
                 with cp3:
-                    plan_threshold = st.number_input("Daily Sales Threshold (₹)", min_value=0.0, value=float(_num(target_s_row['commission_threshold_daily']) or 3000.0), step=100.0)
+                    plan_threshold = st.number_input(
+                        "Daily Sales Threshold (₹)", min_value=0.0,
+                        value=float(_num(source_plan.get("commission_threshold_daily")) or 3000.0), step=100.0,
+                        key=f"new_plan_threshold_{target_s_id}"
+                    )
                 with cp4:
-                    plan_comm_pct = st.number_input("Commission Rate (%)", min_value=0.0, max_value=100.0, value=float(_num(target_s_row['commission_percentage']) or 15.0), step=0.5)
+                    plan_comm_pct = st.number_input(
+                        "Commission Rate (%)", min_value=0.0, max_value=100.0,
+                        value=float(_num(source_plan.get("commission_percentage")) or 15.0), step=0.5,
+                        key=f"new_plan_comm_{target_s_id}"
+                    )
 
                 cp5, cp6, cp7 = st.columns(3)
                 with cp5:
                     plan_allow_wd = st.number_input(
                         "Food & Tea: Mon to Sat (₹/day)", min_value=0.0,
-                        value=float(_num(target_s_row.get('allowance_weekday'))), step=10.0, disabled=use_monthly_food
+                        value=float(_num(source_plan.get("allowance_weekday"))), step=10.0,
+                        disabled=use_monthly_food, key=f"new_plan_wd_{target_s_id}"
                     )
                 with cp6:
                     plan_allow_sun = st.number_input(
                         "Food & Tea: Sunday (₹/day)", min_value=0.0,
-                        value=float(_num(target_s_row.get('allowance_sunday'))), step=10.0, disabled=use_monthly_food
+                        value=float(_num(source_plan.get("allowance_sunday"))), step=10.0,
+                        disabled=use_monthly_food, key=f"new_plan_sun_{target_s_id}"
                     )
                 with cp7:
                     plan_monthly_food = st.number_input(
                         "Food & Tea (₹/month)", min_value=0.0,
-                        value=float(_num(target_s_row.get('monthly_food_tea_allowance'))), step=100.0, disabled=not use_monthly_food
+                        value=float(_num(source_plan.get("monthly_food_tea_allowance"))), step=100.0,
+                        disabled=not use_monthly_food, key=f"new_plan_mfood_{target_s_id}"
                     )
 
                 plan_monthly_fuel = st.number_input(
                     "Monthly Fuel Allowance (₹/month)", min_value=0.0,
-                    value=float(_num(target_s_row.get('monthly_fuel_allowance'))), step=100.0
+                    value=float(_num(source_plan.get("monthly_fuel_allowance"))), step=100.0,
+                    key=f"new_plan_mfuel_{target_s_id}"
                 )
-
-                submit_plan = st.form_submit_button("💾 Save & Activate Compensation Plan", type="primary", use_container_width=True)
+                submit_plan = st.form_submit_button("💾 Save & Activate Compensation Plan", type="primary", width="stretch")
 
             if submit_plan:
                 try:
-                    with db_conn.session as s:
-                        s.execute(
-                            text("""
-                            UPDATE staff_compensation_plans
-                            SET effective_to = :prev_end
-                            WHERE staff_id = :sid AND effective_to IS NULL AND effective_from < :new_start;
-                            """),
-                            {"prev_end": plan_eff_from - timedelta(days=1), "sid": target_s_id, "new_start": plan_eff_from}
+                    if active_plan is not None and plan_eff_from <= active_plan["effective_from_dt"]:
+                        st.error(
+                            "The new plan Effective From date must be later than the current active plan's start date. "
+                            "Use 'Edit Existing Active Plan' to change the current plan."
                         )
-                        s.execute(
-                            text("""
-                            INSERT INTO staff_compensation_plans (
-                                staff_id, effective_from, monthly_fixed_salary,
-                                commission_threshold_daily, commission_percentage,
-                                allowance_weekday, allowance_sunday, food_tea_allowance_mode,
-                                monthly_food_tea_allowance, monthly_fuel_allowance
-                            ) VALUES (
-                                :sid, :efrom, :sal, :thresh, :comm,
-                                :awd, :asun, :food_mode, :mfood, :mfuel
-                            );
-                            """),
-                            {
-                                "sid": target_s_id, "efrom": plan_eff_from, "sal": float(plan_salary),
-                                "thresh": float(plan_threshold), "comm": float(plan_comm_pct),
-                                "awd": float(plan_allow_wd), "asun": float(plan_allow_sun),
-                                "food_mode": selected_food_mode,
-                                "mfood": float(plan_monthly_food), "mfuel": float(plan_monthly_fuel)
-                            }
-                        )
-                        s.commit()
-                    st.cache_data.clear()
-                    show_success_modal(f"New compensation plan activated for {sel_s_plan} from {plan_eff_from.strftime('%d-%b-%y')}!")
+                    else:
+                        with db_conn.session as s:
+                            if active_plan is not None:
+                                s.execute(
+                                    text("""
+                                    UPDATE staff_compensation_plans
+                                    SET effective_to = :prev_end
+                                    WHERE id = :pid AND staff_id = :sid;
+                                    """),
+                                    {
+                                        "prev_end": plan_eff_from - timedelta(days=1),
+                                        "pid": int(active_plan["id"]), "sid": target_s_id
+                                    }
+                                )
+                            s.execute(
+                                text("""
+                                INSERT INTO staff_compensation_plans (
+                                    staff_id, effective_from, monthly_fixed_salary,
+                                    commission_threshold_daily, commission_percentage,
+                                    allowance_weekday, allowance_sunday, food_tea_allowance_mode,
+                                    monthly_food_tea_allowance, monthly_fuel_allowance
+                                ) VALUES (
+                                    :sid, :efrom, :sal, :thresh, :comm,
+                                    :awd, :asun, :food_mode, :mfood, :mfuel
+                                );
+                                """),
+                                {
+                                    "sid": target_s_id, "efrom": plan_eff_from, "sal": float(plan_salary),
+                                    "thresh": float(plan_threshold), "comm": float(plan_comm_pct),
+                                    "awd": float(plan_allow_wd), "asun": float(plan_allow_sun),
+                                    "food_mode": selected_food_mode,
+                                    "mfood": float(plan_monthly_food), "mfuel": float(plan_monthly_fuel)
+                                }
+                            )
+                            s.commit()
+                        st.cache_data.clear()
+                        show_success_modal(f"New compensation plan activated for {sel_s_plan} from {plan_eff_from.strftime('%d-%b-%y')}!")
                 except Exception as e:
                     st.error(f"Could not save compensation plan: {e}")
-
-            st.markdown("---")
-            st.markdown("#### Historical Plans")
-            hist_df = load_staff_compensation_history(target_s_id)
-            if not hist_df.empty:
-                disp_hist = hist_df.copy()
-                disp_hist["effective_from"] = pd.to_datetime(disp_hist["effective_from"]).dt.strftime("%d-%b-%y")
-                disp_hist["effective_to"] = disp_hist["effective_to"].apply(lambda d: pd.to_datetime(d).strftime("%d-%b-%y") if pd.notna(d) else "Active Present")
-                disp_hist["food_tea_allowance_mode"] = disp_hist["food_tea_allowance_mode"].fillna("monthly").astype(str).str.title()
-                st.dataframe(
-                    disp_hist[["effective_from", "effective_to", "monthly_fixed_salary", "commission_threshold_daily", "commission_percentage", "food_tea_allowance_mode", "allowance_weekday", "allowance_sunday", "monthly_food_tea_allowance", "monthly_fuel_allowance"]].rename(columns={
-                        "effective_from": "From", "effective_to": "To", "monthly_fixed_salary": "Fixed Salary (₹)",
-                        "commission_threshold_daily": "Threshold (₹)", "commission_percentage": "Commission (%)",
-                        "food_tea_allowance_mode": "Food/Tea Mode", "allowance_weekday": "Weekday / Day (₹)",
-                        "allowance_sunday": "Sunday / Day (₹)", "monthly_food_tea_allowance": "Food & Tea / Month (₹)",
-                        "monthly_fuel_allowance": "Fuel / Month (₹)"
-                    }),
-                    hide_index=True,
-                    use_container_width=True
-                )
 
     elif staff_tab_sel == "💵 Monthly Dues & Settlement":
         st.write("Calculate monthly dues with fixed salary, commissions where applicable, selected daily/monthly Food & Tea plan, monthly Fuel allowance, and deductions backed by the Payments table:")
