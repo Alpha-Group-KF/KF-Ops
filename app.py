@@ -319,6 +319,21 @@ def _int_num(x):
 # ----------------------------------------------------------------------
 try:
     db_conn = st.connection("postgresql", type="sql")
+
+    try:
+        db_test = db_conn.query("""
+            SELECT
+                current_database() AS database_name,
+                current_schema() AS schema_name,
+                COUNT(*) AS daily_entries
+            FROM public.daily_cart_entries;
+        """, ttl="0s")
+
+        st.write("DB CONNECTION TEST:", db_test)
+
+    except Exception as e:
+        st.error(f"DB CONNECTION TEST FAILED: {e}")
+
 except Exception:
     db_conn = None
 
