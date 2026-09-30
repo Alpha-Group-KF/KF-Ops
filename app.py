@@ -40,8 +40,6 @@ except ImportError:
 
 st.set_page_config(page_title="Kulfi Ops", page_icon="🍦", layout="wide")
 
-st.error("### TEST VERSION 30-SEP-2026 8PM ###")
-
 # ----------------------------------------------------------------------
 # GLOBAL UI STYLES
 # ----------------------------------------------------------------------
