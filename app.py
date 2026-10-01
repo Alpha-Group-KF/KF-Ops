@@ -1279,7 +1279,7 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
 
     adjustment_amount = float(_num(data_dict.get("adjustment_amount", 0.0)))
     adjustment_reason = str(data_dict.get("adjustment_reason") or "").strip()
-    final_adjusted = float(_num(data_dict.get("final_payable_adjusted", 0.0)))
+    final_adjusted = float(_num(data_dict.get("final_payable_adjusted", data_dict.get("due", 0.0))))
 
     summary_data = [
         ["Salary Component", "Basis / Calculation Details", "Amount (Rs.)"],
@@ -1296,7 +1296,7 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
         ["Already Paid / Disbursed", "Cash advances & direct payments recorded", f"-Rs. {data_dict['paid']:,.2f}"],
         ["Calculated Final Payable", "Calculated amount before manual adjustment", f"Rs. {data_dict['due']:,.2f}"],
         ["Manual Adjustment", adjustment_reason if adjustment_reason else "No adjustment entered", f"Rs. {adjustment_amount:+,.2f}" if abs(adjustment_amount) > 0.0001 else "Rs. 0.00"],
-        ["Final Payable (Adjusted)", "Calculated Final Payable + Manual Adjustment; remains zero until an adjustment is entered", f"Rs. {final_adjusted:,.2f}"]
+        ["Final Payable (Adjusted)", "Calculated final payable amount post adjustments", f"Rs. {final_adjusted:,.2f}"]
     ])
 
     t_summary = Table(summary_data, colWidths=[150, 250, 100])
@@ -1649,7 +1649,7 @@ elif page == "Payslip Generator" and user_role == "admin":
                     )
 
             has_adjustment = abs(float(adjustment_amount)) > 0.0001
-            final_payable_adjusted = (float(staff_data.get("due", 0.0)) + float(adjustment_amount)) if has_adjustment else 0.0
+            final_payable_adjusted = float(staff_data.get("due", 0.0)) + float(adjustment_amount)
             staff_data = dict(staff_data)
             staff_data["adjustment_amount"] = float(adjustment_amount)
             staff_data["adjustment_reason"] = adjustment_reason.strip()
@@ -1692,7 +1692,7 @@ elif page == "Payslip Generator" and user_role == "admin":
                 ["Already Paid / Disbursed", "Cash advances & direct payments recorded", f"-₹{staff_data['paid']:,.2f}"],
                 ["Calculated Final Payable", "Calculated amount before manual adjustment", f"₹{staff_data['due']:,.2f}"],
                 ["Manual Adjustment", adjustment_reason.strip() if adjustment_reason.strip() else "No adjustment entered", f"₹{float(adjustment_amount):+,.2f}" if abs(float(adjustment_amount)) > 0.0001 else "₹0.00"],
-                ["Final Payable (Adjusted)", "Calculated Final Payable + Manual Adjustment; remains zero until an adjustment is entered", f"₹{final_payable_adjusted:,.2f}"]
+                ["Final Payable (Adjusted)", "Calculated final payable amount post adjustments", f"₹{final_payable_adjusted:,.2f}"]
             ])
 
             summary_df = pd.DataFrame(summary_table_data[1:], columns=summary_table_data[0])
@@ -1702,11 +1702,12 @@ elif page == "Payslip Generator" and user_role == "admin":
                     return ["font-weight: bold;"] * len(row)
                 return [""] * len(row)
 
+            summary_table_height = 38 + (len(summary_df) * 36)
             st.dataframe(
                 summary_df.style.apply(style_bold_rows, axis=1),
                 hide_index=True,
                 width="stretch",
-                height=500
+                height=summary_table_height
             )
 
             if not is_ops_coordinator:
@@ -4161,9 +4162,9 @@ elif page == "Staff & Payroll" and user_role == "admin":
                     """
                     <style>
                     .comp-history-wrap {width:100%; overflow-x:hidden; margin-bottom:0.7rem;}
-                    .comp-history-table {width:100%; table-layout:fixed; border-collapse:collapse; font-size:9.5px;}
-                    .comp-history-table th {background:#70440E; color:white; font-size:9px; font-weight:800; padding:5px 3px; border:1px solid #E3CBA0; white-space:normal; line-height:1.15;}
-                    .comp-history-table td {font-size:9.5px; padding:5px 3px; border:1px solid #E3CBA0; text-align:center; white-space:normal; overflow-wrap:anywhere; line-height:1.15;}
+                    .comp-history-table {width:100%; table-layout:fixed; border-collapse:collapse; font-size:12px;}
+                    .comp-history-table th {background:#70440E; color:white; font-size:11.5px; font-weight:800; padding:6px 4px; border:1px solid #E3CBA0; white-space:normal; line-height:1.2;}
+                    .comp-history-table td {font-size:12px; padding:6px 4px; border:1px solid #E3CBA0; text-align:center; white-space:normal; overflow-wrap:anywhere; line-height:1.2;}
                     .comp-history-table tr:nth-child(even) td {background:#FFFBF2;}
                     </style>
                     """,
@@ -4230,13 +4231,13 @@ elif page == "Staff & Payroll" and user_role == "admin":
                         with ec3:
                             edit_threshold = st.number_input(
                                 "Daily Sales Threshold (₹)", min_value=0.0,
-                                value=float(_num(active_plan.get("commission_threshold_daily")) or 3000.0), step=100.0,
+                                value=float(_num(active_plan.get("commission_threshold_daily"))), step=100.0,
                                 key=f"edit_plan_threshold_{target_s_id}_{int(active_plan['id'])}"
                             )
                         with ec4:
                             edit_comm_pct = st.number_input(
                                 "Commission Rate (%)", min_value=0.0, max_value=100.0,
-                                value=float(_num(active_plan.get("commission_percentage")) or 15.0), step=0.5,
+                                value=float(_num(active_plan.get("commission_percentage"))), step=0.5,
                                 key=f"edit_plan_comm_{target_s_id}_{int(active_plan['id'])}"
                             )
 
