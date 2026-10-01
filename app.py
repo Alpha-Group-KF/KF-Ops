@@ -2972,38 +2972,68 @@ elif page == "Freezer Stock" and user_role == "admin":
         )
 
         def get_system_stock_as_of(target_date):
-            """System freezer stock as of end of target_date = received - cart additions - stock removed."""
+            """
+            Reconstruct system stock for a past audit by reversing movements from today's
+            system stock back to that audit date.
+
+            Historical system stock =
+                today's system stock
+                + cart additions from (audit date + 1) through today
+                + stock removals from (audit date + 1) through today
+                - stock received from audit date through today
+
+            This keeps the historical view aligned to the same movement logic used by the
+            current freezer stock calculation.
+            """
             stock_map = {code: 0 for code in FLAVOR_CODES}
             if db_conn is None:
                 return stock_map
-            try:
-                rec_asof_df = db_conn.query(
-                    """
-                    SELECT ri.flavor_code, COALESCE(SUM(ri.received_units), 0) AS total_received
-                    FROM stock_received_items ri
-                    JOIN stock_received r ON ri.received_id = r.id
-                    WHERE r.received_date <= :adt
-                    GROUP BY ri.flavor_code;
-                    """,
-                    params={"adt": target_date},
-                    ttl="0s"
-                )
-                rec_asof = dict(zip(rec_asof_df["flavor_code"], rec_asof_df["total_received"])) if not rec_asof_df.empty else {}
 
-                added_asof_df = db_conn.query(
+            try:
+                current_df = get_db_freezer_stock()
+                current_map = (
+                    dict(zip(current_df["code"], current_df["Units in freezer"]))
+                    if not current_df.empty else {}
+                )
+
+                movement_start = target_date + timedelta(days=1)
+                received_start = target_date
+
+                added_after_df = db_conn.query(
                     """
                     SELECT i.flavor_code, COALESCE(SUM(i.added_units), 0) AS total_added
                     FROM daily_cart_items i
                     JOIN daily_cart_entries e ON i.daily_entry_id = e.id
-                    WHERE e.entry_date <= :adt
+                    WHERE e.entry_date >= :start_dt
+                      AND e.entry_date <= CURRENT_DATE
                     GROUP BY i.flavor_code;
                     """,
-                    params={"adt": target_date},
+                    params={"start_dt": movement_start},
                     ttl="0s"
                 )
-                added_asof = dict(zip(added_asof_df["flavor_code"], added_asof_df["total_added"])) if not added_asof_df.empty else {}
+                added_after = (
+                    dict(zip(added_after_df["flavor_code"], added_after_df["total_added"]))
+                    if not added_after_df.empty else {}
+                )
 
-                removed_asof_df = db_conn.query(
+                received_after_df = db_conn.query(
+                    """
+                    SELECT ri.flavor_code, COALESCE(SUM(ri.received_units), 0) AS total_received
+                    FROM stock_received_items ri
+                    JOIN stock_received r ON ri.received_id = r.id
+                    WHERE r.received_date >= :start_dt
+                      AND r.received_date <= CURRENT_DATE
+                    GROUP BY ri.flavor_code;
+                    """,
+                    params={"start_dt": received_start},
+                    ttl="0s"
+                )
+                received_after = (
+                    dict(zip(received_after_df["flavor_code"], received_after_df["total_received"]))
+                    if not received_after_df.empty else {}
+                )
+
+                removed_after_df = db_conn.query(
                     """
                     SELECT
                         COALESCE(SUM(ml_units), 0) AS ml_units,
@@ -3016,24 +3046,32 @@ elif page == "Freezer Stock" and user_role == "admin":
                         COALESCE(SUM(ch_units), 0) AS ch_units,
                         COALESCE(SUM(ra_units), 0) AS ra_units
                     FROM stock_removed
-                    WHERE removal_date <= :adt;
+                    WHERE removal_date >= :start_dt
+                      AND removal_date <= CURRENT_DATE;
                     """,
-                    params={"adt": target_date},
+                    params={"start_dt": movement_start},
                     ttl="0s"
                 )
-                removed_asof = (
-                    {code: int(_num(removed_asof_df.iloc[0].get(FLAVOR_MAP[code]["audit_col"], 0))) for code in FLAVOR_CODES}
-                    if not removed_asof_df.empty else {code: 0 for code in FLAVOR_CODES}
+                removed_after = (
+                    {
+                        code: int(_num(removed_after_df.iloc[0].get(FLAVOR_MAP[code]["audit_col"], 0)))
+                        for code in FLAVOR_CODES
+                    }
+                    if not removed_after_df.empty
+                    else {code: 0 for code in FLAVOR_CODES}
                 )
 
                 for code in FLAVOR_CODES:
                     stock_map[code] = (
-                        int(_num(rec_asof.get(code, 0)))
-                        - int(_num(added_asof.get(code, 0)))
-                        - int(_num(removed_asof.get(code, 0)))
+                        int(_num(current_map.get(code, 0)))
+                        + int(_num(added_after.get(code, 0)))
+                        + int(_num(removed_after.get(code, 0)))
+                        - int(_num(received_after.get(code, 0)))
                     )
+
             except Exception:
                 pass
+
             return stock_map
 
         def show_audit_totals(audit_df):
