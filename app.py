@@ -4147,14 +4147,14 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 hist_work["Salary"] = hist_work["monthly_fixed_salary"].apply(lambda v: f"₹{_num(v):,.0f}")
                 hist_work["Threshold"] = hist_work["commission_threshold_daily"].apply(lambda v: f"₹{_num(v):,.0f}")
                 hist_work["Comm %"] = hist_work["commission_percentage"].apply(lambda v: f"{_num(v):.1f}%")
-                hist_work["Food Mode"] = hist_work["food_tea_allowance_mode"].fillna("monthly").astype(str).str.title()
+                hist_work["Allowance Mode"] = hist_work["food_tea_allowance_mode"].fillna("monthly").astype(str).str.title()
                 hist_work["Weekday"] = hist_work["allowance_weekday"].apply(lambda v: f"₹{_num(v):,.0f}")
                 hist_work["Sunday"] = hist_work["allowance_sunday"].apply(lambda v: f"₹{_num(v):,.0f}")
                 hist_work["Food/Mth"] = hist_work["monthly_food_tea_allowance"].apply(lambda v: f"₹{_num(v):,.0f}")
                 hist_work["Fuel/Mth"] = hist_work["monthly_fuel_allowance"].apply(lambda v: f"₹{_num(v):,.0f}")
 
                 compact_hist = hist_work[[
-                    "Status", "From", "To", "Salary", "Threshold", "Comm %", "Food Mode",
+                    "Status", "From", "To", "Salary", "Threshold", "Comm %", "Allowance Mode",
                     "Weekday", "Sunday", "Food/Mth", "Fuel/Mth"
                 ]]
                 hist_html = compact_hist.to_html(index=False, border=0, classes="comp-history-table", escape=True)
