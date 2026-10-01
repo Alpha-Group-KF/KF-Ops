@@ -2962,28 +2962,289 @@ elif page == "Freezer Stock" and user_role == "admin":
                 except Exception as e: st.error(f"Could not save to database: {e}")
 
     elif freezer_tab_choice == "Stock Audit (Physical Count)":
-        st.write("Log a physical stock count from the freezer to calculate inventory variance.")
-        aud_c1, aud_c2, aud_c3 = st.columns(3)
-        with aud_c1: audit_date = st.date_input("Audit date", value=date.today(), key="audit_dt_entry", format="DD-MM-YYYY")
-        with aud_c2: audit_location = st.text_input("Freezer / Location", value=CITY, key="audit_loc_entry")
-        with aud_c3: audited_by = st.text_input("Audited by", value="Admin", key="audit_by_entry")
+        st.write("Log a new physical stock count, or view and edit a previously saved audit.")
 
-        freezer_curr_df = get_db_freezer_stock()
-        sys_stock_map = dict(zip(freezer_curr_df["code"], freezer_curr_df["Units in freezer"])) if not freezer_curr_df.empty else {}
+        audit_mode = st.radio(
+            "Audit Action",
+            ["Log New Audit", "View / Edit Past Audit"],
+            horizontal=True,
+            key="stock_audit_mode"
+        )
 
-        audit_grid = [{"Flavour": FLAVOR_MAP[code]["name"], "Code": code, "Current System Stock": int(sys_stock_map.get(code, 0)), "Physical Counted Units": int(sys_stock_map.get(code, 0))} for code in FLAVOR_CODES]
-        audit_edited = st.data_editor(pd.DataFrame(audit_grid), column_config={"Flavour": st.column_config.TextColumn(disabled=True), "Code": st.column_config.TextColumn(disabled=True), "Current System Stock": st.column_config.NumberColumn(disabled=True, format="%d"), "Physical Counted Units": st.column_config.NumberColumn(min_value=0, step=1, format="%d")}, hide_index=True, use_container_width=True, key="audit_editor_grid")
-        audit_remarks = st.text_input("Audit remarks / observation notes", key="audit_remarks_input")
-
-        if st.button("Save stock audit", type="primary", use_container_width=True):
+        def get_system_stock_as_of(target_date):
+            """System freezer stock as of end of target_date = received - cart additions - stock removed."""
+            stock_map = {code: 0 for code in FLAVOR_CODES}
+            if db_conn is None:
+                return stock_map
             try:
-                phys_by_code = {row["Code"]: int(row["Physical Counted Units"]) for _, row in audit_edited.iterrows()}
-                with db_conn.session as s:
-                    res = s.execute(text("INSERT INTO stock_audits_wide (audit_date, location, audited_by, remarks, ml_units, mm_units, ps_units, mn_units, kb_units, bm_units, sg_units, ch_units, ra_units) VALUES (:adt, :loc, :by, :rem, :ml, :mm, :ps, :mn, :kb, :bm, :sg, :ch, :ra) RETURNING audit_id;"), {"adt": audit_date, "loc": audit_location, "by": audited_by, "rem": audit_remarks, "ml": phys_by_code.get("ML", 0), "mm": phys_by_code.get("MM", 0), "ps": phys_by_code.get("PS", 0), "mn": phys_by_code.get("MN", 0), "kb": phys_by_code.get("KB", 0), "bm": phys_by_code.get("BM", 0), "sg": phys_by_code.get("SG", 0), "ch": phys_by_code.get("CH", 0), "ra": phys_by_code.get("RA", 0)})
-                    aid = res.scalar()
-                    s.commit()
-                show_success_modal(f"Stock Audit #{aid} logged successfully!")
-            except Exception as e: st.error(f"Could not save audit to database: {e}")
+                rec_asof_df = db_conn.query(
+                    """
+                    SELECT ri.flavor_code, COALESCE(SUM(ri.received_units), 0) AS total_received
+                    FROM stock_received_items ri
+                    JOIN stock_received r ON ri.received_id = r.id
+                    WHERE r.received_date <= :adt
+                    GROUP BY ri.flavor_code;
+                    """,
+                    params={"adt": target_date},
+                    ttl="0s"
+                )
+                rec_asof = dict(zip(rec_asof_df["flavor_code"], rec_asof_df["total_received"])) if not rec_asof_df.empty else {}
+
+                added_asof_df = db_conn.query(
+                    """
+                    SELECT i.flavor_code, COALESCE(SUM(i.added_units), 0) AS total_added
+                    FROM daily_cart_items i
+                    JOIN daily_cart_entries e ON i.daily_entry_id = e.id
+                    WHERE e.entry_date <= :adt
+                    GROUP BY i.flavor_code;
+                    """,
+                    params={"adt": target_date},
+                    ttl="0s"
+                )
+                added_asof = dict(zip(added_asof_df["flavor_code"], added_asof_df["total_added"])) if not added_asof_df.empty else {}
+
+                removed_asof_df = db_conn.query(
+                    """
+                    SELECT
+                        COALESCE(SUM(ml_units), 0) AS ml_units,
+                        COALESCE(SUM(mm_units), 0) AS mm_units,
+                        COALESCE(SUM(ps_units), 0) AS ps_units,
+                        COALESCE(SUM(mn_units), 0) AS mn_units,
+                        COALESCE(SUM(kb_units), 0) AS kb_units,
+                        COALESCE(SUM(bm_units), 0) AS bm_units,
+                        COALESCE(SUM(sg_units), 0) AS sg_units,
+                        COALESCE(SUM(ch_units), 0) AS ch_units,
+                        COALESCE(SUM(ra_units), 0) AS ra_units
+                    FROM stock_removed
+                    WHERE removal_date <= :adt;
+                    """,
+                    params={"adt": target_date},
+                    ttl="0s"
+                )
+                removed_asof = (
+                    {code: int(_num(removed_asof_df.iloc[0].get(FLAVOR_MAP[code]["audit_col"], 0))) for code in FLAVOR_CODES}
+                    if not removed_asof_df.empty else {code: 0 for code in FLAVOR_CODES}
+                )
+
+                for code in FLAVOR_CODES:
+                    stock_map[code] = (
+                        int(_num(rec_asof.get(code, 0)))
+                        - int(_num(added_asof.get(code, 0)))
+                        - int(_num(removed_asof.get(code, 0)))
+                    )
+            except Exception:
+                pass
+            return stock_map
+
+        def show_audit_totals(audit_df):
+            total_system = int(pd.to_numeric(audit_df["Current System Stock"], errors="coerce").fillna(0).sum())
+            total_physical = int(pd.to_numeric(audit_df["Physical Counted Units"], errors="coerce").fillna(0).sum())
+            total_variance = total_physical - total_system
+            tc1, tc2, tc3 = st.columns(3)
+            tc1.metric("Total Current System Stock", f"{total_system:,}")
+            tc2.metric("Total Physical Counted Units", f"{total_physical:,}")
+            tc3.metric("Total Variance", f"{total_variance:+,}")
+            return total_system, total_physical
+
+        if audit_mode == "Log New Audit":
+            aud_c1, aud_c2, aud_c3 = st.columns(3)
+            with aud_c1:
+                audit_date = st.date_input("Audit date", value=date.today(), key="audit_dt_entry", format="DD-MM-YYYY")
+            with aud_c2:
+                audit_location = st.text_input("Freezer / Location", value=CITY, key="audit_loc_entry")
+            with aud_c3:
+                audited_by = st.text_input("Audited by", value="Admin", key="audit_by_entry")
+
+            freezer_curr_df = get_db_freezer_stock()
+            sys_stock_map = dict(zip(freezer_curr_df["code"], freezer_curr_df["Units in freezer"])) if not freezer_curr_df.empty else {}
+
+            audit_grid = [
+                {
+                    "Flavour": FLAVOR_MAP[code]["name"],
+                    "Code": code,
+                    "Current System Stock": int(sys_stock_map.get(code, 0)),
+                    "Physical Counted Units": int(sys_stock_map.get(code, 0))
+                }
+                for code in FLAVOR_CODES
+            ]
+            audit_edited = st.data_editor(
+                pd.DataFrame(audit_grid),
+                column_config={
+                    "Flavour": st.column_config.TextColumn(disabled=True),
+                    "Code": st.column_config.TextColumn(disabled=True),
+                    "Current System Stock": st.column_config.NumberColumn(disabled=True, format="%d"),
+                    "Physical Counted Units": st.column_config.NumberColumn(min_value=0, step=1, format="%d")
+                },
+                hide_index=True,
+                use_container_width=True,
+                key="audit_editor_grid"
+            )
+            show_audit_totals(audit_edited)
+            audit_remarks = st.text_input("Audit remarks / observation notes", key="audit_remarks_input")
+
+            if st.button("Save stock audit", type="primary", use_container_width=True):
+                try:
+                    phys_by_code = {row["Code"]: int(row["Physical Counted Units"]) for _, row in audit_edited.iterrows()}
+                    with db_conn.session as s:
+                        res = s.execute(
+                            text("""
+                                INSERT INTO stock_audits_wide
+                                (audit_date, location, audited_by, remarks,
+                                 ml_units, mm_units, ps_units, mn_units, kb_units, bm_units, sg_units, ch_units, ra_units)
+                                VALUES
+                                (:adt, :loc, :by, :rem,
+                                 :ml, :mm, :ps, :mn, :kb, :bm, :sg, :ch, :ra)
+                                RETURNING audit_id;
+                            """),
+                            {
+                                "adt": audit_date, "loc": audit_location, "by": audited_by, "rem": audit_remarks,
+                                "ml": phys_by_code.get("ML", 0), "mm": phys_by_code.get("MM", 0),
+                                "ps": phys_by_code.get("PS", 0), "mn": phys_by_code.get("MN", 0),
+                                "kb": phys_by_code.get("KB", 0), "bm": phys_by_code.get("BM", 0),
+                                "sg": phys_by_code.get("SG", 0), "ch": phys_by_code.get("CH", 0),
+                                "ra": phys_by_code.get("RA", 0)
+                            }
+                        )
+                        aid = res.scalar()
+                        s.commit()
+                    st.cache_data.clear()
+                    show_success_modal(f"Stock Audit #{aid} logged successfully!")
+                except Exception as e:
+                    st.error(f"Could not save audit to database: {e}")
+
+        else:
+            try:
+                audit_history_df = db_conn.query(
+                    """
+                    SELECT audit_id, audit_date, location, audited_by, remarks,
+                           ml_units, mm_units, ps_units, mn_units, kb_units, bm_units, sg_units, ch_units, ra_units
+                    FROM stock_audits_wide
+                    ORDER BY audit_date DESC, audit_id DESC;
+                    """,
+                    ttl="0s"
+                )
+            except Exception as e:
+                audit_history_df = pd.DataFrame()
+                st.error(f"Could not load audit history: {e}")
+
+            if audit_history_df.empty:
+                st.info("No past stock audits found.")
+            else:
+                audit_history_df = audit_history_df.copy()
+                audit_history_df["audit_date_dt"] = pd.to_datetime(audit_history_df["audit_date"]).dt.date
+                audit_history_df["selector"] = audit_history_df.apply(
+                    lambda r: f"Audit #{int(r['audit_id'])} — {r['audit_date_dt'].strftime('%d-%b-%y')} — {str(r.get('audited_by') or 'N/A')}",
+                    axis=1
+                )
+
+                selected_audit_label = st.selectbox(
+                    "Select Past Audit",
+                    audit_history_df["selector"].tolist(),
+                    key="past_audit_selector"
+                )
+                loaded_audit = audit_history_df[audit_history_df["selector"] == selected_audit_label].iloc[0]
+                loaded_audit_id = int(loaded_audit["audit_id"])
+                loaded_audit_date = loaded_audit["audit_date_dt"]
+
+                eac1, eac2, eac3 = st.columns(3)
+                with eac1:
+                    edit_audit_date = st.date_input(
+                        "Audit date",
+                        value=loaded_audit_date,
+                        key=f"edit_audit_date_{loaded_audit_id}",
+                        format="DD-MM-YYYY"
+                    )
+                with eac2:
+                    edit_audit_location = st.text_input(
+                        "Freezer / Location",
+                        value=str(loaded_audit.get("location") or CITY),
+                        key=f"edit_audit_loc_{loaded_audit_id}"
+                    )
+                with eac3:
+                    edit_audited_by = st.text_input(
+                        "Audited by",
+                        value=str(loaded_audit.get("audited_by") or "Admin"),
+                        key=f"edit_audit_by_{loaded_audit_id}"
+                    )
+
+                historical_system_map = get_system_stock_as_of(edit_audit_date)
+                edit_audit_grid = []
+                for code in FLAVOR_CODES:
+                    audit_col = FLAVOR_MAP[code]["audit_col"]
+                    edit_audit_grid.append({
+                        "Flavour": FLAVOR_MAP[code]["name"],
+                        "Code": code,
+                        "Current System Stock": int(historical_system_map.get(code, 0)),
+                        "Physical Counted Units": int(_num(loaded_audit.get(audit_col, 0)))
+                    })
+
+                edited_past_audit = st.data_editor(
+                    pd.DataFrame(edit_audit_grid),
+                    column_config={
+                        "Flavour": st.column_config.TextColumn(disabled=True),
+                        "Code": st.column_config.TextColumn(disabled=True),
+                        "Current System Stock": st.column_config.NumberColumn(disabled=True, format="%d"),
+                        "Physical Counted Units": st.column_config.NumberColumn(min_value=0, step=1, format="%d")
+                    },
+                    hide_index=True,
+                    use_container_width=True,
+                    key=f"past_audit_editor_{loaded_audit_id}"
+                )
+                show_audit_totals(edited_past_audit)
+
+                edit_audit_remarks = st.text_input(
+                    "Audit remarks / observation notes",
+                    value=str(loaded_audit.get("remarks") or ""),
+                    key=f"edit_audit_remarks_{loaded_audit_id}"
+                )
+
+                if st.button("Update selected stock audit", type="primary", use_container_width=True, key=f"update_audit_{loaded_audit_id}"):
+                    try:
+                        edited_phys_by_code = {
+                            row["Code"]: int(row["Physical Counted Units"])
+                            for _, row in edited_past_audit.iterrows()
+                        }
+                        with db_conn.session as s:
+                            s.execute(
+                                text("""
+                                    UPDATE stock_audits_wide
+                                    SET audit_date = :adt,
+                                        location = :loc,
+                                        audited_by = :by,
+                                        remarks = :rem,
+                                        ml_units = :ml,
+                                        mm_units = :mm,
+                                        ps_units = :ps,
+                                        mn_units = :mn,
+                                        kb_units = :kb,
+                                        bm_units = :bm,
+                                        sg_units = :sg,
+                                        ch_units = :ch,
+                                        ra_units = :ra
+                                    WHERE audit_id = :aid;
+                                """),
+                                {
+                                    "aid": loaded_audit_id,
+                                    "adt": edit_audit_date,
+                                    "loc": edit_audit_location,
+                                    "by": edit_audited_by,
+                                    "rem": edit_audit_remarks,
+                                    "ml": edited_phys_by_code.get("ML", 0),
+                                    "mm": edited_phys_by_code.get("MM", 0),
+                                    "ps": edited_phys_by_code.get("PS", 0),
+                                    "mn": edited_phys_by_code.get("MN", 0),
+                                    "kb": edited_phys_by_code.get("KB", 0),
+                                    "bm": edited_phys_by_code.get("BM", 0),
+                                    "sg": edited_phys_by_code.get("SG", 0),
+                                    "ch": edited_phys_by_code.get("CH", 0),
+                                    "ra": edited_phys_by_code.get("RA", 0),
+                                }
+                            )
+                            s.commit()
+                        st.cache_data.clear()
+                        show_success_modal(f"Stock Audit #{loaded_audit_id} updated successfully!")
+                    except Exception as e:
+                        st.error(f"Could not update stock audit: {e}")
 
 elif page == "Freezer Analysis" and user_role == "admin":
     st.subheader("Freezer Stock Analysis & Reorder Planner")
@@ -5044,7 +5305,29 @@ elif page == "Dashboard" and user_role == "admin":
                 color=alt.Color("Category:N", scale=alt.Scale(scheme="tableau10")),
                 tooltip=[alt.Tooltip("Category:N", title="Category"), alt.Tooltip("Amount:Q", format=",.2f", title="Amount (₹)")]
             ).properties(height=300)
-            st.altair_chart(exp_pie, use_container_width=True)
+
+            exp_chart_col, exp_table_col = st.columns([1.15, 1])
+            with exp_chart_col:
+                st.altair_chart(exp_pie, use_container_width=True)
+            with exp_table_col:
+                exp_breakdown_table = exp_cat_df.copy()
+                exp_breakdown_table["Amount (₹)"] = exp_breakdown_table["Amount"].astype(float)
+                exp_breakdown_table = exp_breakdown_table[["Category", "Amount (₹)"]]
+                exp_total_row = pd.DataFrame([{
+                    "Category": "TOTAL",
+                    "Amount (₹)": float(exp_breakdown_table["Amount (₹)"].sum())
+                }])
+                exp_breakdown_table = pd.concat([exp_breakdown_table, exp_total_row], ignore_index=True)
+                st.dataframe(
+                    exp_breakdown_table,
+                    hide_index=True,
+                    use_container_width=True,
+                    height=min(340, 38 + (len(exp_breakdown_table) * 36)),
+                    column_config={
+                        "Category": st.column_config.TextColumn("Expense Component"),
+                        "Amount (₹)": st.column_config.NumberColumn("Amount (₹)", format="₹%,.2f"),
+                    }
+                )
         else: 
             st.caption("No operating expenses incurred in this date range.")
 
@@ -5159,6 +5442,19 @@ elif page == "Dashboard" and user_role == "admin":
                         })
             date_wise_table["Units Sold"] = date_wise_table["Units Sold"].apply(lambda x: int(round(x)))
             date_wise_table["Date"] = date_wise_table["Date"].dt.strftime("%d-%b-%y")
+
+            date_wise_total = {
+                "Date": "TOTAL",
+                "Units Sold": int(date_wise_table["Units Sold"].sum()),
+                "Revenue (₹)": float(date_wise_table["Revenue (₹)"].sum()),
+                "PhonePe (₹)": float(date_wise_table["PhonePe (₹)"].sum()),
+                "Cash (₹)": float(date_wise_table["Cash (₹)"].sum()),
+                "Staff Advance (₹)": float(date_wise_table["Staff Advance (₹)"].sum()),
+                "Food / Tea (₹)": float(date_wise_table["Food / Tea (₹)"].sum()),
+                "Cash Leakage (₹)": float(date_wise_table["Cash Leakage (₹)"].sum()),
+            }
+            date_wise_table = pd.concat([date_wise_table, pd.DataFrame([date_wise_total])], ignore_index=True)
+
             st.dataframe(date_wise_table, hide_index=True, use_container_width=True, column_config={
                             "Revenue (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
                             "PhonePe (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
@@ -5183,6 +5479,22 @@ elif page == "Dashboard" and user_role == "admin":
             sales_table["Units Sold"] = sales_table["Units Sold"].apply(lambda x: int(round(x)))
             sales_table["Date"] = sales_table["Date"].dt.strftime("%d-%b-%y")
             sales_table = apply_smart_filters(sales_table, ["Cart", "Staff Name"], "sales_filters")
+
+            sales_total = {
+                "Date": "TOTAL",
+                "Cart": "",
+                "Units Sold": int(sales_table["Units Sold"].sum()),
+                "Revenue (₹)": float(sales_table["Revenue (₹)"].sum()),
+                "PhonePe (₹)": float(sales_table["PhonePe (₹)"].sum()),
+                "Cash (₹)": float(sales_table["Cash (₹)"].sum()),
+                "Staff Name": "",
+                "Staff Advance (₹)": float(sales_table["Staff Advance (₹)"].sum()),
+                "Food / Tea (₹)": float(sales_table["Food / Tea (₹)"].sum()),
+                "Cash Leakage (₹)": float(sales_table["Cash Leakage (₹)"].sum()),
+                "Remarks": "",
+            }
+            sales_table = pd.concat([sales_table, pd.DataFrame([sales_total])], ignore_index=True)
+
             st.dataframe(
                             sales_table, 
                             hide_index=True, 
