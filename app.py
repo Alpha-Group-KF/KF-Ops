@@ -3291,7 +3291,7 @@ elif page == "Cart Restock Plan" and user_role == "admin":
         "historical carry-forward stock/runway, a safety buffer, and are always rounded UP to multiples of 10."
     )
 
-    rp_c1, rp_c2, rp_c3 = st.columns([1, 1, 2])
+    rp_c1, rp_c2 = st.columns(2)
     with rp_c1:
         restock_history_days = st.number_input(
             "History Window (days)", min_value=28, max_value=180, value=56, step=7,
@@ -3301,11 +3301,6 @@ elif page == "Cart Restock Plan" and user_role == "admin":
         restock_safety_pct = st.number_input(
             "Safety Buffer (%)", min_value=0, max_value=50, value=20, step=5,
             key="restock_plan_safety_pct"
-        )
-    with rp_c3:
-        st.info(
-            "Formula: Target opening = max(weekday average, weekday 75th percentile) + safety buffer; "
-            "recommended restock = target opening - expected carry-forward stock."
         )
 
     try:
@@ -3417,7 +3412,7 @@ elif page == "Cart Restock Plan" and user_role == "admin":
                     "font-weight:750;padding-left:7px}"
                     ".cart-restock-table tbody tr:nth-child(even):not(.total-row) td{background:#fffaf3}"
                     ".cart-restock-table .total-row td{font-weight:900;background:#f6ead6;border-top:2px solid #b68a4b}"
-                    ".cart-restock-table .sun-col{background:#fff6ec}"
+                    ".cart-restock-table tbody td.sun-col{background:#fff6ec}.cart-restock-table thead th.sun-col{background:#70440E;color:#fff}"
                     "</style>"
                 )
 
@@ -3463,13 +3458,6 @@ elif page == "Cart Restock Plan" and user_role == "admin":
 
                 st.html("".join(cart_tables_html))
 
-                completed_days = operating_hist[["entry_date", "cart_name"]].drop_duplicates().shape[0]
-                st.caption(
-                    f"Based on {completed_days} completed cart-days from {restock_start.strftime('%d-%b-%y')} "
-                    f"to {restock_end.strftime('%d-%b-%y')}. Weekday demand uses the higher of average or 75th-percentile "
-                    f"sales, then applies a {int(restock_safety_pct)}% buffer and subtracts typical previous-day closing stock. "
-                    "If fewer than 2 observations exist for a weekday/flavour, the cart/flavour overall history is used as fallback."
-                )
 
     except Exception as e:
         st.error(f"Could not calculate cart restock recommendations: {e}")
