@@ -3397,92 +3397,71 @@ elif page == "Cart Restock Plan" and user_role == "admin":
                             recommended = _round_up_10(target_opening - expected_carry)
                             weekly_plan[cart][dow][code] = recommended
 
-                # Current-day suggestion uses the latest completed closing balance rather than historical carryover.
-                latest_closing = {}
-                for cart in CARTS:
-                    cart_rows = restock_hist[restock_hist["cart_name"] == cart]
-                    if cart_rows.empty:
-                        continue
-                    latest_date = cart_rows["entry_date"].max()
-                    latest_rows = cart_rows[cart_rows["entry_date"] == latest_date]
-                    for code in FLAVOR_CODES:
-                        code_rows = latest_rows[latest_rows["flavor_code"] == code]
-                        latest_closing[(cart, code)] = float(code_rows["closing_units"].iloc[-1]) if not code_rows.empty else 0.0
+                st.markdown("#### Weekly Restock Plan by Cart")
 
-                today_dow = date.today().weekday()
-                today_name = day_names[today_dow]
-                today_cards = st.columns(3)
-                for idx, cart in enumerate(CARTS):
-                    today_total = 0
-                    target_total = 0.0
-                    carry_total = 0.0
-                    for code in FLAVOR_CODES:
-                        target = float(target_opening_map.get((cart, code, today_dow), 0.0))
-                        carry = float(latest_closing.get((cart, code), 0.0))
-                        today_total += _round_up_10(target - carry)
-                        target_total += target
-                        carry_total += carry
-                    with today_cards[idx]:
-                        st.metric(
-                            f"{cart.replace('HOSUR ', '')} — Today ({today_name})",
-                            f"{today_total} units",
-                            help=f"Target opening ~{target_total:.0f} units; latest completed closing stock {carry_total:.0f} units."
-                        )
+                # Display one compact table per cart. Flavours are rows, weekdays are columns,
+                # and the bottom Total row shows the recommended units for each day.
+                # Custom HTML avoids Streamlit dataframe scrollbars.
+                table_css = (
+                    "<style>"
+                    ".cart-restock-section{margin:10px 0 16px 0}"
+                    ".cart-restock-title{font-family:Fraunces,serif;font-size:15px;font-weight:800;"
+                    "color:#6b4312;margin:0 0 5px 0;padding:5px 8px;background:#fff7e8;"
+                    "border:1px solid #e7d1a9;border-radius:6px}"
+                    ".cart-restock-table{width:100%;table-layout:fixed;border-collapse:collapse;"
+                    "font-size:clamp(9px,.78vw,11px);line-height:1.15;background:#fff}"
+                    ".cart-restock-table th,.cart-restock-table td{padding:5px 3px;border:1px solid #eadfcf;"
+                    "text-align:center;white-space:nowrap;overflow:hidden;text-overflow:clip}"
+                    ".cart-restock-table thead th{background:#70440E;color:#fff;font-weight:800}"
+                    ".cart-restock-table th:first-child,.cart-restock-table td:first-child{width:19%;text-align:left;"
+                    "font-weight:750;padding-left:7px}"
+                    ".cart-restock-table tbody tr:nth-child(even):not(.total-row) td{background:#fffaf3}"
+                    ".cart-restock-table .total-row td{font-weight:900;background:#f6ead6;border-top:2px solid #b68a4b}"
+                    ".cart-restock-table .sun-col{background:#fff6ec}"
+                    "</style>"
+                )
 
-                st.markdown("#### Weekly Restock Matrix")
-
-                # Custom HTML table is used instead of st.dataframe so there are no internal
-                # horizontal/vertical scrollbars and the full weekly plan fits the page width.
-                header_cells = []
-                for code in FLAVOR_CODES:
-                    full_name = FLAVOR_MAP.get(code, {}).get("name", code)
-                    header_cells.append(f"<th title='{escape(str(full_name))}'>{escape(code)}</th>")
-
-                body_rows = []
+                cart_tables_html = [table_css]
                 for cart in CARTS:
                     short_cart = cart.replace("HOSUR ", "")
-                    for dow, day_name in enumerate(day_names):
-                        qtys = [int(weekly_plan[cart][dow].get(code, 0)) for code in FLAVOR_CODES]
-                        total_qty = sum(qtys)
-                        cells = "".join(
-                            f"<td>{qty if qty > 0 else '–'}</td>" for qty in qtys
+                    day_totals = [0] * 7
+                    flavour_rows = []
+
+                    for code in FLAVOR_CODES:
+                        flavour_name = str(FLAVOR_MAP.get(code, {}).get("name", code))
+                        vals = []
+                        for dow in range(7):
+                            qty = int(weekly_plan[cart][dow].get(code, 0))
+                            vals.append(qty)
+                            day_totals[dow] += qty
+
+                        day_cells = "".join(
+                            f"<td class='{'sun-col' if dow == 6 else ''}'>{qty if qty > 0 else '–'}</td>"
+                            for dow, qty in enumerate(vals)
                         )
-                        row_class = "weekend" if dow >= 5 else ""
-                        body_rows.append(
-                            f"<tr class='{row_class}'>"
-                            f"<td class='cart-cell'>{escape(short_cart)}</td>"
-                            f"<td class='day-cell'>{day_name}</td>"
-                            f"{cells}<td class='total-cell'>{total_qty}</td></tr>"
+                        flavour_rows.append(
+                            f"<tr><td>{escape(flavour_name)}</td>{day_cells}</tr>"
                         )
 
-                legend = " · ".join(
-                    f"<b>{escape(code)}</b> {escape(str(FLAVOR_MAP.get(code, {}).get('name', code)))}"
-                    for code in FLAVOR_CODES
-                )
+                    total_cells = "".join(
+                        f"<td class='{'sun-col' if dow == 6 else ''}'>{int(total)}</td>"
+                        for dow, total in enumerate(day_totals)
+                    )
 
-                st.html(
-                    "<style>"
-                    ".restock-plan-table{width:100%;table-layout:fixed;border-collapse:collapse;"
-                    "font-size:clamp(8px,.72vw,10.5px);line-height:1.05;background:#fff}"
-                    ".restock-plan-table th,.restock-plan-table td{padding:4px 2px;border:1px solid #eadfcf;"
-                    "text-align:center;white-space:nowrap;overflow:hidden;text-overflow:clip}"
-                    ".restock-plan-table thead th{background:#70440E;color:#fff;font-weight:800}"
-                    ".restock-plan-table th:nth-child(1){width:9%}"
-                    ".restock-plan-table th:nth-child(2){width:5.5%}"
-                    ".restock-plan-table .cart-cell{font-weight:800;text-align:left;background:#fff9ef}"
-                    ".restock-plan-table .day-cell{font-weight:800;background:#fbf6ed}"
-                    ".restock-plan-table .total-cell{font-weight:900;background:#f7eddc}"
-                    ".restock-plan-table tr.weekend td{background:#fffaf2}"
-                    ".restock-legend{font-size:9px;line-height:1.35;color:#6d5842;margin-top:6px;text-align:center}"
-                    "</style>"
-                    "<table class='restock-plan-table'>"
-                    "<thead><tr><th>Cart</th><th>Day</th>"
-                    + "".join(header_cells)
-                    + "<th>Total</th></tr></thead><tbody>"
-                    + "".join(body_rows)
-                    + "</tbody></table>"
-                    + f"<div class='restock-legend'>{legend}</div>"
-                )
+                    cart_tables_html.append(
+                        "<div class='cart-restock-section'>"
+                        f"<div class='cart-restock-title'>{escape(short_cart)}</div>"
+                        "<table class='cart-restock-table'>"
+                        "<thead><tr><th>Flavour</th>"
+                        "<th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th>"
+                        "<th>Fri</th><th>Sat</th><th class='sun-col'>Sun</th></tr></thead>"
+                        "<tbody>"
+                        + "".join(flavour_rows)
+                        + f"<tr class='total-row'><td>TOTAL</td>{total_cells}</tr>"
+                        + "</tbody></table></div>"
+                    )
+
+                st.html("".join(cart_tables_html))
 
                 completed_days = operating_hist[["entry_date", "cart_name"]].drop_duplicates().shape[0]
                 st.caption(
