@@ -1398,7 +1398,7 @@ else:
     with st.sidebar:
         try: st.image("assets/logo.png", use_container_width=True)
         except Exception: st.markdown("## 🍦 Kulfi Ops")
-        nav_options = ["Dashboard", "Daily Entry", "Live Cart Tracking", "Cash Custody", "Purchase Orders", "Freezer Stock", "Freezer Analysis", "Stock Removed", "Expenses", "Staff & Payroll", "Payslip Generator"]
+        nav_options = ["Dashboard", "Daily Entry", "Live Cart Tracking", "Cash Custody", "Purchase Orders", "Freezer Stock", "Cart Restock Plan", "Freezer Analysis", "Stock Removed", "Expenses", "Staff & Payroll", "Payslip Generator"]
         page = st.radio("Go to", nav_options, label_visibility="collapsed", key="page_nav")
         st.markdown("---")
         if st.button("Log out", use_container_width=True):
@@ -3283,6 +3283,217 @@ elif page == "Freezer Stock" and user_role == "admin":
                         show_success_modal(f"Stock Audit #{loaded_audit_id} updated successfully!")
                     except Exception as e:
                         st.error(f"Could not update stock audit: {e}")
+
+elif page == "Cart Restock Plan" and user_role == "admin":
+    st.subheader("Recommended Cart Restock by Day")
+    st.caption(
+        "Planning baseline by cart, weekday and flavour. Recommendations use completed historical sales, "
+        "historical carry-forward stock/runway, a safety buffer, and are always rounded UP to multiples of 10."
+    )
+
+    rp_c1, rp_c2, rp_c3 = st.columns([1, 1, 2])
+    with rp_c1:
+        restock_history_days = st.number_input(
+            "History Window (days)", min_value=28, max_value=180, value=56, step=7,
+            key="restock_plan_history_days"
+        )
+    with rp_c2:
+        restock_safety_pct = st.number_input(
+            "Safety Buffer (%)", min_value=0, max_value=50, value=20, step=5,
+            key="restock_plan_safety_pct"
+        )
+    with rp_c3:
+        st.info(
+            "Formula: Target opening = max(weekday average, weekday 75th percentile) + safety buffer; "
+            "recommended restock = target opening - expected carry-forward stock."
+        )
+
+    try:
+        restock_end = date.today() - timedelta(days=1)  # only completed sales days
+        restock_start = restock_end - timedelta(days=int(restock_history_days) - 1)
+
+        restock_hist = db_conn.query(
+            """
+            SELECT e.entry_date,
+                   e.cart_name,
+                   i.flavor_code,
+                   COALESCE(i.sold_units, 0) AS sold_units,
+                   COALESCE(i.closing_units, 0) AS closing_units
+            FROM daily_cart_entries e
+            JOIN daily_cart_items i ON i.daily_entry_id = e.id
+            WHERE e.entry_date >= :sdate
+              AND e.entry_date <= :edate
+              AND e.cart_name IN ('HOSUR CART 01', 'HOSUR CART 02', 'HOSUR CART 03')
+            ORDER BY e.entry_date ASC, e.cart_name ASC, i.flavor_code ASC;
+            """,
+            params={"sdate": restock_start, "edate": restock_end},
+            ttl="0s"
+        )
+
+        if restock_hist.empty:
+            st.info("No completed historical cart sales are available yet for the selected window.")
+        else:
+            restock_hist["entry_date"] = pd.to_datetime(restock_hist["entry_date"])
+            restock_hist["sold_units"] = pd.to_numeric(restock_hist["sold_units"], errors="coerce").fillna(0.0)
+            restock_hist["closing_units"] = pd.to_numeric(restock_hist["closing_units"], errors="coerce").fillna(0.0)
+            restock_hist["weekday_no"] = restock_hist["entry_date"].dt.weekday
+
+            # Treat a cart-day as an operating day only if the cart recorded some sales.
+            # A zero for one individual flavour is still retained when the cart sold other flavours.
+            restock_hist["cart_day_sales"] = restock_hist.groupby(
+                ["entry_date", "cart_name"]
+            )["sold_units"].transform("sum")
+            operating_hist = restock_hist[restock_hist["cart_day_sales"] > 0].copy()
+
+            if operating_hist.empty:
+                st.info("Historical entries exist, but there are no completed cart sales in the selected window.")
+            else:
+                day_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+                safety_factor = 1.0 + (float(restock_safety_pct) / 100.0)
+
+                def _round_up_10(value):
+                    value = max(0.0, float(value))
+                    if value <= 0:
+                        return 0
+                    return int(((value + 9.999999) // 10) * 10)
+
+                # Build the weekly recommendation matrix and retain target demand for today's live view.
+                weekly_plan = {}
+                target_opening_map = {}
+                sample_map = {}
+
+                for cart in CARTS:
+                    weekly_plan[cart] = {}
+                    cart_hist = operating_hist[operating_hist["cart_name"] == cart]
+
+                    for dow in range(7):
+                        weekly_plan[cart][dow] = {}
+                        prev_dow = (dow - 1) % 7
+
+                        for code in FLAVOR_CODES:
+                            cf = cart_hist[cart_hist["flavor_code"] == code]
+                            wd = cf[cf["weekday_no"] == dow]
+
+                            # If a weekday has too little history, use that cart/flavour's overall history
+                            # rather than producing a misleading zero recommendation.
+                            sales_sample = wd["sold_units"] if len(wd) >= 2 else cf["sold_units"]
+                            sample_map[(cart, code, dow)] = int(len(wd))
+
+                            if sales_sample.empty:
+                                base_demand = 0.0
+                            else:
+                                avg_sales = float(sales_sample.mean())
+                                p75_sales = float(sales_sample.quantile(0.75))
+                                base_demand = max(avg_sales, p75_sales)
+
+                            target_opening = base_demand * safety_factor
+                            target_opening_map[(cart, code, dow)] = target_opening
+
+                            prev_closing_sample = cf[cf["weekday_no"] == prev_dow]["closing_units"]
+                            if prev_closing_sample.empty:
+                                prev_closing_sample = cf["closing_units"]
+                            expected_carry = float(prev_closing_sample.median()) if not prev_closing_sample.empty else 0.0
+
+                            recommended = _round_up_10(target_opening - expected_carry)
+                            weekly_plan[cart][dow][code] = recommended
+
+                # Current-day suggestion uses the latest completed closing balance rather than historical carryover.
+                latest_closing = {}
+                for cart in CARTS:
+                    cart_rows = restock_hist[restock_hist["cart_name"] == cart]
+                    if cart_rows.empty:
+                        continue
+                    latest_date = cart_rows["entry_date"].max()
+                    latest_rows = cart_rows[cart_rows["entry_date"] == latest_date]
+                    for code in FLAVOR_CODES:
+                        code_rows = latest_rows[latest_rows["flavor_code"] == code]
+                        latest_closing[(cart, code)] = float(code_rows["closing_units"].iloc[-1]) if not code_rows.empty else 0.0
+
+                today_dow = date.today().weekday()
+                today_name = day_names[today_dow]
+                today_cards = st.columns(3)
+                for idx, cart in enumerate(CARTS):
+                    today_total = 0
+                    target_total = 0.0
+                    carry_total = 0.0
+                    for code in FLAVOR_CODES:
+                        target = float(target_opening_map.get((cart, code, today_dow), 0.0))
+                        carry = float(latest_closing.get((cart, code), 0.0))
+                        today_total += _round_up_10(target - carry)
+                        target_total += target
+                        carry_total += carry
+                    with today_cards[idx]:
+                        st.metric(
+                            f"{cart.replace('HOSUR ', '')} — Today ({today_name})",
+                            f"{today_total} units",
+                            help=f"Target opening ~{target_total:.0f} units; latest completed closing stock {carry_total:.0f} units."
+                        )
+
+                st.markdown("#### Weekly Restock Matrix")
+
+                # Custom HTML table is used instead of st.dataframe so there are no internal
+                # horizontal/vertical scrollbars and the full weekly plan fits the page width.
+                header_cells = []
+                for code in FLAVOR_CODES:
+                    full_name = FLAVOR_MAP.get(code, {}).get("name", code)
+                    header_cells.append(f"<th title='{escape(str(full_name))}'>{escape(code)}</th>")
+
+                body_rows = []
+                for cart in CARTS:
+                    short_cart = cart.replace("HOSUR ", "")
+                    for dow, day_name in enumerate(day_names):
+                        qtys = [int(weekly_plan[cart][dow].get(code, 0)) for code in FLAVOR_CODES]
+                        total_qty = sum(qtys)
+                        cells = "".join(
+                            f"<td>{qty if qty > 0 else '–'}</td>" for qty in qtys
+                        )
+                        row_class = "weekend" if dow >= 5 else ""
+                        body_rows.append(
+                            f"<tr class='{row_class}'>"
+                            f"<td class='cart-cell'>{escape(short_cart)}</td>"
+                            f"<td class='day-cell'>{day_name}</td>"
+                            f"{cells}<td class='total-cell'>{total_qty}</td></tr>"
+                        )
+
+                legend = " · ".join(
+                    f"<b>{escape(code)}</b> {escape(str(FLAVOR_MAP.get(code, {}).get('name', code)))}"
+                    for code in FLAVOR_CODES
+                )
+
+                st.html(
+                    "<style>"
+                    ".restock-plan-table{width:100%;table-layout:fixed;border-collapse:collapse;"
+                    "font-size:clamp(8px,.72vw,10.5px);line-height:1.05;background:#fff}"
+                    ".restock-plan-table th,.restock-plan-table td{padding:4px 2px;border:1px solid #eadfcf;"
+                    "text-align:center;white-space:nowrap;overflow:hidden;text-overflow:clip}"
+                    ".restock-plan-table thead th{background:#70440E;color:#fff;font-weight:800}"
+                    ".restock-plan-table th:nth-child(1){width:9%}"
+                    ".restock-plan-table th:nth-child(2){width:5.5%}"
+                    ".restock-plan-table .cart-cell{font-weight:800;text-align:left;background:#fff9ef}"
+                    ".restock-plan-table .day-cell{font-weight:800;background:#fbf6ed}"
+                    ".restock-plan-table .total-cell{font-weight:900;background:#f7eddc}"
+                    ".restock-plan-table tr.weekend td{background:#fffaf2}"
+                    ".restock-legend{font-size:9px;line-height:1.35;color:#6d5842;margin-top:6px;text-align:center}"
+                    "</style>"
+                    "<table class='restock-plan-table'>"
+                    "<thead><tr><th>Cart</th><th>Day</th>"
+                    + "".join(header_cells)
+                    + "<th>Total</th></tr></thead><tbody>"
+                    + "".join(body_rows)
+                    + "</tbody></table>"
+                    + f"<div class='restock-legend'>{legend}</div>"
+                )
+
+                completed_days = operating_hist[["entry_date", "cart_name"]].drop_duplicates().shape[0]
+                st.caption(
+                    f"Based on {completed_days} completed cart-days from {restock_start.strftime('%d-%b-%y')} "
+                    f"to {restock_end.strftime('%d-%b-%y')}. Weekday demand uses the higher of average or 75th-percentile "
+                    f"sales, then applies a {int(restock_safety_pct)}% buffer and subtracts typical previous-day closing stock. "
+                    "If fewer than 2 observations exist for a weekday/flavour, the cart/flavour overall history is used as fallback."
+                )
+
+    except Exception as e:
+        st.error(f"Could not calculate cart restock recommendations: {e}")
 
 elif page == "Freezer Analysis" and user_role == "admin":
     st.subheader("Freezer Stock Analysis & Reorder Planner")
