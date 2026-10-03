@@ -1017,8 +1017,14 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
                 staff_salary = payable_days * standard_daily_rate
                 display_daily_rate = standard_daily_rate
 
-            food_entitled = food_allowance_for_dates(food_mode, monthly_food, allow_wd, allow_sun, worked_dates)
-            fuel_entitled = prorate_monthly(monthly_fuel, worked_dates)
+            if food_mode == "monthly":
+                # Monthly Food Allowance is paid centrally and is not part of an individual payslip.
+                # Under the monthly model, gross earnings are fixed pay pro-rata (+ commission where applicable).
+                food_entitled = 0.0
+                fuel_entitled = 0.0
+            else:
+                food_entitled = food_allowance_for_dates(food_mode, monthly_food, allow_wd, allow_sun, worked_dates)
+                fuel_entitled = prorate_monthly(monthly_fuel, worked_dates)
             allowance_total = food_entitled + fuel_entitled
             staff_paid = float(st_pay["amount_paid"].sum()) if not st_pay.empty else 0.0
 
@@ -1034,7 +1040,10 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
                     else:
                         row_type = "Daily Salary"
                         day_salary = standard_daily_rate
-                        day_allow = food_allowance_for_date(food_mode, monthly_food, allow_wd, allow_sun, d) + (monthly_fuel / month_days(d))
+                        day_allow = (
+                            food_allowance_for_date(food_mode, monthly_food, allow_wd, allow_sun, d)
+                            + (monthly_fuel / month_days(d))
+                        ) if food_mode == "daily" else 0.0
                     detailed_ledger.append({
                         "date": d, "type": row_type, "cart": "—",
                         "collection": 0.0, "fixed_salary": day_salary,
@@ -1163,7 +1172,10 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
                 days_worked += 1
                 worked_dates.add(d)
                 shift_sal += standard_daily_rate
-                day_allow_rate = food_allowance_for_date(food_mode, monthly_food, allow_wd, allow_sun, d) + (monthly_fuel / month_days(d))
+                day_allow_rate = (
+                    food_allowance_for_date(food_mode, monthly_food, allow_wd, allow_sun, d)
+                    if food_mode == "daily" else 0.0
+                )
 
                 for idx, cart_shift in enumerate(shift_map[d]):
                     s_col = cart_shift["collection"]
@@ -1194,10 +1206,15 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
                 })
 
         detailed_ledger.sort(key=lambda x: x["date"])
-        food_entitled = food_allowance_for_dates(food_mode, monthly_food, allow_wd, allow_sun, worked_dates)
-        fuel_entitled = prorate_monthly(monthly_fuel, worked_dates)
-        allowance_total = food_entitled + fuel_entitled
-        staff_incurred = shift_sal + shift_comm + food_entitled + fuel_entitled
+        if food_mode == "monthly":
+            # Monthly Food Allowance is paid centrally, outside the individual payslip.
+            food_entitled = 0.0
+        else:
+            food_entitled = food_allowance_for_dates(food_mode, monthly_food, allow_wd, allow_sun, worked_dates)
+        # Monthly Fuel Allowance is not applicable to Cart Operators.
+        fuel_entitled = 0.0
+        allowance_total = food_entitled
+        staff_incurred = shift_sal + shift_comm + food_entitled
         staff_paid = (float(st_pay["amount_paid"].sum()) if not st_pay.empty else 0.0) + attach_staff_leakage(st_name, detailed_ledger)
         staff_due = staff_incurred - staff_paid
         total_labour_incurred += staff_incurred
@@ -1257,6 +1274,7 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
     month_str = start_date.strftime('%B %Y')
     role = str(data_dict.get('role') or 'Cart Operator')
     is_ops_coordinator = role.strip().lower() == 'ops coordinator'
+    is_cart_operator = role.strip().lower() == 'cart operator'
     payable_days = int(data_dict.get('payable_days', data_dict.get('days_worked', 0) + data_dict.get('paid_leaves', 0)))
 
     story.append(Paragraph(f"<b>Staff Member:</b> {staff_name} &nbsp;|&nbsp; <b>Role:</b> {role} &nbsp;|&nbsp; <b>Date of Joining:</b> {doj_str} &nbsp;|&nbsp; <b>Payslip for the month:</b> {month_str}", sub_style))
@@ -1293,9 +1311,21 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
     # tracked separately under Staff & Payroll -> Monthly Food Allowance.
     if food_mode == "daily":
         summary_data.append([food_component, food_basis, f"Rs. {data_dict.get('food_tea_allowance', 0):,.2f}"])
-    gross_basis = "Fixed salary + commission (where applicable) + Food/Tea + Fuel" if food_mode == "daily" else "Total entitled earnings calculated for the period"
+    if food_mode == "monthly":
+        gross_basis = "Pro-rata fixed salary + commission (where applicable)"
+    elif is_cart_operator:
+        gross_basis = "Pro-rata fixed salary + commission + daily Food/Tea allowance"
+    else:
+        gross_basis = "Pro-rata fixed salary + commission (where applicable) + daily Food/Tea + Fuel"
+
+    if food_mode == "daily" and not is_cart_operator:
+        summary_data.append([
+            "Monthly Fuel Allowance",
+            f"Plan Rs. {data_dict.get('monthly_fuel_allowance', 0):,.2f}/month; pro-rata for days worked",
+            f"Rs. {data_dict.get('fuel_allowance', 0):,.2f}"
+        ])
+
     summary_data.extend([
-        ["Monthly Fuel Allowance", f"Plan Rs. {data_dict.get('monthly_fuel_allowance', 0):,.2f}/month; pro-rata for days worked", f"Rs. {data_dict.get('fuel_allowance', 0):,.2f}"],
         ["Gross Payable Earnings", gross_basis, f"Rs. {data_dict['incurred']:,.2f}"],
         ["Already Paid / Disbursed", "Cash advances & direct payments recorded", f"-Rs. {data_dict['paid']:,.2f}"],
         ["Calculated Final Payable", "Calculated amount before manual adjustment", f"Rs. {data_dict['due']:,.2f}"],
@@ -1458,9 +1488,15 @@ if page == "Daily Entry":
         except Exception as e:
             cart_entries = []; st.warning(f"Could not load entries from database ({e}).")
 
-        if user_role == "entry" and cart_entries:
-            sale_date = date.today() - timedelta(days=1)
-            cart_entries = [e for e in cart_entries if e["date"].date() == sale_date]
+        yesterday_sale_date = date.today() - timedelta(days=1)
+
+        # Sales are never entered for today. Admin can edit yesterday or older entries,
+        # while the data-entry role remains restricted to yesterday only.
+        if cart_entries:
+            if user_role == "entry":
+                cart_entries = [e for e in cart_entries if e["date"].date() == yesterday_sale_date]
+            else:
+                cart_entries = [e for e in cart_entries if e["date"].date() <= yesterday_sale_date]
 
         if not cart_entries: st.info(f"No entries found for {cart_name}.")
         else:
@@ -1470,7 +1506,15 @@ if page == "Daily Entry":
                 sel_date_label = labels[0]
                 with top_c1: st.text_input("Sale date", value=sel_date_label, disabled=True, key=f"fixed_sale_date_{cart_name}")
             else:
-                with top_c1: sel_date_label = st.selectbox("Select entry date to update sales", labels, key=f"date_sel_{cart_name}")
+                yesterday_label = yesterday_sale_date.strftime('%d-%b-%y')
+                default_date_index = labels.index(yesterday_label) if yesterday_label in labels else 0
+                with top_c1:
+                    sel_date_label = st.selectbox(
+                        "Select entry date to update sales",
+                        labels,
+                        index=default_date_index,
+                        key=f"date_sel_{cart_name}"
+                    )
             loaded = cart_entries[labels.index(sel_date_label)]
             entry_id, entry_date, today_val = loaded["db_id"], loaded["date"].date(), date.today()
             data_key_suffix = f"_{entry_id}"
@@ -1615,10 +1659,60 @@ elif page == "Payslip Generator" and user_role == "admin":
     staff_df = load_full_staff_df()
     if staff_df.empty: st.info("No staff records found in the database.")
     else:
-        pc1, pc2, pc3 = st.columns([1.2, 1, 1])
-        with pc1: sel_staff_payslip = st.selectbox("Select Staff Member", staff_df["name"].tolist(), key="payslip_staff_sel")
-        with pc2: payslip_start = st.date_input("Start Date", value=date.today().replace(day=1), key="payslip_start_dt", format="DD-MM-YYYY")
-        with pc3: payslip_end = st.date_input("End Date", value=date.today(), key="payslip_end_dt", format="DD-MM-YYYY")
+        pc1, pc2 = st.columns([1.4, 1])
+        with pc1:
+            sel_staff_payslip = st.selectbox("Select Staff Member", staff_df["name"].tolist(), key="payslip_staff_sel")
+        with pc2:
+            payslip_filter_mode = st.radio(
+                "Filter By",
+                ["Month", "Custom Date Range"],
+                horizontal=True,
+                key="payslip_filter_mode"
+            )
+
+        today_payslip = date.today()
+        if payslip_filter_mode == "Month":
+            pdc1, pdc2 = st.columns(2)
+            payslip_month_names = list(calendar.month_name)[1:]
+            with pdc1:
+                payslip_month_name = st.selectbox(
+                    "Month",
+                    payslip_month_names,
+                    index=today_payslip.month - 1,
+                    key="payslip_month"
+                )
+                payslip_month_num = payslip_month_names.index(payslip_month_name) + 1
+            with pdc2:
+                payslip_year = st.number_input(
+                    "Year",
+                    min_value=2024,
+                    max_value=2035,
+                    value=today_payslip.year,
+                    step=1,
+                    key="payslip_year"
+                )
+            payslip_start = date(int(payslip_year), int(payslip_month_num), 1)
+            payslip_end = date(
+                int(payslip_year),
+                int(payslip_month_num),
+                calendar.monthrange(int(payslip_year), int(payslip_month_num))[1]
+            )
+        else:
+            pdc1, pdc2 = st.columns(2)
+            with pdc1:
+                payslip_start = st.date_input(
+                    "Start Date",
+                    value=today_payslip.replace(day=1),
+                    key="payslip_start_dt",
+                    format="DD-MM-YYYY"
+                )
+            with pdc2:
+                payslip_end = st.date_input(
+                    "End Date",
+                    value=today_payslip,
+                    key="payslip_end_dt",
+                    format="DD-MM-YYYY"
+                )
 
         if payslip_start > payslip_end: st.error("Start date must be before or equal to end date.")
         else:
@@ -1636,9 +1730,10 @@ elif page == "Payslip Generator" and user_role == "admin":
 
             role = str(staff_data.get("role") or selected_role)
             is_ops_coordinator = role.strip().lower() == "ops coordinator"
+            is_cart_operator = role.strip().lower() == "cart operator"
             doj_val = staff_data.get('doj')
             doj_str = pd.to_datetime(doj_val).strftime('%d-%b-%y') if pd.notna(doj_val) and str(doj_val).strip() else "N/A"
-            month_str = payslip_start.strftime('%B %Y')
+            month_str = payslip_start.strftime('%B %Y') if payslip_filter_mode == "Month" else f"{payslip_start.strftime('%d-%b-%y')} to {payslip_end.strftime('%d-%b-%y')}"
             payable_days = int(staff_data.get("payable_days", staff_data.get("days_worked", 0) + staff_data.get("paid_leaves", 0)))
 
             adjustment_key = f"{int(selected_staff_row['id'])}_{payslip_start.strftime('%Y%m%d')}_{payslip_end.strftime('%Y%m%d')}"
@@ -1681,7 +1776,8 @@ elif page == "Payslip Generator" and user_role == "admin":
 
             st.markdown("---")
             st.markdown(f"#### Salary Statement Summary — {sel_staff_payslip}")
-            st.markdown(f"**Role:** {role} &nbsp;|&nbsp; **Date of Joining:** {doj_str} &nbsp;|&nbsp; **Payslip for the month:** {month_str}")
+            period_label = "Payslip Month" if payslip_filter_mode == "Month" else "Payslip Period"
+            st.markdown(f"**Role:** {role} &nbsp;|&nbsp; **Date of Joining:** {doj_str} &nbsp;|&nbsp; **{period_label}:** {month_str}")
 
             if is_ops_coordinator:
                 day_row = ["Payable Salary Days", "Calendar days from later of month start / Date of Joining, less unpaid leave", f"{payable_days} days"]
@@ -1710,9 +1806,21 @@ elif page == "Payslip Generator" and user_role == "admin":
             # monitored separately under Staff & Payroll -> Monthly Food Allowance.
             if food_mode == "daily":
                 summary_table_data.append([food_component, food_basis, f"₹{staff_data.get('food_tea_allowance', 0):,.2f}"])
-            gross_basis = "Fixed salary + commission (where applicable) + Food/Tea + Fuel" if food_mode == "daily" else "Total entitled earnings calculated for the period"
+            if food_mode == "monthly":
+                gross_basis = "Pro-rata fixed salary + commission (where applicable)"
+            elif is_cart_operator:
+                gross_basis = "Pro-rata fixed salary + commission + daily Food/Tea allowance"
+            else:
+                gross_basis = "Pro-rata fixed salary + commission (where applicable) + daily Food/Tea + Fuel"
+
+            if food_mode == "daily" and not is_cart_operator:
+                summary_table_data.append([
+                    "Monthly Fuel Allowance",
+                    f"Plan ₹{staff_data.get('monthly_fuel_allowance', 0):,.2f}/month; pro-rata for days worked",
+                    f"₹{staff_data.get('fuel_allowance', 0):,.2f}"
+                ])
+
             summary_table_data.extend([
-                ["Monthly Fuel Allowance", f"Plan ₹{staff_data.get('monthly_fuel_allowance', 0):,.2f}/month; pro-rata for days worked", f"₹{staff_data.get('fuel_allowance', 0):,.2f}"],
                 ["Gross Payable Earnings", gross_basis, f"₹{staff_data['incurred']:,.2f}"],
                 ["Already Paid / Disbursed", "Cash advances & direct payments recorded", f"-₹{staff_data['paid']:,.2f}"],
                 ["Calculated Final Payable", "Calculated amount before manual adjustment", f"₹{staff_data['due']:,.2f}"],
@@ -4115,10 +4223,60 @@ elif page == "Expenses" and user_role == "admin":
             if not payments_df.empty: all_dts += [pd.to_datetime(payments_df["payment_date"]).min().date(), pd.to_datetime(payments_df["payment_date"]).max().date()]
             min_exp_d, max_exp_d = min(all_dts), max(all_dts)
 
-            rc1, rc2 = st.columns(2)
-            with rc1: rpt_start = st.date_input("From Date", value=max(min_exp_d, max_exp_d - timedelta(days=29)), min_value=min_exp_d, max_value=max_exp_d, key="exp_rpt_start", format="DD-MM-YYYY")
-            with rc2: rpt_end = st.date_input("To Date", value=max_exp_d, min_value=min_exp_d, max_value=max_exp_d, key="exp_rpt_end", format="DD-MM-YYYY")
-            if rpt_start > rpt_end: st.error("'From' date must be before 'To' date."); rpt_start, rpt_end = rpt_end, rpt_start
+            exp_filter_mode = st.radio(
+                "Filter By",
+                ["Month", "Custom Date Range"],
+                horizontal=True,
+                key="expense_report_filter_mode"
+            )
+
+            if exp_filter_mode == "Month":
+                rc1, rc2 = st.columns(2)
+                exp_month_names = list(calendar.month_name)[1:]
+                default_exp_month = max_exp_d.month
+                default_exp_year = max_exp_d.year
+                with rc1:
+                    exp_month_name = st.selectbox(
+                        "Month",
+                        exp_month_names,
+                        index=default_exp_month - 1,
+                        key="exp_rpt_month"
+                    )
+                    exp_month_num = exp_month_names.index(exp_month_name) + 1
+                with rc2:
+                    exp_year = st.number_input(
+                        "Year",
+                        min_value=min_exp_d.year,
+                        max_value=max(max_exp_d.year, date.today().year),
+                        value=default_exp_year,
+                        step=1,
+                        key="exp_rpt_year"
+                    )
+                rpt_start = date(int(exp_year), int(exp_month_num), 1)
+                rpt_end = date(int(exp_year), int(exp_month_num), calendar.monthrange(int(exp_year), int(exp_month_num))[1])
+            else:
+                rc1, rc2 = st.columns(2)
+                with rc1:
+                    rpt_start = st.date_input(
+                        "Start Date",
+                        value=max(min_exp_d, max_exp_d - timedelta(days=29)),
+                        min_value=min_exp_d,
+                        max_value=max_exp_d,
+                        key="exp_rpt_start",
+                        format="DD-MM-YYYY"
+                    )
+                with rc2:
+                    rpt_end = st.date_input(
+                        "End Date",
+                        value=max_exp_d,
+                        min_value=min_exp_d,
+                        max_value=max_exp_d,
+                        key="exp_rpt_end",
+                        format="DD-MM-YYYY"
+                    )
+            if rpt_start > rpt_end:
+                st.error("Start Date must be before or equal to End Date.")
+                rpt_start, rpt_end = rpt_end, rpt_start
 
             f_exp = expenses_summary_df[(pd.to_datetime(expenses_summary_df["expense_date"]).dt.date >= rpt_start) & (pd.to_datetime(expenses_summary_df["expense_date"]).dt.date <= rpt_end)] if not expenses_summary_df.empty else pd.DataFrame()
             f_pay = payments_df[(pd.to_datetime(payments_df["payment_date"]).dt.date >= rpt_start) & (pd.to_datetime(payments_df["payment_date"]).dt.date <= rpt_end)] if not payments_df.empty else pd.DataFrame()
@@ -4922,15 +5080,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
             try:
                 mfa_df = db_conn.query(
                     """
-                    SELECT id,
-                           expense_date,
-                           staff_name,
-                           description,
-                           total_amount,
-                           status,
-                           attributed_to,
-                           recorded_by,
-                           remarks
+                    SELECT id, expense_date, description, total_amount, status
                     FROM expenses
                     WHERE LOWER(TRIM(COALESCE(sub_category, ''))) = 'monthly food allowance'
                       AND expense_date >= :sdate
@@ -4946,91 +5096,82 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 else:
                     mfa_df = mfa_df.copy()
                     mfa_df["total_amount"] = pd.to_numeric(mfa_df["total_amount"], errors="coerce").fillna(0.0)
-                    mfa_df["staff_name"] = mfa_df["staff_name"].fillna("Unassigned").astype(str)
                     mfa_df["expense_date"] = pd.to_datetime(mfa_df["expense_date"])
 
                     total_food_paid = float(mfa_df["total_amount"].sum())
-                    staff_count = int(mfa_df.loc[mfa_df["staff_name"].str.strip().ne(""), "staff_name"].nunique())
-
-                    mc1, mc2, mc3 = st.columns(3)
+                    mc1, mc2 = st.columns(2)
                     mc1.metric("Monthly Food Allowance Paid", f"₹{total_food_paid:,.2f}")
-                    mc2.metric("Staff Covered", f"{staff_count}")
-                    mc3.metric("Expense Records", f"{len(mfa_df)}")
-
-                    st.markdown("#### Staff-wise Summary")
-                    staff_summary = (
-                        mfa_df.groupby("staff_name", dropna=False)
-                        .agg(
-                            **{
-                                "Total Paid (₹)": ("total_amount", "sum"),
-                                "Records": ("id", "count"),
-                                "Last Paid On": ("expense_date", "max")
-                            }
-                        )
-                        .reset_index()
-                        .rename(columns={"staff_name": "Staff"})
-                        .sort_values("Total Paid (₹)", ascending=False)
-                    )
-                    staff_summary["Last Paid On"] = pd.to_datetime(staff_summary["Last Paid On"]).dt.strftime("%d-%b-%y")
-                    st.dataframe(
-                        staff_summary,
-                        hide_index=True,
-                        width="stretch",
-                        column_config={
-                            "Staff": st.column_config.TextColumn(width="medium"),
-                            "Total Paid (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
-                            "Records": st.column_config.NumberColumn(format="%d", width="small"),
-                            "Last Paid On": st.column_config.TextColumn(width="small")
-                        }
-                    )
+                    mc2.metric("Expense Records", f"{len(mfa_df)}")
 
                     st.markdown("#### Payment Records")
                     detail_mfa = mfa_df.rename(columns={
                         "expense_date": "Date",
-                        "staff_name": "Staff",
                         "description": "Description",
-                        "total_amount": "Amount (₹)",
-                        "status": "Status",
-                        "attributed_to": "Attributed To",
-                        "recorded_by": "Recorded By",
-                        "remarks": "Remarks"
+                        "total_amount": "Amount",
+                        "status": "Status"
                     })
                     detail_mfa["Date"] = pd.to_datetime(detail_mfa["Date"]).dt.strftime("%d-%b-%y")
-                    detail_cols = ["Date", "Staff", "Amount (₹)", "Status", "Description", "Attributed To", "Remarks"]
+                    detail_cols = ["Date", "Description", "Amount", "Status"]
                     st.dataframe(
                         detail_mfa[detail_cols],
                         hide_index=True,
                         width="stretch",
                         column_config={
                             "Date": st.column_config.TextColumn(width="small"),
-                            "Staff": st.column_config.TextColumn(width="medium"),
-                            "Amount (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
-                            "Status": st.column_config.TextColumn(width="small"),
                             "Description": st.column_config.TextColumn(width="large"),
-                            "Attributed To": st.column_config.TextColumn(width="medium"),
-                            "Remarks": st.column_config.TextColumn(width="large")
+                            "Amount": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
+                            "Status": st.column_config.TextColumn(width="small")
                         }
                     )
             except Exception as e:
                 st.error(f"Could not load Monthly Food Allowance records: {e}")
 
     elif staff_tab_sel == "💵 Monthly Dues & Settlement":
-        st.write("Calculate monthly dues with fixed salary, commissions where applicable, selected daily/monthly Food & Tea plan, monthly Fuel allowance, and deductions backed by the Payments table:")
+        st.write("Calculate monthly dues with fixed salary, commissions where applicable, applicable daily allowances, and deductions backed by the Payments table:")
 
         now = date.today()
-        m_col1, m_col2 = st.columns(2)
-        with m_col1:
-            month_names = list(calendar.month_name)[1:]
-            sel_month_name = st.selectbox("Select Settlement Month", month_names, index=now.month - 1, key="pay_calc_month")
-            sel_month_idx = month_names.index(sel_month_name) + 1
-        with m_col2:
-            sel_year = st.number_input("Select Year", min_value=2024, max_value=2030, value=now.year, step=1, key="pay_calc_year")
+        settlement_filter_mode = st.radio(
+            "Filter By",
+            ["Month", "Custom Date Range"],
+            horizontal=True,
+            key="monthly_dues_filter_mode"
+        )
 
-        num_days_in_month = calendar.monthrange(sel_year, sel_month_idx)[1]
-        m_start_dt = date(sel_year, sel_month_idx, 1)
-        m_end_dt = date(sel_year, sel_month_idx, num_days_in_month)
+        if settlement_filter_mode == "Month":
+            m_col1, m_col2 = st.columns(2)
+            with m_col1:
+                month_names = list(calendar.month_name)[1:]
+                sel_month_name = st.selectbox("Select Settlement Month", month_names, index=now.month - 1, key="pay_calc_month")
+                sel_month_idx = month_names.index(sel_month_name) + 1
+            with m_col2:
+                sel_year = st.number_input("Select Year", min_value=2024, max_value=2035, value=now.year, step=1, key="pay_calc_year")
+            m_start_dt = date(int(sel_year), int(sel_month_idx), 1)
+            m_end_dt = date(int(sel_year), int(sel_month_idx), calendar.monthrange(int(sel_year), int(sel_month_idx))[1])
+            settlement_period_label = f"{sel_month_name} {int(sel_year)}"
+        else:
+            m_col1, m_col2 = st.columns(2)
+            with m_col1:
+                m_start_dt = st.date_input(
+                    "Start Date",
+                    value=now.replace(day=1),
+                    format="DD-MM-YYYY",
+                    key="pay_calc_start"
+                )
+            with m_col2:
+                m_end_dt = st.date_input(
+                    "End Date",
+                    value=now,
+                    format="DD-MM-YYYY",
+                    key="pay_calc_end"
+                )
+            settlement_period_label = f"{m_start_dt.strftime('%d-%b-%y')} to {m_end_dt.strftime('%d-%b-%y')}"
 
-        st.caption(f"Calculating for period: **{m_start_dt.strftime('%d-%b-%y')}** to **{m_end_dt.strftime('%d-%b-%y')}** ({num_days_in_month} Days in Month)")
+        if m_start_dt > m_end_dt:
+            st.error("Start Date must be before or equal to End Date.")
+            m_start_dt, m_end_dt = m_end_dt, m_start_dt
+
+        period_day_count = (m_end_dt - m_start_dt).days + 1
+        st.caption(f"Calculating for period: **{m_start_dt.strftime('%d-%b-%y')}** to **{m_end_dt.strftime('%d-%b-%y')}** ({period_day_count} calendar days)")
 
         daily_month_df = pd.DataFrame()
         att_month_df = pd.DataFrame()
@@ -5133,13 +5274,22 @@ elif page == "Staff & Payroll" and user_role == "admin":
                     paid_leave_cnt = len([d for d in paid_leave_dates if role_start <= d <= role_end])
                     unpaid_leave_cnt = len([d for d in unpaid_leave_dates if role_start <= d <= role_end])
 
-                    salary_daily_rate = (monthly_sal / num_days_in_month) if staff_role.lower() == "ops coordinator" else daily_rate
-                    apportioned_base_salary = payable_days * salary_daily_rate
-                    food_entitled = sum((allow_sun if d.weekday() == 6 else allow_wd) for d in worked_dates) if food_mode == "daily" else worked_days * (monthly_food / num_days_in_month)
-                    fuel_entitled = worked_days * (monthly_fuel / num_days_in_month)
+                    if staff_role.lower() == "ops coordinator":
+                        salary_by_date = {d: monthly_sal / calendar.monthrange(d.year, d.month)[1] for d in period_dates}
+                    else:
+                        salary_by_date = {d: daily_rate for d in period_dates}
+                    apportioned_base_salary = sum(salary_by_date[d] for d in payable_dates)
+                    salary_daily_rate = (apportioned_base_salary / payable_days) if payable_days > 0 else 0.0
+                    if food_mode == "monthly":
+                        # Monthly Food Allowance is a central expense, not an individual payroll earning.
+                        food_entitled = 0.0
+                        fuel_entitled = 0.0
+                    else:
+                        food_entitled = sum((allow_sun if d.weekday() == 6 else allow_wd) for d in worked_dates)
+                        fuel_entitled = sum(monthly_fuel / calendar.monthrange(d.year, d.month)[1] for d in worked_dates)
                     total_allow_entitled = food_entitled + fuel_entitled
                     total_payments_disbursed = float(st_payments["amount_paid"].sum()) if not st_payments.empty else 0.0
-                    gross_earnings = apportioned_base_salary + food_entitled + fuel_entitled
+                    gross_earnings = apportioned_base_salary + total_allow_entitled
                     net_payable_due = gross_earnings - total_payments_disbursed
 
                     settlement_summary_rows.append({
@@ -5162,12 +5312,15 @@ elif page == "Staff & Payroll" and user_role == "admin":
                         if d in unpaid_leave_dates:
                             row_type, day_salary, day_allow = "Unpaid Leave", 0.0, 0.0
                         elif d in paid_leave_dates:
-                            row_type, day_salary, day_allow = "Paid Leave", salary_daily_rate, 0.0
+                            row_type, day_salary, day_allow = "Paid Leave", salary_by_date.get(d, 0.0), 0.0
                         else:
                             row_type = "Daily Salary"
-                            day_salary = salary_daily_rate
-                            day_food_allow = (allow_sun if d.weekday() == 6 else allow_wd) if food_mode == "daily" else (monthly_food / num_days_in_month)
-                            day_allow = day_food_allow + (monthly_fuel / num_days_in_month)
+                            day_salary = salary_by_date.get(d, 0.0)
+                            if food_mode == "daily":
+                                day_food_allow = allow_sun if d.weekday() == 6 else allow_wd
+                                day_allow = day_food_allow + (monthly_fuel / calendar.monthrange(d.year, d.month)[1])
+                            else:
+                                day_allow = 0.0
                         staff_shift_records.append({
                             "Date": d.strftime("%d-%b-%y"), "Day": d.strftime("%A"),
                             "Staff Name": st_name, "Cart Operated": "—",
@@ -5215,8 +5368,9 @@ elif page == "Staff & Payroll" and user_role == "admin":
                             else:
                                 weekdays_worked += 1
                         if first_shift_today:
-                            day_food_allow = (allow_sun if is_sun else allow_wd) if food_mode == "daily" else (monthly_food / num_days_in_month)
-                            day_allow = day_food_allow + (monthly_fuel / num_days_in_month)
+                            # Cart Operators receive only the daily Food/Tea allowance when on the daily model.
+                            # Monthly Food is central and Fuel is not applicable to cart staff.
+                            day_allow = (allow_sun if is_sun else allow_wd) if food_mode == "daily" else 0.0
                         else:
                             day_allow = 0.0
 
@@ -5365,7 +5519,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
             with tab_drill1:
                 st.write(f"Itemized daily shifts and attendance records for **{sel_staff_drill}**:")
                 if target_staff_log.empty:
-                    st.info(f"No shifts or leave records logged for {sel_staff_drill} in {sel_month_name} {sel_year}.")
+                    st.info(f"No shifts or leave records logged for {sel_staff_drill} in {settlement_period_label}.")
                 else:
                     st.dataframe(
                         target_staff_log,
@@ -5385,7 +5539,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
             with tab_drill2:
                 st.write(f"Actual disbursements and deductions recorded in `expense_payments` for **{sel_staff_drill}**:")
                 if target_staff_pay.empty:
-                    st.info(f"No disbursements / payments recorded for {sel_staff_drill} in {sel_month_name} {sel_year}.")
+                    st.info(f"No disbursements / payments recorded for {sel_staff_drill} in {settlement_period_label}.")
                 else:
                     disp_sp = target_staff_pay.copy()
                     disp_sp["payment_date"] = pd.to_datetime(disp_sp["payment_date"]).dt.strftime("%d-%b-%y")
@@ -5479,15 +5633,65 @@ elif page == "Dashboard" and user_role == "admin":
         st.session_state["applied_start"] = min(max(st.session_state["applied_start"], min_d), max_d)
         st.session_state["applied_end"] = min(max(st.session_state["applied_end"], min_d), max_d)
 
+        dashboard_filter_mode = st.radio(
+            "Filter By",
+            ["Month", "Custom Date Range"],
+            horizontal=True,
+            key="dashboard_report_filter_mode"
+        )
+
         with st.form("date_range_form"):
-            rc1, rc2, rc3 = st.columns([2, 2, 1])
-            with rc1: pending_start = st.date_input("From", value=st.session_state["applied_start"], min_value=min_d, max_value=max_d, format="DD-MM-YYYY")
-            with rc2: pending_end = st.date_input("To", value=st.session_state["applied_end"], min_value=min_d, max_value=max_d, format="DD-MM-YYYY")
-            with rc3: 
+            if dashboard_filter_mode == "Month":
+                rc1, rc2, rc3 = st.columns([2, 2, 1])
+                dash_month_names = list(calendar.month_name)[1:]
+                default_dash_month = st.session_state["applied_start"].month
+                default_dash_year = st.session_state["applied_start"].year
+                with rc1:
+                    dash_month_name = st.selectbox(
+                        "Month",
+                        dash_month_names,
+                        index=default_dash_month - 1,
+                        key="dashboard_report_month"
+                    )
+                    dash_month_num = dash_month_names.index(dash_month_name) + 1
+                with rc2:
+                    dash_year = st.number_input(
+                        "Year",
+                        min_value=min_d.year,
+                        max_value=max_d.year,
+                        value=default_dash_year,
+                        step=1,
+                        key="dashboard_report_year"
+                    )
+                pending_start = date(int(dash_year), int(dash_month_num), 1)
+                pending_end = date(int(dash_year), int(dash_month_num), calendar.monthrange(int(dash_year), int(dash_month_num))[1])
+                pending_start = max(pending_start, min_d)
+                pending_end = min(pending_end, max_d)
+            else:
+                rc1, rc2, rc3 = st.columns([2, 2, 1])
+                with rc1:
+                    pending_start = st.date_input(
+                        "Start Date",
+                        value=st.session_state["applied_start"],
+                        min_value=min_d,
+                        max_value=max_d,
+                        format="DD-MM-YYYY",
+                        key="dashboard_report_start"
+                    )
+                with rc2:
+                    pending_end = st.date_input(
+                        "End Date",
+                        value=st.session_state["applied_end"],
+                        min_value=min_d,
+                        max_value=max_d,
+                        format="DD-MM-YYYY",
+                        key="dashboard_report_end"
+                    )
+            with rc3:
                 st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
                 apply_clicked = st.form_submit_button("Apply", type="primary", use_container_width=True)
 
-        if apply_clicked: 
+        if apply_clicked:
             st.session_state["applied_start"] = pending_start
             st.session_state["applied_end"] = pending_end
         range_start, range_end = st.session_state["applied_start"], st.session_state["applied_end"]
