@@ -1206,6 +1206,7 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
                 })
 
         detailed_ledger.sort(key=lambda x: x["date"])
+        unpaid_leaves_cnt = sum(1 for row in detailed_ledger if row.get("type") == "Unpaid Leave")
         if food_mode == "monthly":
             # Monthly Food Allowance is paid centrally, outside the individual payslip.
             food_entitled = 0.0
@@ -1225,6 +1226,7 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
             "daily_rate": standard_daily_rate,
             "days_worked": days_worked,
             "paid_leaves": paid_leaves_cnt,
+            "unpaid_leaves": unpaid_leaves_cnt,
             "salary": shift_sal,
             "commissions": shift_comm,
             "food_tea_allowance_mode": food_mode,
@@ -1299,8 +1301,9 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
         pro_rata_basis = f"{payable_days} payable calendar days; salary starts from Date of Joining when later than month start"
         days_label = ["Payable Salary Days", pro_rata_basis, f"{payable_days} days"]
     else:
+        unpaid_leaves = int(data_dict.get('unpaid_leaves', 0))
         pro_rata_basis = f"({data_dict['days_worked']} + {data_dict['paid_leaves']}) days @ Rs. {data_dict.get('daily_rate', 600):.2f}/day"
-        days_label = ["Total Days Worked", f"{data_dict['days_worked']} days worked + {data_dict['paid_leaves']} paid leaves", f"{data_dict['days_worked'] + data_dict['paid_leaves']} days"]
+        days_label = ["Total Days Worked", f"{data_dict['days_worked']} Days Worked + {data_dict['paid_leaves']} Paid Leaves, {unpaid_leaves} Unpaid Leaves", f"{data_dict['days_worked'] + data_dict['paid_leaves']} days"]
 
     food_mode = str(data_dict.get("food_tea_allowance_mode") or "monthly").strip().lower()
     if food_mode == "daily":
@@ -1735,7 +1738,7 @@ elif page == "Payslip Generator" and user_role == "admin":
             selected_staff_row = staff_df[staff_df["name"] == sel_staff_payslip].iloc[0]
             selected_role = str(selected_staff_row.get("role") or "Cart Operator")
             staff_data = breakdown_dict.get(sel_staff_payslip, {
-                "monthly_fixed_salary": 18000.0, "days_worked": 0, "paid_leaves": 0, "payable_days": 0, "salary": 0.0,
+                "monthly_fixed_salary": 18000.0, "days_worked": 0, "paid_leaves": 0, "unpaid_leaves": 0, "payable_days": 0, "salary": 0.0,
                 "commissions": 0.0, "food_tea_allowance_mode": "monthly", "allowance_weekday": 0.0, "allowance_sunday": 0.0,
                 "monthly_food_tea_allowance": 0.0, "monthly_fuel_allowance": 0.0,
                 "food_tea_allowance": 0.0, "fuel_allowance": 0.0, "allowances": 0.0,
@@ -1817,7 +1820,8 @@ elif page == "Payslip Generator" and user_role == "admin":
                 day_row = ["Payable Salary Days", "Calendar days from later of month start / Date of Joining, less unpaid leave", f"{payable_days} days"]
                 salary_basis = f"Monthly salary pro-rata for {payable_days} payable calendar days"
             else:
-                day_row = ["Total Days Worked", f"{staff_data['days_worked']} days worked + {staff_data['paid_leaves']} paid leaves", f"{staff_data['days_worked'] + staff_data['paid_leaves']} days"]
+                unpaid_leaves = int(staff_data.get("unpaid_leaves", 0))
+                day_row = ["Total Days Worked", f"{staff_data['days_worked']} Days Worked + {staff_data['paid_leaves']} Paid Leaves, {unpaid_leaves} Unpaid Leaves", f"{staff_data['days_worked'] + staff_data['paid_leaves']} days"]
                 salary_basis = f"({staff_data['days_worked']} + {staff_data['paid_leaves']}) days @ ₹{staff_data.get('daily_rate', 600):.2f}/day"
 
             food_mode = str(staff_data.get("food_tea_allowance_mode") or "monthly").strip().lower()
