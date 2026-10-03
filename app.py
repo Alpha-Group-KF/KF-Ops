@@ -1289,10 +1289,14 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
     ]
     if not is_ops_coordinator:
         summary_data.append(["Sales Commissions", "Commission on qualifying daily collections", f"Rs. {data_dict['commissions']:,.2f}"])
+    # Daily Food/Tea remains part of the payslip presentation. Monthly Food/Tea is
+    # tracked separately under Staff & Payroll -> Monthly Food Allowance.
+    if food_mode == "daily":
+        summary_data.append([food_component, food_basis, f"Rs. {data_dict.get('food_tea_allowance', 0):,.2f}"])
+    gross_basis = "Fixed salary + commission (where applicable) + Food/Tea + Fuel" if food_mode == "daily" else "Total entitled earnings calculated for the period"
     summary_data.extend([
-        [food_component, food_basis, f"Rs. {data_dict.get('food_tea_allowance', 0):,.2f}"],
         ["Monthly Fuel Allowance", f"Plan Rs. {data_dict.get('monthly_fuel_allowance', 0):,.2f}/month; pro-rata for days worked", f"Rs. {data_dict.get('fuel_allowance', 0):,.2f}"],
-        ["Gross Payable Earnings", "Fixed salary + commission (where applicable) + Food/Tea + Fuel", f"Rs. {data_dict['incurred']:,.2f}"],
+        ["Gross Payable Earnings", gross_basis, f"Rs. {data_dict['incurred']:,.2f}"],
         ["Already Paid / Disbursed", "Cash advances & direct payments recorded", f"-Rs. {data_dict['paid']:,.2f}"],
         ["Calculated Final Payable", "Calculated amount before manual adjustment", f"Rs. {data_dict['due']:,.2f}"],
         ["Manual Adjustment", adjustment_reason if adjustment_reason else "No adjustment entered", f"Rs. {adjustment_amount:+,.2f}" if abs(adjustment_amount) > 0.0001 else "Rs. 0.00"],
@@ -1309,7 +1313,8 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
     story.append(t_summary); story.append(Spacer(1, 15))
 
     if not is_ops_coordinator:
-        story.append(Paragraph("<b>Detailed Commission & Allowance Entitlement Ledger</b>", ParagraphStyle('SubHeader', fontName='Helvetica-Bold', fontSize=11, textColor=colors.HexColor('#8A5E17'), alignment=0)))
+        ledger_title = "Detailed Commission & Allowance Entitlement Ledger" if food_mode == "daily" else "Detailed Commission & Salary Ledger"
+        story.append(Paragraph(f"<b>{ledger_title}</b>", ParagraphStyle('SubHeader', fontName='Helvetica-Bold', fontSize=11, textColor=colors.HexColor('#8A5E17'), alignment=0)))
         story.append(Spacer(1, 4))
 
         line_t = Table([['']], colWidths=[525])
@@ -1318,22 +1323,38 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
         story.append(line_t)
         story.append(Spacer(1, 6))
 
-        ledger_rows = [["Date", "Type", "Cart", "Sales", "Salary", "Comm.", "Allow.", "Adv. Taken", "Allow. Taken", "Leakage"]]
-        for item in data_dict.get("detailed_ledger", []):
-            ledger_rows.append([
-                item["date"].strftime("%d-%b-%y"), item["type"], item["cart"],
-                f"{item['collection']:,.0f}" if item['collection'] > 0 else "—",
-                f"{item['fixed_salary']:,.0f}",
-                f"{item['commission']:,.0f}" if item['commission'] > 0 else "—",
-                f"{item['allowance']:,.0f}" if item['allowance'] > 0 else "—",
-                f"{item['advance_taken']:,.0f}" if item.get('advance_taken', 0) > 0 else "—",
-                f"{item['food_taken']:,.0f}" if item.get('food_taken', 0) > 0 else "—",
-                f"{item['leakage']:,.0f}" if item.get('leakage', 0) > 0 else "—"
-            ])
-        if len(ledger_rows) == 1:
-            ledger_rows.append(["No records", "—", "—", "—", "—", "—", "—", "—", "—", "—"])
+        if food_mode == "daily":
+            ledger_rows = [["Date", "Type", "Cart", "Sales", "Salary", "Comm.", "Allow.", "Adv. Taken", "Allow. Taken", "Leakage"]]
+            for item in data_dict.get("detailed_ledger", []):
+                ledger_rows.append([
+                    item["date"].strftime("%d-%b-%y"), item["type"], item["cart"],
+                    f"{item['collection']:,.0f}" if item['collection'] > 0 else "—",
+                    f"{item['fixed_salary']:,.0f}",
+                    f"{item['commission']:,.0f}" if item['commission'] > 0 else "—",
+                    f"{item['allowance']:,.0f}" if item['allowance'] > 0 else "—",
+                    f"{item['advance_taken']:,.0f}" if item.get('advance_taken', 0) > 0 else "—",
+                    f"{item['food_taken']:,.0f}" if item.get('food_taken', 0) > 0 else "—",
+                    f"{item['leakage']:,.0f}" if item.get('leakage', 0) > 0 else "—"
+                ])
+            if len(ledger_rows) == 1:
+                ledger_rows.append(["No records", "—", "—", "—", "—", "—", "—", "—", "—", "—"])
+            ledger_widths = [52, 60, 82, 42, 42, 42, 42, 50, 50, 50]
+        else:
+            ledger_rows = [["Date", "Type", "Cart", "Sales", "Salary", "Comm.", "Adv. Taken", "Leakage"]]
+            for item in data_dict.get("detailed_ledger", []):
+                ledger_rows.append([
+                    item["date"].strftime("%d-%b-%y"), item["type"], item["cart"],
+                    f"{item['collection']:,.0f}" if item['collection'] > 0 else "—",
+                    f"{item['fixed_salary']:,.0f}",
+                    f"{item['commission']:,.0f}" if item['commission'] > 0 else "—",
+                    f"{item['advance_taken']:,.0f}" if item.get('advance_taken', 0) > 0 else "—",
+                    f"{item['leakage']:,.0f}" if item.get('leakage', 0) > 0 else "—"
+                ])
+            if len(ledger_rows) == 1:
+                ledger_rows.append(["No records", "—", "—", "—", "—", "—", "—", "—"])
+            ledger_widths = [58, 72, 100, 55, 55, 55, 65, 65]
 
-        t_ledger = Table(ledger_rows, colWidths=[52, 60, 82, 42, 42, 42, 42, 50, 50, 50])
+        t_ledger = Table(ledger_rows, colWidths=ledger_widths)
         t_ledger.hAlign = 'LEFT'
         t_ledger.setStyle(TableStyle([
             ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#124A1D')), ('TEXTCOLOR', (0,0), (-1,0), colors.white), ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'), ('FONTSIZE', (0,0), (-1,0), 8.5),
@@ -1685,10 +1706,14 @@ elif page == "Payslip Generator" and user_role == "admin":
             ]
             if not is_ops_coordinator:
                 summary_table_data.append(["Sales Commissions", "Commission on qualifying daily collections", f"₹{staff_data['commissions']:,.2f}"])
+            # Daily Food/Tea remains visible in the payslip. Monthly Food/Tea is
+            # monitored separately under Staff & Payroll -> Monthly Food Allowance.
+            if food_mode == "daily":
+                summary_table_data.append([food_component, food_basis, f"₹{staff_data.get('food_tea_allowance', 0):,.2f}"])
+            gross_basis = "Fixed salary + commission (where applicable) + Food/Tea + Fuel" if food_mode == "daily" else "Total entitled earnings calculated for the period"
             summary_table_data.extend([
-                [food_component, food_basis, f"₹{staff_data.get('food_tea_allowance', 0):,.2f}"],
                 ["Monthly Fuel Allowance", f"Plan ₹{staff_data.get('monthly_fuel_allowance', 0):,.2f}/month; pro-rata for days worked", f"₹{staff_data.get('fuel_allowance', 0):,.2f}"],
-                ["Gross Payable Earnings", "Fixed salary + commission (where applicable) + Food/Tea + Fuel", f"₹{staff_data['incurred']:,.2f}"],
+                ["Gross Payable Earnings", gross_basis, f"₹{staff_data['incurred']:,.2f}"],
                 ["Already Paid / Disbursed", "Cash advances & direct payments recorded", f"-₹{staff_data['paid']:,.2f}"],
                 ["Calculated Final Payable", "Calculated amount before manual adjustment", f"₹{staff_data['due']:,.2f}"],
                 ["Manual Adjustment", adjustment_reason.strip() if adjustment_reason.strip() else "No adjustment entered", f"₹{float(adjustment_amount):+,.2f}" if abs(float(adjustment_amount)) > 0.0001 else "₹0.00"],
@@ -1712,7 +1737,8 @@ elif page == "Payslip Generator" and user_role == "admin":
 
             if not is_ops_coordinator:
                 st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-                st.markdown("#### Detailed Commission & Allowance Entitlement Ledger")
+                ledger_heading = "Detailed Commission & Allowance Entitlement Ledger" if food_mode == "daily" else "Detailed Commission & Salary Ledger"
+                st.markdown(f"#### {ledger_heading}")
                 st.caption(f"Payslip for the month: {month_str} (Itemized daily breakdown)")
 
                 ledger_list = staff_data.get("detailed_ledger", [])
@@ -1724,27 +1750,21 @@ elif page == "Payslip Generator" and user_role == "admin":
                     ledger_df["Collection (₹)"] = ledger_df["collection"].apply(lambda v: f"₹{v:,.2f}" if v > 0 else "—")
                     ledger_df["Salary (₹)"] = ledger_df["fixed_salary"].apply(lambda v: f"₹{v:,.2f}")
                     ledger_df["Commission (₹)"] = ledger_df["commission"].apply(lambda v: f"₹{v:,.2f}" if v > 0 else "—")
-                    ledger_df["Allowance (₹)"] = ledger_df["allowance"].apply(lambda v: f"₹{v:,.2f}" if v > 0 else "—")
                     ledger_df["Advance Taken (₹)"] = ledger_df["advance_taken"].apply(lambda v: f"₹{v:,.2f}" if v > 0 else "—")
-                    ledger_df["Allow. Taken (₹)"] = ledger_df["food_taken"].apply(lambda v: f"₹{v:,.2f}" if v > 0 else "—")
                     ledger_df["Leakage"] = ledger_df["leakage"].fillna(0).apply(lambda v: f"₹{v:,.2f}" if v > 0 else "—") if "leakage" in ledger_df else "—"
 
+                    if food_mode == "daily":
+                        ledger_df["Allowance (₹)"] = ledger_df["allowance"].apply(lambda v: f"₹{v:,.2f}" if v > 0 else "—")
+                        ledger_df["Allow. Taken (₹)"] = ledger_df["food_taken"].apply(lambda v: f"₹{v:,.2f}" if v > 0 else "—")
+                        display_cols = ["Date", "Type", "Cart", "Collection (₹)", "Salary (₹)", "Commission (₹)", "Allowance (₹)", "Advance Taken (₹)", "Allow. Taken (₹)", "Leakage"]
+                    else:
+                        display_cols = ["Date", "Type", "Cart", "Collection (₹)", "Salary (₹)", "Commission (₹)", "Advance Taken (₹)", "Leakage"]
+
                     st.dataframe(
-                        ledger_df[["Date", "Type", "Cart", "Collection (₹)", "Salary (₹)", "Commission (₹)", "Allowance (₹)", "Advance Taken (₹)", "Allow. Taken (₹)", "Leakage"]],
+                        ledger_df[display_cols],
                         hide_index=True,
                         use_container_width=True,
-                        column_config={
-                            "Date": st.column_config.TextColumn(width="small"),
-                            "Type": st.column_config.TextColumn(width="small"),
-                            "Cart": st.column_config.TextColumn(width="small"),
-                            "Collection (₹)": st.column_config.TextColumn(width="small"),
-                            "Salary (₹)": st.column_config.TextColumn(width="small"),
-                            "Commission (₹)": st.column_config.TextColumn(width="small"),
-                            "Allowance (₹)": st.column_config.TextColumn(width="small"),
-                            "Advance Taken (₹)": st.column_config.TextColumn(width="small"),
-                            "Allow. Taken (₹)": st.column_config.TextColumn(width="small"),
-                            "Leakage": st.column_config.TextColumn(width="small")
-                        }
+                        column_config={col: st.column_config.TextColumn(width="small") for col in display_cols}
                     )
                 else:
                     st.info("No active days or leave records found within the selected date range.")
@@ -4131,7 +4151,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
 
     staff_tab_sel = st.radio(
         "Section", 
-        ["👥 Staff Directory & KYC", "📅 Attendance & Leave", "⚙️ Compensation Plans", "💵 Monthly Dues & Settlement"], 
+        ["👥 Staff Directory & KYC", "📅 Attendance & Leave", "⚙️ Compensation Plans", "🍱 Monthly Food Allowance", "💵 Monthly Dues & Settlement"], 
         horizontal=True, 
         key="staff_top_nav"
     )
@@ -4843,6 +4863,156 @@ elif page == "Staff & Payroll" and user_role == "admin":
                         show_success_modal(f"New compensation plan activated for {sel_s_plan} from {plan_eff_from.strftime('%d-%b-%y')}!")
                 except Exception as e:
                     st.error(f"Could not save compensation plan: {e}")
+
+    elif staff_tab_sel == "🍱 Monthly Food Allowance":
+        st.write("Track Monthly Food Allowance paid/recorded in the Expenses table.")
+
+        mfa_filter_mode = st.radio(
+            "Filter By",
+            ["Month", "Custom Date Range"],
+            horizontal=True,
+            key="monthly_food_filter_mode"
+        )
+
+        today_mfa = date.today()
+        if mfa_filter_mode == "Month":
+            mf1, mf2 = st.columns(2)
+            month_names_mfa = list(calendar.month_name)[1:]
+            with mf1:
+                mfa_month_name = st.selectbox(
+                    "Month",
+                    month_names_mfa,
+                    index=today_mfa.month - 1,
+                    key="monthly_food_month"
+                )
+                mfa_month_num = month_names_mfa.index(mfa_month_name) + 1
+            with mf2:
+                mfa_year = st.number_input(
+                    "Year",
+                    min_value=2024,
+                    max_value=2035,
+                    value=today_mfa.year,
+                    step=1,
+                    key="monthly_food_year"
+                )
+            mfa_start = date(int(mfa_year), int(mfa_month_num), 1)
+            mfa_end = date(int(mfa_year), int(mfa_month_num), calendar.monthrange(int(mfa_year), int(mfa_month_num))[1])
+        else:
+            mf1, mf2 = st.columns(2)
+            with mf1:
+                mfa_start = st.date_input(
+                    "Start Date",
+                    value=today_mfa.replace(day=1),
+                    format="DD-MM-YYYY",
+                    key="monthly_food_start"
+                )
+            with mf2:
+                mfa_end = st.date_input(
+                    "End Date",
+                    value=today_mfa,
+                    format="DD-MM-YYYY",
+                    key="monthly_food_end"
+                )
+
+        if mfa_start > mfa_end:
+            st.error("Start Date must be before or equal to End Date.")
+        elif db_conn is None:
+            st.error("Database connection is not available.")
+        else:
+            try:
+                mfa_df = db_conn.query(
+                    """
+                    SELECT id,
+                           expense_date,
+                           staff_name,
+                           description,
+                           total_amount,
+                           status,
+                           attributed_to,
+                           recorded_by,
+                           remarks
+                    FROM expenses
+                    WHERE LOWER(TRIM(COALESCE(sub_category, ''))) = 'monthly food allowance'
+                      AND expense_date >= :sdate
+                      AND expense_date <= :edate
+                    ORDER BY expense_date DESC, id DESC;
+                    """,
+                    params={"sdate": mfa_start, "edate": mfa_end},
+                    ttl="0s"
+                )
+
+                if mfa_df.empty:
+                    st.info(f"No Monthly Food Allowance records found from {mfa_start.strftime('%d-%b-%y')} to {mfa_end.strftime('%d-%b-%y')}.")
+                else:
+                    mfa_df = mfa_df.copy()
+                    mfa_df["total_amount"] = pd.to_numeric(mfa_df["total_amount"], errors="coerce").fillna(0.0)
+                    mfa_df["staff_name"] = mfa_df["staff_name"].fillna("Unassigned").astype(str)
+                    mfa_df["expense_date"] = pd.to_datetime(mfa_df["expense_date"])
+
+                    total_food_paid = float(mfa_df["total_amount"].sum())
+                    staff_count = int(mfa_df.loc[mfa_df["staff_name"].str.strip().ne(""), "staff_name"].nunique())
+
+                    mc1, mc2, mc3 = st.columns(3)
+                    mc1.metric("Monthly Food Allowance Paid", f"₹{total_food_paid:,.2f}")
+                    mc2.metric("Staff Covered", f"{staff_count}")
+                    mc3.metric("Expense Records", f"{len(mfa_df)}")
+
+                    st.markdown("#### Staff-wise Summary")
+                    staff_summary = (
+                        mfa_df.groupby("staff_name", dropna=False)
+                        .agg(
+                            **{
+                                "Total Paid (₹)": ("total_amount", "sum"),
+                                "Records": ("id", "count"),
+                                "Last Paid On": ("expense_date", "max")
+                            }
+                        )
+                        .reset_index()
+                        .rename(columns={"staff_name": "Staff"})
+                        .sort_values("Total Paid (₹)", ascending=False)
+                    )
+                    staff_summary["Last Paid On"] = pd.to_datetime(staff_summary["Last Paid On"]).dt.strftime("%d-%b-%y")
+                    st.dataframe(
+                        staff_summary,
+                        hide_index=True,
+                        width="stretch",
+                        column_config={
+                            "Staff": st.column_config.TextColumn(width="medium"),
+                            "Total Paid (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
+                            "Records": st.column_config.NumberColumn(format="%d", width="small"),
+                            "Last Paid On": st.column_config.TextColumn(width="small")
+                        }
+                    )
+
+                    st.markdown("#### Payment Records")
+                    detail_mfa = mfa_df.rename(columns={
+                        "expense_date": "Date",
+                        "staff_name": "Staff",
+                        "description": "Description",
+                        "total_amount": "Amount (₹)",
+                        "status": "Status",
+                        "attributed_to": "Attributed To",
+                        "recorded_by": "Recorded By",
+                        "remarks": "Remarks"
+                    })
+                    detail_mfa["Date"] = pd.to_datetime(detail_mfa["Date"]).dt.strftime("%d-%b-%y")
+                    detail_cols = ["Date", "Staff", "Amount (₹)", "Status", "Description", "Attributed To", "Remarks"]
+                    st.dataframe(
+                        detail_mfa[detail_cols],
+                        hide_index=True,
+                        width="stretch",
+                        column_config={
+                            "Date": st.column_config.TextColumn(width="small"),
+                            "Staff": st.column_config.TextColumn(width="medium"),
+                            "Amount (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
+                            "Status": st.column_config.TextColumn(width="small"),
+                            "Description": st.column_config.TextColumn(width="large"),
+                            "Attributed To": st.column_config.TextColumn(width="medium"),
+                            "Remarks": st.column_config.TextColumn(width="large")
+                        }
+                    )
+            except Exception as e:
+                st.error(f"Could not load Monthly Food Allowance records: {e}")
 
     elif staff_tab_sel == "💵 Monthly Dues & Settlement":
         st.write("Calculate monthly dues with fixed salary, commissions where applicable, selected daily/monthly Food & Tea plan, monthly Fuel allowance, and deductions backed by the Payments table:")
