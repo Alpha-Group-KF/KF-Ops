@@ -1298,11 +1298,11 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
     story.append(Paragraph(pdf_header, sub_style))
     story.append(Spacer(1, 12))
 
+    unpaid_leaves = int(data_dict.get('unpaid_leaves', 0))
     if is_ops_coordinator:
-        pro_rata_basis = f"{payable_days} payable calendar days; salary starts from Date of Joining when later than month start"
-        days_label = ["Payable Salary Days", pro_rata_basis, f"{payable_days} days"]
+        pro_rata_basis = f"{data_dict['days_worked']} Days Worked + {data_dict['paid_leaves']} Paid Leaves, {unpaid_leaves} Unpaid Leaves"
+        days_label = ["Total Days Worked", pro_rata_basis, f"{payable_days} payable days"]
     else:
-        unpaid_leaves = int(data_dict.get('unpaid_leaves', 0))
         pro_rata_basis = f"({data_dict['days_worked']} + {data_dict['paid_leaves']}) days @ Rs. {data_dict.get('daily_rate', 600):.2f}/day"
         days_label = ["Total Days Worked", f"{data_dict['days_worked']} Days Worked + {data_dict['paid_leaves']} Paid Leaves, {unpaid_leaves} Unpaid Leaves", f"{data_dict['days_worked'] + data_dict['paid_leaves']} days"]
 
@@ -1819,11 +1819,11 @@ elif page == "Payslip Generator" and user_role == "admin":
             employment_header += f" &nbsp;|&nbsp; **{period_label}:** {month_str}"
             st.markdown(employment_header)
 
+            unpaid_leaves = int(staff_data.get("unpaid_leaves", 0))
             if is_ops_coordinator:
-                day_row = ["Payable Salary Days", "Calendar days from later of month start / Date of Joining, less unpaid leave", f"{payable_days} days"]
+                day_row = ["Total Days Worked", f"{staff_data['days_worked']} Days Worked + {staff_data['paid_leaves']} Paid Leaves, {unpaid_leaves} Unpaid Leaves", f"{payable_days} payable days"]
                 salary_basis = f"Monthly salary pro-rata for {payable_days} payable calendar days"
             else:
-                unpaid_leaves = int(staff_data.get("unpaid_leaves", 0))
                 day_row = ["Total Days Worked", f"{staff_data['days_worked']} Days Worked + {staff_data['paid_leaves']} Paid Leaves, {unpaid_leaves} Unpaid Leaves", f"{staff_data['days_worked'] + staff_data['paid_leaves']} days"]
                 salary_basis = f"({staff_data['days_worked']} + {staff_data['paid_leaves']}) days @ ₹{staff_data.get('daily_rate', 600):.2f}/day"
 
