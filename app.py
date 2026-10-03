@@ -1271,13 +1271,28 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
 
     doj_val = data_dict.get('doj')
     doj_str = pd.to_datetime(doj_val).strftime('%d-%b-%y') if pd.notna(doj_val) and str(doj_val).strip() else "N/A"
+
+    dol_val = data_dict.get('dol')
+    dol_date = None
+    if pd.notna(dol_val) and str(dol_val).strip():
+        try:
+            dol_date = pd.to_datetime(dol_val).date()
+        except Exception:
+            dol_date = None
+    show_last_working_day = dol_date is not None and start_date <= dol_date <= end_date
+    dol_str = dol_date.strftime('%d-%b-%y') if show_last_working_day else None
+
     month_str = start_date.strftime('%B %Y')
     role = str(data_dict.get('role') or 'Cart Operator')
     is_ops_coordinator = role.strip().lower() == 'ops coordinator'
     is_cart_operator = role.strip().lower() == 'cart operator'
     payable_days = int(data_dict.get('payable_days', data_dict.get('days_worked', 0) + data_dict.get('paid_leaves', 0)))
 
-    story.append(Paragraph(f"<b>Staff Member:</b> {staff_name} &nbsp;|&nbsp; <b>Role:</b> {role} &nbsp;|&nbsp; <b>Date of Joining:</b> {doj_str} &nbsp;|&nbsp; <b>Payslip for the month:</b> {month_str}", sub_style))
+    pdf_header = f"<b>Staff Member:</b> {staff_name} &nbsp;|&nbsp; <b>Role:</b> {role} &nbsp;|&nbsp; <b>Date of Joining:</b> {doj_str}"
+    if show_last_working_day:
+        pdf_header += f" &nbsp;|&nbsp; <b>Last Working Day:</b> {dol_str}"
+    pdf_header += f" &nbsp;|&nbsp; <b>Payslip for the month:</b> {month_str}"
+    story.append(Paragraph(pdf_header, sub_style))
     story.append(Spacer(1, 12))
 
     if is_ops_coordinator:
@@ -1733,6 +1748,19 @@ elif page == "Payslip Generator" and user_role == "admin":
             is_cart_operator = role.strip().lower() == "cart operator"
             doj_val = staff_data.get('doj')
             doj_str = pd.to_datetime(doj_val).strftime('%d-%b-%y') if pd.notna(doj_val) and str(doj_val).strip() else "N/A"
+
+            # Show Last Working Day on the payslip only when it falls within
+            # the selected payslip period.
+            dol_val = selected_staff_row.get("date_of_leaving")
+            dol_date = None
+            if pd.notna(dol_val) and str(dol_val).strip():
+                try:
+                    dol_date = pd.to_datetime(dol_val).date()
+                except Exception:
+                    dol_date = None
+            show_last_working_day = dol_date is not None and payslip_start <= dol_date <= payslip_end
+            dol_str = dol_date.strftime('%d-%b-%y') if show_last_working_day else None
+
             month_str = payslip_start.strftime('%B %Y') if payslip_filter_mode == "Month" else f"{payslip_start.strftime('%d-%b-%y')} to {payslip_end.strftime('%d-%b-%y')}"
             payable_days = int(staff_data.get("payable_days", staff_data.get("days_worked", 0) + staff_data.get("paid_leaves", 0)))
 
@@ -1767,6 +1795,8 @@ elif page == "Payslip Generator" and user_role == "admin":
             has_adjustment = abs(float(adjustment_amount)) > 0.0001
             final_payable_adjusted = float(staff_data.get("due", 0.0)) + float(adjustment_amount)
             staff_data = dict(staff_data)
+            # Preserve Last Working Day for the PDF header as well.
+            staff_data["dol"] = dol_val
             staff_data["adjustment_amount"] = float(adjustment_amount)
             staff_data["adjustment_reason"] = adjustment_reason.strip()
             staff_data["final_payable_adjusted"] = final_payable_adjusted
@@ -1777,7 +1807,11 @@ elif page == "Payslip Generator" and user_role == "admin":
             st.markdown("---")
             st.markdown(f"#### Salary Statement Summary — {sel_staff_payslip}")
             period_label = "Payslip Month" if payslip_filter_mode == "Month" else "Payslip Period"
-            st.markdown(f"**Role:** {role} &nbsp;|&nbsp; **Date of Joining:** {doj_str} &nbsp;|&nbsp; **{period_label}:** {month_str}")
+            employment_header = f"**Role:** {role} &nbsp;|&nbsp; **Date of Joining:** {doj_str}"
+            if show_last_working_day:
+                employment_header += f" &nbsp;|&nbsp; **Last Working Day:** {dol_str}"
+            employment_header += f" &nbsp;|&nbsp; **{period_label}:** {month_str}"
+            st.markdown(employment_header)
 
             if is_ops_coordinator:
                 day_row = ["Payable Salary Days", "Calendar days from later of month start / Date of Joining, less unpaid leave", f"{payable_days} days"]
