@@ -1019,9 +1019,10 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
 
             if food_mode == "monthly":
                 # Monthly Food Allowance is paid centrally and is not part of an individual payslip.
-                # Under the monthly model, gross earnings are fixed pay pro-rata (+ commission where applicable).
                 food_entitled = 0.0
-                fuel_entitled = 0.0
+                # Fuel remains an individual earning for the Ops Coordinator and is
+                # pro-rated for actual worked days even when Food/Tea is on the monthly model.
+                fuel_entitled = prorate_monthly(monthly_fuel, worked_dates) if role_lower == "ops coordinator" else 0.0
             else:
                 food_entitled = food_allowance_for_dates(food_mode, monthly_food, allow_wd, allow_sun, worked_dates)
                 fuel_entitled = prorate_monthly(monthly_fuel, worked_dates)
@@ -1329,14 +1330,16 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
     # tracked separately under Staff & Payroll -> Monthly Food Allowance.
     if food_mode == "daily":
         summary_data.append([food_component, food_basis, f"Rs. {data_dict.get('food_tea_allowance', 0):,.2f}"])
-    if food_mode == "monthly":
+    if food_mode == "monthly" and is_ops_coordinator:
+        gross_basis = "Pro-rata fixed salary + pro-rata Fuel allowance"
+    elif food_mode == "monthly":
         gross_basis = "Pro-rata fixed salary + commission (where applicable)"
     elif is_cart_operator:
         gross_basis = "Pro-rata fixed salary + commission + daily Food/Tea allowance"
     else:
         gross_basis = "Pro-rata fixed salary + commission (where applicable) + daily Food/Tea + Fuel"
 
-    if food_mode == "daily" and not is_cart_operator:
+    if (is_ops_coordinator or food_mode == "daily") and not is_cart_operator:
         summary_data.append([
             "Monthly Fuel Allowance",
             f"Plan Rs. {data_dict.get('monthly_fuel_allowance', 0):,.2f}/month; pro-rata for days worked",
@@ -1844,14 +1847,16 @@ elif page == "Payslip Generator" and user_role == "admin":
             # monitored separately under Staff & Payroll -> Monthly Food Allowance.
             if food_mode == "daily":
                 summary_table_data.append([food_component, food_basis, f"₹{staff_data.get('food_tea_allowance', 0):,.2f}"])
-            if food_mode == "monthly":
+            if food_mode == "monthly" and is_ops_coordinator:
+                gross_basis = "Pro-rata fixed salary + pro-rata Fuel allowance"
+            elif food_mode == "monthly":
                 gross_basis = "Pro-rata fixed salary + commission (where applicable)"
             elif is_cart_operator:
                 gross_basis = "Pro-rata fixed salary + commission + daily Food/Tea allowance"
             else:
                 gross_basis = "Pro-rata fixed salary + commission (where applicable) + daily Food/Tea + Fuel"
 
-            if food_mode == "daily" and not is_cart_operator:
+            if (is_ops_coordinator or food_mode == "daily") and not is_cart_operator:
                 summary_table_data.append([
                     "Monthly Fuel Allowance",
                     f"Plan ₹{staff_data.get('monthly_fuel_allowance', 0):,.2f}/month; pro-rata for days worked",
@@ -5321,7 +5326,12 @@ elif page == "Staff & Payroll" and user_role == "admin":
                     if food_mode == "monthly":
                         # Monthly Food Allowance is a central expense, not an individual payroll earning.
                         food_entitled = 0.0
-                        fuel_entitled = 0.0
+                        # Ops Coordinator Fuel is an individual earning and remains payable
+                        # pro-rata for actual worked days under the monthly Food/Tea model.
+                        fuel_entitled = (
+                            sum(monthly_fuel / calendar.monthrange(d.year, d.month)[1] for d in worked_dates)
+                            if staff_role.lower() == "ops coordinator" else 0.0
+                        )
                     else:
                         food_entitled = sum((allow_sun if d.weekday() == 6 else allow_wd) for d in worked_dates)
                         fuel_entitled = sum(monthly_fuel / calendar.monthrange(d.year, d.month)[1] for d in worked_dates)
