@@ -3336,26 +3336,28 @@ elif page == "Cart Stock Plan" and user_role == "admin":
             # Compact HTML table so all three carts fit without internal scrollbars.
             st.html("""
             <style>
-            .max-stock-wrap { width:100%; margin:0 0 8px 0; }
+            .max-stock-wrap {
+                width:92%; max-width:1180px; margin:0 auto 12px auto;
+            }
             .max-stock-title {
-                font-family:'Fraunces',serif; font-size:15px; font-weight:800;
+                font-family:'Fraunces',serif; font-size:17px; font-weight:800;
                 color:#6F430D; background:#FFF7E8; border:1px solid #E7C88F;
-                border-radius:7px; padding:4px 10px; margin:4px 0 4px 0;
+                border-radius:7px; padding:5px 10px; margin:5px 0 5px 0;
             }
             table.max-stock-table {
                 width:100%; table-layout:fixed; border-collapse:collapse;
-                font-size:10px; line-height:1.05; background:#fff;
+                font-size:13.5px; line-height:1.15; background:#fff;
                 border:1px solid #D8C29D;
             }
             .max-stock-table th, .max-stock-table td {
-                border:1px solid #E3D6C2; padding:3px 5px; height:18px;
+                border:1px solid #E3D6C2; padding:4px 5px; height:23px;
                 text-align:center; white-space:nowrap;
             }
             .max-stock-table thead th {
-                background:#75450C; color:#fff; font-weight:800;
+                background:#75450C; color:#fff; font-weight:800; font-size:13.5px;
             }
             .max-stock-table th:first-child, .max-stock-table td:first-child {
-                width:23%; text-align:left; font-weight:700;
+                width:25%; text-align:left; font-weight:700;
             }
             .max-stock-table tbody tr:nth-child(even):not(.max-stock-total) td {
                 background:#FFF9F0;
