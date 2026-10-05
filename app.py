@@ -3804,14 +3804,15 @@ elif page == "Freezer Analysis" and user_role == "admin":
     pv1, pv2 = st.columns(2)
     pv1.metric("Current Total Stock", f"{tot_curr_b:,.0f} units")
     pv2.metric("Current Stock Value", f"₹{tot_stock_value_display:,}")
-    st.markdown(
-        "Includes amount "
-        f"<span style='color:#C43D17;font-weight:900;'>₹{pending_stock_payment:,.2f}</span> "
-        "against "
-        f"<span style='color:#C43D17;font-weight:900;'>{pending_stock_units:,}</span> "
-        "units of stock received",
-        unsafe_allow_html=True
-    )
+    if pending_stock_payment > 0:
+        st.markdown(
+            "Includes amount "
+            f"<span style='color:#C43D17;font-weight:900;'>₹{pending_stock_payment:,.2f}</span> "
+            "against "
+            f"<span style='color:#C43D17;font-weight:900;'>{pending_stock_units:,}</span> "
+            "units of stock received",
+            unsafe_allow_html=True
+        )
     cv1, cv2 = st.columns(2)
     cv1.metric("Current Cart Stock", f"{current_cart_stock:,.0f} units")
     cv2.metric("Cart Stock Value", f"₹{current_cart_stock_value_display:,}")
