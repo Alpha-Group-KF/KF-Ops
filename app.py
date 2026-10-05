@@ -317,13 +317,9 @@ def _int_num(x):
 # ----------------------------------------------------------------------
 # DATABASE CONNECTION
 # ----------------------------------------------------------------------
-print("[STARTUP] 1 - imports/config complete", flush=True)
 try:
-    print("[STARTUP] 2 - creating Streamlit PostgreSQL connection object", flush=True)
     db_conn = st.connection("postgresql", type="sql")
-    print("[STARTUP] 3 - connection object created", flush=True)
-except Exception as e:
-    print(f"[STARTUP] DB connection creation failed: {type(e).__name__}: {e}", flush=True)
+except Exception:
     db_conn = None
 
 @st.dialog("WhatsApp Confirmation")
@@ -407,9 +403,7 @@ def get_flavor_meta_by_code():
             pass
     return meta
 
-print("[STARTUP] 4 - loading flavour metadata", flush=True)
 FLAVOR_MAP = get_flavor_meta_by_code()
-print("[STARTUP] 5 - flavour metadata loaded; continuing app", flush=True)
 
 def load_active_staff_list():
     if db_conn is not None:
