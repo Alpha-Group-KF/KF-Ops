@@ -483,13 +483,6 @@ def list_daily_entries_with_prefill():
     return entries
 
 def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map, sold_map, total, phonepe, cash, remarks, staff_name="", staff_advance=0.0, food_tea_cash=0.0, cash_leakage=0.0):
-    # Tag all Daily Entry records saved through the Streamlit web app.
-    # Avoid duplicating the tag when an existing web entry is edited and saved again.
-    web_entry_tag = "[entry logged through web app]"
-    remarks_text = str(remarks or "").strip()
-    if web_entry_tag.lower() not in remarks_text.lower():
-        remarks_text = f"{remarks_text} {web_entry_tag}".strip()
-
     if db_conn is not None:
         with db_conn.session as s:
             res = s.execute(
@@ -504,7 +497,7 @@ def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map,
                     "date": entry_date, "cart": cart_name, "city": CITY, "staff": staff_name, 
                     "tot": float(total), "ph": float(phonepe), "cash": float(cash), 
                     "adv": float(staff_advance), "food": float(food_tea_cash), "leak": float(cash_leakage), 
-                    "rem": remarks_text
+                    "rem": str(remarks)
                 }
             )
             daily_id = res.scalar()
@@ -3685,9 +3678,6 @@ elif page == "Freezer Analysis" and user_role == "admin":
         tot_rem_b += removed_onward
         tot_curr_b += current_physical_base_stock
         stock_value_cp = float(current_physical_base_stock) * float(f_info["cost_price"])
-        # Round each displayed flavour value first so the displayed TOTAL exactly
-        # matches the sum of the values visible on screen.
-        stock_value_display = int(stock_value_cp + 0.5) if stock_value_cp >= 0 else int(stock_value_cp - 0.5)
         tot_stock_value_cp += stock_value_cp
 
         phys_base_rows.append({
@@ -3697,12 +3687,9 @@ elif page == "Freezer Analysis" and user_role == "admin":
             "Cart Addition": added_onward,
             "Stock Removed": removed_onward,
             "Current Stock": current_physical_base_stock,
-            "Stock Value": stock_value_display
+            "Stock Value (CP)": stock_value_cp
         })
 
-    # Displayed freezer value total = sum of the individually displayed rounded
-    # flavour values, avoiding a ₹1/₹2 visual mismatch caused by rounding only at total level.
-    tot_stock_value_display = int(sum(int(r["Stock Value"]) for r in phys_base_rows))
     phys_base_df = pd.DataFrame(phys_base_rows)
     phys_base_df = pd.concat([phys_base_df, pd.DataFrame([{
         "Flavour": "🔥 OVERALL TOTAL",
@@ -3711,147 +3698,51 @@ elif page == "Freezer Analysis" and user_role == "admin":
         "Cart Addition": tot_added_b,
         "Stock Removed": tot_rem_b,
         "Current Stock": tot_curr_b,
-        "Stock Value": tot_stock_value_display
+        "Stock Value (CP)": tot_stock_value_cp
     }])], ignore_index=True)
     st.dataframe(
         phys_base_df,
         hide_index=True,
         use_container_width=True,
         column_config={
-            "Stock Value": st.column_config.NumberColumn(
-                "Stock Value",
+            "Stock Value (CP)": st.column_config.NumberColumn(
+                "Stock Value (CP)",
                 help="Current stock valued at Cost Price (CP), not MRP",
-                format="₹%,.0f"
+                format="₹%,.2f"
             )
         }
     )
 
-    # Supplier amount still outstanding for stock receipts explicitly marked Pending,
-    # together with the units covered by those pending receipts.
+    # Supplier amount still outstanding for stock receipts explicitly marked Pending.
+    # payment_amount is the payable amount recorded on the Stock Received entry.
     pending_stock_payment = 0.0
-    pending_stock_units = 0
+    pending_stock_receipt_count = 0
     try:
         pending_payment_df = db_conn.query(
             """
             SELECT
-                COALESCE((
-                    SELECT SUM(r.payment_amount)
-                    FROM stock_received r
-                    WHERE LOWER(TRIM(COALESCE(r.payment_status, ''))) = 'pending'
-                ), 0) AS pending_amount,
-                COALESCE((
-                    SELECT SUM(i.received_units)
-                    FROM stock_received_items i
-                    JOIN stock_received r ON r.id = i.received_id
-                    WHERE LOWER(TRIM(COALESCE(r.payment_status, ''))) = 'pending'
-                ), 0) AS pending_units;
+                COALESCE(SUM(payment_amount), 0) AS pending_amount,
+                COUNT(*) AS pending_count
+            FROM stock_received
+            WHERE LOWER(TRIM(COALESCE(payment_status, ''))) = 'pending';
             """,
             ttl="0s"
         )
         if not pending_payment_df.empty:
             pending_stock_payment = float(_num(pending_payment_df.iloc[0].get("pending_amount")))
-            pending_stock_units = int(round(_num(pending_payment_df.iloc[0].get("pending_units"))))
+            pending_stock_receipt_count = int(_num(pending_payment_df.iloc[0].get("pending_count")))
     except Exception:
         pending_stock_payment = 0.0
-        pending_stock_units = 0
-
-    # Current cart stock = latest recorded closing position for each sales cart.
-    current_cart_stock = 0
-    current_cart_stock_value = 0.0
-    cart_stock_breakdown = {cart: {"units": 0, "value": 0.0} for cart in CARTS}
-    try:
-        cart_stock_df = db_conn.query(
-            """
-            WITH latest_cart_entries AS (
-                SELECT DISTINCT ON (cart_name) id, cart_name, entry_date
-                FROM daily_cart_entries
-                WHERE cart_name IN ('HOSUR CART 01', 'HOSUR CART 02', 'HOSUR CART 03')
-                ORDER BY cart_name, entry_date DESC, id DESC
-            )
-            SELECT e.cart_name, i.flavor_code, COALESCE(i.closing_units, 0) AS closing_units
-            FROM latest_cart_entries e
-            JOIN daily_cart_items i ON i.daily_entry_id = e.id;
-            """,
-            ttl="0s"
-        )
-        if not cart_stock_df.empty:
-            for _, r in cart_stock_df.iterrows():
-                cart_name = str(r.get("cart_name") or "").strip()
-                code = str(r.get("flavor_code") or "").strip()
-                units = int(round(_num(r.get("closing_units"))))
-                value = units * float(FLAVOR_MAP[code]["cost_price"]) if code in FLAVOR_MAP else 0.0
-                current_cart_stock += units
-                current_cart_stock_value += value
-                if cart_name in cart_stock_breakdown:
-                    cart_stock_breakdown[cart_name]["units"] += units
-                    cart_stock_breakdown[cart_name]["value"] += value
-    except Exception:
-        current_cart_stock = 0
-        current_cart_stock_value = 0.0
-        cart_stock_breakdown = {cart: {"units": 0, "value": 0.0} for cart in CARTS}
-
-    # Round each displayed cart total first and then add those displayed values for
-    # the overall cart value, so the TOTAL always equals the visible cart rows.
-    for cart in CARTS:
-        raw_cart_value = float(cart_stock_breakdown.get(cart, {}).get("value", 0.0))
-        cart_stock_breakdown[cart]["display_value"] = (
-            int(raw_cart_value + 0.5) if raw_cart_value >= 0 else int(raw_cart_value - 0.5)
-        )
-    current_cart_stock_value_display = int(
-        sum(cart_stock_breakdown[cart]["display_value"] for cart in CARTS)
-    )
+        pending_stock_receipt_count = 0
 
     pv1, pv2 = st.columns(2)
-    pv1.metric("Current Total Stock", f"{tot_curr_b:,.0f} units")
-    pv2.metric("Current Stock Value", f"₹{tot_stock_value_display:,}")
-    st.markdown(
-        "Includes amount "
-        f"<span style='color:#C43D17;font-weight:900;'>₹{pending_stock_payment:,.2f}</span> "
-        "against "
-        f"<span style='color:#C43D17;font-weight:900;'>{pending_stock_units:,}</span> "
-        "units of stock received",
-        unsafe_allow_html=True
-    )
-    cv1, cv2 = st.columns(2)
-    cv1.metric("Current Cart Stock", f"{current_cart_stock:,.0f} units")
-    cv2.metric("Cart Stock Value", f"₹{current_cart_stock_value_display:,}")
-
-    # Compact cart-wise split. Keep the total row visible even though the two summary
-    # metrics above also show the overall cart position.
-    cart_rows_html = []
-    for cart in CARTS:
-        cart_data = cart_stock_breakdown.get(cart, {"units": 0, "value": 0.0})
-        cart_rows_html.append(
-            f"""<div style='display:grid;grid-template-columns:1.7fr 0.8fr 1fr;align-items:center;
-                    padding:7px 10px;border-top:1px solid #EAD9BC;font-size:12px;'>
-                    <div style='font-weight:800;color:#4A2418;'>{escape(cart)}</div>
-                    <div style='text-align:right;font-weight:800;color:#124A1D;'>{cart_data['units']:,} units</div>
-                    <div style='text-align:right;font-weight:800;color:#70440E;'>₹{cart_data['display_value']:,}</div>
-                </div>"""
+    pv1.metric("Current Stock Value (CP)", f"₹{tot_stock_value_cp:,.2f}")
+    pv2.metric("Pending Stock Payment", f"₹{pending_stock_payment:,.2f}")
+    if pending_stock_receipt_count > 0:
+        st.caption(
+            f"{pending_stock_receipt_count} stock receipt(s) are currently marked Pending. "
+            "The pending payment is shown separately from stock value."
         )
-    cart_rows_html.append(
-        f"""<div style='display:grid;grid-template-columns:1.7fr 0.8fr 1fr;align-items:center;
-                padding:8px 10px;border-top:2px solid #D8B879;background:#FFF2DC;font-size:12px;'>
-                <div style='font-weight:900;color:#4A2418;'>TOTAL</div>
-                <div style='text-align:right;font-weight:900;color:#124A1D;'>{current_cart_stock:,} units</div>
-                <div style='text-align:right;font-weight:900;color:#70440E;'>₹{current_cart_stock_value_display:,}</div>
-            </div>"""
-    )
-    st.markdown(
-        f"""
-        <div style='margin-top:8px;border:1px solid #E3CBA0;border-radius:9px;overflow:hidden;
-                    background:#FFFBF2;box-shadow:0 1px 2px rgba(0,0,0,0.03);'>
-            <div style='display:grid;grid-template-columns:1.7fr 0.8fr 1fr;align-items:center;
-                        padding:7px 10px;background:#F6E7CC;font-size:11px;color:#6B4A22;'>
-                <div style='font-weight:900;'>Cart-wise Stock</div>
-                <div style='text-align:right;font-weight:900;'>Units</div>
-                <div style='text-align:right;font-weight:900;'>Value</div>
-            </div>
-            {''.join(cart_rows_html)}
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
 
     # --- SECTION 2: Suggested Orders & Inventory Runway (Based on Physical-Base Stock) ---
     st.markdown("---")
