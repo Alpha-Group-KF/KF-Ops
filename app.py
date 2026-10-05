@@ -483,6 +483,13 @@ def list_daily_entries_with_prefill():
     return entries
 
 def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map, sold_map, total, phonepe, cash, remarks, staff_name="", staff_advance=0.0, food_tea_cash=0.0, cash_leakage=0.0):
+    # Tag all Daily Entry records saved through the Streamlit web app.
+    # Avoid duplicating the tag when an existing web entry is edited and saved again.
+    web_entry_tag = "[entry logged through web app]"
+    remarks_text = str(remarks or "").strip()
+    if web_entry_tag.lower() not in remarks_text.lower():
+        remarks_text = f"{remarks_text} {web_entry_tag}".strip()
+
     if db_conn is not None:
         with db_conn.session as s:
             res = s.execute(
@@ -497,7 +504,7 @@ def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map,
                     "date": entry_date, "cart": cart_name, "city": CITY, "staff": staff_name, 
                     "tot": float(total), "ph": float(phonepe), "cash": float(cash), 
                     "adv": float(staff_advance), "food": float(food_tea_cash), "leak": float(cash_leakage), 
-                    "rem": str(remarks)
+                    "rem": remarks_text
                 }
             )
             daily_id = res.scalar()
@@ -3660,6 +3667,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
 
     phys_base_rows = []
     tot_base_b, tot_rec_b, tot_added_b, tot_rem_b, tot_curr_b = 0, 0, 0, 0, 0
+    tot_stock_value_cp = 0.0
     phys_curr_map = get_physical_current_stock_map()
 
     for code in FLAVOR_CODES:
@@ -3676,26 +3684,82 @@ elif page == "Freezer Analysis" and user_role == "admin":
         tot_added_b += added_onward
         tot_rem_b += removed_onward
         tot_curr_b += current_physical_base_stock
+        stock_value_cp = float(current_physical_base_stock) * float(f_info["cost_price"])
+        tot_stock_value_cp += stock_value_cp
 
         phys_base_rows.append({
             "Flavour": f_info["name"],
-            "Per Last Audit": base_audit,
-            "Recv post Audit": rec_onward,
-            "Cart Additions": added_onward,
-            "Removed": removed_onward,
-            "Current Stock": current_physical_base_stock
+            "Last Physical Audit": base_audit,
+            "Stock Received": rec_onward,
+            "Cart Addition": added_onward,
+            "Stock Removed": removed_onward,
+            "Current Stock": current_physical_base_stock,
+            "Stock Value": stock_value_cp
         })
 
     phys_base_df = pd.DataFrame(phys_base_rows)
     phys_base_df = pd.concat([phys_base_df, pd.DataFrame([{
         "Flavour": "🔥 OVERALL TOTAL",
-        "Per Last Audit": tot_base_b,
-        "Recv post Audit": tot_rec_b,
-        "Cart Additions": tot_added_b,
-        "Removed": tot_rem_b,
-        "Current Stock": tot_curr_b
+        "Last Physical Audit": tot_base_b,
+        "Stock Received": tot_rec_b,
+        "Cart Addition": tot_added_b,
+        "Stock Removed": tot_rem_b,
+        "Current Stock": tot_curr_b,
+        "Stock Value": tot_stock_value_cp
     }])], ignore_index=True)
-    st.dataframe(phys_base_df, hide_index=True, use_container_width=True)
+    st.dataframe(
+        phys_base_df,
+        hide_index=True,
+        use_container_width=True,
+        column_config={
+            "Stock Value": st.column_config.NumberColumn(
+                "Stock Value",
+                help="Current stock valued at Cost Price (CP), not MRP",
+                format="₹%,.2f"
+            )
+        }
+    )
+
+    # Supplier amount still outstanding for stock receipts explicitly marked Pending,
+    # together with the units covered by those pending receipts.
+    pending_stock_payment = 0.0
+    pending_stock_units = 0
+    try:
+        pending_payment_df = db_conn.query(
+            """
+            SELECT
+                COALESCE((
+                    SELECT SUM(r.payment_amount)
+                    FROM stock_received r
+                    WHERE LOWER(TRIM(COALESCE(r.payment_status, ''))) = 'pending'
+                ), 0) AS pending_amount,
+                COALESCE((
+                    SELECT SUM(i.received_units)
+                    FROM stock_received_items i
+                    JOIN stock_received r ON r.id = i.received_id
+                    WHERE LOWER(TRIM(COALESCE(r.payment_status, ''))) = 'pending'
+                ), 0) AS pending_units;
+            """,
+            ttl="0s"
+        )
+        if not pending_payment_df.empty:
+            pending_stock_payment = float(_num(pending_payment_df.iloc[0].get("pending_amount")))
+            pending_stock_units = int(round(_num(pending_payment_df.iloc[0].get("pending_units"))))
+    except Exception:
+        pending_stock_payment = 0.0
+        pending_stock_units = 0
+
+    pv1, pv2 = st.columns(2)
+    pv1.metric("Current Total Stock", f"{tot_curr_b:,.0f} units")
+    pv2.metric("Current Stock Value", f"₹{tot_stock_value_cp:,.2f}")
+    st.markdown(
+        "Includes amount "
+        f"<span style='color:#C43D17;font-weight:900;'>₹{pending_stock_payment:,.2f}</span> "
+        "against "
+        f"<span style='color:#C43D17;font-weight:900;'>{pending_stock_units:,}</span> "
+        "units of stock received",
+        unsafe_allow_html=True
+    )
 
     # --- SECTION 2: Suggested Orders & Inventory Runway (Based on Physical-Base Stock) ---
     st.markdown("---")
@@ -3747,37 +3811,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
         st.session_state["_pending_po_screen_mode"] = "Create New Order"
         st.rerun()
 
-# --- TABLE 3: Audit Date Variance Comparison ---
-    st.markdown("---")
-    st.markdown(f"### 3. Audit Date Variance Comparison &nbsp; *(As on Audit Date: {audit_date_str})*")
-    comparison_rows = []
-    tot_rec_a, tot_issued_a, tot_removed_a, tot_calc_a, tot_phys, has_audit = 0, 0, 0, 0, 0, bool(audit_map)
-
-    for code in FLAVOR_CODES:
-        f_info = FLAVOR_MAP[code]
-        recv_units, issued_units, removed_units = int(rec_map_audit.get(code, 0)), int(added_map_audit.get(code, 0)), int(rem_map_audit.get(code, 0))
-        calc_stock = recv_units - issued_units - removed_units
-        tot_rec_a += recv_units; tot_issued_a += issued_units; tot_removed_a += removed_units; tot_calc_a += calc_stock
-
-        phys_stock = audit_map.get(code, None)
-        if phys_stock is not None:
-            phys_stock = int(phys_stock); tot_phys += phys_stock; var_qty = phys_stock - calc_stock
-            var_status = "✅ Match" if var_qty == 0 else (f"🟢 +{var_qty}" if var_qty > 0 else f"🔴 {var_qty}")
-            phys_display, var_display = str(phys_stock), str(var_qty)
-        else: phys_display, var_display, var_status = "—", "—", "⚪ Missing"
-
-        comparison_rows.append({"Flavour": f_info["name"], "Received (In)": recv_units, "Issued (Carts)": issued_units, "Removed": removed_units, "Calc. Stock (Audit)": calc_stock, "Physical Audit Count": phys_display, "Variance": var_display, "Audit Status": var_status})
-
-    c_m1, c_m2, c_m3, c_m4, c_m5, c_m6 = st.columns(6)
-    c_m1.metric("Inward (at Audit)", f"{tot_rec_a} pcs"); c_m2.metric("Issued (at Audit)", f"{tot_issued_a} pcs"); c_m3.metric("Removed (at Audit)", f"{tot_removed_a} pcs"); c_m4.metric("Calc. Stock (at Audit)", f"{tot_calc_a} pcs"); c_m5.metric("Physical Audited", f"{tot_phys} pcs" if has_audit else "Not Available")
-    net_var = tot_phys - tot_calc_a if has_audit else 0
-    c_m6.metric("Net Variance", f"{net_var:+d} pcs" if has_audit else "N/A")
-
-    comp_df = pd.DataFrame(comparison_rows)
-    comp_df = pd.concat([comp_df, pd.DataFrame([{"Flavour": "🔥 OVERALL TOTAL", "Received (In)": tot_rec_a, "Issued (Carts)": tot_issued_a, "Removed": tot_removed_a, "Calc. Stock (Audit)": tot_calc_a, "Physical Audit Count": str(tot_phys) if has_audit else "—", "Variance": f"{net_var:+d}" if has_audit else "—", "Audit Status": "✅ Match" if net_var == 0 and has_audit else (f"⚠️ {net_var:+d}" if has_audit else "—")}])], ignore_index=True)
-    st.dataframe(comp_df, hide_index=True, use_container_width=True)
-
-    st.markdown("---"); st.markdown("### 4. Detailed Stock Movement Logs")
+    st.markdown("---"); st.markdown("### 3. Detailed Stock Movement Logs")
     m_tab1, m_tab2, m_tab3, m_tab4 = st.tabs(["📋 Purchase Orders", "📦 Received Deliveries", "🔍 Physical Stock Audits", "🗑️ Stock Removed"])
 
     with m_tab1:
