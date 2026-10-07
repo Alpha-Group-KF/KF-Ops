@@ -318,7 +318,16 @@ def _int_num(x):
 # DATABASE CONNECTION
 # ----------------------------------------------------------------------
 try:
-    db_conn = st.connection("postgresql", type="sql")
+    # Psycopg3 automatically prepares a statement after repeated executions.
+    # Supabase/Supavisor transaction-pooled connections can reuse server-side
+    # prepared-statement names, causing DuplicatePreparedStatement errors.
+    # Disable automatic prepared statements for this connection.
+    db_conn = st.connection(
+        "postgresql",
+        type="sql",
+        connect_args={"prepare_threshold": None},
+        pool_pre_ping=True,
+    )
 except Exception:
     db_conn = None
 
