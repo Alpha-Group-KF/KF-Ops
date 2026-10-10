@@ -6233,9 +6233,10 @@ elif page == "Dashboard" and user_role == "admin":
                             "Cash": "sum",
                             "Staff_Advance": "sum",
                             "Food_Tea_Cash": "sum",
-                            "Cash_Leakage": "sum"  # <--- Added Cash Leakage
+                            "Cash_Leakage_Explained": "sum",
+                            "Cash_Leakage_Unexplained": "sum"
                         }).reset_index().sort_values("Date", ascending=False)
-                        
+
             date_wise_table = date_wise_agg.rename(columns={
                             "Sold_Total": "Units Sold",
                             "Total_Collection": "Revenue (₹)",
@@ -6243,7 +6244,8 @@ elif page == "Dashboard" and user_role == "admin":
                             "Cash": "Cash (₹)",
                             "Staff_Advance": "Staff Advance (₹)",
                             "Food_Tea_Cash": "Food / Tea (₹)",
-                            "Cash_Leakage": "Cash Leakage (₹)" # <--- Renamed for display
+                            "Cash_Leakage_Explained": "Leakage Explained (₹)",
+                            "Cash_Leakage_Unexplained": "Leakage Unexplained (₹)"
                         })
             date_wise_table["Units Sold"] = date_wise_table["Units Sold"].apply(lambda x: int(round(x)))
             date_wise_table["Date"] = date_wise_table["Date"].dt.strftime("%d-%b-%y")
@@ -6256,24 +6258,34 @@ elif page == "Dashboard" and user_role == "admin":
                 "Cash (₹)": float(date_wise_table["Cash (₹)"].sum()),
                 "Staff Advance (₹)": float(date_wise_table["Staff Advance (₹)"].sum()),
                 "Food / Tea (₹)": float(date_wise_table["Food / Tea (₹)"].sum()),
-                "Cash Leakage (₹)": float(date_wise_table["Cash Leakage (₹)"].sum()),
+                "Leakage Explained (₹)": float(date_wise_table["Leakage Explained (₹)"].sum()),
+                "Leakage Unexplained (₹)": float(date_wise_table["Leakage Unexplained (₹)"].sum()),
             }
             date_wise_table = pd.concat([date_wise_table, pd.DataFrame([date_wise_total])], ignore_index=True)
 
-            st.dataframe(date_wise_table, hide_index=True, use_container_width=True, column_config={
-                            "Revenue (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
-                            "PhonePe (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
-                            "Cash (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
-                            "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
-                            "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
-                            "Cash Leakage (₹)": st.column_config.NumberColumn(format="₹%,.2f")
-                        })
-            
+            st.dataframe(
+                date_wise_table,
+                hide_index=True,
+                use_container_width=True,
+                column_config={
+                    "Date": st.column_config.TextColumn(width="small"),
+                    "Units Sold": st.column_config.NumberColumn(width="small"),
+                    "Revenue (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
+                    "PhonePe (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
+                    "Cash (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
+                    "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
+                    "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
+                    "Leakage Explained (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
+                    "Leakage Unexplained (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
+                },
+                row_height=26
+            )
+
             st.markdown("#### Itemized Daily Cart Sales Log")
             display_cols = [
                 "Date", "Cart", "Sold_Total", "Total_Collection", "PhonePe", "Cash",
                 "Staff_Name", "Staff_Advance", "Food_Tea_Cash",
-                "Cash_Leakage_Explained", "Cash_Leakage_Unexplained", "Remarks"
+                "Cash_Leakage_Explained", "Cash_Leakage_Unexplained"
             ]
             sales_table = range_df.sort_values(["Date", "Cart"])[display_cols].rename(columns={
                             "Sold_Total": "Units Sold", 
@@ -6302,29 +6314,27 @@ elif page == "Dashboard" and user_role == "admin":
                 "Food / Tea (₹)": float(sales_table["Food / Tea (₹)"].sum()),
                 "Leakage Explained (₹)": float(sales_table["Leakage Explained (₹)"].sum()),
                 "Leakage Unexplained (₹)": float(sales_table["Leakage Unexplained (₹)"].sum()),
-                "Remarks": "",
             }
             sales_table = pd.concat([sales_table, pd.DataFrame([sales_total])], ignore_index=True)
 
             st.dataframe(
-                            sales_table, 
-                            hide_index=True, 
-                            use_container_width=True, 
-                            column_config={
-                                "Date": st.column_config.TextColumn(width="small"),
-                                "Cart": st.column_config.TextColumn(width="small"),
-                                "Units Sold": st.column_config.NumberColumn(width="small"),
-                                "Revenue (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
-                                "PhonePe (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
-                                "Cash (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
-                                "Staff Name": st.column_config.TextColumn(width="small"),
-                                "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
-                                "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
-                                "Leakage Explained (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
-                                "Leakage Unexplained (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
-                                "Remarks": st.column_config.TextColumn(width="medium"),
-                            },
-                            row_height=28
-                        )
+                sales_table, 
+                hide_index=True, 
+                use_container_width=True, 
+                column_config={
+                    "Date": st.column_config.TextColumn(width="small"),
+                    "Cart": st.column_config.TextColumn(width="medium"),
+                    "Units Sold": st.column_config.NumberColumn(width="small"),
+                    "Revenue (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
+                    "PhonePe (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
+                    "Cash (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
+                    "Staff Name": st.column_config.TextColumn(width="medium"),
+                    "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
+                    "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
+                    "Leakage Explained (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
+                    "Leakage Unexplained (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
+                },
+                row_height=26
+            )
         else: 
             st.caption("No sales data recorded in this period.")
