@@ -6235,7 +6235,7 @@ elif page == "Dashboard" and user_role == "admin":
                             "Food_Tea_Cash": "sum",
                             "Cash_Leakage_Explained": "sum",
                             "Cash_Leakage_Unexplained": "sum"
-                        }).reset_index().sort_values("Date", ascending=False)
+                        }).reset_index()
 
             date_wise_table = date_wise_agg.rename(columns={
                             "Sold_Total": "Units Sold",
@@ -6248,13 +6248,13 @@ elif page == "Dashboard" and user_role == "admin":
                             "Cash_Leakage_Unexplained": "Leakage Unexplained (₹)"
                         })
             date_wise_table["Units Sold"] = date_wise_table["Units Sold"].apply(lambda x: int(round(x)))
-            # Preserve an explicit descending date order before converting the Date
-            # column to its display string.
+            date_wise_table["Date"] = pd.to_datetime(date_wise_table["Date"]).dt.date
+
+            # Initial order: latest date first. Keeping Date as a true date value also
+            # ensures any user-triggered sort remains chronological rather than text-based.
             date_wise_table = date_wise_table.sort_values("Date", ascending=False).reset_index(drop=True)
-            date_wise_table["Date"] = date_wise_table["Date"].dt.strftime("%d-%b-%y")
 
             date_wise_total = {
-                "Date": "TOTAL",
                 "Units Sold": int(date_wise_table["Units Sold"].sum()),
                 "Revenue (₹)": float(date_wise_table["Revenue (₹)"].sum()),
                 "PhonePe (₹)": float(date_wise_table["PhonePe (₹)"].sum()),
@@ -6264,15 +6264,45 @@ elif page == "Dashboard" and user_role == "admin":
                 "Leakage Explained (₹)": float(date_wise_table["Leakage Explained (₹)"].sum()),
                 "Leakage Unexplained (₹)": float(date_wise_table["Leakage Unexplained (₹)"].sum()),
             }
-            date_wise_table = pd.concat([date_wise_table, pd.DataFrame([date_wise_total])], ignore_index=True)
 
-            def _highlight_report_total(row):
-                if str(row.get("Date", "")).strip().upper() == "TOTAL":
-                    return [
-                        "background-color:#70440E;color:#FFFFFF;font-weight:900;"
-                        for _ in row
-                    ]
-                return ["" for _ in row]
+            def _render_report_total_row(total_values):
+                # Fixed HTML total row kept outside the sortable dataframe so clicking
+                # any table header can never move the TOTAL row away from the bottom.
+                total_cells = [
+                    "TOTAL",
+                    f"{int(total_values['Units Sold']):,}",
+                    f"₹{float(total_values['Revenue (₹)']):,.0f}",
+                    f"₹{float(total_values['PhonePe (₹)']):,.0f}",
+                    f"₹{float(total_values['Cash (₹)']):,.0f}",
+                    f"₹{float(total_values['Staff Advance (₹)']):,.0f}",
+                    f"₹{float(total_values['Food / Tea (₹)']):,.0f}",
+                    f"₹{float(total_values['Leakage Explained (₹)']):,.0f}",
+                    f"₹{float(total_values['Leakage Unexplained (₹)']):,.0f}",
+                ]
+                alignments = ["left"] + ["right"] * 8
+                cell_html = "".join(
+                    f"<div style='padding:7px 6px;text-align:{alignments[i]};"
+                    f"font-weight:900;color:#FFFFFF;white-space:nowrap;overflow:hidden;"
+                    f"text-overflow:ellipsis;'>{escape(str(value))}</div>"
+                    for i, value in enumerate(total_cells)
+                )
+                st.markdown(
+                    f"""
+                    <div style="
+                        display:grid;
+                        grid-template-columns:0.72fr 0.62fr 1.02fr 0.92fr 0.82fr 1.08fr 0.92fr 1.18fr 1.28fr;
+                        background:#70440E;
+                        border:1px solid #5F3508;
+                        border-radius:0 0 7px 7px;
+                        margin-top:-1px;
+                        margin-bottom:8px;
+                        font-size:11px;
+                        align-items:center;">
+                        {cell_html}
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
 
             date_wise_styled = (
                 date_wise_table.style
@@ -6284,21 +6314,18 @@ elif page == "Dashboard" and user_role == "admin":
                         "font-weight": "700",
                     }
                 )
-                .apply(_highlight_report_total, axis=1)
             )
 
-            # Date and Units Sold deliberately kept extra-narrow so the amount columns
-            # have more room and the table remains visible without horizontal scrolling.
             st.dataframe(
                 date_wise_styled,
                 hide_index=True,
                 use_container_width=True,
                 column_config={
-                    "Date": st.column_config.TextColumn(width=78),
-                    "Units Sold": st.column_config.NumberColumn(width=66),
+                    "Date": st.column_config.DateColumn(format="DD-MMM-YY", width=72),
+                    "Units Sold": st.column_config.NumberColumn(width=62),
                     "Revenue (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=102),
                     "PhonePe (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=92),
-                    "Cash (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=86),
+                    "Cash (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=82),
                     "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=108),
                     "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=92),
                     "Leakage Explained (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=118),
@@ -6306,38 +6333,35 @@ elif page == "Dashboard" and user_role == "admin":
                 },
                 row_height=25
             )
+            _render_report_total_row(date_wise_total)
 
             st.markdown("#### Itemized Daily Cart Sales Log")
 
-            # Prepare one common itemized dataset, then display a separate compact
-            # table for each cart. The Cart column is intentionally removed from the
-            # visible tables to provide more room for the financial columns.
+            # No filters for the itemized log. Each cart is shown separately, so the
+            # Cart and Staff Name columns are not needed in the visible tables.
             display_cols = [
                 "Date", "Cart", "Sold_Total", "Total_Collection", "PhonePe", "Cash",
-                "Staff_Name", "Staff_Advance", "Food_Tea_Cash",
+                "Staff_Advance", "Food_Tea_Cash",
                 "Cash_Leakage_Explained", "Cash_Leakage_Unexplained"
             ]
-            sales_table = range_df.sort_values(["Date", "Cart"])[display_cols].rename(columns={
-                            "Sold_Total": "Units Sold", 
-                            "Total_Collection": "Revenue (₹)", 
-                            "PhonePe": "PhonePe (₹)", 
-                            "Cash": "Cash (₹)", 
-                            "Staff_Name": "Staff Name", 
-                            "Staff_Advance": "Staff Advance (₹)", 
+            sales_table = range_df[display_cols].rename(columns={
+                            "Sold_Total": "Units Sold",
+                            "Total_Collection": "Revenue (₹)",
+                            "PhonePe": "PhonePe (₹)",
+                            "Cash": "Cash (₹)",
+                            "Staff_Advance": "Staff Advance (₹)",
                             "Food_Tea_Cash": "Food / Tea (₹)",
                             "Cash_Leakage_Explained": "Leakage Explained (₹)",
                             "Cash_Leakage_Unexplained": "Leakage Unexplained (₹)"
                         })
             sales_table["Units Sold"] = sales_table["Units Sold"].apply(lambda x: int(round(x)))
-            sales_table["Date"] = sales_table["Date"].dt.strftime("%d-%b-%y")
-
-            # Cart selection is no longer required because all three carts are shown
-            # as their own sections. Staff Name remains available as a report filter,
-            # but is removed from the visible cart tables below.
-            sales_table = apply_smart_filters(sales_table, ["Staff Name"], "sales_filters")
+            sales_table["Date"] = pd.to_datetime(sales_table["Date"]).dt.date
 
             for cart_name in CARTS:
                 cart_table = sales_table[sales_table["Cart"] == cart_name].copy()
+
+                # Default order is latest date first for every cart table.
+                cart_table = cart_table.sort_values("Date", ascending=False).reset_index(drop=True)
 
                 cart_units = int(cart_table["Units Sold"].sum()) if not cart_table.empty else 0
                 cart_revenue = float(cart_table["Revenue (₹)"].sum()) if not cart_table.empty else 0.0
@@ -6367,10 +6391,9 @@ elif page == "Dashboard" and user_role == "admin":
                     st.caption("No sales entries for this cart in the selected period.")
                     continue
 
-                cart_table = cart_table.drop(columns=["Cart", "Staff Name"])
+                cart_table = cart_table.drop(columns=["Cart"])
 
                 cart_total = {
-                    "Date": "TOTAL",
                     "Units Sold": int(cart_table["Units Sold"].sum()),
                     "Revenue (₹)": float(cart_table["Revenue (₹)"].sum()),
                     "PhonePe (₹)": float(cart_table["PhonePe (₹)"].sum()),
@@ -6380,7 +6403,7 @@ elif page == "Dashboard" and user_role == "admin":
                     "Leakage Explained (₹)": float(cart_table["Leakage Explained (₹)"].sum()),
                     "Leakage Unexplained (₹)": float(cart_table["Leakage Unexplained (₹)"].sum()),
                 }
-                cart_table = pd.concat([cart_table, pd.DataFrame([cart_total])], ignore_index=True)
+
                 cart_table_styled = (
                     cart_table.style
                     .set_properties(
@@ -6391,7 +6414,6 @@ elif page == "Dashboard" and user_role == "admin":
                             "font-weight": "700",
                         }
                     )
-                    .apply(_highlight_report_total, axis=1)
                 )
 
                 st.dataframe(
@@ -6399,7 +6421,7 @@ elif page == "Dashboard" and user_role == "admin":
                     hide_index=True,
                     use_container_width=True,
                     column_config={
-                        "Date": st.column_config.TextColumn(width=76),
+                        "Date": st.column_config.DateColumn(format="DD-MMM-YY", width=72),
                         "Units Sold": st.column_config.NumberColumn(width=62),
                         "Revenue (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=104),
                         "PhonePe (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=94),
@@ -6411,5 +6433,6 @@ elif page == "Dashboard" and user_role == "admin":
                     },
                     row_height=25
                 )
+                _render_report_total_row(cart_total)
         else: 
             st.caption("No sales data recorded in this period.")
