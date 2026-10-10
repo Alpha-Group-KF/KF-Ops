@@ -6248,6 +6248,9 @@ elif page == "Dashboard" and user_role == "admin":
                             "Cash_Leakage_Unexplained": "Leakage Unexplained (₹)"
                         })
             date_wise_table["Units Sold"] = date_wise_table["Units Sold"].apply(lambda x: int(round(x)))
+            # Preserve an explicit descending date order before converting the Date
+            # column to its display string.
+            date_wise_table = date_wise_table.sort_values("Date", ascending=False).reset_index(drop=True)
             date_wise_table["Date"] = date_wise_table["Date"].dt.strftime("%d-%b-%y")
 
             date_wise_total = {
@@ -6271,7 +6274,18 @@ elif page == "Dashboard" and user_role == "admin":
                     ]
                 return ["" for _ in row]
 
-            date_wise_styled = date_wise_table.style.apply(_highlight_report_total, axis=1)
+            date_wise_styled = (
+                date_wise_table.style
+                .set_properties(
+                    subset=["Date", "Units Sold", "Revenue (₹)"],
+                    **{
+                        "background-color": "#FFF2DC",
+                        "color": "#4A2418",
+                        "font-weight": "700",
+                    }
+                )
+                .apply(_highlight_report_total, axis=1)
+            )
 
             # Date and Units Sold deliberately kept extra-narrow so the amount columns
             # have more room and the table remains visible without horizontal scrolling.
@@ -6282,13 +6296,13 @@ elif page == "Dashboard" and user_role == "admin":
                 column_config={
                     "Date": st.column_config.TextColumn(width=78),
                     "Units Sold": st.column_config.NumberColumn(width=66),
-                    "Revenue (₹)": st.column_config.NumberColumn(format="₹%,.2f", width=102),
-                    "PhonePe (₹)": st.column_config.NumberColumn(format="₹%,.2f", width=92),
-                    "Cash (₹)": st.column_config.NumberColumn(format="₹%,.2f", width=86),
-                    "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%,.2f", width=108),
-                    "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%,.2f", width=92),
-                    "Leakage Explained (₹)": st.column_config.NumberColumn(format="₹%,.2f", width=118),
-                    "Leakage Unexplained (₹)": st.column_config.NumberColumn(format="₹%,.2f", width=126),
+                    "Revenue (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=102),
+                    "PhonePe (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=92),
+                    "Cash (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=86),
+                    "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=108),
+                    "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=92),
+                    "Leakage Explained (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=118),
+                    "Leakage Unexplained (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=126),
                 },
                 row_height=25
             )
@@ -6318,7 +6332,8 @@ elif page == "Dashboard" and user_role == "admin":
             sales_table["Date"] = sales_table["Date"].dt.strftime("%d-%b-%y")
 
             # Cart selection is no longer required because all three carts are shown
-            # as their own sections. Retain the useful Staff Name filter.
+            # as their own sections. Staff Name remains available as a report filter,
+            # but is removed from the visible cart tables below.
             sales_table = apply_smart_filters(sales_table, ["Staff Name"], "sales_filters")
 
             for cart_name in CARTS:
@@ -6352,7 +6367,7 @@ elif page == "Dashboard" and user_role == "admin":
                     st.caption("No sales entries for this cart in the selected period.")
                     continue
 
-                cart_table = cart_table.drop(columns=["Cart"])
+                cart_table = cart_table.drop(columns=["Cart", "Staff Name"])
 
                 cart_total = {
                     "Date": "TOTAL",
@@ -6360,14 +6375,24 @@ elif page == "Dashboard" and user_role == "admin":
                     "Revenue (₹)": float(cart_table["Revenue (₹)"].sum()),
                     "PhonePe (₹)": float(cart_table["PhonePe (₹)"].sum()),
                     "Cash (₹)": float(cart_table["Cash (₹)"].sum()),
-                    "Staff Name": "",
                     "Staff Advance (₹)": float(cart_table["Staff Advance (₹)"].sum()),
                     "Food / Tea (₹)": float(cart_table["Food / Tea (₹)"].sum()),
                     "Leakage Explained (₹)": float(cart_table["Leakage Explained (₹)"].sum()),
                     "Leakage Unexplained (₹)": float(cart_table["Leakage Unexplained (₹)"].sum()),
                 }
                 cart_table = pd.concat([cart_table, pd.DataFrame([cart_total])], ignore_index=True)
-                cart_table_styled = cart_table.style.apply(_highlight_report_total, axis=1)
+                cart_table_styled = (
+                    cart_table.style
+                    .set_properties(
+                        subset=["Date", "Units Sold", "Revenue (₹)"],
+                        **{
+                            "background-color": "#FFF2DC",
+                            "color": "#4A2418",
+                            "font-weight": "700",
+                        }
+                    )
+                    .apply(_highlight_report_total, axis=1)
+                )
 
                 st.dataframe(
                     cart_table_styled,
@@ -6376,14 +6401,13 @@ elif page == "Dashboard" and user_role == "admin":
                     column_config={
                         "Date": st.column_config.TextColumn(width=76),
                         "Units Sold": st.column_config.NumberColumn(width=62),
-                        "Revenue (₹)": st.column_config.NumberColumn(format="₹%,.2f", width=92),
-                        "PhonePe (₹)": st.column_config.NumberColumn(format="₹%,.2f", width=84),
-                        "Cash (₹)": st.column_config.NumberColumn(format="₹%,.2f", width=78),
-                        "Staff Name": st.column_config.TextColumn(width=112),
-                        "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%,.2f", width=98),
-                        "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%,.2f", width=84),
-                        "Leakage Explained (₹)": st.column_config.NumberColumn(format="₹%,.2f", width=108),
-                        "Leakage Unexplained (₹)": st.column_config.NumberColumn(format="₹%,.2f", width=116),
+                        "Revenue (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=104),
+                        "PhonePe (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=94),
+                        "Cash (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=88),
+                        "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=108),
+                        "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=94),
+                        "Leakage Explained (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=116),
+                        "Leakage Unexplained (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=124),
                     },
                     row_height=25
                 )
