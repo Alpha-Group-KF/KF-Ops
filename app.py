@@ -449,11 +449,15 @@ def list_daily_entries_with_prefill():
     entries = []
     if db_conn is not None:
         query = """
-        SELECT e.id AS db_id, e.entry_date, e.cart_name, e.staff_name, e.total_collection, e.phonepe, e.cash, e.staff_advance, e.food_tea_cash, e.cash_leakage, e.remarks,
+        SELECT e.id AS db_id, e.entry_date, e.cart_name, e.staff_name, e.total_collection, e.phonepe, e.cash,
+            e.staff_advance, e.food_tea_cash, e.cash_leakage,
+            e.cash_leakage_explained, e.cash_leakage_unexplained, e.remarks,
             json_agg(json_build_object('code', i.flavor_code, 'open', i.opening_units, 'add', i.added_units, 'sold', i.sold_units, 'close', i.closing_units)) AS items
         FROM daily_cart_entries e
         LEFT JOIN daily_cart_items i ON e.id = i.daily_entry_id
-        GROUP BY e.id, e.entry_date, e.cart_name, e.staff_name, e.total_collection, e.phonepe, e.cash, e.staff_advance, e.food_tea_cash, e.cash_leakage, e.remarks
+        GROUP BY e.id, e.entry_date, e.cart_name, e.staff_name, e.total_collection, e.phonepe, e.cash,
+            e.staff_advance, e.food_tea_cash, e.cash_leakage, e.cash_leakage_explained,
+            e.cash_leakage_unexplained, e.remarks
         ORDER BY e.entry_date DESC, e.cart_name ASC;
         """
         df = db_conn.query(query, ttl="0s")
@@ -469,6 +473,8 @@ def list_daily_entries_with_prefill():
                     "phonepe": float(r["phonepe"]) if pd.notna(r["phonepe"]) else 0.0, 
                     "cash": float(r["cash"]) if pd.notna(r["cash"]) else 0.0, 
                     "cash_leakage": float(r["cash_leakage"]) if pd.notna(r["cash_leakage"]) else 0.0,
+                    "cash_leakage_explained": float(r["cash_leakage_explained"]) if pd.notna(r["cash_leakage_explained"]) else 0.0,
+                    "cash_leakage_unexplained": float(r["cash_leakage_unexplained"]) if pd.notna(r["cash_leakage_unexplained"]) else 0.0,
                     "remarks": str(r["remarks"]) if pd.notna(r["remarks"]) else "",
                     "staff_name": str(r["staff_name"]) if pd.notna(r["staff_name"]) else "", 
                     "staff_advance": float(r["staff_advance"]) if pd.notna(r["staff_advance"]) else 0.0, 
@@ -485,35 +491,61 @@ def list_daily_entries_with_prefill():
             by_code = {code: {"opening": prev_closings.get(code, 0), "added": 0, "closing": prev_closings.get(code, 0), "sold": 0} for code in FLAVOR_CODES}
             entries.append({
                 "db_id": f"prefill_{cart}_{yesterday.strftime('%Y%m%d')}", "date": pd.Timestamp(yesterday), "cart": cart, "by_code": by_code,
-                "total": 0.0, "phonepe": 0.0, "cash": 0.0, "cash_leakage": 0.0, "remarks": "", "staff_name": prev_staff, "staff_advance": 0.0, "food_tea_cash": 0.0, "is_prefill": True
+                "total": 0.0, "phonepe": 0.0, "cash": 0.0, "cash_leakage": 0.0,
+                "cash_leakage_explained": 0.0, "cash_leakage_unexplained": 0.0,
+                "remarks": "", "staff_name": prev_staff, "staff_advance": 0.0, "food_tea_cash": 0.0, "is_prefill": True
             })
 
     entries.sort(key=lambda x: (x["date"], x["cart"]), reverse=True)
     return entries
 
-def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map, sold_map, total, phonepe, cash, remarks, staff_name="", staff_advance=0.0, food_tea_cash=0.0, cash_leakage=0.0):
+def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map, sold_map, total, phonepe, cash, remarks,
+                     staff_name="", staff_advance=0.0, food_tea_cash=0.0,
+                     cash_leakage_explained=0.0, cash_leakage_unexplained=0.0):
     # Tag all Daily Entry records saved through the Streamlit web app.
     # Avoid duplicating the tag when an existing web entry is edited and saved again.
-    web_entry_tag = "[entry logged through web app]"
+    web_entry_tag = "[web app]"
     remarks_text = str(remarks or "").strip()
     if web_entry_tag.lower() not in remarks_text.lower():
         remarks_text = f"{remarks_text} {web_entry_tag}".strip()
+
+    cash_leakage_explained = max(0.0, float(cash_leakage_explained or 0.0))
+    cash_leakage_unexplained = max(0.0, float(cash_leakage_unexplained or 0.0))
+    # Keep the legacy total column populated for existing P&L/payroll/expense logic.
+    cash_leakage = cash_leakage_explained + cash_leakage_unexplained
 
     if db_conn is not None:
         with db_conn.session as s:
             res = s.execute(
                 text("""
-                INSERT INTO daily_cart_entries (entry_date, cart_name, city, staff_name, total_collection, phonepe, cash, staff_advance, food_tea_cash, cash_leakage, remarks)
-                VALUES (:date, :cart, :city, :staff, :tot, :ph, :cash, :adv, :food, :leak, :rem)
+                INSERT INTO daily_cart_entries (
+                    entry_date, cart_name, city, staff_name, total_collection, phonepe, cash,
+                    staff_advance, food_tea_cash, cash_leakage_explained, cash_leakage_unexplained,
+                    cash_leakage, remarks
+                )
+                VALUES (
+                    :date, :cart, :city, :staff, :tot, :ph, :cash,
+                    :adv, :food, :leak_exp, :leak_unexp, :leak, :rem
+                )
                 ON CONFLICT (entry_date, cart_name) DO UPDATE 
-                SET staff_name = EXCLUDED.staff_name, total_collection = EXCLUDED.total_collection, phonepe = EXCLUDED.phonepe, cash = EXCLUDED.cash, staff_advance = EXCLUDED.staff_advance, food_tea_cash = EXCLUDED.food_tea_cash, cash_leakage = EXCLUDED.cash_leakage, remarks = EXCLUDED.remarks
+                SET staff_name = EXCLUDED.staff_name,
+                    total_collection = EXCLUDED.total_collection,
+                    phonepe = EXCLUDED.phonepe,
+                    cash = EXCLUDED.cash,
+                    staff_advance = EXCLUDED.staff_advance,
+                    food_tea_cash = EXCLUDED.food_tea_cash,
+                    cash_leakage_explained = EXCLUDED.cash_leakage_explained,
+                    cash_leakage_unexplained = EXCLUDED.cash_leakage_unexplained,
+                    cash_leakage = EXCLUDED.cash_leakage,
+                    remarks = EXCLUDED.remarks
                 RETURNING id;
                 """),
                 {
                     "date": entry_date, "cart": cart_name, "city": CITY, "staff": staff_name, 
-                    "tot": float(total), "ph": float(phonepe), "cash": float(cash), 
-                    "adv": float(staff_advance), "food": float(food_tea_cash), "leak": float(cash_leakage), 
-                    "rem": remarks_text
+                    "tot": float(total), "ph": float(phonepe), "cash": float(cash),
+                    "adv": float(staff_advance), "food": float(food_tea_cash),
+                    "leak_exp": cash_leakage_explained, "leak_unexp": cash_leakage_unexplained,
+                    "leak": cash_leakage, "rem": remarks_text
                 }
             )
             daily_id = res.scalar()
@@ -637,14 +669,17 @@ def load_db_daily_df():
     query = """
     SELECT e.entry_date AS "Date", e.cart_name AS "Cart", e.total_collection AS "Total_Collection", 
            e.phonepe AS "PhonePe", e.cash AS "Cash", e.staff_name AS "Staff_Name", 
-           e.staff_advance AS "Staff_Advance", e.food_tea_cash AS "Food_Tea_Cash", 
+           e.staff_advance AS "Staff_Advance", e.food_tea_cash AS "Food_Tea_Cash",
+           e.cash_leakage_explained AS "Cash_Leakage_Explained",
+           e.cash_leakage_unexplained AS "Cash_Leakage_Unexplained",
            e.cash_leakage AS "Cash_Leakage", e.remarks AS "Remarks", 
            COALESCE(SUM(i.sold_units), 0) AS "Sold_Total", 
            COALESCE(SUM(i.closing_units), 0) AS "Closing_Total"
     FROM daily_cart_entries e 
     LEFT JOIN daily_cart_items i ON e.id = i.daily_entry_id
     GROUP BY e.id, e.entry_date, e.cart_name, e.total_collection, e.phonepe, e.cash, 
-             e.staff_name, e.staff_advance, e.food_tea_cash, e.cash_leakage, e.remarks 
+             e.staff_name, e.staff_advance, e.food_tea_cash,
+             e.cash_leakage_explained, e.cash_leakage_unexplained, e.cash_leakage, e.remarks 
     ORDER BY e.entry_date DESC;
     """
     df = db_conn.query(query, ttl="0s")
@@ -1620,6 +1655,8 @@ if page == "Daily Entry":
                     if f"daily_adv{data_key_suffix}" not in st.session_state: st.session_state[f"daily_adv{data_key_suffix}"] = f"{loaded['staff_advance']:.2f}" if "staff_advance" in loaded else "0.00"
                     if f"daily_food{data_key_suffix}" not in st.session_state: st.session_state[f"daily_food{data_key_suffix}"] = f"{loaded['food_tea_cash']:.2f}" if "food_tea_cash" in loaded else "0.00"
                     if f"daily_cash{data_key_suffix}" not in st.session_state: st.session_state[f"daily_cash{data_key_suffix}"] = f"{loaded['cash']:.2f}"
+                    if f"daily_leak_explained{data_key_suffix}" not in st.session_state:
+                        st.session_state[f"daily_leak_explained{data_key_suffix}"] = f"{loaded.get('cash_leakage_explained', 0.0):.2f}"
 
                     st.markdown("---")
                     st.write(f"**Cash, UPI & Advance Collection ({entry_date.strftime('%d-%b')})**")
@@ -1632,11 +1669,53 @@ if page == "Daily Entry":
                         phonepe_val = _num(st.text_input("PhonePe / UPI (₹)", key=f"daily_phonepe{data_key_suffix}"))
                         cash_val = _num(st.text_input("Cash Collected (₹)", key=f"daily_cash{data_key_suffix}"))
 
-                    cash_leakage = total_collection_val - phonepe_val - staff_advance_val - food_tea_val - cash_val
-                    has_leakage = cash_leakage > 0.001
-                    if has_leakage: st.markdown(f"<div style='margin-top:2px;'><label style='font-size:11px; font-weight:700;'>Cash Leakage:</label> <b style='color:#C41C1C; font-size:14px;'>₹{cash_leakage:,.2f}</b></div><p style='color:#C41C1C; font-weight:bold; font-size:11.5px; margin: 2px 0 !important;'>⚠️ Cash leakage detected - enter reason in remarks</p>", unsafe_allow_html=True)
-                    else: st.markdown(f"<div style='margin-top:2px;'><label style='font-size:11px; font-weight:700;'>Cash Leakage:</label> <b style='color:#2A1B10; font-size:13px;'>₹{cash_leakage:,.2f}</b></div>", unsafe_allow_html=True)
-                    remarks = st.text_input("Remarks", value=loaded["remarks"], key=f"daily_remarks{data_key_suffix}", placeholder="Enter remarks (mandatory if cash leakage)...")
+                    leakage_before_explanation = total_collection_val - phonepe_val - staff_advance_val - food_tea_val - cash_val
+                    available_cash_leakage = max(0.0, leakage_before_explanation)
+
+                    leak_c1, leak_c2 = st.columns(2)
+                    with leak_c1:
+                        cash_leakage_explained = max(0.0, _num(
+                            st.text_input(
+                                "Cash Leakage (Explained) (₹)",
+                                key=f"daily_leak_explained{data_key_suffix}",
+                                placeholder="0.00",
+                            )
+                        ))
+                    cash_leakage_unexplained = max(0.0, available_cash_leakage - cash_leakage_explained)
+                    with leak_c2:
+                        unexp_color = "#C41C1C" if cash_leakage_unexplained > 0.001 else "#2A1B10"
+                        unexp_bg = "#FFF0ED" if cash_leakage_unexplained > 0.001 else "#F7F4EF"
+                        st.markdown(
+                            f"""
+                            <div style="font-size:10.5px;font-weight:700;margin-bottom:1px;">Cash Leakage (Unexplained) (₹)</div>
+                            <div style="height:28px;border:1px solid #D8C7AA;border-radius:6px;padding:4px 7px;
+                                        background:{unexp_bg};color:{unexp_color};font-size:12px;font-weight:800;">
+                                ₹{cash_leakage_unexplained:,.2f}
+                            </div>
+                            """,
+                            unsafe_allow_html=True,
+                        )
+
+                    explained_exceeds_available = cash_leakage_explained > available_cash_leakage + 0.001
+                    has_leakage = cash_leakage_explained > 0.001 or cash_leakage_unexplained > 0.001
+
+                    if explained_exceeds_available:
+                        st.error(f"Cash Leakage (Explained) cannot exceed the current leakage amount of ₹{available_cash_leakage:,.2f}.")
+                    elif has_leakage:
+                        st.markdown(
+                            "<p style='color:#C41C1C; font-weight:bold; font-size:11.5px; margin: 2px 0 !important;'>"
+                            "⚠️ Remarks are mandatory when explained or unexplained cash leakage is present."
+                            "</p>",
+                            unsafe_allow_html=True,
+                        )
+
+                    remarks = st.text_input(
+                        "Remarks",
+                        value=loaded["remarks"],
+                        key=f"daily_remarks{data_key_suffix}",
+                        placeholder="Enter remarks (mandatory if cash leakage)...",
+                    )
+                    manual_remarks = re.sub(r"\[(?:web app|mobile app)\]", "", str(remarks or ""), flags=re.IGNORECASE).strip()
 
             today_added_map, today_opening_map, today_db_opening_map = {}, {}, {}
             with col_box_right:
@@ -1672,11 +1751,18 @@ if page == "Daily Entry":
             st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
             if st.button("💾 Submit Daily Sales & Today's Restock Entry", type="primary", use_container_width=True):
                 if any(s < 0 for s in sold_map.values()): st.error("Sales works out negative for at least one flavour on previous day - fix closing count before saving.")
-                elif has_leakage and not remarks.strip(): st.error("Remarks is mandatory when there is a cash leakage. Please enter a reason.")
+                elif explained_exceeds_available: st.error("Reduce Cash Leakage (Explained) so it does not exceed the current leakage amount.")
+                elif has_leakage and not manual_remarks: st.error("Remarks/reason is mandatory when explained or unexplained cash leakage is present.")
                 else:
                     try:
                         selected_staff = "" if staff_name == "Select Staff" else staff_name
-                        sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map, sold_map, total_collection_val, phonepe_val, cash_val, remarks, selected_staff, staff_advance_val, food_tea_val, cash_leakage=cash_leakage)
+                        sync_daily_entry(
+                            entry_date, cart_name, added_map, closing_map, opening_map, sold_map,
+                            total_collection_val, phonepe_val, cash_val, remarks, selected_staff,
+                            staff_advance_val, food_tea_val,
+                            cash_leakage_explained=cash_leakage_explained,
+                            cash_leakage_unexplained=cash_leakage_unexplained,
+                        )
                         sync_today_restock_entry(today_val, cart_name, selected_staff, today_db_opening_map, today_added_map)
                         st.cache_resource.clear()
                         st.session_state["active_daily_cart"] = None
@@ -6184,7 +6270,11 @@ elif page == "Dashboard" and user_role == "admin":
                         })
             
             st.markdown("#### Itemized Daily Cart Sales Log")
-            display_cols = ["Date", "Cart", "Sold_Total", "Total_Collection", "PhonePe", "Cash", "Staff_Name", "Staff_Advance", "Food_Tea_Cash", "Cash_Leakage", "Remarks"]
+            display_cols = [
+                "Date", "Cart", "Sold_Total", "Total_Collection", "PhonePe", "Cash",
+                "Staff_Name", "Staff_Advance", "Food_Tea_Cash",
+                "Cash_Leakage_Explained", "Cash_Leakage_Unexplained", "Remarks"
+            ]
             sales_table = range_df.sort_values(["Date", "Cart"])[display_cols].rename(columns={
                             "Sold_Total": "Units Sold", 
                             "Total_Collection": "Revenue (₹)", 
@@ -6193,7 +6283,8 @@ elif page == "Dashboard" and user_role == "admin":
                             "Staff_Name": "Staff Name", 
                             "Staff_Advance": "Staff Advance (₹)", 
                             "Food_Tea_Cash": "Food / Tea (₹)",
-                            "Cash_Leakage": "Cash Leakage (₹)"
+                            "Cash_Leakage_Explained": "Leakage Explained (₹)",
+                            "Cash_Leakage_Unexplained": "Leakage Unexplained (₹)"
                         })
             sales_table["Units Sold"] = sales_table["Units Sold"].apply(lambda x: int(round(x)))
             sales_table["Date"] = sales_table["Date"].dt.strftime("%d-%b-%y")
@@ -6209,7 +6300,8 @@ elif page == "Dashboard" and user_role == "admin":
                 "Staff Name": "",
                 "Staff Advance (₹)": float(sales_table["Staff Advance (₹)"].sum()),
                 "Food / Tea (₹)": float(sales_table["Food / Tea (₹)"].sum()),
-                "Cash Leakage (₹)": float(sales_table["Cash Leakage (₹)"].sum()),
+                "Leakage Explained (₹)": float(sales_table["Leakage Explained (₹)"].sum()),
+                "Leakage Unexplained (₹)": float(sales_table["Leakage Unexplained (₹)"].sum()),
                 "Remarks": "",
             }
             sales_table = pd.concat([sales_table, pd.DataFrame([sales_total])], ignore_index=True)
@@ -6219,13 +6311,20 @@ elif page == "Dashboard" and user_role == "admin":
                             hide_index=True, 
                             use_container_width=True, 
                             column_config={
-                                "Revenue (₹)": st.column_config.NumberColumn(format="₹%,.2f"), 
-                                "PhonePe (₹)": st.column_config.NumberColumn(format="₹%,.2f"), 
-                                "Cash (₹)": st.column_config.NumberColumn(format="₹%,.2f"), 
-                                "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%,.2f"), 
-                                "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%,.2f"),
-                                "Cash Leakage (₹)": st.column_config.NumberColumn(format="₹%,.2f")
-                            }
+                                "Date": st.column_config.TextColumn(width="small"),
+                                "Cart": st.column_config.TextColumn(width="small"),
+                                "Units Sold": st.column_config.NumberColumn(width="small"),
+                                "Revenue (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
+                                "PhonePe (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
+                                "Cash (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
+                                "Staff Name": st.column_config.TextColumn(width="small"),
+                                "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
+                                "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
+                                "Leakage Explained (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
+                                "Leakage Unexplained (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
+                                "Remarks": st.column_config.TextColumn(width="medium"),
+                            },
+                            row_height=28
                         )
         else: 
             st.caption("No sales data recorded in this period.")
