@@ -6281,9 +6281,9 @@ elif page == "Dashboard" and user_role == "admin":
                 ]
                 alignments = ["left"] + ["right"] * 8
                 cell_html = "".join(
-                    f"<div style='padding:7px 6px;text-align:{alignments[i]};"
-                    f"font-weight:900;color:#FFFFFF;white-space:nowrap;overflow:hidden;"
-                    f"text-overflow:ellipsis;'>{escape(str(value))}</div>"
+                    f"<div style='padding:9px 6px;text-align:{alignments[i]};"
+                    f"font-weight:900;color:#FFFFFF;font-size:13.5px;line-height:1.25;"
+                    f"white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'>{escape(str(value))}</div>"
                     for i, value in enumerate(total_cells)
                 )
                 st.markdown(
@@ -6294,9 +6294,9 @@ elif page == "Dashboard" and user_role == "admin":
                         background:#70440E;
                         border:1px solid #5F3508;
                         border-radius:0 0 7px 7px;
-                        margin-top:-1px;
+                        margin-top:-13px;
                         margin-bottom:8px;
-                        font-size:11px;
+                        font-size:13.5px;
                         align-items:center;">
                         {cell_html}
                     </div>
@@ -6371,15 +6371,15 @@ elif page == "Dashboard" and user_role == "admin":
                     <div style="
                         margin-top:10px;
                         margin-bottom:6px;
-                        padding:8px 12px;
+                        padding:9px 12px;
                         border:1px solid #DEB887;
                         border-radius:8px;
                         background:#FFF2DC;
                         display:flex;
                         justify-content:space-between;
                         align-items:center;">
-                        <span style="font-weight:900;color:#70440E;font-size:13px;">🛒 {escape(cart_name)}</span>
-                        <span style="font-weight:800;color:#124A1D;font-size:11.5px;">
+                        <span style="font-weight:900;color:#70440E;font-size:14px;">🛒 {escape(cart_name)}</span>
+                        <span style="font-weight:900;color:#124A1D;font-size:14px;">
                             {cart_units:,} units &nbsp;•&nbsp; ₹{cart_revenue:,.0f}
                         </span>
                     </div>
