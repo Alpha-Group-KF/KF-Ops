@@ -6225,8 +6225,15 @@ elif page == "Dashboard" and user_role == "admin":
             else: 
                 st.caption("No cart entries found in this range.")
 
+            # Sales report tables show completed sales dates only.
+            # Today is intentionally excluded; the latest possible report date is yesterday.
+            latest_completed_sales_date = date.today() - timedelta(days=1)
+            report_sales_df = range_df[
+                pd.to_datetime(range_df["Date"]).dt.date <= latest_completed_sales_date
+            ].copy()
+
             st.markdown("#### Date-Wise Daily Sales Log")
-            date_wise_agg = range_df.groupby("Date").agg({
+            date_wise_agg = report_sales_df.groupby("Date").agg({
                             "Sold_Total": "sum",
                             "Total_Collection": "sum",
                             "PhonePe": "sum",
@@ -6253,6 +6260,14 @@ elif page == "Dashboard" and user_role == "admin":
             # Initial order: latest date first. Keeping Date as a true date value also
             # ensures any user-triggered sort remains chronological rather than text-based.
             date_wise_table = date_wise_table.sort_values("Date", ascending=False).reset_index(drop=True)
+
+            def _highlight_latest_completed_sales_row(row):
+                if row.get("Date") == latest_completed_sales_date:
+                    return [
+                        "background-color:#DDF3E2;color:#124A1D;font-weight:900;"
+                        for _ in row
+                    ]
+                return ["" for _ in row]
 
             date_wise_total = {
                 "Units Sold": int(date_wise_table["Units Sold"].sum()),
@@ -6314,6 +6329,7 @@ elif page == "Dashboard" and user_role == "admin":
                         "font-weight": "700",
                     }
                 )
+                .apply(_highlight_latest_completed_sales_row, axis=1)
             )
 
             st.dataframe(
@@ -6344,7 +6360,7 @@ elif page == "Dashboard" and user_role == "admin":
                 "Staff_Advance", "Food_Tea_Cash",
                 "Cash_Leakage_Explained", "Cash_Leakage_Unexplained"
             ]
-            sales_table = range_df[display_cols].rename(columns={
+            sales_table = report_sales_df[display_cols].rename(columns={
                             "Sold_Total": "Units Sold",
                             "Total_Collection": "Revenue (₹)",
                             "PhonePe": "PhonePe (₹)",
@@ -6414,6 +6430,7 @@ elif page == "Dashboard" and user_role == "admin":
                             "font-weight": "700",
                         }
                     )
+                    .apply(_highlight_latest_completed_sales_row, axis=1)
                 )
 
                 st.dataframe(
