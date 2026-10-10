@@ -6263,25 +6263,41 @@ elif page == "Dashboard" and user_role == "admin":
             }
             date_wise_table = pd.concat([date_wise_table, pd.DataFrame([date_wise_total])], ignore_index=True)
 
+            def _highlight_report_total(row):
+                if str(row.get("Date", "")).strip().upper() == "TOTAL":
+                    return [
+                        "background-color:#70440E;color:#FFFFFF;font-weight:900;"
+                        for _ in row
+                    ]
+                return ["" for _ in row]
+
+            date_wise_styled = date_wise_table.style.apply(_highlight_report_total, axis=1)
+
+            # Date and Units Sold deliberately kept extra-narrow so the amount columns
+            # have more room and the table remains visible without horizontal scrolling.
             st.dataframe(
-                date_wise_table,
+                date_wise_styled,
                 hide_index=True,
                 use_container_width=True,
                 column_config={
-                    "Date": st.column_config.TextColumn(width="small"),
-                    "Units Sold": st.column_config.NumberColumn(width="small"),
-                    "Revenue (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
-                    "PhonePe (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
-                    "Cash (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
-                    "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
-                    "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
-                    "Leakage Explained (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
-                    "Leakage Unexplained (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
+                    "Date": st.column_config.TextColumn(width=78),
+                    "Units Sold": st.column_config.NumberColumn(width=66),
+                    "Revenue (₹)": st.column_config.NumberColumn(format="₹%,.2f", width=102),
+                    "PhonePe (₹)": st.column_config.NumberColumn(format="₹%,.2f", width=92),
+                    "Cash (₹)": st.column_config.NumberColumn(format="₹%,.2f", width=86),
+                    "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%,.2f", width=108),
+                    "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%,.2f", width=92),
+                    "Leakage Explained (₹)": st.column_config.NumberColumn(format="₹%,.2f", width=118),
+                    "Leakage Unexplained (₹)": st.column_config.NumberColumn(format="₹%,.2f", width=126),
                 },
-                row_height=26
+                row_height=25
             )
 
             st.markdown("#### Itemized Daily Cart Sales Log")
+
+            # Prepare one common itemized dataset, then display a separate compact
+            # table for each cart. The Cart column is intentionally removed from the
+            # visible tables to provide more room for the financial columns.
             display_cols = [
                 "Date", "Cart", "Sold_Total", "Total_Collection", "PhonePe", "Cash",
                 "Staff_Name", "Staff_Advance", "Food_Tea_Cash",
@@ -6300,41 +6316,76 @@ elif page == "Dashboard" and user_role == "admin":
                         })
             sales_table["Units Sold"] = sales_table["Units Sold"].apply(lambda x: int(round(x)))
             sales_table["Date"] = sales_table["Date"].dt.strftime("%d-%b-%y")
-            sales_table = apply_smart_filters(sales_table, ["Cart", "Staff Name"], "sales_filters")
 
-            sales_total = {
-                "Date": "TOTAL",
-                "Cart": "",
-                "Units Sold": int(sales_table["Units Sold"].sum()),
-                "Revenue (₹)": float(sales_table["Revenue (₹)"].sum()),
-                "PhonePe (₹)": float(sales_table["PhonePe (₹)"].sum()),
-                "Cash (₹)": float(sales_table["Cash (₹)"].sum()),
-                "Staff Name": "",
-                "Staff Advance (₹)": float(sales_table["Staff Advance (₹)"].sum()),
-                "Food / Tea (₹)": float(sales_table["Food / Tea (₹)"].sum()),
-                "Leakage Explained (₹)": float(sales_table["Leakage Explained (₹)"].sum()),
-                "Leakage Unexplained (₹)": float(sales_table["Leakage Unexplained (₹)"].sum()),
-            }
-            sales_table = pd.concat([sales_table, pd.DataFrame([sales_total])], ignore_index=True)
+            # Cart selection is no longer required because all three carts are shown
+            # as their own sections. Retain the useful Staff Name filter.
+            sales_table = apply_smart_filters(sales_table, ["Staff Name"], "sales_filters")
 
-            st.dataframe(
-                sales_table, 
-                hide_index=True, 
-                use_container_width=True, 
-                column_config={
-                    "Date": st.column_config.TextColumn(width="small"),
-                    "Cart": st.column_config.TextColumn(width="medium"),
-                    "Units Sold": st.column_config.NumberColumn(width="small"),
-                    "Revenue (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
-                    "PhonePe (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
-                    "Cash (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
-                    "Staff Name": st.column_config.TextColumn(width="medium"),
-                    "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
-                    "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
-                    "Leakage Explained (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
-                    "Leakage Unexplained (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
-                },
-                row_height=26
-            )
+            for cart_name in CARTS:
+                cart_table = sales_table[sales_table["Cart"] == cart_name].copy()
+
+                cart_units = int(cart_table["Units Sold"].sum()) if not cart_table.empty else 0
+                cart_revenue = float(cart_table["Revenue (₹)"].sum()) if not cart_table.empty else 0.0
+
+                st.markdown(
+                    f"""
+                    <div style="
+                        margin-top:10px;
+                        margin-bottom:6px;
+                        padding:8px 12px;
+                        border:1px solid #DEB887;
+                        border-radius:8px;
+                        background:#FFF2DC;
+                        display:flex;
+                        justify-content:space-between;
+                        align-items:center;">
+                        <span style="font-weight:900;color:#70440E;font-size:13px;">🛒 {escape(cart_name)}</span>
+                        <span style="font-weight:800;color:#124A1D;font-size:11.5px;">
+                            {cart_units:,} units &nbsp;•&nbsp; ₹{cart_revenue:,.0f}
+                        </span>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+                if cart_table.empty:
+                    st.caption("No sales entries for this cart in the selected period.")
+                    continue
+
+                cart_table = cart_table.drop(columns=["Cart"])
+
+                cart_total = {
+                    "Date": "TOTAL",
+                    "Units Sold": int(cart_table["Units Sold"].sum()),
+                    "Revenue (₹)": float(cart_table["Revenue (₹)"].sum()),
+                    "PhonePe (₹)": float(cart_table["PhonePe (₹)"].sum()),
+                    "Cash (₹)": float(cart_table["Cash (₹)"].sum()),
+                    "Staff Name": "",
+                    "Staff Advance (₹)": float(cart_table["Staff Advance (₹)"].sum()),
+                    "Food / Tea (₹)": float(cart_table["Food / Tea (₹)"].sum()),
+                    "Leakage Explained (₹)": float(cart_table["Leakage Explained (₹)"].sum()),
+                    "Leakage Unexplained (₹)": float(cart_table["Leakage Unexplained (₹)"].sum()),
+                }
+                cart_table = pd.concat([cart_table, pd.DataFrame([cart_total])], ignore_index=True)
+                cart_table_styled = cart_table.style.apply(_highlight_report_total, axis=1)
+
+                st.dataframe(
+                    cart_table_styled,
+                    hide_index=True,
+                    use_container_width=True,
+                    column_config={
+                        "Date": st.column_config.TextColumn(width=76),
+                        "Units Sold": st.column_config.NumberColumn(width=62),
+                        "Revenue (₹)": st.column_config.NumberColumn(format="₹%,.2f", width=92),
+                        "PhonePe (₹)": st.column_config.NumberColumn(format="₹%,.2f", width=84),
+                        "Cash (₹)": st.column_config.NumberColumn(format="₹%,.2f", width=78),
+                        "Staff Name": st.column_config.TextColumn(width=112),
+                        "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%,.2f", width=98),
+                        "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%,.2f", width=84),
+                        "Leakage Explained (₹)": st.column_config.NumberColumn(format="₹%,.2f", width=108),
+                        "Leakage Unexplained (₹)": st.column_config.NumberColumn(format="₹%,.2f", width=116),
+                    },
+                    row_height=25
+                )
         else: 
             st.caption("No sales data recorded in this period.")
