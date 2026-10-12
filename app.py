@@ -22,6 +22,7 @@ import re
 import calendar
 import os
 import io
+import base64
 from html import escape
 from urllib.parse import quote
 from urllib.parse import quote
@@ -957,10 +958,42 @@ def load_db_expenses_summary_df():
     try: return db_conn.query(query, ttl="0s")
     except Exception: return pd.DataFrame()
 
+def prepare_payment_receipt(uploaded_file):
+    """Return nullable receipt metadata + Base64 for an optional payment image."""
+    if uploaded_file is None:
+        return {
+            "name": None,
+            "mime": None,
+            "size": None,
+            "base64": None,
+            "uploaded_at": None,
+        }
+
+    raw = uploaded_file.getvalue()
+    max_bytes = int(3.5 * 1024 * 1024)
+    if len(raw) > max_bytes:
+        raise ValueError("Receipt / bill image must be 3.5 MB or smaller.")
+
+    mime = str(getattr(uploaded_file, "type", "") or "").lower().strip()
+    allowed_mimes = {"image/jpeg", "image/jpg", "image/png", "image/webp"}
+    if mime not in allowed_mimes:
+        raise ValueError("Receipt / bill must be a JPG, JPEG, PNG or WEBP image.")
+
+    return {
+        "name": str(getattr(uploaded_file, "name", "") or "receipt-image"),
+        "mime": mime,
+        "size": int(len(raw)),
+        "base64": base64.b64encode(raw).decode("ascii"),
+        "uploaded_at": datetime.now(),
+    }
+
+
 def load_db_payments_df():
     if db_conn is None: return pd.DataFrame()
     query = """
-    SELECT p.id, p.expense_id, p.payment_date, p.amount_paid, p.payment_mode, p.ref_no, p.paid_to, p.paid_by, p.notes, e.category, e.sub_category, e.description AS expense_desc, e.total_amount AS expense_total, e.staff_name
+    SELECT p.id, p.expense_id, p.payment_date, p.amount_paid, p.payment_mode, p.ref_no, p.paid_to, p.paid_by, p.notes,
+           p.receipt_file_name, p.receipt_mime_type, p.receipt_file_size_bytes, p.receipt_uploaded_at,
+           e.category, e.sub_category, e.description AS expense_desc, e.total_amount AS expense_total, e.staff_name
     FROM expense_payments p JOIN expenses e ON p.expense_id = e.id ORDER BY p.payment_date DESC, p.id DESC;
     """
     try: return db_conn.query(query, ttl="0s")
@@ -4859,7 +4892,7 @@ elif page == "Expenses" and user_role == "admin":
 
             st.markdown("---")
             has_direct_pay = st.checkbox("Record immediate payment now", value=False, key="add_e_direct_pay")
-            p_date, p_amt, p_mode, p_ref, p_to, p_notes = None, 0.0, "UPI / Bank Transfer", "", "", ""
+            p_date, p_amt, p_mode, p_ref, p_to, p_notes, p_receipt = None, 0.0, "UPI / Bank Transfer", "", "", "", None
             if has_direct_pay:
                 p1, p2, p3 = st.columns(3)
                 with p1: p_date = st.date_input("Payment Date", value=e_date, key="add_p_date", format="DD-MM-YYYY")
@@ -4869,6 +4902,13 @@ elif page == "Expenses" and user_role == "admin":
                 with p4: p_ref = st.text_input("Ref / UTR No.", placeholder="e.g. UPI Ref, Txn ID", key="add_p_ref")
                 with p5: p_to = st.text_input("Paid To", value=e_vendor, key="add_p_to")
                 p_notes = st.text_input("Payment Notes", placeholder="Optional payment note...", key="add_p_notes")
+                p_receipt = st.file_uploader(
+                    "Receipt / Bill Image (Optional)",
+                    type=["jpg", "jpeg", "png", "webp"],
+                    accept_multiple_files=False,
+                    key="add_p_receipt"
+                )
+                st.caption("Accepted: JPG, JPEG, PNG, WEBP • maximum 3.5 MB")
 
             if st.button("💾 Save Expense Entry", type="primary", use_container_width=True):
                 if e_amount <= 0: st.error("Please enter an expense amount greater than 0.")
@@ -4877,14 +4917,21 @@ elif page == "Expenses" and user_role == "admin":
                         p_po_id = int(e_po.split("#")[1].split(" ")[0]) if "PO #" in e_po else None
                         sel_staff = None if e_staff == "Select Staff" else e_staff
                         computed_status = "Paid" if (has_direct_pay and p_amt >= e_amount) else ("Partially Paid" if (has_direct_pay and p_amt > 0) else e_stat)
+                        p_receipt_data = prepare_payment_receipt(p_receipt) if (has_direct_pay and p_amt > 0) else prepare_payment_receipt(None)
                         with db_conn.session as s:
                             res = s.execute(text("INSERT INTO expenses (expense_date, month, expense_type, category, sub_category, description, total_amount, attributed_to, vendor_name, staff_name, purchase_order_id, status, recorded_by, remarks) VALUES (:ed, :month, :et, :cat, :subcat, :desc, :amt, :attr, :vendor, :staff, :poid, :stat, :recby, :rem) RETURNING id;"), {"ed": e_date, "month": e_month, "et": e_type, "cat": e_cat, "subcat": e_subcat.strip(), "desc": e_desc.strip(), "amt": float(e_amount), "attr": e_attr, "vendor": e_vendor.strip(), "staff": sel_staff, "poid": p_po_id, "stat": computed_status, "recby": "Admin", "rem": e_remarks.strip()})
                             new_exp_id = res.scalar()
                             new_payment_id = None
                             if has_direct_pay and p_amt > 0:
                                 pay_res = s.execute(
-                                    text("INSERT INTO expense_payments (expense_id, payment_date, amount_paid, payment_mode, ref_no, paid_to, paid_by, notes) VALUES (:eid, :pdate, :pamt, :pmode, :pref, :pto, :pby, :notes) RETURNING id;"),
-                                    {"eid": new_exp_id, "pdate": p_date, "pamt": float(p_amt), "pmode": p_mode, "pref": p_ref.strip(), "pto": p_to.strip(), "pby": "Admin", "notes": p_notes.strip()}
+                                    text("INSERT INTO expense_payments (expense_id, payment_date, amount_paid, payment_mode, ref_no, paid_to, paid_by, notes, receipt_file_name, receipt_mime_type, receipt_file_size_bytes, receipt_image_base64, receipt_uploaded_at) VALUES (:eid, :pdate, :pamt, :pmode, :pref, :pto, :pby, :notes, :rname, :rmime, :rsize, :rbase64, :ruploaded) RETURNING id;"),
+                                    {
+                                        "eid": new_exp_id, "pdate": p_date, "pamt": float(p_amt), "pmode": p_mode,
+                                        "pref": p_ref.strip(), "pto": p_to.strip(), "pby": "Admin", "notes": p_notes.strip(),
+                                        "rname": p_receipt_data["name"], "rmime": p_receipt_data["mime"],
+                                        "rsize": p_receipt_data["size"], "rbase64": p_receipt_data["base64"],
+                                        "ruploaded": p_receipt_data["uploaded_at"],
+                                    }
                                 )
                                 new_payment_id = pay_res.scalar()
 
@@ -5039,15 +5086,30 @@ elif page == "Expenses" and user_role == "admin":
                     with c4: new_p_ref = st.text_input("Transaction / UTR Ref No.", placeholder="e.g. UPI Ref, IMPS Txn ID", key="rec_p_ref")
                     with c5: new_p_to = st.text_input("Paid To", value=str(target_exp.get("vendor_name") or ""), key="rec_p_to")
                     new_p_notes = st.text_input("Payment Notes / Remarks", placeholder="e.g. Part payment tranche 1...", key="rec_p_notes")
+                    new_p_receipt = st.file_uploader(
+                        "Receipt / Bill Image (Optional)",
+                        type=["jpg", "jpeg", "png", "webp"],
+                        accept_multiple_files=False,
+                        key="rec_p_receipt"
+                    )
+                    st.caption("Accepted: JPG, JPEG, PNG, WEBP • maximum 3.5 MB")
 
                     if st.button("💳 Disburse Payment", type="primary", use_container_width=True):
                         if new_p_amount <= 0: st.error("Please enter a payment amount greater than 0.")
                         else:
                             try:
+                                new_p_receipt_data = prepare_payment_receipt(new_p_receipt)
                                 with db_conn.session as s:
                                     pay_res = s.execute(
-                                        text("INSERT INTO expense_payments (expense_id, payment_date, amount_paid, payment_mode, ref_no, paid_to, paid_by, notes) VALUES (:eid, :pdate, :pamt, :pmode, :pref, :pto, :pby, :notes) RETURNING id;"),
-                                        {"eid": target_exp_id, "pdate": new_p_date, "pamt": float(new_p_amount), "pmode": new_p_mode, "pref": new_p_ref.strip(), "pto": new_p_to.strip(), "pby": "Admin", "notes": new_p_notes.strip()}
+                                        text("INSERT INTO expense_payments (expense_id, payment_date, amount_paid, payment_mode, ref_no, paid_to, paid_by, notes, receipt_file_name, receipt_mime_type, receipt_file_size_bytes, receipt_image_base64, receipt_uploaded_at) VALUES (:eid, :pdate, :pamt, :pmode, :pref, :pto, :pby, :notes, :rname, :rmime, :rsize, :rbase64, :ruploaded) RETURNING id;"),
+                                        {
+                                            "eid": target_exp_id, "pdate": new_p_date, "pamt": float(new_p_amount),
+                                            "pmode": new_p_mode, "pref": new_p_ref.strip(), "pto": new_p_to.strip(),
+                                            "pby": "Admin", "notes": new_p_notes.strip(),
+                                            "rname": new_p_receipt_data["name"], "rmime": new_p_receipt_data["mime"],
+                                            "rsize": new_p_receipt_data["size"], "rbase64": new_p_receipt_data["base64"],
+                                            "ruploaded": new_p_receipt_data["uploaded_at"],
+                                        }
                                     )
                                     new_payment_id = pay_res.scalar()
                                     new_status = "Paid" if (float(target_exp["total_paid"]) + float(new_p_amount)) >= float(target_exp["total_amount"]) else "Partially Paid"
@@ -5097,10 +5159,67 @@ elif page == "Expenses" and user_role == "admin":
             if payments_df.empty: st.info("No payment transactions found in database.")
             else:
                 st.metric("Total Payments Disbursed", f"₹{float(payments_df['amount_paid'].sum()):,.2f}")
-                disp_pay = payments_df.copy(); disp_pay["payment_date"] = pd.to_datetime(disp_pay["payment_date"]).dt.strftime("%d-%b-%y"); disp_pay["Expense Link"] = disp_pay.apply(lambda r: f"#{r['expense_id']} — {r['category']} (₹{float(r['expense_total']):,.0f})", axis=1)
-                disp_pay = disp_pay[["id", "payment_date", "Expense Link", "amount_paid", "payment_mode", "ref_no", "paid_to", "paid_by", "notes"]].rename(columns={"id": "Payment ID", "payment_date": "Date", "amount_paid": "Amount (₹)", "payment_mode": "Mode", "ref_no": "Ref / UTR", "paid_to": "Paid To", "paid_by": "Paid By", "notes": "Notes"})
-                disp_pay = apply_smart_filters(disp_pay, ["Mode", "Paid To"], "payment_filters")
+                disp_pay = payments_df.copy()
+                disp_pay["payment_date"] = pd.to_datetime(disp_pay["payment_date"]).dt.strftime("%d-%b-%y")
+                disp_pay["Expense Link"] = disp_pay.apply(lambda r: f"#{r['expense_id']} — {r['category']} (₹{float(r['expense_total']):,.0f})", axis=1)
+                disp_pay["Receipt"] = disp_pay["receipt_file_name"].apply(lambda v: "🧾 Yes" if pd.notna(v) and str(v).strip() else "—")
+                disp_pay = disp_pay[["id", "payment_date", "Expense Link", "amount_paid", "payment_mode", "ref_no", "paid_to", "paid_by", "Receipt", "notes"]].rename(columns={"id": "Payment ID", "payment_date": "Date", "amount_paid": "Amount (₹)", "payment_mode": "Mode", "ref_no": "Ref / UTR", "paid_to": "Paid To", "paid_by": "Paid By", "notes": "Notes"})
+                disp_pay = apply_smart_filters(disp_pay, ["Mode", "Paid To", "Receipt"], "payment_filters")
                 st.dataframe(disp_pay, hide_index=True, use_container_width=True, column_config={"Amount (₹)": st.column_config.NumberColumn(format="₹%,.2f")})
+
+                receipt_rows = payments_df[
+                    payments_df["receipt_file_name"].notna()
+                    & payments_df["receipt_file_name"].astype(str).str.strip().ne("")
+                ].copy()
+
+                if not receipt_rows.empty:
+                    st.markdown("#### View Receipt / Bill")
+                    receipt_records = receipt_rows.to_dict("records")
+                    receipt_labels = [
+                        f"Payment #{int(r['id'])} — {pd.to_datetime(r['payment_date']).strftime('%d-%b-%y')} — "
+                        f"{r.get('category') or 'Expense'} — ₹{float(r.get('amount_paid') or 0):,.2f}"
+                        for r in receipt_records
+                    ]
+                    selected_receipt_label = st.selectbox(
+                        "Select payment receipt",
+                        receipt_labels,
+                        key="view_payment_receipt_select"
+                    )
+                    selected_receipt = receipt_records[receipt_labels.index(selected_receipt_label)]
+                    selected_payment_id = int(selected_receipt["id"])
+
+                    try:
+                        receipt_blob_df = db_conn.query(
+                            """
+                            SELECT receipt_file_name, receipt_mime_type, receipt_file_size_bytes, receipt_image_base64
+                            FROM expense_payments
+                            WHERE id = :pid
+                            LIMIT 1;
+                            """,
+                            params={"pid": selected_payment_id},
+                            ttl="0s"
+                        )
+                        if receipt_blob_df.empty or not str(receipt_blob_df.iloc[0].get("receipt_image_base64") or "").strip():
+                            st.info("Receipt image data is not available for this payment.")
+                        else:
+                            receipt_blob = receipt_blob_df.iloc[0]
+                            receipt_bytes = base64.b64decode(str(receipt_blob["receipt_image_base64"]))
+                            receipt_name = str(receipt_blob.get("receipt_file_name") or f"payment_{selected_payment_id}_receipt")
+                            st.image(
+                                receipt_bytes,
+                                caption=f"Payment #{selected_payment_id} — {receipt_name}",
+                                use_container_width=True
+                            )
+                            st.download_button(
+                                "⬇️ Download Receipt / Bill",
+                                data=receipt_bytes,
+                                file_name=receipt_name,
+                                mime=str(receipt_blob.get("receipt_mime_type") or "image/jpeg"),
+                                use_container_width=True,
+                                key=f"download_payment_receipt_{selected_payment_id}"
+                            )
+                    except Exception as e:
+                        st.error(f"Could not load receipt image: {e}")
 
         elif p_sub_mode == "Edit Past Payment":
             if payments_df.empty: st.info("No payments recorded to edit.")
