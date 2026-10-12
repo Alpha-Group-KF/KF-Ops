@@ -3662,10 +3662,92 @@ elif page == "Freezer Stock" and user_role == "admin":
 
         audit_mode = st.radio(
             "Audit Action",
-            ["Log New Audit", "View / Edit Past Audit"],
+            ["Log New Audit", "View Last Audit", "View / Edit Past Audit"],
             horizontal=True,
             key="stock_audit_mode"
         )
+
+        def audit_calc_col(code):
+            return f"{str(code).lower()}_calc_units"
+
+        def audit_variance_col(code):
+            return f"{str(code).lower()}_variance_units"
+
+        def audit_snapshot_available(audit_row):
+            return any(
+                pd.notna(audit_row.get(audit_calc_col(code)))
+                for code in FLAVOR_CODES
+            )
+
+        def saved_audit_snapshot_map(audit_row):
+            return {
+                code: int(_num(audit_row.get(audit_calc_col(code), 0)))
+                for code in FLAVOR_CODES
+            }
+
+        def display_saved_audit_snapshot(audit_row, key_prefix="saved_audit"):
+            has_snapshot = audit_snapshot_available(audit_row)
+            physical_map = {
+                code: int(_num(audit_row.get(FLAVOR_MAP[code]["audit_col"], 0)))
+                for code in FLAVOR_CODES
+            }
+
+            if not has_snapshot:
+                st.warning(
+                    "Calculated stock and variance were not stored for this older audit. "
+                    "New audits will preserve the exact calculated-stock snapshot used at submission."
+                )
+                physical_df = pd.DataFrame([
+                    {
+                        "Flavour": FLAVOR_MAP[code]["name"],
+                        "Physical Count": physical_map[code],
+                    }
+                    for code in FLAVOR_CODES
+                ])
+                st.dataframe(physical_df, hide_index=True, use_container_width=True)
+                return
+
+            calc_map = saved_audit_snapshot_map(audit_row)
+            variance_map = {
+                code: int(_num(audit_row.get(audit_variance_col(code), physical_map[code] - calc_map[code])))
+                for code in FLAVOR_CODES
+            }
+
+            snapshot_df = pd.DataFrame([
+                {
+                    "Flavour": FLAVOR_MAP[code]["name"],
+                    "Calculated Stock": calc_map[code],
+                    "Physical Count": physical_map[code],
+                    "Variance": variance_map[code],
+                }
+                for code in FLAVOR_CODES
+            ])
+
+            total_calc = int(_num(audit_row.get("total_calc_units")))
+            if pd.isna(audit_row.get("total_calc_units")):
+                total_calc = int(sum(calc_map.values()))
+
+            total_physical = int(sum(physical_map.values()))
+            total_variance = int(_num(audit_row.get("total_variance_units")))
+            if pd.isna(audit_row.get("total_variance_units")):
+                total_variance = total_physical - total_calc
+
+            tc1, tc2, tc3 = st.columns(3)
+            tc1.metric("Saved Calculated Stock", f"{total_calc:,}")
+            tc2.metric("Physical Count", f"{total_physical:,}")
+            tc3.metric("Saved Variance", f"{total_variance:+,}")
+
+            def _variance_style(value):
+                try:
+                    return "color: #19692C; font-weight: 800;" if int(value) == 0 else "color: #C43D17; font-weight: 800;"
+                except Exception:
+                    return ""
+
+            st.dataframe(
+                snapshot_df.style.map(_variance_style, subset=["Variance"]),
+                hide_index=True,
+                use_container_width=True,
+            )
 
         def get_system_stock_as_of(target_date):
             """
@@ -3795,8 +3877,16 @@ elif page == "Freezer Stock" and user_role == "admin":
             with aud_c4:
                 audited_by = st.text_input("Audited by", value="Admin", key="audit_by_entry")
 
-            freezer_curr_df = get_db_freezer_stock()
-            sys_stock_map = dict(zip(freezer_curr_df["code"], freezer_curr_df["Units in freezer"])) if not freezer_curr_df.empty else {}
+            # Use the same last-physical-audit movement logic as Freezer Analysis.
+            # For the very first audit (no prior physical audit), fall back to the
+            # all-movements freezer calculation.
+            sys_stock_map = get_physical_current_stock_map()
+            if not sys_stock_map:
+                freezer_curr_df = get_db_freezer_stock()
+                sys_stock_map = (
+                    dict(zip(freezer_curr_df["code"], freezer_curr_df["Units in freezer"]))
+                    if not freezer_curr_df.empty else {}
+                )
 
             audit_grid = [
                 {
@@ -3825,15 +3915,37 @@ elif page == "Freezer Stock" and user_role == "admin":
             if st.button("Save stock audit", type="primary", use_container_width=True):
                 try:
                     phys_by_code = {row["Code"]: int(row["Physical Counted Units"]) for _, row in audit_edited.iterrows()}
+                    calc_by_code = {row["Code"]: int(row["Current System Stock"]) for _, row in audit_edited.iterrows()}
+                    variance_by_code = {
+                        code: int(phys_by_code.get(code, 0)) - int(calc_by_code.get(code, 0))
+                        for code in FLAVOR_CODES
+                    }
+                    total_calc_units = int(sum(calc_by_code.values()))
+                    total_variance_units = int(sum(variance_by_code.values()))
+
                     with db_conn.session as s:
                         res = s.execute(
                             text("""
                                 INSERT INTO stock_audits_wide
-                                (audit_date, audit_time, location, audited_by, remarks,
-                                 ml_units, mm_units, ps_units, mn_units, kb_units, bm_units, sg_units, ch_units, ra_units)
+                                (
+                                    audit_date, audit_time, location, audited_by, remarks,
+                                    ml_units, mm_units, ps_units, mn_units, kb_units, bm_units, sg_units, ch_units, ra_units,
+                                    ml_calc_units, mm_calc_units, ps_calc_units, mn_calc_units, kb_calc_units,
+                                    bm_calc_units, sg_calc_units, ch_calc_units, ra_calc_units,
+                                    ml_variance_units, mm_variance_units, ps_variance_units, mn_variance_units, kb_variance_units,
+                                    bm_variance_units, sg_variance_units, ch_variance_units, ra_variance_units,
+                                    total_calc_units, total_variance_units
+                                )
                                 VALUES
-                                (:adt, :atm, :loc, :by, :rem,
-                                 :ml, :mm, :ps, :mn, :kb, :bm, :sg, :ch, :ra)
+                                (
+                                    :adt, :atm, :loc, :by, :rem,
+                                    :ml, :mm, :ps, :mn, :kb, :bm, :sg, :ch, :ra,
+                                    :ml_calc, :mm_calc, :ps_calc, :mn_calc, :kb_calc,
+                                    :bm_calc, :sg_calc, :ch_calc, :ra_calc,
+                                    :ml_var, :mm_var, :ps_var, :mn_var, :kb_var,
+                                    :bm_var, :sg_var, :ch_var, :ra_var,
+                                    :total_calc, :total_var
+                                )
                                 RETURNING audit_id;
                             """),
                             {
@@ -3842,7 +3954,19 @@ elif page == "Freezer Stock" and user_role == "admin":
                                 "ps": phys_by_code.get("PS", 0), "mn": phys_by_code.get("MN", 0),
                                 "kb": phys_by_code.get("KB", 0), "bm": phys_by_code.get("BM", 0),
                                 "sg": phys_by_code.get("SG", 0), "ch": phys_by_code.get("CH", 0),
-                                "ra": phys_by_code.get("RA", 0)
+                                "ra": phys_by_code.get("RA", 0),
+                                "ml_calc": calc_by_code.get("ML", 0), "mm_calc": calc_by_code.get("MM", 0),
+                                "ps_calc": calc_by_code.get("PS", 0), "mn_calc": calc_by_code.get("MN", 0),
+                                "kb_calc": calc_by_code.get("KB", 0), "bm_calc": calc_by_code.get("BM", 0),
+                                "sg_calc": calc_by_code.get("SG", 0), "ch_calc": calc_by_code.get("CH", 0),
+                                "ra_calc": calc_by_code.get("RA", 0),
+                                "ml_var": variance_by_code.get("ML", 0), "mm_var": variance_by_code.get("MM", 0),
+                                "ps_var": variance_by_code.get("PS", 0), "mn_var": variance_by_code.get("MN", 0),
+                                "kb_var": variance_by_code.get("KB", 0), "bm_var": variance_by_code.get("BM", 0),
+                                "sg_var": variance_by_code.get("SG", 0), "ch_var": variance_by_code.get("CH", 0),
+                                "ra_var": variance_by_code.get("RA", 0),
+                                "total_calc": total_calc_units,
+                                "total_var": total_variance_units,
                             }
                         )
                         aid = res.scalar()
@@ -3852,12 +3976,49 @@ elif page == "Freezer Stock" and user_role == "admin":
                 except Exception as e:
                     st.error(f"Could not save audit to database: {e}")
 
+        elif audit_mode == "View Last Audit":
+            try:
+                last_audit_df = db_conn.query(
+                    """
+                    SELECT *
+                    FROM stock_audits_wide
+                    ORDER BY audit_date DESC, audit_id DESC
+                    LIMIT 1;
+                    """,
+                    ttl="0s"
+                )
+            except Exception as e:
+                last_audit_df = pd.DataFrame()
+                st.error(f"Could not load the last stock audit: {e}")
+
+            if last_audit_df.empty:
+                st.info("No stock audits found.")
+            else:
+                last_audit = last_audit_df.iloc[0]
+                last_date = pd.to_datetime(last_audit["audit_date"]).strftime("%d-%b-%Y")
+                last_time = (
+                    str(last_audit.get("audit_time"))[:5]
+                    if pd.notna(last_audit.get("audit_time")) and str(last_audit.get("audit_time")).strip()
+                    else "—"
+                )
+                mc1, mc2, mc3, mc4 = st.columns(4)
+                mc1.metric("Audit #", f"#{int(last_audit['audit_id'])}")
+                mc2.metric("Audit Date", last_date)
+                mc3.metric("Audit Time", last_time)
+                mc4.metric("Audited By", str(last_audit.get("audited_by") or "—"))
+                display_saved_audit_snapshot(last_audit, key_prefix="last_audit")
+
         else:
             try:
                 audit_history_df = db_conn.query(
                     """
                     SELECT audit_id, audit_date, audit_time, location, audited_by, remarks,
-                           ml_units, mm_units, ps_units, mn_units, kb_units, bm_units, sg_units, ch_units, ra_units
+                           ml_units, mm_units, ps_units, mn_units, kb_units, bm_units, sg_units, ch_units, ra_units,
+                           ml_calc_units, mm_calc_units, ps_calc_units, mn_calc_units, kb_calc_units,
+                           bm_calc_units, sg_calc_units, ch_calc_units, ra_calc_units,
+                           ml_variance_units, mm_variance_units, ps_variance_units, mn_variance_units, kb_variance_units,
+                           bm_variance_units, sg_variance_units, ch_variance_units, ra_variance_units,
+                           total_calc_units, total_variance_units
                     FROM stock_audits_wide
                     ORDER BY audit_date DESC, audit_id DESC;
                     """,
@@ -3926,7 +4087,13 @@ elif page == "Freezer Stock" and user_role == "admin":
                         key=f"edit_audit_by_{loaded_audit_id}"
                     )
 
-                historical_system_map = get_system_stock_as_of(edit_audit_date)
+                if audit_snapshot_available(loaded_audit):
+                    historical_system_map = saved_audit_snapshot_map(loaded_audit)
+                    st.caption("Calculated stock shown below is the saved snapshot captured when this audit was submitted.")
+                else:
+                    historical_system_map = get_system_stock_as_of(edit_audit_date)
+                    st.caption("Legacy audit: calculated stock is being reconstructed because no snapshot was stored originally.")
+
                 edit_audit_grid = []
                 for code in FLAVOR_CODES:
                     audit_col = FLAVOR_MAP[code]["audit_col"]
@@ -3963,6 +4130,17 @@ elif page == "Freezer Stock" and user_role == "admin":
                             row["Code"]: int(row["Physical Counted Units"])
                             for _, row in edited_past_audit.iterrows()
                         }
+                        edited_calc_by_code = {
+                            row["Code"]: int(row["Current System Stock"])
+                            for _, row in edited_past_audit.iterrows()
+                        }
+                        edited_variance_by_code = {
+                            code: int(edited_phys_by_code.get(code, 0)) - int(edited_calc_by_code.get(code, 0))
+                            for code in FLAVOR_CODES
+                        }
+                        edited_total_calc = int(sum(edited_calc_by_code.values()))
+                        edited_total_variance = int(sum(edited_variance_by_code.values()))
+
                         with db_conn.session as s:
                             s.execute(
                                 text("""
@@ -3980,7 +4158,27 @@ elif page == "Freezer Stock" and user_role == "admin":
                                         bm_units = :bm,
                                         sg_units = :sg,
                                         ch_units = :ch,
-                                        ra_units = :ra
+                                        ra_units = :ra,
+                                        ml_calc_units = :ml_calc,
+                                        mm_calc_units = :mm_calc,
+                                        ps_calc_units = :ps_calc,
+                                        mn_calc_units = :mn_calc,
+                                        kb_calc_units = :kb_calc,
+                                        bm_calc_units = :bm_calc,
+                                        sg_calc_units = :sg_calc,
+                                        ch_calc_units = :ch_calc,
+                                        ra_calc_units = :ra_calc,
+                                        ml_variance_units = :ml_var,
+                                        mm_variance_units = :mm_var,
+                                        ps_variance_units = :ps_var,
+                                        mn_variance_units = :mn_var,
+                                        kb_variance_units = :kb_var,
+                                        bm_variance_units = :bm_var,
+                                        sg_variance_units = :sg_var,
+                                        ch_variance_units = :ch_var,
+                                        ra_variance_units = :ra_var,
+                                        total_calc_units = :total_calc,
+                                        total_variance_units = :total_var
                                     WHERE audit_id = :aid;
                                 """),
                                 {
@@ -3999,6 +4197,26 @@ elif page == "Freezer Stock" and user_role == "admin":
                                     "sg": edited_phys_by_code.get("SG", 0),
                                     "ch": edited_phys_by_code.get("CH", 0),
                                     "ra": edited_phys_by_code.get("RA", 0),
+                                    "ml_calc": edited_calc_by_code.get("ML", 0),
+                                    "mm_calc": edited_calc_by_code.get("MM", 0),
+                                    "ps_calc": edited_calc_by_code.get("PS", 0),
+                                    "mn_calc": edited_calc_by_code.get("MN", 0),
+                                    "kb_calc": edited_calc_by_code.get("KB", 0),
+                                    "bm_calc": edited_calc_by_code.get("BM", 0),
+                                    "sg_calc": edited_calc_by_code.get("SG", 0),
+                                    "ch_calc": edited_calc_by_code.get("CH", 0),
+                                    "ra_calc": edited_calc_by_code.get("RA", 0),
+                                    "ml_var": edited_variance_by_code.get("ML", 0),
+                                    "mm_var": edited_variance_by_code.get("MM", 0),
+                                    "ps_var": edited_variance_by_code.get("PS", 0),
+                                    "mn_var": edited_variance_by_code.get("MN", 0),
+                                    "kb_var": edited_variance_by_code.get("KB", 0),
+                                    "bm_var": edited_variance_by_code.get("BM", 0),
+                                    "sg_var": edited_variance_by_code.get("SG", 0),
+                                    "ch_var": edited_variance_by_code.get("CH", 0),
+                                    "ra_var": edited_variance_by_code.get("RA", 0),
+                                    "total_calc": edited_total_calc,
+                                    "total_var": edited_total_variance,
                                 }
                             )
                             s.commit()
