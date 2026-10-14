@@ -1289,12 +1289,12 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
         # true monthly pro-rata: the payable period always starts no earlier
         # than Date of Joining and each day uses that calendar month's divisor.
         if role_lower != "cart operator":
-            period_start, period_end = employment_start, employment_end
-            if role_lower == "ops coordinator":
-                if pd.notna(doj) and str(doj).strip():
-                    period_start = max(period_start, pd.to_datetime(doj).date())
-                if pd.notna(leaving) and str(leaving).strip():
-                    period_end = min(period_end, pd.to_datetime(leaving).date())
+            period_start = employment_start
+            period_end = min(employment_end, date.today())
+            if pd.notna(doj) and str(doj).strip():
+                period_start = max(period_start, pd.to_datetime(doj).date())
+            if pd.notna(leaving) and str(leaving).strip():
+                period_end = min(period_end, pd.to_datetime(leaving).date())
 
             if period_start > period_end:
                 continue
@@ -1657,7 +1657,7 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
 
     summary_data.extend([
         ["Gross Payable Earnings", gross_basis, f"Rs. {data_dict['incurred']:,.2f}"],
-        ["Already Paid / Disbursed", "Cash advances & direct payments recorded", f"-Rs. {data_dict['paid']:,.2f}"],
+        ["Already Paid / Disbursed", "Advances paid already & unexplained leakages / missed / wrong entries", f"-Rs. {data_dict['paid']:,.2f}"],
         ["Calculated Final Payable", "Calculated amount before manual adjustment", f"Rs. {data_dict['due']:,.2f}"],
         ["Manual Adjustment", adjustment_reason if adjustment_reason else "No adjustment entered", f"Rs. {adjustment_amount:+,.2f}" if abs(adjustment_amount) > 0.0001 else "Rs. 0.00"],
         ["Final Payable (Adjusted)", "Calculated final payable amount post adjustments", f"Rs. {final_adjusted:,.2f}"]
@@ -2435,7 +2435,7 @@ elif page == "Payslip Generator" and user_role == "admin":
 
             summary_table_data.extend([
                 ["Gross Payable Earnings", gross_basis, f"₹{staff_data['incurred']:,.2f}"],
-                ["Already Paid / Disbursed", "Cash advances & direct payments recorded", f"-₹{staff_data['paid']:,.2f}"],
+                ["Already Paid / Disbursed", "Advances paid already & unexplained leakages / missed / wrong entries", f"-₹{staff_data['paid']:,.2f}"],
                 ["Calculated Final Payable", "Calculated amount before manual adjustment", f"₹{staff_data['due']:,.2f}"],
                 ["Manual Adjustment", adjustment_reason.strip() if adjustment_reason.strip() else "No adjustment entered", f"₹{float(adjustment_amount):+,.2f}" if abs(float(adjustment_amount)) > 0.0001 else "₹0.00"],
                 ["Final Payable (Adjusted)", "Calculated final payable amount post adjustments", f"₹{final_payable_adjusted:,.2f}"]
@@ -6316,14 +6316,14 @@ elif page == "Staff & Payroll" and user_role == "admin":
                             else:
                                 unpaid_leave_dates.add(l_dt)
 
-                    role_start, role_end = m_start_dt, m_end_dt
-                    if staff_role.lower() == "ops coordinator":
-                        doj_val = s_row.get("date_of_joining")
-                        dol_val = s_row.get("date_of_leaving")
-                        if pd.notna(doj_val) and str(doj_val).strip():
-                            role_start = max(role_start, pd.to_datetime(doj_val).date())
-                        if pd.notna(dol_val) and str(dol_val).strip():
-                            role_end = min(role_end, pd.to_datetime(dol_val).date())
+                    role_start = m_start_dt
+                    role_end = min(m_end_dt, date.today())
+                    doj_val = s_row.get("date_of_joining")
+                    dol_val = s_row.get("date_of_leaving")
+                    if pd.notna(doj_val) and str(doj_val).strip():
+                        role_start = max(role_start, pd.to_datetime(doj_val).date())
+                    if pd.notna(dol_val) and str(dol_val).strip():
+                        role_end = min(role_end, pd.to_datetime(dol_val).date())
 
                     if role_start > role_end:
                         detailed_staff_logs[st_name] = pd.DataFrame()
