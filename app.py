@@ -597,20 +597,30 @@ def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map,
                     {"eid": exp_food_id, "pdate": entry_date, "pamt": float(food_tea_cash), "pref": f"CART-FOOD-{entry_date.strftime('%Y%m%d')}", "pto": staff_name, "notes": f"Daily food and tea cash allowance disbursed from cart collection at {cart_name}"}
                 )
 
-            if float(cash_leakage) > 0.001:
-                s.execute(
-                    text("""
-                    INSERT INTO expenses (expense_date, expense_type, category, sub_category, description, total_amount, attributed_to, vendor_name, staff_name, status, recorded_by, remarks) 
-                    VALUES (:ed, 'OPEX', 'Leakage Expense', 'Cash Leakage', :desc, :amt, :attr, NULL, NULL, 'Not Applicable', 'Daily Entry Auto', :rem);
-                    """),
-                    {
-                        "ed": entry_date, 
-                        "desc": f"Cash Leakage recorded at {cart_name}", 
-                        "amt": float(cash_leakage), 
-                        "attr": cart_name, 
-                        "rem": f"[Auto: Daily Entry #{daily_id}] Cash Leakage"
-                    }
-                )
+            # Store explained and unexplained leakage separately for accurate payroll.
+            # Both amounts are already represented in daily_cart_entries.cash_leakage.
+            for leakage_kind, amount, leakage_staff in (
+                ("Explained", cash_leakage_explained, None),
+                ("Unexplained", cash_leakage_unexplained, staff_name or None),
+            ):
+                if amount > 0.001:
+                    s.execute(
+                        text("""
+                        INSERT INTO expenses (expense_date, expense_type, category, sub_category,
+                                              description, total_amount, attributed_to, vendor_name,
+                                              staff_name, status, recorded_by, remarks)
+                        VALUES (:ed, 'OPEX', 'Leakage Expense', 'Cash Leakage', :desc, :amt,
+                                :attr, NULL, :staff, 'Not Applicable', 'Daily Entry Auto', :rem);
+                        """),
+                        {
+                            "ed": entry_date,
+                            "desc": f"Cash Leakage ({leakage_kind}) recorded at {cart_name}",
+                            "amt": float(amount),
+                            "attr": cart_name,
+                            "staff": leakage_staff,
+                            "rem": f"[Auto: Daily Entry #{daily_id}] Leakage {leakage_kind}",
+                        }
+                    )
 
             s.commit()
 
@@ -1194,8 +1204,10 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
             SELECT expense_date, staff_name, total_amount
             FROM expenses
             WHERE LOWER(TRIM(COALESCE(sub_category, ''))) = 'cash leakage'
+              AND category = 'Leakage Expense'
               AND expense_date >= :sdate AND expense_date <= :edate
-              AND staff_name IS NOT NULL;
+              AND NULLIF(TRIM(staff_name), '') IS NOT NULL
+;
         """, params={"sdate": start_date, "edate": end_date}, ttl="0s")
 
     def month_days(d):
