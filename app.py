@@ -1211,7 +1211,7 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
         """, params={"sdate": start_date, "edate": end_date}, ttl="0s")
 
     def month_days(d):
-        return calendar.monthrange(d.year, d.month)[1]
+        return 30
 
     def prorate_monthly(monthly_amount, eligible_dates):
         amount = float(_num(monthly_amount))
@@ -1319,12 +1319,8 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
             paid_leave_cnt = len([d for d in paid_leave_dates if d in payable_dates])
             unpaid_leave_cnt = len([d for d in unpaid_leave_dates if period_start <= d <= period_end])
 
-            if role_lower == "ops coordinator":
-                staff_salary = sum(monthly_sal / month_days(d) for d in payable_dates)
-                display_daily_rate = monthly_sal / month_days(period_start)
-            else:
-                staff_salary = payable_days * standard_daily_rate
-                display_daily_rate = standard_daily_rate
+            staff_salary = payable_days * standard_daily_rate
+            display_daily_rate = standard_daily_rate
 
             if food_mode == "monthly":
                 # Monthly Food Allowance is paid centrally and is not part of an individual payslip.
@@ -1657,7 +1653,7 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
 
     summary_data.extend([
         ["Gross Payable Earnings", gross_basis, f"Rs. {data_dict['incurred']:,.2f}"],
-        ["Already Paid / Disbursed", "Advances paid already & unexplained leakages / missed / wrong entries", f"-Rs. {data_dict['paid']:,.2f}"],
+        ["Already Paid / Disbursed", ("Advances paid already, unexplained leakages & penalties" if is_cart_operator else "Advances paid already & penalties"), f"-Rs. {data_dict['paid']:,.2f}"],
         ["Calculated Final Payable", "Calculated amount before manual adjustment", f"Rs. {data_dict['due']:,.2f}"],
         ["Manual Adjustment", adjustment_reason if adjustment_reason else "No adjustment entered", f"Rs. {adjustment_amount:+,.2f}" if abs(adjustment_amount) > 0.0001 else "Rs. 0.00"],
         ["Final Payable (Adjusted)", "Calculated final payable amount post adjustments", f"Rs. {final_adjusted:,.2f}"]
@@ -2435,7 +2431,7 @@ elif page == "Payslip Generator" and user_role == "admin":
 
             summary_table_data.extend([
                 ["Gross Payable Earnings", gross_basis, f"₹{staff_data['incurred']:,.2f}"],
-                ["Already Paid / Disbursed", "Advances paid already & unexplained leakages / missed / wrong entries", f"-₹{staff_data['paid']:,.2f}"],
+                ["Already Paid / Disbursed", ("Advances paid already, unexplained leakages & penalties" if is_cart_operator else "Advances paid already & penalties"), f"-₹{staff_data['paid']:,.2f}"],
                 ["Calculated Final Payable", "Calculated amount before manual adjustment", f"₹{staff_data['due']:,.2f}"],
                 ["Manual Adjustment", adjustment_reason.strip() if adjustment_reason.strip() else "No adjustment entered", f"₹{float(adjustment_amount):+,.2f}" if abs(float(adjustment_amount)) > 0.0001 else "₹0.00"],
                 ["Final Payable (Adjusted)", "Calculated final payable amount post adjustments", f"₹{final_payable_adjusted:,.2f}"]
@@ -6338,10 +6334,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                     paid_leave_cnt = len([d for d in paid_leave_dates if role_start <= d <= role_end])
                     unpaid_leave_cnt = len([d for d in unpaid_leave_dates if role_start <= d <= role_end])
 
-                    if staff_role.lower() == "ops coordinator":
-                        salary_by_date = {d: monthly_sal / calendar.monthrange(d.year, d.month)[1] for d in period_dates}
-                    else:
-                        salary_by_date = {d: daily_rate for d in period_dates}
+                    salary_by_date = {d: daily_rate for d in period_dates}
                     apportioned_base_salary = sum(salary_by_date[d] for d in payable_dates)
                     salary_daily_rate = (apportioned_base_salary / payable_days) if payable_days > 0 else 0.0
                     if food_mode == "monthly":
@@ -6350,12 +6343,12 @@ elif page == "Staff & Payroll" and user_role == "admin":
                         # Ops Coordinator Fuel is an individual earning and remains payable
                         # pro-rata for actual worked days under the monthly Food/Tea model.
                         fuel_entitled = (
-                            sum(monthly_fuel / calendar.monthrange(d.year, d.month)[1] for d in worked_dates)
+                            sum(monthly_fuel / 30.0 for d in worked_dates)
                             if staff_role.lower() == "ops coordinator" else 0.0
                         )
                     else:
                         food_entitled = sum((allow_sun if d.weekday() == 6 else allow_wd) for d in worked_dates)
-                        fuel_entitled = sum(monthly_fuel / calendar.monthrange(d.year, d.month)[1] for d in worked_dates)
+                        fuel_entitled = sum(monthly_fuel / 30.0 for d in worked_dates)
                     total_allow_entitled = food_entitled + fuel_entitled
                     total_payments_disbursed = float(st_payments["amount_paid"].sum()) if not st_payments.empty else 0.0
                     gross_earnings = apportioned_base_salary + total_allow_entitled
@@ -6387,7 +6380,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                             day_salary = salary_by_date.get(d, 0.0)
                             if food_mode == "daily":
                                 day_food_allow = allow_sun if d.weekday() == 6 else allow_wd
-                                day_allow = day_food_allow + (monthly_fuel / calendar.monthrange(d.year, d.month)[1])
+                                day_allow = day_food_allow + (monthly_fuel / 30.0)
                             else:
                                 day_allow = 0.0
                         staff_shift_records.append({
