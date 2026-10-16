@@ -257,6 +257,93 @@ div[data-testid="stDataFrame"] td, div[data-testid="stDataEditor"] td {
     font-size: 11.5px !important;
 }
 hr { border-color: #E3CBA0 !important; margin: 0.35rem 0 !important; }
+/* Distinct Editable Table Input Borders */
+div[data-testid="stNumberInput"] div[data-baseweb="input"] {
+    border: 1.8px solid #D97706 !important;
+    background-color: #FFFBEB !important;
+    border-radius: 6px !important;
+    box-shadow: 0 1px 2px rgba(217, 119, 6, 0.08) !important;
+}
+div[data-testid="stNumberInput"] div[data-baseweb="input"]:focus-within {
+    border: 2px solid #19692C !important;
+    background-color: #ECFDF5 !important;
+    box-shadow: 0 0 0 2px rgba(25, 105, 44, 0.18) !important;
+}
+div[data-testid="stNumberInput"] input {
+    text-align: center !important;
+    font-weight: 800 !important;
+    color: #2A1B10 !important;
+}
+.entry-grid-header {
+    background: #70440E;
+    color: #FFFFFF !important;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 11.5px;
+    font-weight: 800;
+    text-align: center;
+    margin-bottom: 4px;
+}
+.entry-grid-cell {
+    background: #FFFBF2;
+    border: 1px solid #E6D4B5;
+    border-radius: 6px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 800;
+    color: #4A2418;
+}
+.entry-grid-cell-flavour {
+    background: #FFFFFF;
+    border: 1px solid #E6D4B5;
+    border-radius: 6px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 8px;
+    font-size: 12px;
+    font-weight: 800;
+    color: #4A2418;
+}
+.entry-grid-cell-sold {
+    background: #FCE8E2;
+    border: 1px solid #F3C3B6;
+    border-radius: 6px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 900;
+    color: #C43D17;
+}
+.entry-grid-cell-amount {
+    background: #EAF4EC;
+    border: 1px solid #B7DFB9;
+    border-radius: 6px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 8px;
+    font-size: 12px;
+    font-weight: 900;
+    color: #124A1D;
+}
+.entry-grid-total-row {
+    background: #FFF2DC;
+    border: 1.5px solid #CDAE76;
+    border-radius: 7px;
+    padding: 6px 10px;
+    margin-top: 6px;
+    font-size: 12px;
+    font-weight: 900;
+    color: #4A2418;
+}
 </style>
 """)
 
@@ -1916,11 +2003,7 @@ if page == "Daily Entry":
                         )
 
                 if sales_opening_mismatch:
-                    mismatch_msg = (
-                        f"Opening units for sale date {_entry_date_display(entry_date)} not matching "
-                        f"previous sale date {_entry_date_display(prev_sale_date)} closing units for cart {cart_name}.  "
-                        f"Please check and fix this issue to proceed further"
-                    )
+                    mismatch_msg = "Error:: Opening units mismatch with previous closing units - please fix this to proceed"
                     mismatch_target = f"{cart_name}_{entry_date.strftime('%Y%m%d')}"
                     if st.session_state.get("_last_mismatch_modal_target") != mismatch_target:
                         st.session_state["_last_mismatch_modal_target"] = mismatch_target
@@ -1941,14 +2024,24 @@ if page == "Daily Entry":
                     disabled=sales_opening_mismatch,
                 )
 
-                added_map, closing_map, sold_map = {}, {}, {}
+                added_map, closing_map, sold_map, amount_map = {}, {}, {}, {}
 
                 st.markdown(
                     f"<div class='header-box-sales'><span>📅 Sales & Closing Entry — {_entry_date_display(entry_date)}</span><span><b>{cart_name}</b></span></div>",
                     unsafe_allow_html=True,
                 )
                 with st.container(border=True):
-                    st.caption(f"Record **closing counts** and daytime stock additions for **{_entry_date_display(entry_date)}**:")
+                    st.caption(
+                        f"Enter **+ Added** and **Closing** units in the highlighted boxes for **{_entry_date_display(entry_date)}**:"
+                    )
+                    hc1, hc2, hc3, hc4, hc5, hc6 = st.columns([2.1, 0.85, 1.05, 1.05, 0.85, 1.15], gap="small")
+                    hc1.markdown("<div class='entry-grid-header' style='text-align:left;'>Flavour (MRP)</div>", unsafe_allow_html=True)
+                    hc2.markdown("<div class='entry-grid-header'>Open</div>", unsafe_allow_html=True)
+                    hc3.markdown("<div class='entry-grid-header'>+ Add ✏️</div>", unsafe_allow_html=True)
+                    hc4.markdown("<div class='entry-grid-header'>Close ✏️</div>", unsafe_allow_html=True)
+                    hc5.markdown("<div class='entry-grid-header'>Sold</div>", unsafe_allow_html=True)
+                    hc6.markdown("<div class='entry-grid-header' style='text-align:right;'>Sale (₹)</div>", unsafe_allow_html=True)
+
                     for code in FLAVOR_CODES:
                         f_info = FLAVOR_MAP[code]
                         k_add, k_cls = f"add_{entry_id}_{code}", f"cls_{entry_id}_{code}"
@@ -1958,29 +2051,60 @@ if page == "Daily Entry":
                             st.session_state[k_cls] = loaded["by_code"][code]["closing"]
 
                         cur_open = opening_map[code]
-                        cur_add = _int_num(st.session_state[k_add])
-                        cur_cls = _int_num(st.session_state[k_cls])
+                        rc1, rc2, rc3, rc4, rc5, rc6 = st.columns([2.1, 0.85, 1.05, 1.05, 0.85, 1.15], gap="small")
+                        with rc1:
+                            st.markdown(
+                                f"<div class='entry-grid-cell-flavour'><span>{f_info['name']}</span><span style='color:#8A5E17;font-size:11px;'>₹{f_info['mrp']:.0f}</span></div>",
+                                unsafe_allow_html=True,
+                            )
+                        with rc2:
+                            st.markdown(f"<div class='entry-grid-cell'>{cur_open}</div>", unsafe_allow_html=True)
+                        with rc3:
+                            cur_add = _int_num(
+                                st.number_input(
+                                    f"Add {f_info['name']}",
+                                    min_value=0,
+                                    step=1,
+                                    format="%d",
+                                    key=k_add,
+                                    label_visibility="collapsed",
+                                    disabled=sales_opening_mismatch,
+                                )
+                            )
+                        with rc4:
+                            cur_cls = _int_num(
+                                st.number_input(
+                                    f"Close {f_info['name']}",
+                                    min_value=0,
+                                    step=1,
+                                    format="%d",
+                                    key=k_cls,
+                                    label_visibility="collapsed",
+                                    disabled=sales_opening_mismatch,
+                                )
+                            )
                         cur_sold = cur_open + cur_add - cur_cls
-                        added_map[code], closing_map[code], sold_map[code] = cur_add, cur_cls, cur_sold
-
-                        st.markdown(
-                            f"<div class='flavor-entry-row'><div class='flavor-title-bar'><span class='flavor-name'>{f_info['name']} (₹{f_info['mrp']:.0f})</span><div><span class='badge-open'>Opening: {cur_open}</span> <span class='badge-sold'>Sold: {cur_sold}</span></div></div></div>",
-                            unsafe_allow_html=True,
-                        )
-                        col_a, col_b = st.columns(2)
-                        with col_a:
-                            st.number_input("+ Added during day", min_value=0, step=1, format="%d", key=k_add, disabled=sales_opening_mismatch)
-                        with col_b:
-                            st.number_input("Closing count", min_value=0, step=1, format="%d", key=k_cls, disabled=sales_opening_mismatch)
+                        cur_amt = max(0, cur_sold) * float(f_info["mrp"])
+                        added_map[code], closing_map[code], sold_map[code], amount_map[code] = cur_add, cur_cls, cur_sold, cur_amt
+                        with rc5:
+                            st.markdown(f"<div class='entry-grid-cell-sold'>{cur_sold}</div>", unsafe_allow_html=True)
+                        with rc6:
+                            st.markdown(f"<div class='entry-grid-cell-amount'>₹{cur_amt:,.0f}</div>", unsafe_allow_html=True)
 
                     tot_open = sum(opening_map.values())
                     tot_add = sum(added_map.values())
                     tot_close = sum(closing_map.values())
                     tot_sold = sum(sold_map.values())
+                    calculated_mrp_total = float(sum(amount_map.values()))
 
-                    calculated_mrp_total = float(
-                        sum(sold_map[code] * FLAVOR_MAP[code]["mrp"] for code in FLAVOR_CODES)
-                    )
+                    tc1, tc2, tc3, tc4, tc5, tc6 = st.columns([2.1, 0.85, 1.05, 1.05, 0.85, 1.15], gap="small")
+                    tc1.markdown("<div class='entry-grid-total-row' style='text-align:left;'>TOTAL</div>", unsafe_allow_html=True)
+                    tc2.markdown(f"<div class='entry-grid-total-row' style='text-align:center;'>{tot_open}</div>", unsafe_allow_html=True)
+                    tc3.markdown(f"<div class='entry-grid-total-row' style='text-align:center;'>{tot_add}</div>", unsafe_allow_html=True)
+                    tc4.markdown(f"<div class='entry-grid-total-row' style='text-align:center;'>{tot_close}</div>", unsafe_allow_html=True)
+                    tc5.markdown(f"<div class='entry-grid-total-row' style='text-align:center;color:#C43D17;'>{tot_sold}</div>", unsafe_allow_html=True)
+                    tc6.markdown(f"<div class='entry-grid-total-row' style='text-align:right;color:#124A1D;'>₹{calculated_mrp_total:,.0f}</div>", unsafe_allow_html=True)
+
                     k_tot = f"daily_total{data_key_suffix}"
                     k_prev_calc = f"daily_prev_calc{data_key_suffix}"
 
@@ -2075,13 +2199,6 @@ if page == "Daily Entry":
                         flags=re.IGNORECASE,
                     ).strip()
 
-                    st.markdown("---")
-                    m1, m2, m3, m4 = st.columns(4)
-                    m1.metric("Opening", f"{tot_open} pcs")
-                    m2.metric("Added", f"{tot_add} pcs")
-                    m3.metric("Closing", f"{tot_close} pcs")
-                    m4.metric("Total Sold", f"{tot_sold} pcs")
-
                 if any(s < 0 for s in sold_map.values()):
                     st.error(f"Sales negative for at least one flavour on {_entry_date_display(entry_date)} - check closing count.")
 
@@ -2161,6 +2278,12 @@ if page == "Daily Entry":
                 unsafe_allow_html=True,
             )
             with st.container(border=True):
+                rh1, rh2, rh3, rh4 = st.columns([2.2, 1.0, 1.2, 1.2], gap="small")
+                rh1.markdown("<div class='entry-grid-header' style='background:#124A1D;text-align:left;'>Flavour</div>", unsafe_allow_html=True)
+                rh2.markdown("<div class='entry-grid-header' style='background:#124A1D;'>Opening</div>", unsafe_allow_html=True)
+                rh3.markdown("<div class='entry-grid-header' style='background:#124A1D;'>+ Restock ✏️</div>", unsafe_allow_html=True)
+                rh4.markdown("<div class='entry-grid-header' style='background:#124A1D;text-align:right;'>Total Opening</div>", unsafe_allow_html=True)
+
                 for code in FLAVOR_CODES:
                     f_info = FLAVOR_MAP[code]
                     opening = int(today_stock_state[code]["opening"])
@@ -2169,35 +2292,36 @@ if page == "Daily Entry":
                     if key not in st.session_state:
                         st.session_state[key] = existing_added
 
-                    st.markdown(
-                        f"<div class='flavor-entry-row'><div class='flavor-title-bar'><span class='flavor-name'>{f_info['name']}</span><span class='badge-open'>Opening: {opening} pcs</span></div></div>",
-                        unsafe_allow_html=True,
-                    )
-                    rc1, rc2 = st.columns([1, 1])
-                    with rc1:
-                        qty = st.number_input(
-                            "+ Restock",
-                            min_value=0,
-                            step=1,
-                            format="%d",
-                            key=key,
+                    c1, c2, c3, c4 = st.columns([2.2, 1.0, 1.2, 1.2], gap="small")
+                    with c1:
+                        st.markdown(f"<div class='entry-grid-cell-flavour'><span>{f_info['name']}</span></div>", unsafe_allow_html=True)
+                    with c2:
+                        st.markdown(f"<div class='entry-grid-cell'>{opening}</div>", unsafe_allow_html=True)
+                    with c3:
+                        qty = int(
+                            st.number_input(
+                                f"Restock {f_info['name']}",
+                                min_value=0,
+                                step=1,
+                                format="%d",
+                                key=key,
+                                label_visibility="collapsed",
+                            )
                         )
-                    qty = int(qty)
                     restock_map[code] = qty
                     restock_after_map[code] = opening + qty
-                    with rc2:
-                        st.markdown("<div style='height: 18px;'></div>", unsafe_allow_html=True)
-                        st.markdown(
-                            f"<div style='text-align:right'><span class='badge-today-open'>Opening + Restock: <b>{opening + qty} pcs</b></span></div>",
-                            unsafe_allow_html=True,
-                        )
+                    with c4:
+                        st.markdown(f"<div class='entry-grid-cell-amount'>{opening + qty} pcs</div>", unsafe_allow_html=True)
 
+                total_opening_base = sum(int(today_stock_state[code]["opening"]) for code in FLAVOR_CODES)
                 total_restock = sum(restock_map.values())
                 total_opening_after = sum(restock_after_map.values())
-                st.markdown("---")
-                rt1, rt2 = st.columns(2)
-                rt1.metric("Stock Added for Today", f"{total_restock} pcs")
-                rt2.metric("Today's Total Opening", f"{total_opening_after} pcs")
+
+                tf1, tf2, tf3, tf4 = st.columns([2.2, 1.0, 1.2, 1.2], gap="small")
+                tf1.markdown("<div class='entry-grid-total-row' style='text-align:left;'>TOTAL</div>", unsafe_allow_html=True)
+                tf2.markdown(f"<div class='entry-grid-total-row' style='text-align:center;'>{total_opening_base}</div>", unsafe_allow_html=True)
+                tf3.markdown(f"<div class='entry-grid-total-row' style='text-align:center;color:#124A1D;'>+{total_restock} pcs</div>", unsafe_allow_html=True)
+                tf4.markdown(f"<div class='entry-grid-total-row' style='text-align:right;color:#124A1D;'>{total_opening_after} pcs</div>", unsafe_allow_html=True)
 
             if st.button("📦 Submit Restock", type="primary", use_container_width=True, key=f"submit_restock_{cart_name}"):
                 try:
@@ -2219,18 +2343,28 @@ if page == "Daily Entry":
             st.subheader("➕ Extra Stock")
             st.caption("Additional stock supplied after the cart has started selling")
 
-            cart_name = st.selectbox("Assigned Cart", CARTS, key="entry_cart_shared")
-            st.text_input(
-                "Extra Stock Date",
-                value=_entry_date_display(today_val),
-                disabled=True,
-                key=f"extra_date_{cart_name}",
-            )
+            ec_top1, ec_top2 = st.columns([1.2, 1])
+            with ec_top1:
+                cart_name = st.selectbox("Assigned Cart", CARTS, key="entry_cart_shared")
+            with ec_top2:
+                st.text_input(
+                    "Extra Stock Date",
+                    value=_entry_date_display(today_val),
+                    disabled=True,
+                    key=f"extra_date_{cart_name}",
+                )
 
             today_stock_state, today_staff = get_today_cart_stock_state(cart_name, today_val)
             extra_map = {}
 
             with st.container(border=True):
+                eh1, eh2, eh3, eh4, eh5 = st.columns([2.0, 0.9, 0.9, 1.1, 1.1], gap="small")
+                eh1.markdown("<div class='entry-grid-header' style='text-align:left;'>Flavour</div>", unsafe_allow_html=True)
+                eh2.markdown("<div class='entry-grid-header'>Current</div>", unsafe_allow_html=True)
+                eh3.markdown("<div class='entry-grid-header'>Added Today</div>", unsafe_allow_html=True)
+                eh4.markdown("<div class='entry-grid-header'>+ Extra ✏️</div>", unsafe_allow_html=True)
+                eh5.markdown("<div class='entry-grid-header' style='text-align:right;'>After Extra</div>", unsafe_allow_html=True)
+
                 for code in FLAVOR_CODES:
                     f_info = FLAVOR_MAP[code]
                     current_added = int(today_stock_state[code]["added"])
@@ -2239,37 +2373,39 @@ if page == "Daily Entry":
                     if key not in st.session_state:
                         st.session_state[key] = 0
 
-                    st.markdown(
-                        f"<div class='flavor-entry-row'><div class='flavor-title-bar'><span class='flavor-name'>{f_info['name']}</span><span class='badge-open'>Current: {current_stock} pcs · Added today: {current_added}</span></div></div>",
-                        unsafe_allow_html=True,
-                    )
-                    ec1, ec2 = st.columns([1, 1])
-                    with ec1:
-                        qty = st.number_input(
-                            "+ Extra",
-                            min_value=0,
-                            step=1,
-                            format="%d",
-                            key=key,
+                    c1, c2, c3, c4, c5 = st.columns([2.0, 0.9, 0.9, 1.1, 1.1], gap="small")
+                    with c1:
+                        st.markdown(f"<div class='entry-grid-cell-flavour'><span>{f_info['name']}</span></div>", unsafe_allow_html=True)
+                    with c2:
+                        st.markdown(f"<div class='entry-grid-cell'>{current_stock}</div>", unsafe_allow_html=True)
+                    with c3:
+                        st.markdown(f"<div class='entry-grid-cell'>{current_added}</div>", unsafe_allow_html=True)
+                    with c4:
+                        qty = int(
+                            st.number_input(
+                                f"Extra {f_info['name']}",
+                                min_value=0,
+                                step=1,
+                                format="%d",
+                                key=key,
+                                label_visibility="collapsed",
+                            )
                         )
-                    qty = int(qty)
                     extra_map[code] = qty
-                    with ec2:
-                        st.markdown("<div style='height: 18px;'></div>", unsafe_allow_html=True)
-                        st.markdown(
-                            f"<div style='text-align:right'><span class='badge-today-open'>After Extra: <b>{current_stock + qty} pcs</b></span></div>",
-                            unsafe_allow_html=True,
-                        )
+                    with c5:
+                        st.markdown(f"<div class='entry-grid-cell-amount'>{current_stock + qty} pcs</div>", unsafe_allow_html=True)
 
+                tot_curr_stock = sum(int(today_stock_state[code]["closing"]) for code in FLAVOR_CODES)
+                tot_added_today = sum(int(today_stock_state[code]["added"]) for code in FLAVOR_CODES)
                 total_extra = sum(extra_map.values())
-                total_after_extra = sum(
-                    int(today_stock_state[code]["closing"]) + int(extra_map[code])
-                    for code in FLAVOR_CODES
-                )
-                st.markdown("---")
-                et1, et2 = st.columns(2)
-                et1.metric("Extra Stock to Add", f"{total_extra} pcs")
-                et2.metric("Today's Stock After Extra", f"{total_after_extra} pcs")
+                total_after_extra = tot_curr_stock + total_extra
+
+                ef1, ef2, ef3, ef4, ef5 = st.columns([2.0, 0.9, 0.9, 1.1, 1.1], gap="small")
+                ef1.markdown("<div class='entry-grid-total-row' style='text-align:left;'>TOTAL</div>", unsafe_allow_html=True)
+                ef2.markdown(f"<div class='entry-grid-total-row' style='text-align:center;'>{tot_curr_stock}</div>", unsafe_allow_html=True)
+                ef3.markdown(f"<div class='entry-grid-total-row' style='text-align:center;'>{tot_added_today}</div>", unsafe_allow_html=True)
+                ef4.markdown(f"<div class='entry-grid-total-row' style='text-align:center;color:#C43D17;'>+{total_extra} pcs</div>", unsafe_allow_html=True)
+                ef5.markdown(f"<div class='entry-grid-total-row' style='text-align:right;color:#124A1D;'>{total_after_extra} pcs</div>", unsafe_allow_html=True)
 
             if st.button("➕ Submit Extra Stock", type="primary", use_container_width=True, key=f"submit_extra_{cart_name}"):
                 if total_extra <= 0:
@@ -2277,7 +2413,6 @@ if page == "Daily Entry":
                 else:
                     try:
                         add_today_extra_stock_entry(today_val, cart_name, extra_map, today_staff)
-                        # Match the mobile screen: after save, Extra Stock fields return to zero.
                         for code in FLAVOR_CODES:
                             st.session_state[f"extra_stock_{cart_name}_{code}"] = 0
                         st.cache_data.clear()
