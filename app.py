@@ -392,6 +392,12 @@ def show_success_modal(message):
     if st.button("OK", type="primary", use_container_width=True):
         st.rerun()
 
+@st.dialog("Opening Stock Mismatch")
+def show_opening_mismatch_modal(message):
+    st.error(message)
+    if st.button("OK", type="primary", use_container_width=True, key="opening_mismatch_ok_btn"):
+        st.rerun()
+
 # ----------------------------------------------------------------------
 # DATABASE LOADERS & HELPERS
 # ----------------------------------------------------------------------
@@ -425,10 +431,10 @@ def load_active_staff_list():
             pass
     return ["Select Staff"]
 
-def get_latest_cart_closing_state(cart_name, before_date):
-    if db_conn is None: return {}, ""
+def get_latest_cart_closing_state_with_date(cart_name, before_date):
+    if db_conn is None: return {}, "", None
     query = """
-    SELECT e.staff_name, json_agg(json_build_object('code', i.flavor_code, 'close', i.closing_units)) AS items
+    SELECT e.entry_date, e.staff_name, json_agg(json_build_object('code', i.flavor_code, 'close', i.closing_units)) AS items
     FROM daily_cart_entries e
     LEFT JOIN daily_cart_items i ON e.id = i.daily_entry_id
     WHERE e.cart_name = :cart AND e.entry_date < :bdate
@@ -438,13 +444,18 @@ def get_latest_cart_closing_state(cart_name, before_date):
         df = db_conn.query(query, params={"cart": cart_name, "bdate": before_date}, ttl="0s")
         if not df.empty:
             r = df.iloc[0]
+            prev_dt = pd.to_datetime(r["entry_date"]).date() if pd.notna(r["entry_date"]) else None
             staff = str(r["staff_name"]) if pd.notna(r["staff_name"]) else ""
             items = r["items"] if isinstance(r["items"], list) else []
             closings = {str(itm.get("code")).strip(): int(itm.get("close") or 0) for itm in items if isinstance(itm, dict) and itm.get("code")}
-            return closings, staff
+            return closings, staff, prev_dt
     except Exception:
         pass
-    return {}, ""
+    return {}, "", None
+
+def get_latest_cart_closing_state(cart_name, before_date):
+    closings, staff, _ = get_latest_cart_closing_state_with_date(cart_name, before_date)
+    return closings, staff
 
 def list_daily_entries_with_prefill():
     entries = []
@@ -1811,6 +1822,7 @@ if page == "Daily Entry":
                 st.markdown("### 🧾 Sales Entry")
                 st.caption("Closing stock, sales, collections, leakage and remarks")
                 if st.button("Open Sales Entry →", key="open_sales_entry", type="primary", use_container_width=True):
+                    st.session_state.pop("_last_mismatch_modal_target", None)
                     st.session_state["daily_entry_mode"] = "sales"
                     st.rerun()
         with em2:
@@ -1835,6 +1847,7 @@ if page == "Daily Entry":
         back_col, _ = st.columns([2.2, 4.8])
         with back_col:
             if st.button("⬅ Back to Entry Menu", key=f"back_to_entry_menu_{entry_mode}", type="primary", use_container_width=True):
+                st.session_state.pop("_last_mismatch_modal_target", None)
                 st.session_state["daily_entry_mode"] = None
                 st.rerun()
         st.markdown("<div style='height: 4px;'></div>", unsafe_allow_html=True)
@@ -1867,30 +1880,54 @@ if page == "Daily Entry":
                 st.info(f"No sales entries found for {cart_name}.")
             else:
                 labels = [_entry_date_display(e["date"].date()) for e in cart_entries]
-                if user_role == "entry":
-                    sel_date_label = labels[0]
-                    with f2:
+                yesterday_label = _entry_date_display(yesterday_sale_date)
+                default_date_index = labels.index(yesterday_label) if yesterday_label in labels else 0
+                current_sel_label = st.session_state.get(f"date_sel_{cart_name}", labels[default_date_index])
+                if current_sel_label not in labels:
+                    current_sel_label = labels[default_date_index]
+
+                loaded = cart_entries[labels.index(current_sel_label)] if user_role != "entry" else cart_entries[0]
+                entry_id = loaded["db_id"]
+                entry_date = loaded["date"].date()
+                data_key_suffix = f"_{entry_id}"
+                opening_map = {code: int(loaded["by_code"][code]["opening"]) for code in FLAVOR_CODES}
+
+                prev_closings, _, prev_sale_date = get_latest_cart_closing_state_with_date(cart_name, entry_date)
+                sales_opening_mismatch = (
+                    prev_sale_date is not None
+                    and any(int(opening_map.get(code, 0)) != int(prev_closings.get(code, 0)) for code in FLAVOR_CODES)
+                )
+
+                with f2:
+                    if user_role == "entry" or sales_opening_mismatch:
+                        sel_date_label = _entry_date_display(entry_date)
                         st.text_input(
                             "Sale Date",
                             value=sel_date_label,
                             disabled=True,
-                            key=f"fixed_sale_date_{cart_name}",
+                            key=f"fixed_sale_date_{cart_name}_{entry_date.strftime('%Y%m%d')}",
                         )
-                else:
-                    yesterday_label = _entry_date_display(yesterday_sale_date)
-                    default_date_index = labels.index(yesterday_label) if yesterday_label in labels else 0
-                    with f2:
+                    else:
                         sel_date_label = st.selectbox(
                             "Sale Date",
                             labels,
-                            index=default_date_index,
+                            index=labels.index(current_sel_label),
                             key=f"date_sel_{cart_name}",
                         )
 
-                loaded = cart_entries[labels.index(sel_date_label)]
-                entry_id = loaded["db_id"]
-                entry_date = loaded["date"].date()
-                data_key_suffix = f"_{entry_id}"
+                if sales_opening_mismatch:
+                    mismatch_msg = (
+                        f"Opening units for sale date {_entry_date_display(entry_date)} not matching "
+                        f"previous sale date {_entry_date_display(prev_sale_date)} closing units for cart {cart_name}.  "
+                        f"Please check and fix this issue to proceed further"
+                    )
+                    mismatch_target = f"{cart_name}_{entry_date.strftime('%Y%m%d')}"
+                    if st.session_state.get("_last_mismatch_modal_target") != mismatch_target:
+                        st.session_state["_last_mismatch_modal_target"] = mismatch_target
+                        show_opening_mismatch_modal(mismatch_msg)
+                    st.error(mismatch_msg)
+                else:
+                    st.session_state.pop("_last_mismatch_modal_target", None)
 
                 staff_options = load_active_staff_list()
                 default_staff_name = loaded.get("staff_name", "")
@@ -1901,10 +1938,10 @@ if page == "Daily Entry":
                     staff_options,
                     index=staff_options.index(default_staff_name) if default_staff_name in staff_options else 0,
                     key=f"daily_staff{data_key_suffix}",
+                    disabled=sales_opening_mismatch,
                 )
 
                 added_map, closing_map, sold_map = {}, {}, {}
-                opening_map = {code: loaded["by_code"][code]["opening"] for code in FLAVOR_CODES}
 
                 st.markdown(
                     f"<div class='header-box-sales'><span>📅 Sales & Closing Entry — {_entry_date_display(entry_date)}</span><span><b>{cart_name}</b></span></div>",
@@ -1932,9 +1969,9 @@ if page == "Daily Entry":
                         )
                         col_a, col_b = st.columns(2)
                         with col_a:
-                            st.number_input("+ Added during day", min_value=0, step=1, format="%d", key=k_add)
+                            st.number_input("+ Added during day", min_value=0, step=1, format="%d", key=k_add, disabled=sales_opening_mismatch)
                         with col_b:
-                            st.number_input("Closing count", min_value=0, step=1, format="%d", key=k_cls)
+                            st.number_input("Closing count", min_value=0, step=1, format="%d", key=k_cls, disabled=sales_opening_mismatch)
 
                     tot_open = sum(opening_map.values())
                     tot_add = sum(added_map.values())
@@ -1970,19 +2007,18 @@ if page == "Daily Entry":
                         st.session_state[f"daily_leak_explained{data_key_suffix}"] = f"{loaded.get('cash_leakage_explained', 0.0):.2f}"
 
                     st.markdown("---")
-                    # Keep the same sales/financial functionality while presenting the two key totals prominently.
                     sum1, sum2 = st.columns(2)
                     sum1.metric("Total Sold", f"{tot_sold} pcs")
                     sum2.metric("Total Collection", f"₹{calculated_mrp_total:,.0f}")
 
                     c3, c4 = st.columns(2)
                     with c3:
-                        total_collection_val = _num(st.text_input("Total collection (₹)", key=k_tot))
-                        staff_advance_val = _num(st.text_input("Advance to staff (₹)", key=f"daily_adv{data_key_suffix}"))
-                        food_tea_val = _num(st.text_input("Cash Food / Tea (₹)", key=f"daily_food{data_key_suffix}"))
+                        total_collection_val = _num(st.text_input("Total collection (₹)", key=k_tot, disabled=sales_opening_mismatch))
+                        staff_advance_val = _num(st.text_input("Advance to staff (₹)", key=f"daily_adv{data_key_suffix}", disabled=sales_opening_mismatch))
+                        food_tea_val = _num(st.text_input("Cash Food / Tea (₹)", key=f"daily_food{data_key_suffix}", disabled=sales_opening_mismatch))
                     with c4:
-                        phonepe_val = _num(st.text_input("PhonePe / UPI (₹)", key=f"daily_phonepe{data_key_suffix}"))
-                        cash_val = _num(st.text_input("Cash Collected (₹)", key=f"daily_cash{data_key_suffix}"))
+                        phonepe_val = _num(st.text_input("PhonePe / UPI (₹)", key=f"daily_phonepe{data_key_suffix}", disabled=sales_opening_mismatch))
+                        cash_val = _num(st.text_input("Cash Collected (₹)", key=f"daily_cash{data_key_suffix}", disabled=sales_opening_mismatch))
 
                     leakage_before_explanation = total_collection_val - phonepe_val - staff_advance_val - food_tea_val - cash_val
                     available_cash_leakage = max(0.0, leakage_before_explanation)
@@ -1995,6 +2031,7 @@ if page == "Daily Entry":
                                 "Cash Leakage (Explained) (₹)",
                                 key=f"daily_leak_explained{data_key_suffix}",
                                 placeholder="0.00",
+                                disabled=sales_opening_mismatch,
                             )),
                         )
                     cash_leakage_unexplained = max(0.0, available_cash_leakage - cash_leakage_explained)
@@ -2029,15 +2066,15 @@ if page == "Daily Entry":
                         value=loaded["remarks"],
                         key=f"daily_remarks{data_key_suffix}",
                         placeholder="Enter remarks (mandatory if cash leakage)...",
+                        disabled=sales_opening_mismatch,
                     )
                     manual_remarks = re.sub(
-                        r"\[(?:web app|mobile app)\]",
+                        r"\[(?:web appert{}mobile app)\]",
                         "",
                         str(remarks or ""),
                         flags=re.IGNORECASE,
                     ).strip()
 
-                    # Retain the detailed stock totals from the existing screen at the bottom.
                     st.markdown("---")
                     m1, m2, m3, m4 = st.columns(4)
                     m1.metric("Opening", f"{tot_open} pcs")
@@ -2048,7 +2085,7 @@ if page == "Daily Entry":
                 if any(s < 0 for s in sold_map.values()):
                     st.error(f"Sales negative for at least one flavour on {_entry_date_display(entry_date)} - check closing count.")
 
-                if st.button("💾 Submit Sales Entry", type="primary", use_container_width=True, key=f"submit_sales_{entry_id}"):
+                if st.button("💾 Submit Sales Entry", type="primary", use_container_width=True, key=f"submit_sales_{entry_id}", disabled=sales_opening_mismatch):
                     if any(s < 0 for s in sold_map.values()):
                         st.error("Sales works out negative for at least one flavour - fix closing count before saving.")
                     elif explained_exceeds_available:
@@ -4626,11 +4663,11 @@ elif page == "Freezer Analysis" and user_role == "admin":
     pv2.metric("Current Stock Value", f"₹{tot_stock_value_display:,}")
     if pending_stock_payment > 0:
         st.markdown(
-            "Includes pending payment amount "
+            "Includes pending payment of "
             f"<span style='color:#C43D17;font-weight:900;'>₹{pending_stock_payment:,.2f}</span> "
             "against "
             f"<span style='color:#C43D17;font-weight:900;'>{pending_stock_units:,}</span> "
-            "units of stock received",
+            "units",
             unsafe_allow_html=True
         )
     cv1, cv2 = st.columns(2)
