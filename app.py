@@ -2092,15 +2092,30 @@ if page == "Daily Entry":
             st.subheader("📦 Restock Entry")
             st.caption("Today's normal cart stock allocation")
 
-            cart_name = st.selectbox("Assigned Cart", CARTS, key="entry_cart_shared")
-            st.text_input(
-                "Restock Date",
-                value=_entry_date_display(today_val),
-                disabled=True,
-                key=f"restock_date_{cart_name}",
-            )
+            rc_top1, rc_top2 = st.columns([1.2, 1])
+            with rc_top1:
+                cart_name = st.selectbox("Assigned Cart", CARTS, key="entry_cart_shared")
+            with rc_top2:
+                st.text_input(
+                    "Restock Date",
+                    value=_entry_date_display(today_val),
+                    disabled=True,
+                    key=f"restock_date_{cart_name}",
+                )
 
             today_stock_state, today_staff = get_today_cart_stock_state(cart_name, today_val)
+            staff_options = load_active_staff_list()
+            if today_staff and today_staff not in staff_options:
+                staff_options.append(today_staff)
+            restock_staff_key = f"restock_staff_{cart_name}_{today_val.strftime('%Y%m%d')}"
+            if restock_staff_key not in st.session_state:
+                st.session_state[restock_staff_key] = today_staff if today_staff in staff_options else "Select Staff"
+            staff_name = st.selectbox(
+                "Cart staff assigned",
+                staff_options,
+                index=staff_options.index(st.session_state[restock_staff_key]) if st.session_state[restock_staff_key] in staff_options else 0,
+                key=restock_staff_key,
+            )
             restock_map = {}
             restock_after_map = {}
 
@@ -2149,8 +2164,9 @@ if page == "Daily Entry":
 
             if st.button("📦 Submit Restock", type="primary", use_container_width=True, key=f"submit_restock_{cart_name}"):
                 try:
+                    selected_staff = "" if staff_name == "Select Staff" else staff_name
                     opening_map = {code: int(today_stock_state[code]["opening"]) for code in FLAVOR_CODES}
-                    sync_today_restock_entry(today_val, cart_name, today_staff, opening_map, restock_map)
+                    sync_today_restock_entry(today_val, cart_name, selected_staff, opening_map, restock_map)
                     st.cache_data.clear()
                     st.cache_resource.clear()
                     show_success_modal(
@@ -4610,7 +4626,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
     pv2.metric("Current Stock Value", f"₹{tot_stock_value_display:,}")
     if pending_stock_payment > 0:
         st.markdown(
-            "Includes amount "
+            "Includes pending payment amount "
             f"<span style='color:#C43D17;font-weight:900;'>₹{pending_stock_payment:,.2f}</span> "
             "against "
             f"<span style='color:#C43D17;font-weight:900;'>{pending_stock_units:,}</span> "
