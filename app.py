@@ -6413,14 +6413,16 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 else:
                     total_food_paid = 0.0
 
-                remaining_to_disburse = total_entitled_allowance - total_food_paid
+                entitled_rounded = int(round(total_entitled_allowance))
+                disbursed_rounded = int(round(total_food_paid))
+                remaining_rounded = entitled_rounded - disbursed_rounded
 
                 mc1, mc2, mc3 = st.columns(3)
-                mc1.metric("Total Entitled Allowance", f"₹{total_entitled_allowance:,.2f}")
-                mc2.metric("Total Disbursed So Far", f"₹{total_food_paid:,.2f}")
+                mc1.metric("Total Entitled Allowance", f"₹{entitled_rounded:,}")
+                mc2.metric("Total Disbursed So Far", f"₹{disbursed_rounded:,}")
                 mc3.metric(
                     "Remaining to be Disbursed",
-                    f"-₹{abs(remaining_to_disburse):,.2f}" if remaining_to_disburse < -0.004 else f"₹{remaining_to_disburse:,.2f}"
+                    f"-₹{abs(remaining_rounded):,}" if remaining_rounded < 0 else f"₹{remaining_rounded:,}"
                 )
 
                 if mfa_df.empty:
