@@ -6281,41 +6281,63 @@ elif page == "Staff & Payroll" and user_role == "admin":
         )
 
         today_mfa = date.today()
+        min_mfa_date = date(2026, 9, 1)
+
         if mfa_filter_mode == "Month":
             mf1, mf2 = st.columns(2)
-            month_names_mfa = list(calendar.month_name)[1:]
-            with mf1:
-                mfa_month_name = st.selectbox(
-                    "Month",
-                    month_names_mfa,
-                    index=today_mfa.month - 1,
-                    key="monthly_food_month"
-                )
-                mfa_month_num = month_names_mfa.index(mfa_month_name) + 1
+            all_month_names = list(calendar.month_name)[1:]
             with mf2:
                 mfa_year = st.number_input(
                     "Year",
-                    min_value=2024,
+                    min_value=2026,
                     max_value=2035,
-                    value=today_mfa.year,
+                    value=max(2026, today_mfa.year),
                     step=1,
                     key="monthly_food_year"
                 )
+            if int(mfa_year) == 2026:
+                allowed_month_names = all_month_names[8:]
+            else:
+                allowed_month_names = all_month_names
+
+            default_mfa_month_name = all_month_names[today_mfa.month - 1]
+            default_mfa_index = (
+                allowed_month_names.index(default_mfa_month_name)
+                if default_mfa_month_name in allowed_month_names
+                else 0
+            )
+            with mf1:
+                mfa_month_name = st.selectbox(
+                    "Month",
+                    allowed_month_names,
+                    index=default_mfa_index,
+                    key=f"monthly_food_month_{int(mfa_year)}"
+                )
+                mfa_month_num = all_month_names.index(mfa_month_name) + 1
+
             mfa_start = date(int(mfa_year), int(mfa_month_num), 1)
-            mfa_end = date(int(mfa_year), int(mfa_month_num), calendar.monthrange(int(mfa_year), int(mfa_month_num))[1])
+            mfa_end = date(
+                int(mfa_year),
+                int(mfa_month_num),
+                calendar.monthrange(int(mfa_year), int(mfa_month_num))[1]
+            )
         else:
             mf1, mf2 = st.columns(2)
+            default_start_dt = max(min_mfa_date, today_mfa.replace(day=1))
+            default_end_dt = max(min_mfa_date, today_mfa)
             with mf1:
                 mfa_start = st.date_input(
                     "Start Date",
-                    value=today_mfa.replace(day=1),
+                    value=default_start_dt,
+                    min_value=min_mfa_date,
                     format="DD-MM-YYYY",
                     key="monthly_food_start"
                 )
             with mf2:
                 mfa_end = st.date_input(
                     "End Date",
-                    value=today_mfa,
+                    value=default_end_dt,
+                    min_value=min_mfa_date,
                     format="DD-MM-YYYY",
                     key="monthly_food_end"
                 )
@@ -6326,15 +6348,23 @@ elif page == "Staff & Payroll" and user_role == "admin":
             st.error("Database connection is not available.")
         else:
             try:
+                entitlement_end = min(mfa_end, today_mfa)
+                if mfa_end > today_mfa and mfa_start <= today_mfa:
+                    st.caption(
+                        f"ℹ️ Current month is in progress — entitlement is pro-rated up to today (**{today_mfa.strftime('%d-%b-%Y')}**)."
+                    )
+                elif mfa_start > today_mfa:
+                    st.caption("ℹ️ Selected period is in the future — entitlement accrued so far is ₹0.00.")
+
                 total_entitled_allowance = 0.0
-                if not staff_df.empty:
+                if not staff_df.empty and mfa_start <= entitlement_end:
                     for _, s_row in staff_df.iterrows():
                         s_status = str(s_row.get("status") or "").strip().lower()
                         if s_status == "on-boarding":
                             continue
 
                         emp_start = mfa_start
-                        emp_end = mfa_end
+                        emp_end = entitlement_end
                         doj = s_row.get("date_of_joining")
                         dol = s_row.get("date_of_leaving")
 
