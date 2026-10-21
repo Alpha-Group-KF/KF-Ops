@@ -5170,7 +5170,7 @@ elif page == "Expenses" and user_role == "admin":
                 display_exp["expense_date"] = pd.to_datetime(display_exp["expense_date"]).dt.strftime("%d-%b-%y")
                 display_exp["PO Link"] = display_exp["purchase_order_id"].apply(lambda p: f"PO #{int(p)}" if pd.notna(p) else "—")
                 display_exp = display_exp[["id", "expense_date", "month", "expense_type", "category", "sub_category", "description", "total_amount", "total_paid", "balance_due", "status", "attributed_to", "vendor_name", "staff_name", "PO Link"]].rename(columns={"id": "ID", "expense_date": "Date", "month": "Month", "expense_type": "Type", "category": "Category", "sub_category": "Sub-Category", "description": "Description", "total_amount": "Total (₹)", "total_paid": "Paid (₹)", "balance_due": "Balance (₹)", "status": "Status", "attributed_to": "Attributed To", "vendor_name": "Vendor", "staff_name": "Staff Name"})
-                display_exp = apply_smart_filters(display_exp, ["Month", "Category", "Status", "Staff Name"], "expense_filters")
+                display_exp = apply_smart_filters(display_exp, ["Month", "Category", "Sub-Category", "Status", "Staff Name"], "expense_filters")
                 st.dataframe(display_exp, hide_index=True, use_container_width=True, column_config={
                     **{col: st.column_config.TextColumn(width="small") for col in display_exp.columns if col not in ("ID", "Total (₹)", "Paid (₹)", "Balance (₹)", "Description")},
                     "ID": st.column_config.NumberColumn(width="small"),
@@ -6271,7 +6271,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                     st.error(f"Could not save compensation plan: {e}")
 
     elif staff_tab_sel == "🍱 Monthly Food Allowance":
-        st.write("Track Monthly Food Allowance paid/recorded in the Expenses table.")
+        st.write("Track Monthly Food Allowance entitlement (pro-rated by joining date & plan) vs. actual disbursements in the Expenses table.")
 
         mfa_filter_mode = st.radio(
             "Filter By",
@@ -6326,6 +6326,42 @@ elif page == "Staff & Payroll" and user_role == "admin":
             st.error("Database connection is not available.")
         else:
             try:
+                total_entitled_allowance = 0.0
+                if not staff_df.empty:
+                    for _, s_row in staff_df.iterrows():
+                        s_status = str(s_row.get("status") or "").strip().lower()
+                        if s_status == "on-boarding":
+                            continue
+
+                        emp_start = mfa_start
+                        emp_end = mfa_end
+                        doj = s_row.get("date_of_joining")
+                        dol = s_row.get("date_of_leaving")
+
+                        if pd.notna(doj) and str(doj).strip():
+                            emp_start = max(emp_start, pd.to_datetime(doj).date())
+                        if pd.notna(dol) and str(dol).strip():
+                            emp_end = min(emp_end, pd.to_datetime(dol).date())
+
+                        if emp_start > emp_end:
+                            continue
+
+                        plan_row = load_staff_comp_plan_as_of(int(s_row["id"]), emp_end)
+                        plan_source = plan_row if plan_row is not None else s_row
+
+                        food_mode = str(plan_source.get("food_tea_allowance_mode") or "monthly").strip().lower()
+                        monthly_food_amt = float(_num(plan_source.get("monthly_food_tea_allowance")))
+
+                        if food_mode == "monthly" and monthly_food_amt > 0:
+                            cur_d = emp_start
+                            while cur_d <= emp_end:
+                                days_in_cur_month = calendar.monthrange(cur_d.year, cur_d.month)[1]
+                                month_last_day = date(cur_d.year, cur_d.month, days_in_cur_month)
+                                seg_end = min(emp_end, month_last_day)
+                                active_days_in_month = (seg_end - cur_d).days + 1
+                                total_entitled_allowance += (monthly_food_amt / float(days_in_cur_month)) * active_days_in_month
+                                cur_d = seg_end + timedelta(days=1)
+
                 mfa_df = db_conn.query(
                     """
                     SELECT id, expense_date, description, total_amount, status
@@ -6339,18 +6375,27 @@ elif page == "Staff & Payroll" and user_role == "admin":
                     ttl="0s"
                 )
 
-                if mfa_df.empty:
-                    st.info(f"No Monthly Food Allowance records found from {mfa_start.strftime('%d-%b-%y')} to {mfa_end.strftime('%d-%b-%y')}.")
-                else:
+                if not mfa_df.empty:
                     mfa_df = mfa_df.copy()
                     mfa_df["total_amount"] = pd.to_numeric(mfa_df["total_amount"], errors="coerce").fillna(0.0)
                     mfa_df["expense_date"] = pd.to_datetime(mfa_df["expense_date"])
-
                     total_food_paid = float(mfa_df["total_amount"].sum())
-                    mc1, mc2 = st.columns(2)
-                    mc1.metric("Monthly Food Allowance Paid", f"₹{total_food_paid:,.2f}")
-                    mc2.metric("Expense Records", f"{len(mfa_df)}")
+                else:
+                    total_food_paid = 0.0
 
+                remaining_to_disburse = total_entitled_allowance - total_food_paid
+
+                mc1, mc2, mc3 = st.columns(3)
+                mc1.metric("Total Entitled Allowance", f"₹{total_entitled_allowance:,.2f}")
+                mc2.metric("Total Disbursed So Far", f"₹{total_food_paid:,.2f}")
+                mc3.metric(
+                    "Remaining to be Disbursed",
+                    f"-₹{abs(remaining_to_disburse):,.2f}" if remaining_to_disburse < -0.004 else f"₹{remaining_to_disburse:,.2f}"
+                )
+
+                if mfa_df.empty:
+                    st.info(f"No Monthly Food Allowance expense records found from {mfa_start.strftime('%d-%b-%y')} to {mfa_end.strftime('%d-%b-%y')}.")
+                else:
                     st.markdown("#### Payment Records")
                     detail_mfa = mfa_df.rename(columns={
                         "expense_date": "Date",
