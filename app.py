@@ -345,6 +345,106 @@ div[data-testid="stNumberInput"] input {
     font-weight: 900;
     color: #4A2418;
 }
+/* Compact No-Scroll Ledger Rows for Expenses & Payments */
+.ledger-tbl-header {
+    background: linear-gradient(90deg, #70440E 0%, #8A5E17 100%);
+    color: #FFFFFF !important;
+    padding: 7px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+}
+.ledger-cell {
+    background: #FFFBF2;
+    border: 1px solid #E6D4B5;
+    border-radius: 6px;
+    min-height: 32px;
+    padding: 4px 7px;
+    display: flex;
+    align-items: center;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #3A2312;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.ledger-cell-desc {
+    background: #FFFFFF;
+    border: 1px solid #E6D4B5;
+    border-radius: 6px;
+    min-height: 32px;
+    padding: 4px 8px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #2A1B10;
+    line-height: 1.2;
+}
+.ledger-subtext {
+    font-size: 10px;
+    font-weight: 600;
+    color: #8A5E17;
+}
+.ledger-amt-total {
+    background: #FFF8EB;
+    border: 1px solid #E3CBA0;
+    border-radius: 6px;
+    min-height: 32px;
+    padding: 4px 7px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #4A2418;
+}
+.ledger-amt-paid {
+    background: #EAF4EC;
+    border: 1px solid #B7DFB9;
+    border-radius: 6px;
+    min-height: 32px;
+    padding: 4px 7px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #124A1D;
+}
+.ledger-amt-due {
+    background: #FCE8E2;
+    border: 1px solid #F3C3B6;
+    border-radius: 6px;
+    min-height: 32px;
+    padding: 4px 7px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #C43D17;
+}
+.status-pill {
+    padding: 2px 7px;
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 800;
+    display: inline-block;
+    text-align: center;
+    white-space: nowrap;
+}
+.status-paid { background: #E6F4EA; color: #137333; border: 1px solid #CEEAD6; }
+.status-partial { background: #FEF7E0; color: #B06000; border: 1px solid #FEEFC3; }
+.status-pending { background: #FCE8E6; color: #C5221F; border: 1px solid #FAD2CF; }
+.status-other { background: #F1F3F4; color: #5F6368; border: 1px solid #DADCE0; }
 </style>
 """)
 
@@ -5137,6 +5237,51 @@ elif page == "Stock Removed" and user_role == "admin":
 elif page == "Expenses" and user_role == "admin":
     st.subheader("Expenses & Payments Management")
     st.caption("Manage supplier bills, operating expenses, payments (Cash vs UPI), and settlement balances.")
+
+    # Handle pending navigation triggered by inline Edit / Clone buttons BEFORE widgets instantiate
+    if "_pending_exp_nav_sec" in st.session_state:
+        st.session_state["exp_nav_sec"] = st.session_state.pop("_pending_exp_nav_sec")
+    if "_pending_e_sub_mode_rad" in st.session_state:
+        st.session_state["e_sub_mode_rad"] = st.session_state.pop("_pending_e_sub_mode_rad")
+    if "_pending_p_sub_mode_rad" in st.session_state:
+        st.session_state["p_sub_mode_rad"] = st.session_state.pop("_pending_p_sub_mode_rad")
+
+    def _status_pill_html(status_val):
+        s = str(status_val or "Pending").strip()
+        sl = s.lower()
+        if sl == "paid":
+            cls = "status-paid"
+        elif "partial" in sl:
+            cls = "status-partial"
+        elif sl == "pending":
+            cls = "status-pending"
+        else:
+            cls = "status-other"
+        return f"<span class='status-pill {cls}'>{escape(s)}</span>"
+
+    def _populate_expense_clone_state(src_exp):
+        pos_df_cl = db_conn.query("SELECT id, order_date, location FROM purchase_orders ORDER BY order_date DESC;", ttl="0s") if db_conn else pd.DataFrame()
+        po_opts_cl = ["None"] + [f"PO #{r['id']} ({pd.to_datetime(r['order_date']).strftime('%d-%b')})" for _, r in pos_df_cl.iterrows()] if not pos_df_cl.empty else ["None"]
+        staff_opts_cl = load_active_staff_list()
+        st.session_state["add_e_type"] = src_exp["expense_type"] if src_exp.get("expense_type") in EXPENSE_TYPES else EXPENSE_TYPES[0]
+        st.session_state["add_e_cat"] = src_exp["category"] if src_exp.get("category") in EXPENSE_CATEGORIES else EXPENSE_CATEGORIES[0]
+        st.session_state["add_e_subcat"] = str(src_exp.get("sub_category") or "")
+        st.session_state["add_e_date"] = date.today()
+        st.session_state[f"add_e_month_{date.today().strftime('%Y%m')}"] = list(calendar.month_name)[date.today().month]
+        st.session_state["add_e_amt"] = float(src_exp.get("total_amount") or 0.0)
+        st.session_state["add_e_attr"] = src_exp["attributed_to"] if src_exp.get("attributed_to") in ATTRIBUTED_OPTIONS else ATTRIBUTED_OPTIONS[0]
+        st.session_state["add_e_vendor"] = str(src_exp.get("vendor_name") or "")
+        src_staff = str(src_exp.get("staff_name") or "Select Staff")
+        st.session_state["add_e_staff"] = src_staff if src_staff in staff_opts_cl else "Select Staff"
+        if pd.notna(src_exp.get("purchase_order_id")):
+            matched_po = next((o for o in po_opts_cl if o.startswith(f"PO #{int(src_exp['purchase_order_id'])} ")), "None")
+            st.session_state["add_e_po"] = matched_po
+        else:
+            st.session_state["add_e_po"] = "None"
+        st.session_state["add_e_stat"] = "Pending"
+        st.session_state["add_e_desc"] = str(src_exp.get("description") or "")
+        st.session_state["add_e_remarks"] = str(src_exp.get("remarks") or "")
+
     exp_nav = st.radio("Section", ["📋 Expenses (Bills / Invoices)", "💳 Payments (Cash Outflows)", "📊 Summary & Date Reports"], horizontal=True, key="exp_nav_sec")
 
     if exp_nav == "📋 Expenses (Bills / Invoices)":
@@ -5171,24 +5316,7 @@ elif page == "Expenses" and user_role == "admin":
                         st.markdown("<div style='height: 19px;'></div>", unsafe_allow_html=True)
                         if st.button("📋 Load Details", use_container_width=True, key="btn_apply_exp_clone", disabled=(sel_clone_label == clone_labels[0])):
                             src_exp = clone_records[clone_labels.index(sel_clone_label) - 1]
-                            st.session_state["add_e_type"] = src_exp["expense_type"] if src_exp.get("expense_type") in EXPENSE_TYPES else EXPENSE_TYPES[0]
-                            st.session_state["add_e_cat"] = src_exp["category"] if src_exp.get("category") in EXPENSE_CATEGORIES else EXPENSE_CATEGORIES[0]
-                            st.session_state["add_e_subcat"] = str(src_exp.get("sub_category") or "")
-                            st.session_state["add_e_date"] = date.today()
-                            st.session_state[f"add_e_month_{date.today().strftime('%Y%m')}"] = list(calendar.month_name)[date.today().month]
-                            st.session_state["add_e_amt"] = float(src_exp.get("total_amount") or 0.0)
-                            st.session_state["add_e_attr"] = src_exp["attributed_to"] if src_exp.get("attributed_to") in ATTRIBUTED_OPTIONS else ATTRIBUTED_OPTIONS[0]
-                            st.session_state["add_e_vendor"] = str(src_exp.get("vendor_name") or "")
-                            src_staff = str(src_exp.get("staff_name") or "Select Staff")
-                            st.session_state["add_e_staff"] = src_staff if src_staff in staff_opts else "Select Staff"
-                            if pd.notna(src_exp.get("purchase_order_id")):
-                                matched_po = next((o for o in po_opts if o.startswith(f"PO #{int(src_exp['purchase_order_id'])} ")), "None")
-                                st.session_state["add_e_po"] = matched_po
-                            else:
-                                st.session_state["add_e_po"] = "None"
-                            st.session_state["add_e_stat"] = "Pending"
-                            st.session_state["add_e_desc"] = str(src_exp.get("description") or "")
-                            st.session_state["add_e_remarks"] = str(src_exp.get("remarks") or "")
+                            _populate_expense_clone_state(src_exp)
                             st.toast(f"Cloned details from Expense #{src_exp['id']}!", icon="📋")
                             st.rerun()
                 else:
@@ -5294,43 +5422,91 @@ elif page == "Expenses" and user_role == "admin":
                     except Exception as e: st.error(f"Could not save expense: {e}")
 
         elif e_sub_mode == "View Expenses":
-            if expenses_summary_df.empty: st.info("No expenses found in database.")
+            if expenses_summary_df.empty:
+                st.info("No expenses found in database.")
             else:
                 ek1, ek2, ek3 = st.columns(3)
-                ek1.metric("Total Expenses Incurred", f"₹{float(expenses_summary_df['total_amount'].sum()):,.2f}"); ek2.metric("Total Amount Paid", f"₹{float(expenses_summary_df['total_paid'].sum()):,.2f}"); ek3.metric("Outstanding Balance Due", f"₹{float(expenses_summary_df['balance_due'].sum()):,.2f}")
-                display_exp = expenses_summary_df.copy()
-                display_exp["expense_date"] = pd.to_datetime(display_exp["expense_date"]).dt.strftime("%d-%b-%y")
-                display_exp["PO Link"] = display_exp["purchase_order_id"].apply(lambda p: f"PO #{int(p)}" if pd.notna(p) else "—")
-                display_exp = display_exp[["id", "expense_date", "month", "expense_type", "category", "sub_category", "description", "total_amount", "total_paid", "balance_due", "status", "attributed_to", "vendor_name", "staff_name", "PO Link"]].rename(columns={"id": "ID", "expense_date": "Date", "month": "Month", "expense_type": "Type", "category": "Category", "sub_category": "Sub-Category", "description": "Description", "total_amount": "Total (₹)", "total_paid": "Paid (₹)", "balance_due": "Balance (₹)", "status": "Status", "attributed_to": "Attributed To", "vendor_name": "Vendor", "staff_name": "Staff Name"})
-                display_exp = apply_smart_filters(display_exp, ["Month", "Category", "Sub-Category", "Status", "Staff Name"], "expense_filters")
-                st.dataframe(display_exp, hide_index=True, use_container_width=True, column_config={
-                    **{col: st.column_config.TextColumn(width="small") for col in display_exp.columns if col not in ("ID", "Total (₹)", "Paid (₹)", "Balance (₹)", "Description")},
-                    "ID": st.column_config.NumberColumn(width="small"),
-                    "Description": st.column_config.TextColumn(width="medium"),
-                    "Total (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
-                    "Paid (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small"),
-                    "Balance (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small")
-                })
+                ek1.metric("Total Expenses Incurred", f"₹{float(expenses_summary_df['total_amount'].sum()):,.2f}")
+                ek2.metric("Total Amount Paid", f"₹{float(expenses_summary_df['total_paid'].sum()):,.2f}")
+                ek3.metric("Outstanding Balance Due", f"₹{float(expenses_summary_df['balance_due'].sum()):,.2f}")
 
-                with st.expander("🗑️ Delete an Expense Entry", expanded=False):
-                    del_exp_records = expenses_summary_df.to_dict("records")
-                    del_exp_labels = [
-                        f"#{r['id']} — {pd.to_datetime(r['expense_date']).strftime('%d-%b-%y')} — {r['category']} — {r.get('description') or r.get('vendor_name') or 'No desc'} (₹{float(r['total_amount']):,.2f})"
-                        for r in del_exp_records
-                    ]
-                    dc1, dc2 = st.columns([3.8, 1.2], gap="small")
-                    with dc1:
-                        sel_del_exp_lbl = st.selectbox("Select Expense to Delete", del_exp_labels, key="view_del_exp_sel")
-                    with dc2:
-                        st.markdown("<div style='height: 19px;'></div>", unsafe_allow_html=True)
-                        if st.button("🗑️ Delete Expense", type="secondary", use_container_width=True, key="view_del_exp_btn"):
-                            confirm_delete_expense_modal(del_exp_records[del_exp_labels.index(sel_del_exp_lbl)])
+                filter_source = expenses_summary_df.copy()
+                filter_source["Month"] = filter_source["month"].fillna("")
+                filter_source["Category"] = filter_source["category"].fillna("")
+                filter_source["Sub-Category"] = filter_source["sub_category"].fillna("")
+                filter_source["Status"] = filter_source["status"].fillna("")
+                filter_source["Staff Name"] = filter_source["staff_name"].fillna("")
+                filtered_exp_df = apply_smart_filters(filter_source, ["Month", "Category", "Sub-Category", "Status", "Staff Name"], "expense_filters")
+
+                # Pagination control to keep screen fast and clean
+                pg_c1, pg_c2 = st.columns([3.5, 1.5])
+                with pg_c1:
+                    st.caption("💡 Tip: Use **✏️** to Edit, **📋** to Clone into a new expense, or **🗑️** to Delete.")
+                with pg_c2:
+                    page_size = st.selectbox("Rows per page", [25, 50, 100, 500], index=0, key="exp_view_page_size", label_visibility="collapsed")
+
+                # Column layout (No horizontal scroll; Attributed To & Vendor removed)
+                col_weights = [0.48, 0.72, 0.65, 1.35, 1.75, 0.82, 0.82, 0.82, 0.78, 0.72, 0.58, 0.95]
+                headers = ["ID", "Date", "Month", "Category", "Description", "Total", "Paid", "Balance", "Status", "Staff", "PO", "Actions"]
+                h_cols = st.columns(col_weights, gap="small")
+                for hc, h_text in zip(h_cols, headers):
+                    align = "justify-content:flex-end;" if h_text in ("Total", "Paid", "Balance") else ("justify-content:center;" if h_text in ("ID", "Date", "Status", "PO", "Actions") else "")
+                    hc.markdown(f"<div class='ledger-tbl-header' style='{align}'>{h_text}</div>", unsafe_allow_html=True)
+
+                for _, r in filtered_exp_df.head(int(page_size)).iterrows():
+                    eid = int(r["id"])
+                    dt_str = pd.to_datetime(r["expense_date"]).strftime("%d-%b-%y")
+                    mth_str = str(r.get("month") or "")[:3]
+                    cat_str = str(r.get("category") or "—")
+                    sub_str = str(r.get("sub_category") or "").strip()
+                    etype_str = str(r.get("expense_type") or "OPEX").strip()
+                    desc_str = str(r.get("description") or "—").strip()
+                    tot_v = float(r.get("total_amount") or 0.0)
+                    paid_v = float(r.get("total_paid") or 0.0)
+                    due_v = float(r.get("balance_due") or 0.0)
+                    staff_str = str(r.get("staff_name") or "—").strip() if pd.notna(r.get("staff_name")) and str(r.get("staff_name")).strip() else "—"
+                    po_str = f"PO #{int(r['purchase_order_id'])}" if pd.notna(r.get("purchase_order_id")) else "—"
+
+                    rc = st.columns(col_weights, gap="small")
+                    rc[0].markdown(f"<div class='ledger-cell' style='justify-content:center;'>#{eid}</div>", unsafe_allow_html=True)
+                    rc[1].markdown(f"<div class='ledger-cell' style='justify-content:center;'>{dt_str}</div>", unsafe_allow_html=True)
+                    rc[2].markdown(f"<div class='ledger-cell'>{escape(mth_str)}</div>", unsafe_allow_html=True)
+                    sub_html = f"<span class='ledger-subtext'>{escape(etype_str)}{(' • ' + escape(sub_str)) if sub_str else ''}</span>"
+                    rc[3].markdown(f"<div class='ledger-cell-desc'><span>{escape(cat_str)}</span>{sub_html}</div>", unsafe_allow_html=True)
+                    rc[4].markdown(f"<div class='ledger-cell-desc' title='{escape(desc_str)}'><span>{escape(desc_str[:52] + ('…' if len(desc_str) > 52 else ''))}</span></div>", unsafe_allow_html=True)
+                    rc[5].markdown(f"<div class='ledger-amt-total'>₹{tot_v:,.0f}</div>", unsafe_allow_html=True)
+                    rc[6].markdown(f"<div class='ledger-amt-paid'>₹{paid_v:,.0f}</div>", unsafe_allow_html=True)
+                    due_cls = "ledger-amt-due" if due_v > 0.009 else "ledger-cell"
+                    rc[7].markdown(f"<div class='{due_cls}' style='justify-content:flex-end;'>₹{due_v:,.0f}</div>", unsafe_allow_html=True)
+                    rc[8].markdown(f"<div class='ledger-cell' style='justify-content:center;'>{_status_pill_html(r.get('status'))}</div>", unsafe_allow_html=True)
+                    rc[9].markdown(f"<div class='ledger-cell'>{escape(staff_str)}</div>", unsafe_allow_html=True)
+                    rc[10].markdown(f"<div class='ledger-cell' style='justify-content:center;'>{escape(po_str)}</div>", unsafe_allow_html=True)
+
+                    with rc[11]:
+                        b1, b2, b3 = st.columns(3, gap="small")
+                        if b1.button("✏️", key=f"row_edit_exp_{eid}", help=f"Edit Expense #{eid}", use_container_width=True):
+                            st.session_state["_target_edit_exp_id"] = eid
+                            st.session_state["_pending_e_sub_mode_rad"] = "Edit Past Expense"
+                            st.rerun()
+                        if b2.button("📋", key=f"row_clone_exp_{eid}", help=f"Clone Expense #{eid}", use_container_width=True):
+                            _populate_expense_clone_state(r.to_dict())
+                            st.session_state["_pending_e_sub_mode_rad"] = "Add New Expense"
+                            st.toast(f"Cloned Expense #{eid} into Add New Expense!", icon="📋")
+                            st.rerun()
+                        if b3.button("🗑️", key=f"row_del_exp_{eid}", help=f"Delete Expense #{eid}", use_container_width=True):
+                            confirm_delete_expense_modal(r.to_dict())
 
         elif e_sub_mode == "Edit Past Expense":
             if expenses_summary_df.empty: st.info("No expenses found to edit.")
             else:
                 exp_records = expenses_summary_df.to_dict("records")
                 exp_labels = [f"#{r['id']} — {pd.to_datetime(r['expense_date']).strftime('%d-%b-%y')} — {r['category']} (Total: ₹{float(r['total_amount']):,.0f} | Due: ₹{float(r['balance_due']):,.0f})" for r in exp_records]
+                if "_target_edit_exp_id" in st.session_state:
+                    tid = st.session_state.pop("_target_edit_exp_id")
+                    for idx_r, rec in enumerate(exp_records):
+                        if int(rec["id"]) == int(tid):
+                            st.session_state["edit_exp_select"] = exp_labels[idx_r]
+                            break
                 sel_exp_label = st.selectbox("Select Expense to Edit", exp_labels, key="edit_exp_select")
                 loaded_exp = exp_records[exp_labels.index(sel_exp_label)]; loaded_exp_id = loaded_exp["id"]
                 pos_df = db_conn.query("SELECT id, order_date, location FROM purchase_orders ORDER BY order_date DESC;", ttl="0s") if db_conn else pd.DataFrame()
@@ -5417,7 +5593,7 @@ elif page == "Expenses" and user_role == "admin":
                 if db_conn is not None:
                     try:
                         po_rec_df = db_conn.query(
-                            '''
+                            """
                             SELECT
                                 p.id AS po_id,
                                 p.notes AS po_notes,
@@ -5434,7 +5610,7 @@ elif page == "Expenses" and user_role == "admin":
                                     WHERE pi.order_id = p.id
                                 ), 0) AS po_gross_amount
                             FROM purchase_orders p;
-                            ''',
+                            """,
                             ttl="0s"
                         )
                         for _, pr in po_rec_df.iterrows():
@@ -5467,6 +5643,10 @@ elif page == "Expenses" and user_role == "admin":
                 exp_work_df["effective_total"] = exp_work_df.apply(_resolve_bill_total, axis=1)
                 exp_work_df["effective_due"] = (exp_work_df["effective_total"] - exp_work_df["total_paid"].astype(float)).clip(lower=0.0)
 
+                clone_pay_payload = st.session_state.get("_clone_payment_payload")
+                if clone_pay_payload:
+                    st.session_state["filter_unpaid_exp"] = False
+
                 unpaid_filter = st.checkbox("Show only expenses with pending balance", value=True, key="filter_unpaid_exp")
                 filtered_exp = exp_work_df[exp_work_df["effective_due"] > 0.009] if unpaid_filter else exp_work_df
                 if filtered_exp.empty: st.success("🎉 All logged expenses are fully settled!")
@@ -5479,6 +5659,13 @@ elif page == "Expenses" and user_role == "admin":
                         f" (Total: ₹{float(r['effective_total']):,.2f} | Due: ₹{float(r['effective_due']):,.2f})"
                         for r in f_records
                     ]
+                    if clone_pay_payload and "expense_id" in clone_pay_payload:
+                        c_eid = int(clone_pay_payload["expense_id"])
+                        for idx_f, frec in enumerate(f_records):
+                            if int(frec["id"]) == c_eid:
+                                st.session_state["pay_target_select"] = f_labels[idx_f]
+                                break
+
                     selected_label = st.selectbox("Select Expense to Pay", f_labels, key="pay_target_select")
                     target_exp = f_records[f_labels.index(selected_label)]
                     target_exp_id = int(target_exp["id"])
@@ -5492,7 +5679,16 @@ elif page == "Expenses" and user_role == "admin":
                     m3.metric("Outstanding Balance", f"₹{curr_due:,.2f}")
 
                     amt_widget_key = f"rec_p_amt_{target_exp_id}_{curr_due:.2f}"
-                    if amt_widget_key not in st.session_state:
+                    if clone_pay_payload and int(clone_pay_payload.get("expense_id", -1)) == target_exp_id:
+                        st.session_state[amt_widget_key] = float(clone_pay_payload.get("amount_paid") or curr_due)
+                        st.session_state[f"rec_p_date_{target_exp_id}"] = date.today()
+                        if clone_pay_payload.get("payment_mode") in PAYMENT_MODES:
+                            st.session_state[f"rec_p_mode_{target_exp_id}"] = clone_pay_payload["payment_mode"]
+                        st.session_state[f"rec_p_ref_{target_exp_id}"] = str(clone_pay_payload.get("ref_no") or "")
+                        st.session_state[f"rec_p_to_{target_exp_id}"] = str(clone_pay_payload.get("paid_to") or target_exp.get("vendor_name") or "")
+                        st.session_state[f"rec_p_notes_{target_exp_id}"] = str(clone_pay_payload.get("notes") or "")
+                        st.session_state.pop("_clone_payment_payload", None)
+                    elif amt_widget_key not in st.session_state:
                         st.session_state[amt_widget_key] = curr_due
 
                     c1, c2, c3 = st.columns(3)
@@ -5570,30 +5766,77 @@ elif page == "Expenses" and user_role == "admin":
                             except Exception as e: st.error(f"Could not record payment: {e}")
 
         elif p_sub_mode == "View Payments":
-            if payments_df.empty: st.info("No payment transactions found in database.")
+            if payments_df.empty:
+                st.info("No payment transactions found in database.")
             else:
                 st.metric("Total Payments Disbursed", f"₹{float(payments_df['amount_paid'].sum()):,.2f}")
-                disp_pay = payments_df.copy()
-                disp_pay["payment_date"] = pd.to_datetime(disp_pay["payment_date"]).dt.strftime("%d-%b-%y")
-                disp_pay["Expense Link"] = disp_pay.apply(lambda r: f"#{r['expense_id']} — {r['category']} (₹{float(r['expense_total']):,.0f})", axis=1)
-                disp_pay["Receipt"] = disp_pay["receipt_file_name"].apply(lambda v: "🧾 Yes" if pd.notna(v) and str(v).strip() else "—")
-                disp_pay = disp_pay[["id", "payment_date", "Expense Link", "amount_paid", "payment_mode", "ref_no", "paid_to", "paid_by", "Receipt", "notes"]].rename(columns={"id": "Payment ID", "payment_date": "Date", "amount_paid": "Amount (₹)", "payment_mode": "Mode", "ref_no": "Ref / UTR", "paid_to": "Paid To", "paid_by": "Paid By", "notes": "Notes"})
-                disp_pay = apply_smart_filters(disp_pay, ["Mode", "Paid To", "Receipt"], "payment_filters")
-                st.dataframe(disp_pay, hide_index=True, use_container_width=True, column_config={"Amount (₹)": st.column_config.NumberColumn(format="₹%,.2f")})
+                filter_pay_df = payments_df.copy()
+                filter_pay_df["Mode"] = filter_pay_df["payment_mode"].fillna("")
+                filter_pay_df["Paid To"] = filter_pay_df["paid_to"].fillna("")
+                filter_pay_df["Receipt"] = filter_pay_df["receipt_file_name"].apply(lambda v: "🧾 Yes" if pd.notna(v) and str(v).strip() else "—")
+                filtered_pay = apply_smart_filters(filter_pay_df, ["Mode", "Paid To", "Receipt"], "payment_filters")
 
-                with st.expander("🗑️ Delete a Payment Entry", expanded=False):
-                    del_pay_records = payments_df.to_dict("records")
-                    del_pay_labels = [
-                        f"Payment #{r['id']} — {pd.to_datetime(r['payment_date']).strftime('%d-%b-%y')} — Expense #{r['expense_id']} ({r['category']}) — ₹{float(r['amount_paid']):,.2f}"
-                        for r in del_pay_records
-                    ]
-                    dpc1, dpc2 = st.columns([3.8, 1.2], gap="small")
-                    with dpc1:
-                        sel_del_pay_lbl = st.selectbox("Select Payment to Delete", del_pay_labels, key="view_del_pay_sel")
-                    with dpc2:
-                        st.markdown("<div style='height: 19px;'></div>", unsafe_allow_html=True)
-                        if st.button("🗑️ Delete Payment", type="secondary", use_container_width=True, key="view_del_pay_btn"):
-                            confirm_delete_payment_modal(del_pay_records[del_pay_labels.index(sel_del_pay_lbl)])
+                p_pg1, p_pg2 = st.columns([3.5, 1.5])
+                with p_pg1:
+                    st.caption("💡 Tip: Use **✏️** to Edit, **📋** to Clone into a new payment, or **🗑️** to Delete.")
+                with p_pg2:
+                    pay_page_size = st.selectbox("Rows per page", [25, 50, 100, 500], index=0, key="pay_view_page_size", label_visibility="collapsed")
+
+                # Column layout (No horizontal scroll; Ref/UTR & Paid By removed)
+                p_weights = [0.55, 0.78, 1.85, 0.95, 1.15, 1.15, 0.58, 1.45, 0.95]
+                p_headers = ["Pay ID", "Date", "Expense Link", "Amount", "Mode", "Paid To", "Receipt", "Notes", "Actions"]
+                ph_cols = st.columns(p_weights, gap="small")
+                for phc, ph_text in zip(ph_cols, p_headers):
+                    align = "justify-content:flex-end;" if ph_text == "Amount" else ("justify-content:center;" if ph_text in ("Pay ID", "Date", "Receipt", "Actions") else "")
+                    phc.markdown(f"<div class='ledger-tbl-header' style='{align}'>{ph_text}</div>", unsafe_allow_html=True)
+
+                for _, r in filtered_pay.head(int(pay_page_size)).iterrows():
+                    pid = int(r["id"])
+                    eid = int(r["expense_id"])
+                    p_dt = pd.to_datetime(r["payment_date"]).strftime("%d-%b-%y")
+                    cat_str = str(r.get("category") or "Expense")
+                    sub_str = str(r.get("sub_category") or "").strip()
+                    exp_tot = float(r.get("expense_total") or 0.0)
+                    amt_v = float(r.get("amount_paid") or 0.0)
+                    mode_str = str(r.get("payment_mode") or "—")
+                    pto_str = str(r.get("paid_to") or "—").strip() if pd.notna(r.get("paid_to")) and str(r.get("paid_to")).strip() else "—"
+                    rec_str = "🧾 Yes" if pd.notna(r.get("receipt_file_name")) and str(r.get("receipt_file_name")).strip() else "—"
+                    notes_str = str(r.get("notes") or "—").strip() if pd.notna(r.get("notes")) and str(r.get("notes")).strip() else "—"
+
+                    prc = st.columns(p_weights, gap="small")
+                    prc[0].markdown(f"<div class='ledger-cell' style='justify-content:center;'>#{pid}</div>", unsafe_allow_html=True)
+                    prc[1].markdown(f"<div class='ledger-cell' style='justify-content:center;'>{p_dt}</div>", unsafe_allow_html=True)
+                    prc[2].markdown(
+                        f"<div class='ledger-cell-desc'><span>#{eid} — {escape(cat_str)}</span>"
+                        f"<span class='ledger-subtext'>Bill: ₹{exp_tot:,.0f}{(' • ' + escape(sub_str)) if sub_str else ''}</span></div>",
+                        unsafe_allow_html=True
+                    )
+                    prc[3].markdown(f"<div class='ledger-amt-paid'>₹{amt_v:,.2f}</div>", unsafe_allow_html=True)
+                    prc[4].markdown(f"<div class='ledger-cell'>{escape(mode_str)}</div>", unsafe_allow_html=True)
+                    prc[5].markdown(f"<div class='ledger-cell'>{escape(pto_str)}</div>", unsafe_allow_html=True)
+                    prc[6].markdown(f"<div class='ledger-cell' style='justify-content:center;'>{rec_str}</div>", unsafe_allow_html=True)
+                    prc[7].markdown(f"<div class='ledger-cell-desc' title='{escape(notes_str)}'><span>{escape(notes_str[:42] + ('…' if len(notes_str) > 42 else ''))}</span></div>", unsafe_allow_html=True)
+
+                    with prc[8]:
+                        pb1, pb2, pb3 = st.columns(3, gap="small")
+                        if pb1.button("✏️", key=f"row_edit_pay_{pid}", help=f"Edit Payment #{pid}", use_container_width=True):
+                            st.session_state["_target_edit_pay_id"] = pid
+                            st.session_state["_pending_p_sub_mode_rad"] = "Edit Past Payment"
+                            st.rerun()
+                        if pb2.button("📋", key=f"row_clone_pay_{pid}", help=f"Clone Payment #{pid}", use_container_width=True):
+                            st.session_state["_clone_payment_payload"] = {
+                                "expense_id": eid,
+                                "amount_paid": amt_v,
+                                "payment_mode": mode_str,
+                                "ref_no": str(r.get("ref_no") or ""),
+                                "paid_to": str(r.get("paid_to") or ""),
+                                "notes": str(r.get("notes") or ""),
+                            }
+                            st.session_state["_pending_p_sub_mode_rad"] = "Record New Payment"
+                            st.toast(f"Cloned Payment #{pid} into Record New Payment!", icon="📋")
+                            st.rerun()
+                        if pb3.button("🗑️", key=f"row_del_pay_{pid}", help=f"Delete Payment #{pid}", use_container_width=True):
+                            confirm_delete_payment_modal(r.to_dict())
 
                 receipt_rows = payments_df[
                     payments_df["receipt_file_name"].notna()
@@ -5601,6 +5844,7 @@ elif page == "Expenses" and user_role == "admin":
                 ].copy()
 
                 if not receipt_rows.empty:
+                    st.markdown("---")
                     st.markdown("#### View Receipt / Bill")
                     receipt_records = receipt_rows.to_dict("records")
                     receipt_labels = [
@@ -5618,12 +5862,12 @@ elif page == "Expenses" and user_role == "admin":
 
                     try:
                         receipt_blob_df = db_conn.query(
-                            '''
+                            """
                             SELECT receipt_file_name, receipt_mime_type, receipt_file_size_bytes, receipt_image_base64
                             FROM expense_payments
                             WHERE id = :pid
                             LIMIT 1;
-                            ''',
+                            """,
                             params={"pid": selected_payment_id},
                             ttl="0s"
                         )
@@ -5654,6 +5898,12 @@ elif page == "Expenses" and user_role == "admin":
             else:
                 pay_records = payments_df.to_dict("records")
                 pay_labels = [f"Payment #{r['id']} — {pd.to_datetime(r['payment_date']).strftime('%d-%b-%y')} — For Expense #{r['expense_id']} ({r['category']}) (₹{float(r['amount_paid']):,.2f})" for r in pay_records]
+                if "_target_edit_pay_id" in st.session_state:
+                    tpid = st.session_state.pop("_target_edit_pay_id")
+                    for idx_p, prec in enumerate(pay_records):
+                        if int(prec["id"]) == int(tpid):
+                            st.session_state["edit_pay_select"] = pay_labels[idx_p]
+                            break
                 loaded_pay = pay_records[pay_labels.index(st.selectbox("Select Payment to Edit", pay_labels, key="edit_pay_select"))]; loaded_pay_id = loaded_pay["id"]
 
                 c1, c2, c3 = st.columns(3)
@@ -5676,7 +5926,7 @@ elif page == "Expenses" and user_role == "admin":
                                     s.execute(text("UPDATE expense_payments SET payment_date = :pdate, amount_paid = :pamt, payment_mode = :pmode, ref_no = :pref, paid_to = :pto, notes = :notes WHERE id = :id;"), {"pdate": ep_date, "pamt": float(ep_amt), "pmode": ep_mode, "pref": ep_ref.strip(), "pto": ep_to.strip(), "notes": ep_notes.strip(), "id": loaded_pay_id})
 
                                     s.execute(
-                                        text('''
+                                        text("""
                                             UPDATE staff_salary_payouts sp
                                             SET amount_paid = :pamt, payment_date = :pdate
                                             WHERE sp.payment_id = :pid
@@ -5685,7 +5935,7 @@ elif page == "Expenses" and user_role == "admin":
                                                   WHERE e.id = sp.expense_id
                                                     AND LOWER(TRIM(COALESCE(e.sub_category, ''))) = 'salary'
                                               );
-                                        '''),
+                                        """),
                                         {"pamt": float(ep_amt), "pdate": ep_date, "pid": loaded_pay_id}
                                     )
                                     s.commit()
