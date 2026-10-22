@@ -270,9 +270,10 @@ div[data-testid="stNumberInput"] div[data-baseweb="input"]:focus-within {
     box-shadow: 0 0 0 2px rgba(25, 105, 44, 0.18) !important;
 }
 div[data-testid="stNumberInput"] input {
-    text-align: center !important;
+    text-align: left !important;
     font-weight: 800 !important;
     color: #2A1B10 !important;
+    padding-left: 8px !important;
 }
 .entry-grid-header {
     background: #70440E;
@@ -484,6 +485,94 @@ def show_opening_mismatch_modal(message):
     st.error(message)
     if st.button("OK", type="primary", use_container_width=True, key="opening_mismatch_ok_btn"):
         st.rerun()
+
+@st.dialog("⚠️ Confirm Delete Expense")
+def confirm_delete_expense_modal(exp_row):
+    exp_id = int(exp_row["id"])
+    exp_dt = pd.to_datetime(exp_row["expense_date"]).strftime("%d-%b-%Y")
+    st.warning(f"Are you sure you want to permanently delete **Expense #{exp_id}**?")
+    st.markdown(
+        f'''
+        <div style="background:#FFFBF2;border:1px solid #E3CBA0;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:13px;">
+            <div><b>Date:</b> {exp_dt} &nbsp;|&nbsp; <b>Category:</b> {exp_row["category"]}</div>
+            <div><b>Description:</b> {exp_row.get("description") or exp_row.get("vendor_name") or "—"}</div>
+            <div><b>Total Amount:</b> ₹{float(exp_row["total_amount"]):,.2f} &nbsp;|&nbsp; <b>Paid:</b> ₹{float(exp_row.get("total_paid") or 0):,.2f}</div>
+        </div>
+        ''',
+        unsafe_allow_html=True,
+    )
+    if int(exp_row.get("payment_count") or 0) > 0:
+        st.caption(f"⚠️ Note: Deleting this expense will also delete its **{int(exp_row['payment_count'])}** linked payment record(s).")
+
+    c1, c2 = st.columns(2)
+    with c1:
+        if st.button("🗑️ Yes, Delete Expense", type="primary", use_container_width=True, key=f"confirm_del_exp_{exp_id}"):
+            try:
+                with db_conn.session as s:
+                    s.execute(text("DELETE FROM staff_salary_payouts WHERE expense_id = :eid;"), {"eid": exp_id})
+                    s.execute(text("DELETE FROM expense_payments WHERE expense_id = :eid;"), {"eid": exp_id})
+                    s.execute(text("DELETE FROM expenses WHERE id = :eid;"), {"eid": exp_id})
+                    s.commit()
+                st.cache_data.clear()
+                st.rerun()
+            except Exception as e:
+                st.error(f"Could not delete expense: {e}")
+    with c2:
+        if st.button("Cancel", use_container_width=True, key=f"cancel_del_exp_{exp_id}"):
+            st.rerun()
+
+
+@st.dialog("⚠️ Confirm Delete Payment")
+def confirm_delete_payment_modal(pay_row):
+    pay_id = int(pay_row["id"])
+    exp_id = int(pay_row["expense_id"])
+    pay_dt = pd.to_datetime(pay_row["payment_date"]).strftime("%d-%b-%Y")
+    st.warning(f"Are you sure you want to permanently delete **Payment #{pay_id}**?")
+    st.markdown(
+        f'''
+        <div style="background:#FFFBF2;border:1px solid #E3CBA0;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:13px;">
+            <div><b>Payment Date:</b> {pay_dt} &nbsp;|&nbsp; <b>Mode:</b> {pay_row["payment_mode"]}</div>
+            <div><b>Linked Expense:</b> #{exp_id} ({pay_row.get("category") or "—"})</div>
+            <div><b>Amount Paid:</b> ₹{float(pay_row["amount_paid"]):,.2f} &nbsp;|&nbsp; <b>Paid To:</b> {pay_row.get("paid_to") or "—"}</div>
+        </div>
+        ''',
+        unsafe_allow_html=True,
+    )
+
+    c1, c2 = st.columns(2)
+    with c1:
+        if st.button("🗑️ Yes, Delete Payment", type="primary", use_container_width=True, key=f"confirm_del_pay_{pay_id}"):
+            try:
+                with db_conn.session as s:
+                    s.execute(text("UPDATE staff_salary_payouts SET payment_id = NULL WHERE payment_id = :pid;"), {"pid": pay_id})
+                    s.execute(text("DELETE FROM expense_payments WHERE id = :pid;"), {"pid": pay_id})
+
+                    rem = s.execute(
+                        text('''
+                            SELECT e.total_amount, COALESCE(SUM(p.amount_paid), 0) AS paid_sum
+                            FROM expenses e
+                            LEFT JOIN expense_payments p ON e.id = p.expense_id
+                            WHERE e.id = :eid
+                            GROUP BY e.id, e.total_amount;
+                        '''),
+                        {"eid": exp_id},
+                    ).fetchone()
+                    if rem:
+                        tot_amt = float(rem[0] or 0.0)
+                        paid_sum = float(rem[1] or 0.0)
+                        new_status = "Paid" if paid_sum >= tot_amt - 0.001 else ("Partially Paid" if paid_sum > 0.001 else "Pending")
+                        s.execute(
+                            text("UPDATE expenses SET status = :stat, updated_at = NOW() WHERE id = :eid;"),
+                            {"stat": new_status, "eid": exp_id},
+                        )
+                    s.commit()
+                st.cache_data.clear()
+                st.rerun()
+            except Exception as e:
+                st.error(f"Could not delete payment: {e}")
+    with c2:
+        if st.button("Cancel", use_container_width=True, key=f"cancel_del_pay_{pay_id}"):
+            st.rerun()
 
 # ----------------------------------------------------------------------
 # DATABASE LOADERS & HELPERS
@@ -5060,6 +5149,51 @@ elif page == "Expenses" and user_role == "admin":
             po_opts = ["None"] + [f"PO #{r['id']} ({pd.to_datetime(r['order_date']).strftime('%d-%b')})" for _, r in pos_df.iterrows()] if not pos_df.empty else ["None"]
             staff_opts = load_active_staff_list()
 
+            # --- Clone from Existing Expense Bar ---
+            with st.container(border=True):
+                cl_c1, cl_c2 = st.columns([3.8, 1.2], gap="small")
+                if not expenses_summary_df.empty:
+                    clone_records = expenses_summary_df.to_dict("records")
+                    clone_labels = ["— Select an existing expense to clone —"] + [
+                        f"#{r['id']} | {pd.to_datetime(r['expense_date']).strftime('%d-%b-%y')} | {r['category']}"
+                        f"{(' (' + str(r['sub_category']) + ')') if pd.notna(r.get('sub_category')) and str(r.get('sub_category')).strip() else ''}"
+                        f" — {str(r.get('description') or r.get('vendor_name') or 'No desc')[:38]} (₹{float(r['total_amount']):,.0f})"
+                        for r in clone_records
+                    ]
+                    with cl_c1:
+                        sel_clone_label = st.selectbox(
+                            "📋 Clone from Existing Expense (Optional)",
+                            clone_labels,
+                            key="clone_exp_picker",
+                            help="Pick any past expense and click 'Load Details' to pre-fill the fields below."
+                        )
+                    with cl_c2:
+                        st.markdown("<div style='height: 19px;'></div>", unsafe_allow_html=True)
+                        if st.button("📋 Load Details", use_container_width=True, key="btn_apply_exp_clone", disabled=(sel_clone_label == clone_labels[0])):
+                            src_exp = clone_records[clone_labels.index(sel_clone_label) - 1]
+                            st.session_state["add_e_type"] = src_exp["expense_type"] if src_exp.get("expense_type") in EXPENSE_TYPES else EXPENSE_TYPES[0]
+                            st.session_state["add_e_cat"] = src_exp["category"] if src_exp.get("category") in EXPENSE_CATEGORIES else EXPENSE_CATEGORIES[0]
+                            st.session_state["add_e_subcat"] = str(src_exp.get("sub_category") or "")
+                            st.session_state["add_e_date"] = date.today()
+                            st.session_state[f"add_e_month_{date.today().strftime('%Y%m')}"] = list(calendar.month_name)[date.today().month]
+                            st.session_state["add_e_amt"] = float(src_exp.get("total_amount") or 0.0)
+                            st.session_state["add_e_attr"] = src_exp["attributed_to"] if src_exp.get("attributed_to") in ATTRIBUTED_OPTIONS else ATTRIBUTED_OPTIONS[0]
+                            st.session_state["add_e_vendor"] = str(src_exp.get("vendor_name") or "")
+                            src_staff = str(src_exp.get("staff_name") or "Select Staff")
+                            st.session_state["add_e_staff"] = src_staff if src_staff in staff_opts else "Select Staff"
+                            if pd.notna(src_exp.get("purchase_order_id")):
+                                matched_po = next((o for o in po_opts if o.startswith(f"PO #{int(src_exp['purchase_order_id'])} ")), "None")
+                                st.session_state["add_e_po"] = matched_po
+                            else:
+                                st.session_state["add_e_po"] = "None"
+                            st.session_state["add_e_stat"] = "Pending"
+                            st.session_state["add_e_desc"] = str(src_exp.get("description") or "")
+                            st.session_state["add_e_remarks"] = str(src_exp.get("remarks") or "")
+                            st.toast(f"Cloned details from Expense #{src_exp['id']}!", icon="📋")
+                            st.rerun()
+                else:
+                    st.caption("No existing expenses available to clone yet.")
+
             c1, c2, c3, c4, c5 = st.columns([1.05, 1.05, 1.35, 0.95, 1.10], gap="small")
             with c1: e_type = st.selectbox("Expense Type", EXPENSE_TYPES, index=0, key="add_e_type")
             with c2: e_cat = st.selectbox("Category", EXPENSE_CATEGORIES, index=0, key="add_e_cat")
@@ -5074,7 +5208,7 @@ elif page == "Expenses" and user_role == "admin":
                 )
 
             c5, c6, c7 = st.columns(3)
-            with c5: e_amount = st.number_input("Total Amount (₹)", min_value=0.0, step=10.0, key="add_e_amt")
+            with c5: e_amount = st.number_input("Total Amount (₹)", min_value=0.0, step=10.0, format="%.2f", key="add_e_amt")
             with c6: e_attr = st.selectbox("Attributed To", ATTRIBUTED_OPTIONS, index=0, key="add_e_attr")
             with c7: e_vendor = st.text_input("Vendor / Supplier Name", placeholder="e.g. Deep Freeze Services", key="add_e_vendor")
 
@@ -5092,11 +5226,11 @@ elif page == "Expenses" and user_role == "admin":
             if has_direct_pay:
                 p1, p2, p3 = st.columns(3)
                 with p1: p_date = st.date_input("Payment Date", value=e_date, key="add_p_date", format="DD-MM-YYYY")
-                with p2: p_amt = st.number_input("Amount Paid (₹)", min_value=0.0, value=float(e_amount), step=10.0, key="add_p_amt")
+                with p2: p_amt = st.number_input("Amount Paid (₹)", min_value=0.0, value=float(e_amount), step=10.0, format="%.2f", key=f"add_p_amt_{float(e_amount):.2f}")
                 with p3: p_mode = st.selectbox("Payment Mode", PAYMENT_MODES, index=0, key="add_p_mode")
                 p4, p5 = st.columns(2)
                 with p4: p_ref = st.text_input("Ref / UTR No.", placeholder="e.g. UPI Ref, Txn ID", key="add_p_ref")
-                with p5: p_to = st.text_input("Paid To", value=e_vendor, key="add_p_to")
+                with p5: p_to = st.text_input("Paid To", value=e_vendor, key=f"add_p_to_{e_vendor}")
                 p_notes = st.text_input("Payment Notes", placeholder="Optional payment note...", key="add_p_notes")
                 p_receipt = st.file_uploader(
                     "Receipt / Bill Image (Optional)",
@@ -5131,8 +5265,6 @@ elif page == "Expenses" and user_role == "admin":
                                 )
                                 new_payment_id = pay_res.scalar()
 
-                            # Automatically sync Salary expenses to staff_salary_payouts.
-                            # The sub-category comparison is case-insensitive.
                             if e_subcat.strip().lower() == "salary":
                                 payout_res = s.execute(
                                     text("SELECT id FROM staff_salary_payouts WHERE expense_id = :eid ORDER BY id DESC LIMIT 1;"),
@@ -5180,6 +5312,20 @@ elif page == "Expenses" and user_role == "admin":
                     "Balance (₹)": st.column_config.NumberColumn(format="₹%,.2f", width="small")
                 })
 
+                with st.expander("🗑️ Delete an Expense Entry", expanded=False):
+                    del_exp_records = expenses_summary_df.to_dict("records")
+                    del_exp_labels = [
+                        f"#{r['id']} — {pd.to_datetime(r['expense_date']).strftime('%d-%b-%y')} — {r['category']} — {r.get('description') or r.get('vendor_name') or 'No desc'} (₹{float(r['total_amount']):,.2f})"
+                        for r in del_exp_records
+                    ]
+                    dc1, dc2 = st.columns([3.8, 1.2], gap="small")
+                    with dc1:
+                        sel_del_exp_lbl = st.selectbox("Select Expense to Delete", del_exp_labels, key="view_del_exp_sel")
+                    with dc2:
+                        st.markdown("<div style='height: 19px;'></div>", unsafe_allow_html=True)
+                        if st.button("🗑️ Delete Expense", type="secondary", use_container_width=True, key="view_del_exp_btn"):
+                            confirm_delete_expense_modal(del_exp_records[del_exp_labels.index(sel_del_exp_lbl)])
+
         elif e_sub_mode == "Edit Past Expense":
             if expenses_summary_df.empty: st.info("No expenses found to edit.")
             else:
@@ -5205,7 +5351,7 @@ elif page == "Expenses" and user_role == "admin":
                     e_edit_month = st.selectbox("Month", month_options, index=default_month_idx, key=f"ee_month_{loaded_exp_id}")
 
                 c5, c6, c7 = st.columns(3)
-                with c5: e_edit_amount = st.number_input("Total Amount (₹)", min_value=0.0, value=float(loaded_exp["total_amount"]), step=10.0, key=f"ee_amt_{loaded_exp_id}")
+                with c5: e_edit_amount = st.number_input("Total Amount (₹)", min_value=0.0, value=float(loaded_exp["total_amount"]), step=10.0, format="%.2f", key=f"ee_amt_{loaded_exp_id}")
                 with c6: e_edit_attr = st.selectbox("Attributed To", ATTRIBUTED_OPTIONS, index=ATTRIBUTED_OPTIONS.index(loaded_exp["attributed_to"]) if loaded_exp["attributed_to"] in ATTRIBUTED_OPTIONS else 0, key=f"ee_attr_{loaded_exp_id}")
                 with c7: e_edit_vendor = st.text_input("Vendor Name", value=str(loaded_exp.get("vendor_name") or ""), key=f"ee_vendor_{loaded_exp_id}")
 
@@ -5217,42 +5363,46 @@ elif page == "Expenses" and user_role == "admin":
                 e_edit_desc = st.text_input("Description", value=str(loaded_exp.get("description") or ""), key=f"ee_desc_{loaded_exp_id}")
                 e_edit_remarks = st.text_input("Remarks", value=str(loaded_exp.get("remarks") or ""), key=f"ee_rem_{loaded_exp_id}")
 
-                if st.button("💾 Update Expense", type="primary", use_container_width=True):
-                    if e_edit_amount <= 0: st.error("Amount must be greater than 0.")
-                    else:
-                        try:
-                            p_po_id = int(e_edit_po.split("#")[1].split(" ")[0]) if "PO #" in e_edit_po else None
-                            sel_staff = None if e_edit_staff == "Select Staff" else e_edit_staff
-                            with db_conn.session as s:
-                                s.execute(text("UPDATE expenses SET expense_date = :ed, month = :month, expense_type = :et, category = :cat, sub_category = :subcat, description = :desc, total_amount = :amt, attributed_to = :attr, vendor_name = :vendor, staff_name = :staff, purchase_order_id = :poid, status = :stat, remarks = :rem, updated_at = NOW() WHERE id = :id;"), {"ed": e_edit_date, "month": e_edit_month, "et": e_edit_type, "cat": e_edit_cat, "subcat": e_edit_subcat.strip(), "desc": e_edit_desc.strip(), "amt": float(e_edit_amount), "attr": e_edit_attr, "vendor": e_edit_vendor.strip(), "staff": sel_staff, "poid": p_po_id, "stat": e_edit_stat, "rem": e_edit_remarks.strip(), "id": loaded_exp_id})
+                btn_c1, btn_c2 = st.columns([3.5, 1.2], gap="small")
+                with btn_c1:
+                    if st.button("💾 Update Expense", type="primary", use_container_width=True, key=f"btn_upd_exp_{loaded_exp_id}"):
+                        if e_edit_amount <= 0: st.error("Amount must be greater than 0.")
+                        else:
+                            try:
+                                p_po_id = int(e_edit_po.split("#")[1].split(" ")[0]) if "PO #" in e_edit_po else None
+                                sel_staff = None if e_edit_staff == "Select Staff" else e_edit_staff
+                                with db_conn.session as s:
+                                    s.execute(text("UPDATE expenses SET expense_date = :ed, month = :month, expense_type = :et, category = :cat, sub_category = :subcat, description = :desc, total_amount = :amt, attributed_to = :attr, vendor_name = :vendor, staff_name = :staff, purchase_order_id = :poid, status = :stat, remarks = :rem, updated_at = NOW() WHERE id = :id;"), {"ed": e_edit_date, "month": e_edit_month, "et": e_edit_type, "cat": e_edit_cat, "subcat": e_edit_subcat.strip(), "desc": e_edit_desc.strip(), "amt": float(e_edit_amount), "attr": e_edit_attr, "vendor": e_edit_vendor.strip(), "staff": sel_staff, "poid": p_po_id, "stat": e_edit_stat, "rem": e_edit_remarks.strip(), "id": loaded_exp_id})
 
-                                # Keep the linked salary payout in sync when editing a Salary expense.
-                                if e_edit_subcat.strip().lower() == "salary":
-                                    payout_res = s.execute(
-                                        text("SELECT id FROM staff_salary_payouts WHERE expense_id = :eid ORDER BY id DESC LIMIT 1;"),
-                                        {"eid": loaded_exp_id}
-                                    ).fetchone()
-                                    payout_params = {
-                                        "eid": loaded_exp_id,
-                                        "staff": sel_staff,
-                                        "salary_month": e_edit_month,
-                                        "salary_year": e_edit_date.year,
-                                        "amount_paid": float(e_edit_amount),
-                                        "payment_date": e_edit_date,
-                                    }
-                                    if payout_res:
-                                        s.execute(
-                                            text("UPDATE staff_salary_payouts SET staff_name = :staff, salary_month = :salary_month, salary_year = :salary_year, amount_paid = :amount_paid, payment_date = :payment_date WHERE id = :id;"),
-                                            {**payout_params, "id": payout_res[0]}
-                                        )
-                                    else:
-                                        s.execute(
-                                            text("INSERT INTO staff_salary_payouts (expense_id, staff_name, salary_month, salary_year, amount_paid, payment_date) VALUES (:eid, :staff, :salary_month, :salary_year, :amount_paid, :payment_date);"),
-                                            payout_params
-                                        )
-                                s.commit()
-                            show_success_modal(f"Expense #{loaded_exp_id} updated successfully!")
-                        except Exception as e: st.error(f"Could not update expense: {e}")
+                                    if e_edit_subcat.strip().lower() == "salary":
+                                        payout_res = s.execute(
+                                            text("SELECT id FROM staff_salary_payouts WHERE expense_id = :eid ORDER BY id DESC LIMIT 1;"),
+                                            {"eid": loaded_exp_id}
+                                        ).fetchone()
+                                        payout_params = {
+                                            "eid": loaded_exp_id,
+                                            "staff": sel_staff,
+                                            "salary_month": e_edit_month,
+                                            "salary_year": e_edit_date.year,
+                                            "amount_paid": float(e_edit_amount),
+                                            "payment_date": e_edit_date,
+                                        }
+                                        if payout_res:
+                                            s.execute(
+                                                text("UPDATE staff_salary_payouts SET staff_name = :staff, salary_month = :salary_month, salary_year = :salary_year, amount_paid = :amount_paid, payment_date = :payment_date WHERE id = :id;"),
+                                                {**payout_params, "id": payout_res[0]}
+                                            )
+                                        else:
+                                            s.execute(
+                                                text("INSERT INTO staff_salary_payouts (expense_id, staff_name, salary_month, salary_year, amount_paid, payment_date) VALUES (:eid, :staff, :salary_month, :salary_year, :amount_paid, :payment_date);"),
+                                                payout_params
+                                            )
+                                    s.commit()
+                                show_success_modal(f"Expense #{loaded_exp_id} updated successfully!")
+                            except Exception as e: st.error(f"Could not update expense: {e}")
+                with btn_c2:
+                    if st.button("🗑️ Delete Expense", type="secondary", use_container_width=True, key=f"btn_del_exp_{loaded_exp_id}"):
+                        confirm_delete_expense_modal(loaded_exp)
 
     elif exp_nav == "💳 Payments (Cash Outflows)":
         p_sub_mode = st.radio("Action", ["Record New Payment", "View Payments", "Edit Past Payment"], horizontal=True, key="p_sub_mode_rad")
@@ -5262,35 +5412,107 @@ elif page == "Expenses" and user_role == "admin":
             st.write("Record a disbursement / payment against an existing bill:")
             if expenses_summary_df.empty: st.info("No expenses found to make payment against.")
             else:
+                # Fetch PO / Stock Received net amounts so PO-linked bills always reflect accurate PO outstanding balances
+                po_net_map = {}
+                if db_conn is not None:
+                    try:
+                        po_rec_df = db_conn.query(
+                            '''
+                            SELECT
+                                p.id AS po_id,
+                                p.notes AS po_notes,
+                                COALESCE((
+                                    SELECT SUM(sr.payment_amount)
+                                    FROM stock_received sr
+                                    WHERE sr.purchase_order_id = p.id
+                                      AND COALESCE(sr.payment_amount, 0) > 0
+                                ), 0) AS received_payment_amount,
+                                COALESCE((
+                                    SELECT SUM(pi.ordered_units * f.cost_price)
+                                    FROM purchase_order_items pi
+                                    JOIN flavors f ON f.code = pi.flavor_code
+                                    WHERE pi.order_id = p.id
+                                ), 0) AS po_gross_amount
+                            FROM purchase_orders p;
+                            ''',
+                            ttl="0s"
+                        )
+                        for _, pr in po_rec_df.iterrows():
+                            poid = int(pr["po_id"])
+                            rec_pay_amt = float(_num(pr.get("received_payment_amount")))
+                            po_gross = float(_num(pr.get("po_gross_amount")))
+                            notes_str = str(pr.get("po_notes") or "")
+                            final_match = re.search(r"Final:\s*₹?([\d,]+(?:\.\d+)?)", notes_str)
+                            disc_match = re.search(r"\[Discount:\s*([\d.]+)%", notes_str)
+                            if rec_pay_amt > 0:
+                                po_net_map[poid] = rec_pay_amt
+                            elif final_match:
+                                po_net_map[poid] = _num(final_match.group(1))
+                            elif disc_match and po_gross > 0:
+                                disc_p = float(disc_match.group(1))
+                                po_net_map[poid] = po_gross * (1.0 - disc_p / 100.0)
+                            elif po_gross > 0:
+                                po_net_map[poid] = po_gross
+                    except Exception:
+                        po_net_map = {}
+
+                exp_work_df = expenses_summary_df.copy()
+                def _resolve_bill_total(row):
+                    exp_tot = float(_num(row.get("total_amount")))
+                    poid = row.get("purchase_order_id")
+                    if pd.notna(poid) and int(poid) in po_net_map and po_net_map[int(poid)] > 0:
+                        return float(po_net_map[int(poid)]) if exp_tot <= 0 else exp_tot
+                    return exp_tot
+
+                exp_work_df["effective_total"] = exp_work_df.apply(_resolve_bill_total, axis=1)
+                exp_work_df["effective_due"] = (exp_work_df["effective_total"] - exp_work_df["total_paid"].astype(float)).clip(lower=0.0)
+
                 unpaid_filter = st.checkbox("Show only expenses with pending balance", value=True, key="filter_unpaid_exp")
-                filtered_exp = expenses_summary_df[expenses_summary_df["balance_due"] > 0] if unpaid_filter else expenses_summary_df
+                filtered_exp = exp_work_df[exp_work_df["effective_due"] > 0.009] if unpaid_filter else exp_work_df
                 if filtered_exp.empty: st.success("🎉 All logged expenses are fully settled!")
                 else:
                     f_records = filtered_exp.to_dict("records")
-                    f_labels = [f"Expense #{r['id']} — {r['category']} — {r['description'] or r['vendor_name']} (Total: ₹{float(r['total_amount']):,.0f} | Due: ₹{float(r['balance_due']):,.0f})" for r in f_records]
-                    target_exp = f_records[f_labels.index(st.selectbox("Select Expense to Pay", f_labels, key="pay_target_select"))]; target_exp_id, curr_due = target_exp["id"], float(target_exp["balance_due"])
+                    f_labels = [
+                        f"Expense #{r['id']}"
+                        f"{(' (PO #' + str(int(r['purchase_order_id'])) + ')') if pd.notna(r.get('purchase_order_id')) else ''}"
+                        f" — {r['category']} — {r['description'] or r['vendor_name']}"
+                        f" (Total: ₹{float(r['effective_total']):,.2f} | Due: ₹{float(r['effective_due']):,.2f})"
+                        for r in f_records
+                    ]
+                    selected_label = st.selectbox("Select Expense to Pay", f_labels, key="pay_target_select")
+                    target_exp = f_records[f_labels.index(selected_label)]
+                    target_exp_id = int(target_exp["id"])
+                    bill_total = float(target_exp["effective_total"])
+                    already_paid = float(target_exp["total_paid"])
+                    curr_due = round(max(0.0, float(target_exp["effective_due"])), 2)
 
                     m1, m2, m3 = st.columns(3)
-                    m1.metric("Bill Total", f"₹{float(target_exp['total_amount']):,.2f}"); m2.metric("Already Paid", f"₹{float(target_exp['total_paid']):,.2f}"); m3.metric("Outstanding Balance", f"₹{curr_due:,.2f}")
+                    m1.metric("Bill Total", f"₹{bill_total:,.2f}")
+                    m2.metric("Already Paid", f"₹{already_paid:,.2f}")
+                    m3.metric("Outstanding Balance", f"₹{curr_due:,.2f}")
+
+                    amt_widget_key = f"rec_p_amt_{target_exp_id}_{curr_due:.2f}"
+                    if amt_widget_key not in st.session_state:
+                        st.session_state[amt_widget_key] = curr_due
 
                     c1, c2, c3 = st.columns(3)
-                    with c1: new_p_date = st.date_input("Payment Date", value=date.today(), key="rec_p_date", format="DD-MM-YYYY")
-                    with c2: new_p_amount = st.number_input("Amount to Pay (₹)", min_value=0.0, value=max(0.0, curr_due), step=10.0, key="rec_p_amt")
-                    with c3: new_p_mode = st.selectbox("Payment Mode", PAYMENT_MODES, index=0, key="rec_p_mode")
+                    with c1: new_p_date = st.date_input("Payment Date", value=date.today(), key=f"rec_p_date_{target_exp_id}", format="DD-MM-YYYY")
+                    with c2: new_p_amount = st.number_input("Amount to Pay (₹)", min_value=0.0, step=10.0, format="%.2f", key=amt_widget_key)
+                    with c3: new_p_mode = st.selectbox("Payment Mode", PAYMENT_MODES, index=0, key=f"rec_p_mode_{target_exp_id}")
 
                     c4, c5 = st.columns(2)
-                    with c4: new_p_ref = st.text_input("Transaction / UTR Ref No.", placeholder="e.g. UPI Ref, IMPS Txn ID", key="rec_p_ref")
-                    with c5: new_p_to = st.text_input("Paid To", value=str(target_exp.get("vendor_name") or ""), key="rec_p_to")
-                    new_p_notes = st.text_input("Payment Notes / Remarks", placeholder="e.g. Part payment tranche 1...", key="rec_p_notes")
+                    with c4: new_p_ref = st.text_input("Transaction / UTR Ref No.", placeholder="e.g. UPI Ref, IMPS Txn ID", key=f"rec_p_ref_{target_exp_id}")
+                    with c5: new_p_to = st.text_input("Paid To", value=str(target_exp.get("vendor_name") or ""), key=f"rec_p_to_{target_exp_id}")
+                    new_p_notes = st.text_input("Payment Notes / Remarks", placeholder="e.g. Part payment tranche 1...", key=f"rec_p_notes_{target_exp_id}")
                     new_p_receipt = st.file_uploader(
                         "Receipt / Bill Image (Optional)",
                         type=["jpg", "jpeg", "png", "webp"],
                         accept_multiple_files=False,
-                        key="rec_p_receipt"
+                        key=f"rec_p_receipt_{target_exp_id}"
                     )
                     st.caption("Accepted: JPG, JPEG, PNG, WEBP • maximum 3.5 MB")
 
-                    if st.button("💳 Disburse Payment", type="primary", use_container_width=True):
+                    if st.button("💳 Disburse Payment", type="primary", use_container_width=True, key=f"btn_disburse_{target_exp_id}"):
                         if new_p_amount <= 0: st.error("Please enter a payment amount greater than 0.")
                         else:
                             try:
@@ -5308,11 +5530,9 @@ elif page == "Expenses" and user_role == "admin":
                                         }
                                     )
                                     new_payment_id = pay_res.scalar()
-                                    new_status = "Paid" if (float(target_exp["total_paid"]) + float(new_p_amount)) >= float(target_exp["total_amount"]) else "Partially Paid"
+                                    new_status = "Paid" if (already_paid + float(new_p_amount)) >= (bill_total - 0.009) else "Partially Paid"
                                     s.execute(text("UPDATE expenses SET status = :stat, updated_at = NOW() WHERE id = :id;"), {"stat": new_status, "id": target_exp_id})
 
-                                    # For Salary expenses, keep staff_salary_payouts.payment_id linked
-                                    # to the most recently recorded payment for this expense.
                                     salary_res = s.execute(
                                         text("SELECT sub_category FROM expenses WHERE id = :eid;"),
                                         {"eid": target_exp_id}
@@ -5328,8 +5548,6 @@ elif page == "Expenses" and user_role == "admin":
                                                 {"payment_id": new_payment_id, "id": payout_res[0]}
                                             )
                                         else:
-                                            # Create the payout link if the salary expense was created before
-                                            # salary-payout synchronization was introduced.
                                             exp_res = s.execute(
                                                 text("SELECT staff_name, month, expense_date, total_amount FROM expenses WHERE id = :eid;"),
                                                 {"eid": target_exp_id}
@@ -5363,6 +5581,20 @@ elif page == "Expenses" and user_role == "admin":
                 disp_pay = apply_smart_filters(disp_pay, ["Mode", "Paid To", "Receipt"], "payment_filters")
                 st.dataframe(disp_pay, hide_index=True, use_container_width=True, column_config={"Amount (₹)": st.column_config.NumberColumn(format="₹%,.2f")})
 
+                with st.expander("🗑️ Delete a Payment Entry", expanded=False):
+                    del_pay_records = payments_df.to_dict("records")
+                    del_pay_labels = [
+                        f"Payment #{r['id']} — {pd.to_datetime(r['payment_date']).strftime('%d-%b-%y')} — Expense #{r['expense_id']} ({r['category']}) — ₹{float(r['amount_paid']):,.2f}"
+                        for r in del_pay_records
+                    ]
+                    dpc1, dpc2 = st.columns([3.8, 1.2], gap="small")
+                    with dpc1:
+                        sel_del_pay_lbl = st.selectbox("Select Payment to Delete", del_pay_labels, key="view_del_pay_sel")
+                    with dpc2:
+                        st.markdown("<div style='height: 19px;'></div>", unsafe_allow_html=True)
+                        if st.button("🗑️ Delete Payment", type="secondary", use_container_width=True, key="view_del_pay_btn"):
+                            confirm_delete_payment_modal(del_pay_records[del_pay_labels.index(sel_del_pay_lbl)])
+
                 receipt_rows = payments_df[
                     payments_df["receipt_file_name"].notna()
                     & payments_df["receipt_file_name"].astype(str).str.strip().ne("")
@@ -5386,12 +5618,12 @@ elif page == "Expenses" and user_role == "admin":
 
                     try:
                         receipt_blob_df = db_conn.query(
-                            """
+                            '''
                             SELECT receipt_file_name, receipt_mime_type, receipt_file_size_bytes, receipt_image_base64
                             FROM expense_payments
                             WHERE id = :pid
                             LIMIT 1;
-                            """,
+                            ''',
                             params={"pid": selected_payment_id},
                             ttl="0s"
                         )
@@ -5426,7 +5658,7 @@ elif page == "Expenses" and user_role == "admin":
 
                 c1, c2, c3 = st.columns(3)
                 with c1: ep_date = st.date_input("Payment Date", value=pd.to_datetime(loaded_pay["payment_date"]).date(), key=f"ep_dt_{loaded_pay_id}", format="DD-MM-YYYY")
-                with c2: ep_amt = st.number_input("Amount Paid (₹)", min_value=0.0, value=float(loaded_pay["amount_paid"]), step=10.0, key=f"ep_amt_{loaded_pay_id}")
+                with c2: ep_amt = st.number_input("Amount Paid (₹)", min_value=0.0, value=float(loaded_pay["amount_paid"]), step=10.0, format="%.2f", key=f"ep_amt_{loaded_pay_id}")
                 with c3: ep_mode = st.selectbox("Payment Mode", PAYMENT_MODES, index=PAYMENT_MODES.index(loaded_pay["payment_mode"]) if loaded_pay["payment_mode"] in PAYMENT_MODES else 0, key=f"ep_mode_{loaded_pay_id}")
 
                 c4, c5 = st.columns(2)
@@ -5434,31 +5666,34 @@ elif page == "Expenses" and user_role == "admin":
                 with c5: ep_to = st.text_input("Paid To", value=str(loaded_pay.get("paid_to") or ""), key=f"ep_to_{loaded_pay_id}")
                 ep_notes = st.text_input("Payment Notes", value=str(loaded_pay.get("notes") or ""), key=f"ep_notes_{loaded_pay_id}")
 
-                if st.button("💾 Update Payment", type="primary", use_container_width=True):
-                    if ep_amt <= 0: st.error("Amount must be greater than 0.")
-                    else:
-                        try:
-                            with db_conn.session as s:
-                                s.execute(text("UPDATE expense_payments SET payment_date = :pdate, amount_paid = :pamt, payment_mode = :pmode, ref_no = :pref, paid_to = :pto, notes = :notes WHERE id = :id;"), {"pdate": ep_date, "pamt": float(ep_amt), "pmode": ep_mode, "pref": ep_ref.strip(), "pto": ep_to.strip(), "notes": ep_notes.strip(), "id": loaded_pay_id})
+                p_btn1, p_btn2 = st.columns([3.5, 1.2], gap="small")
+                with p_btn1:
+                    if st.button("💾 Update Payment", type="primary", use_container_width=True, key=f"btn_upd_pay_{loaded_pay_id}"):
+                        if ep_amt <= 0: st.error("Amount must be greater than 0.")
+                        else:
+                            try:
+                                with db_conn.session as s:
+                                    s.execute(text("UPDATE expense_payments SET payment_date = :pdate, amount_paid = :pamt, payment_mode = :pmode, ref_no = :pref, paid_to = :pto, notes = :notes WHERE id = :id;"), {"pdate": ep_date, "pamt": float(ep_amt), "pmode": ep_mode, "pref": ep_ref.strip(), "pto": ep_to.strip(), "notes": ep_notes.strip(), "id": loaded_pay_id})
 
-                                # If this payment is the payment currently linked to a Salary payout,
-                                # keep the payout's amount/date synchronized with the edited payment.
-                                s.execute(
-                                    text("""
-                                        UPDATE staff_salary_payouts sp
-                                        SET amount_paid = :pamt, payment_date = :pdate
-                                        WHERE sp.payment_id = :pid
-                                          AND EXISTS (
-                                              SELECT 1 FROM expenses e
-                                              WHERE e.id = sp.expense_id
-                                                AND LOWER(TRIM(COALESCE(e.sub_category, ''))) = 'salary'
-                                          );
-                                    """),
-                                    {"pamt": float(ep_amt), "pdate": ep_date, "pid": loaded_pay_id}
-                                )
-                                s.commit()
-                            show_success_modal(f"Payment #{loaded_pay_id} updated successfully!")
-                        except Exception as e: st.error(f"Could not update payment: {e}")
+                                    s.execute(
+                                        text('''
+                                            UPDATE staff_salary_payouts sp
+                                            SET amount_paid = :pamt, payment_date = :pdate
+                                            WHERE sp.payment_id = :pid
+                                              AND EXISTS (
+                                                  SELECT 1 FROM expenses e
+                                                  WHERE e.id = sp.expense_id
+                                                    AND LOWER(TRIM(COALESCE(e.sub_category, ''))) = 'salary'
+                                              );
+                                        '''),
+                                        {"pamt": float(ep_amt), "pdate": ep_date, "pid": loaded_pay_id}
+                                    )
+                                    s.commit()
+                                show_success_modal(f"Payment #{loaded_pay_id} updated successfully!")
+                            except Exception as e: st.error(f"Could not update payment: {e}")
+                with p_btn2:
+                    if st.button("🗑️ Delete Payment", type="secondary", use_container_width=True, key=f"btn_del_pay_{loaded_pay_id}"):
+                        confirm_delete_payment_modal(loaded_pay)
 
     elif exp_nav == "📊 Summary & Date Reports":
         st.write("Analyze expense obligations, actual disbursements, and settlement ratios over any time window:")
