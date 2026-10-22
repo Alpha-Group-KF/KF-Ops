@@ -470,12 +470,12 @@ div[data-testid="stNumberInput"] input {
 .status-pending { background: #FCE8E6; color: #C5221F; border: 1px solid #FAD2CF; }
 .status-other { background: #F1F3F4; color: #5F6368; border: 1px solid #DADCE0; }
 
-/* Make inline row action buttons compact and guaranteed visible */
+/* Make inline row action buttons compact, clean, and guaranteed visible */
 div[data-testid="stHorizontalBlock"] .stButton button {
     padding: 2px 4px !important;
     min-height: 30px !important;
     height: 30px !important;
-    font-size: 12px !important;
+    font-size: 11.5px !important;
     line-height: 1 !important;
     border: 1px solid #D8C29D !important;
     background-color: #FFFBF2 !important;
@@ -5283,7 +5283,6 @@ elif page == "Expenses" and user_role == "admin":
     st.subheader("Expenses & Payments Management")
     st.caption("Manage supplier bills, operating expenses, payments (Cash vs UPI), and settlement balances.")
 
-    # Handle pending navigation triggered by inline Edit / Clone buttons BEFORE widgets instantiate
     if "_pending_exp_nav_sec" in st.session_state:
         st.session_state["exp_nav_sec"] = st.session_state.pop("_pending_exp_nav_sec")
     if "_pending_e_sub_mode_rad" in st.session_state:
@@ -5291,7 +5290,6 @@ elif page == "Expenses" and user_role == "admin":
     if "_pending_p_sub_mode_rad" in st.session_state:
         st.session_state["p_sub_mode_rad"] = st.session_state.pop("_pending_p_sub_mode_rad")
 
-    # Guard against stale radio values if user previously had "Edit Past ..." selected
     if st.session_state.get("e_sub_mode_rad") not in (None, "View Expenses", "Add New Expense"):
         st.session_state["e_sub_mode_rad"] = "View Expenses"
     if st.session_state.get("p_sub_mode_rad") not in (None, "View Payments", "Record New Payment"):
@@ -5354,17 +5352,13 @@ elif page == "Expenses" and user_role == "admin":
         e_sub_mode = st.radio("Action", ["View Expenses", "Add New Expense"], horizontal=True, key="e_sub_mode_rad")
         expenses_summary_df = load_db_expenses_summary_df()
 
-        # Clear inline edit target if user switches to Add New Expense
         if e_sub_mode == "Add New Expense":
             st.session_state.pop("_editing_expense_id", None)
-
-        if e_sub_mode == "Add New Expense":
             st.write("Record a new bill or obligation incurred:")
             pos_df = db_conn.query("SELECT id, order_date, location FROM purchase_orders ORDER BY order_date DESC;", ttl="0s") if db_conn else pd.DataFrame()
             po_opts = ["None"] + [f"PO #{r['id']} ({pd.to_datetime(r['order_date']).strftime('%d-%b')})" for _, r in pos_df.iterrows()] if not pos_df.empty else ["None"]
             staff_opts = load_active_staff_list()
 
-            # --- Clone from Existing Expense Bar ---
             with st.container(border=True):
                 cl_c1, cl_c2 = st.columns([3.8, 1.2], gap="small")
                 if not expenses_summary_df.empty:
@@ -5494,7 +5488,6 @@ elif page == "Expenses" and user_role == "admin":
         elif e_sub_mode == "View Expenses":
             editing_exp_id = st.session_state.get("_editing_expense_id")
 
-            # If an inline Edit (✏️) button was clicked, show the Edit form for that Expense
             if editing_exp_id is not None and not expenses_summary_df.empty:
                 match_rows = expenses_summary_df[expenses_summary_df["id"] == int(editing_exp_id)]
                 if match_rows.empty:
@@ -5582,7 +5575,7 @@ elif page == "Expenses" and user_role == "admin":
                                     show_success_modal(f"Expense #{loaded_exp_id} updated successfully!")
                                 except Exception as e: st.error(f"Could not update expense: {e}")
                     with btn_c2:
-                        if st.button("🗑️ Delete Expense", type="secondary", use_container_width=True, key=f"btn_del_exp_{loaded_exp_id}"):
+                        if st.button("❌ Delete Expense", type="secondary", use_container_width=True, key=f"btn_del_exp_{loaded_exp_id}"):
                             confirm_delete_expense_modal(loaded_exp)
 
             elif expenses_summary_df.empty:
@@ -5606,24 +5599,34 @@ elif page == "Expenses" and user_role == "admin":
 
                 pg_c1, pg_c2 = st.columns([3.8, 1.2])
                 with pg_c1:
-                    st.caption("💡 Actions per row: **✏️** Edit &nbsp;|&nbsp; **📋** Clone into New Expense &nbsp;|&nbsp; **🗑️** Delete")
+                    st.caption("💡 Actions per row: **✏️** Edit &nbsp;|&nbsp; **📋** Copy (Clone into New Expense) &nbsp;|&nbsp; **❌** Delete")
                 with pg_c2:
                     page_size = st.selectbox("Rows per page", [25, 50, 100, 500], index=0, key="exp_view_page_size", label_visibility="collapsed")
 
-                # Direct top-level columns (no nested columns inside Actions -> buttons are always visible!)
-                col_weights = [0.46, 0.72, 0.45, 1.35, 1.85, 0.78, 0.78, 0.78, 0.68, 0.68, 0.52, 0.34, 0.34, 0.34]
-                headers = ["ID", "Date", "Mth", "Category", "Description", "Total", "Paid", "Balance", "Status", "Staff", "PO", "Edit", "Clone", "Del"]
+                # ID and Month removed from table columns (Month filter retained above); COPY header with Clone tooltip
+                col_weights = [0.75, 1.50, 2.15, 0.82, 0.82, 0.82, 0.76, 0.76, 0.58, 0.36, 0.38, 0.36]
+                headers = [
+                    ("Date", "Expense Date"),
+                    ("Category", "Category & Sub-Category"),
+                    ("Description", "Description"),
+                    ("Total", "Total Amount"),
+                    ("Paid", "Amount Paid"),
+                    ("Balance", "Balance Due"),
+                    ("Status", "Payment Status"),
+                    ("Staff", "Linked Staff"),
+                    ("PO", "Linked Purchase Order"),
+                    ("Edit", "Edit Expense"),
+                    ("COPY", "Clone"),
+                    ("Del", "Delete Expense"),
+                ]
                 h_cols = st.columns(col_weights, gap="small")
-                for hc, h_text in zip(h_cols, headers):
-                    align = "justify-content:flex-end;" if h_text in ("Total", "Paid", "Balance") else ("justify-content:center;" if h_text in ("ID", "Date", "Mth", "Status", "PO", "Edit", "Clone", "Del") else "")
-                    hc.markdown(f"<div class='ledger-tbl-header' style='{align}'>{h_text}</div>", unsafe_allow_html=True)
+                for hc, (h_text, h_tip) in zip(h_cols, headers):
+                    align = "justify-content:flex-end;" if h_text in ("Total", "Paid", "Balance") else ("justify-content:center;" if h_text in ("Date", "Status", "PO", "Edit", "COPY", "Del") else "")
+                    hc.markdown(f"<div class='ledger-tbl-header' style='{align}' title='{escape(h_tip)}'>{h_text}</div>", unsafe_allow_html=True)
 
                 for _, r in filtered_exp_df.head(int(page_size)).iterrows():
                     eid = int(r["id"])
-                    dt_obj = pd.to_datetime(r["expense_date"])
-                    dt_str = dt_obj.strftime("%d-%b-%y")
-                    raw_mth = _clean_str(r.get("month"), "")
-                    mth_str = (raw_mth[:3] if raw_mth else dt_obj.strftime("%b"))
+                    dt_str = pd.to_datetime(r["expense_date"]).strftime("%d-%b-%y")
                     cat_str = _clean_str(r.get("category"), "—")
                     sub_str = _clean_str(r.get("sub_category"), "")
                     etype_str = _clean_str(r.get("expense_type"), "OPEX")
@@ -5635,37 +5638,34 @@ elif page == "Expenses" and user_role == "admin":
                     po_str = f"PO #{int(r['purchase_order_id'])}" if pd.notna(r.get("purchase_order_id")) else "—"
 
                     rc = st.columns(col_weights, gap="small")
-                    rc[0].markdown(f"<div class='ledger-cell' style='justify-content:center;'>#{eid}</div>", unsafe_allow_html=True)
-                    rc[1].markdown(f"<div class='ledger-cell' style='justify-content:center;'>{dt_str}</div>", unsafe_allow_html=True)
-                    rc[2].markdown(f"<div class='ledger-cell' style='justify-content:center;'>{escape(mth_str)}</div>", unsafe_allow_html=True)
+                    rc[0].markdown(f"<div class='ledger-cell' style='justify-content:center;'>{dt_str}</div>", unsafe_allow_html=True)
                     sub_html = f"<span class='ledger-subtext' title='{escape(etype_str + (' • ' + sub_str if sub_str else ''))}'>{escape(etype_str)}{(' • ' + escape(sub_str)) if sub_str else ''}</span>"
-                    rc[3].markdown(f"<div class='ledger-cell-desc' title='{escape(cat_str)}'><span>{escape(cat_str)}</span>{sub_html}</div>", unsafe_allow_html=True)
-                    rc[4].markdown(f"<div class='ledger-cell-desc' title='{escape(desc_str)}'><span>{escape(desc_str)}</span></div>", unsafe_allow_html=True)
-                    rc[5].markdown(f"<div class='ledger-amt-total'>₹{tot_v:,.0f}</div>", unsafe_allow_html=True)
-                    rc[6].markdown(f"<div class='ledger-amt-paid'>₹{paid_v:,.0f}</div>", unsafe_allow_html=True)
+                    rc[1].markdown(f"<div class='ledger-cell-desc' title='{escape(cat_str)}'><span>{escape(cat_str)}</span>{sub_html}</div>", unsafe_allow_html=True)
+                    rc[2].markdown(f"<div class='ledger-cell-desc' title='{escape(desc_str)}'><span>{escape(desc_str)}</span></div>", unsafe_allow_html=True)
+                    rc[3].markdown(f"<div class='ledger-amt-total'>₹{tot_v:,.0f}</div>", unsafe_allow_html=True)
+                    rc[4].markdown(f"<div class='ledger-amt-paid'>₹{paid_v:,.0f}</div>", unsafe_allow_html=True)
                     due_cls = "ledger-amt-due" if due_v > 0.009 else "ledger-cell"
-                    rc[7].markdown(f"<div class='{due_cls}' style='justify-content:flex-end;'>₹{due_v:,.0f}</div>", unsafe_allow_html=True)
-                    rc[8].markdown(f"<div class='ledger-cell' style='justify-content:center;'>{_status_pill_html(r.get('status'))}</div>", unsafe_allow_html=True)
-                    rc[9].markdown(f"<div class='ledger-cell' title='{escape(staff_str)}'>{escape(staff_str)}</div>", unsafe_allow_html=True)
-                    rc[10].markdown(f"<div class='ledger-cell' style='justify-content:center;'>{escape(po_str)}</div>", unsafe_allow_html=True)
+                    rc[5].markdown(f"<div class='{due_cls}' style='justify-content:flex-end;'>₹{due_v:,.0f}</div>", unsafe_allow_html=True)
+                    rc[6].markdown(f"<div class='ledger-cell' style='justify-content:center;'>{_status_pill_html(r.get('status'))}</div>", unsafe_allow_html=True)
+                    rc[7].markdown(f"<div class='ledger-cell' title='{escape(staff_str)}'>{escape(staff_str)}</div>", unsafe_allow_html=True)
+                    rc[8].markdown(f"<div class='ledger-cell' style='justify-content:center;'>{escape(po_str)}</div>", unsafe_allow_html=True)
 
-                    if rc[11].button("✏️", key=f"row_edit_exp_{eid}", help=f"Edit Expense #{eid}", use_container_width=True):
+                    if rc[9].button("✏️", key=f"row_edit_exp_{eid}", help="Edit", use_container_width=True):
                         st.session_state["_editing_expense_id"] = eid
                         st.rerun()
-                    if rc[12].button("📋", key=f"row_clone_exp_{eid}", help=f"Clone Expense #{eid}", use_container_width=True):
+                    if rc[10].button("📋", key=f"row_clone_exp_{eid}", help="Clone", use_container_width=True):
                         _populate_expense_clone_state(r.to_dict())
                         st.session_state.pop("_editing_expense_id", None)
                         st.session_state["_pending_e_sub_mode_rad"] = "Add New Expense"
                         st.toast(f"Cloned Expense #{eid} into Add New Expense!", icon="📋")
                         st.rerun()
-                    if rc[13].button("🗑️", key=f"row_del_exp_{eid}", help=f"Delete Expense #{eid}", use_container_width=True):
+                    if rc[11].button("❌", key=f"row_del_exp_{eid}", help="Delete", use_container_width=True):
                         confirm_delete_expense_modal(r.to_dict())
 
     # ==================================================================
     # SECTION 2: PAYMENTS (CASH OUTFLOWS)
     # ==================================================================
     elif exp_nav == "💳 Payments (Cash Outflows)":
-        # View Payments first, then Record New Payment (Edit Past Payment removed from top bar)
         p_sub_mode = st.radio("Action", ["View Payments", "Record New Payment"], horizontal=True, key="p_sub_mode_rad")
         payments_df, expenses_summary_df = load_db_payments_df(), load_db_expenses_summary_df()
 
@@ -5853,7 +5853,6 @@ elif page == "Expenses" and user_role == "admin":
         elif p_sub_mode == "View Payments":
             editing_pay_id = st.session_state.get("_editing_payment_id")
 
-            # If an inline Edit (✏️) button was clicked on a payment row, open the Edit Payment view
             if editing_pay_id is not None and not payments_df.empty:
                 pmatch = payments_df[payments_df["id"] == int(editing_pay_id)]
                 if pmatch.empty:
@@ -5908,7 +5907,7 @@ elif page == "Expenses" and user_role == "admin":
                                     show_success_modal(f"Payment #{loaded_pay_id} updated successfully!")
                                 except Exception as e: st.error(f"Could not update payment: {e}")
                     with p_btn2:
-                        if st.button("🗑️ Delete Payment", type="secondary", use_container_width=True, key=f"btn_del_pay_{loaded_pay_id}"):
+                        if st.button("❌ Delete Payment", type="secondary", use_container_width=True, key=f"btn_del_pay_{loaded_pay_id}"):
                             confirm_delete_payment_modal(loaded_pay)
 
             elif payments_df.empty:
@@ -5918,22 +5917,31 @@ elif page == "Expenses" and user_role == "admin":
                 filter_pay_df = payments_df.copy()
                 filter_pay_df["Mode"] = filter_pay_df["payment_mode"].apply(lambda v: _clean_str(v, ""))
                 filter_pay_df["Paid To"] = filter_pay_df["paid_to"].apply(lambda v: _clean_str(v, ""))
-                filter_pay_df["Receipt"] = filter_pay_df["receipt_file_name"].apply(lambda v: "🧾 Yes" if _clean_str(v, "") else "—")
-                filtered_pay = apply_smart_filters(filter_pay_df, ["Mode", "Paid To", "Receipt"], "payment_filters")
+                filtered_pay = apply_smart_filters(filter_pay_df, ["Mode", "Paid To"], "payment_filters")
 
                 p_pg1, p_pg2 = st.columns([3.8, 1.2])
                 with p_pg1:
-                    st.caption("💡 Actions per row: **✏️** Edit &nbsp;|&nbsp; **📋** Clone into New Payment &nbsp;|&nbsp; **🗑️** Delete")
+                    st.caption("💡 Actions per row: **✏️** Edit &nbsp;|&nbsp; **📋** Copy (Clone into New Payment) &nbsp;|&nbsp; **❌** Delete")
                 with p_pg2:
                     pay_page_size = st.selectbox("Rows per page", [25, 50, 100, 500], index=0, key="pay_view_page_size", label_visibility="collapsed")
 
-                # Direct top-level columns (no nested columns inside Actions; single-word "ID" & "Rcpt" headers prevent line wrapping)
-                p_weights = [0.52, 0.76, 1.75, 0.90, 1.20, 1.10, 0.48, 1.55, 0.34, 0.34, 0.34]
-                p_headers = ["ID", "Date", "Expense Link", "Amount", "Mode", "Paid To", "Rcpt", "Notes", "Edit", "Clone", "Del"]
+                # ID and RCPT removed from table list; View Receipt section below removed completely
+                p_weights = [0.80, 2.10, 0.95, 1.25, 1.35, 1.95, 0.36, 0.38, 0.36]
+                p_headers = [
+                    ("Date", "Payment Date"),
+                    ("Expense Link", "Linked Expense"),
+                    ("Amount", "Amount Paid"),
+                    ("Mode", "Payment Mode"),
+                    ("Paid To", "Payee"),
+                    ("Notes", "Payment Notes"),
+                    ("Edit", "Edit Payment"),
+                    ("COPY", "Clone"),
+                    ("Del", "Delete Payment"),
+                ]
                 ph_cols = st.columns(p_weights, gap="small")
-                for phc, ph_text in zip(ph_cols, p_headers):
-                    align = "justify-content:flex-end;" if ph_text == "Amount" else ("justify-content:center;" if ph_text in ("ID", "Date", "Rcpt", "Edit", "Clone", "Del") else "")
-                    phc.markdown(f"<div class='ledger-tbl-header' style='{align}'>{ph_text}</div>", unsafe_allow_html=True)
+                for phc, (ph_text, ph_tip) in zip(ph_cols, p_headers):
+                    align = "justify-content:flex-end;" if ph_text == "Amount" else ("justify-content:center;" if ph_text in ("Date", "Edit", "COPY", "Del") else "")
+                    phc.markdown(f"<div class='ledger-tbl-header' style='{align}' title='{escape(ph_tip)}'>{ph_text}</div>", unsafe_allow_html=True)
 
                 for _, r in filtered_pay.head(int(pay_page_size)).iterrows():
                     pid = int(r["id"])
@@ -5945,27 +5953,24 @@ elif page == "Expenses" and user_role == "admin":
                     amt_v = float(r.get("amount_paid") or 0.0)
                     mode_str = _clean_str(r.get("payment_mode"), "—")
                     pto_str = _clean_str(r.get("paid_to"), "—")
-                    rec_str = "🧾" if _clean_str(r.get("receipt_file_name"), "") else "—"
                     notes_str = _clean_str(r.get("notes"), "—")
 
                     prc = st.columns(p_weights, gap="small")
-                    prc[0].markdown(f"<div class='ledger-cell' style='justify-content:center;'>#{pid}</div>", unsafe_allow_html=True)
-                    prc[1].markdown(f"<div class='ledger-cell' style='justify-content:center;'>{p_dt}</div>", unsafe_allow_html=True)
-                    prc[2].markdown(
+                    prc[0].markdown(f"<div class='ledger-cell' style='justify-content:center;'>{p_dt}</div>", unsafe_allow_html=True)
+                    prc[1].markdown(
                         f"<div class='ledger-cell-desc' title='#{eid} — {escape(cat_str)}'><span>#{eid} — {escape(cat_str)}</span>"
                         f"<span class='ledger-subtext'>Bill: ₹{exp_tot:,.0f}{(' • ' + escape(sub_str)) if sub_str else ''}</span></div>",
                         unsafe_allow_html=True
                     )
-                    prc[3].markdown(f"<div class='ledger-amt-paid'>₹{amt_v:,.2f}</div>", unsafe_allow_html=True)
-                    prc[4].markdown(f"<div class='ledger-cell' title='{escape(mode_str)}'>{escape(mode_str)}</div>", unsafe_allow_html=True)
-                    prc[5].markdown(f"<div class='ledger-cell' title='{escape(pto_str)}'>{escape(pto_str)}</div>", unsafe_allow_html=True)
-                    prc[6].markdown(f"<div class='ledger-cell' style='justify-content:center;'>{rec_str}</div>", unsafe_allow_html=True)
-                    prc[7].markdown(f"<div class='ledger-cell-desc' title='{escape(notes_str)}'><span>{escape(notes_str)}</span></div>", unsafe_allow_html=True)
+                    prc[2].markdown(f"<div class='ledger-amt-paid'>₹{amt_v:,.2f}</div>", unsafe_allow_html=True)
+                    prc[3].markdown(f"<div class='ledger-cell' title='{escape(mode_str)}'>{escape(mode_str)}</div>", unsafe_allow_html=True)
+                    prc[4].markdown(f"<div class='ledger-cell' title='{escape(pto_str)}'>{escape(pto_str)}</div>", unsafe_allow_html=True)
+                    prc[5].markdown(f"<div class='ledger-cell-desc' title='{escape(notes_str)}'><span>{escape(notes_str)}</span></div>", unsafe_allow_html=True)
 
-                    if prc[8].button("✏️", key=f"row_edit_pay_{pid}", help=f"Edit Payment #{pid}", use_container_width=True):
+                    if prc[6].button("✏️", key=f"row_edit_pay_{pid}", help="Edit", use_container_width=True):
                         st.session_state["_editing_payment_id"] = pid
                         st.rerun()
-                    if prc[9].button("📋", key=f"row_clone_pay_{pid}", help=f"Clone Payment #{pid}", use_container_width=True):
+                    if prc[7].button("📋", key=f"row_clone_pay_{pid}", help="Clone", use_container_width=True):
                         st.session_state["_clone_payment_payload"] = {
                             "expense_id": eid,
                             "amount_paid": amt_v,
@@ -5978,63 +5983,8 @@ elif page == "Expenses" and user_role == "admin":
                         st.session_state["_pending_p_sub_mode_rad"] = "Record New Payment"
                         st.toast(f"Cloned Payment #{pid} into Record New Payment!", icon="📋")
                         st.rerun()
-                    if prc[10].button("🗑️", key=f"row_del_pay_{pid}", help=f"Delete Payment #{pid}", use_container_width=True):
+                    if prc[8].button("❌", key=f"row_del_pay_{pid}", help="Delete", use_container_width=True):
                         confirm_delete_payment_modal(r.to_dict())
-
-                receipt_rows = payments_df[
-                    payments_df["receipt_file_name"].notna()
-                    & payments_df["receipt_file_name"].astype(str).str.strip().ne("")
-                ].copy()
-
-                if not receipt_rows.empty:
-                    st.markdown("---")
-                    st.markdown("#### View Receipt / Bill")
-                    receipt_records = receipt_rows.to_dict("records")
-                    receipt_labels = [
-                        f"Payment #{int(r['id'])} — {pd.to_datetime(r['payment_date']).strftime('%d-%b-%y')} — "
-                        f"{r.get('category') or 'Expense'} — ₹{float(r.get('amount_paid') or 0):,.2f}"
-                        for r in receipt_records
-                    ]
-                    selected_receipt_label = st.selectbox(
-                        "Select payment receipt",
-                        receipt_labels,
-                        key="view_payment_receipt_select"
-                    )
-                    selected_receipt = receipt_records[receipt_labels.index(selected_receipt_label)]
-                    selected_payment_id = int(selected_receipt["id"])
-
-                    try:
-                        receipt_blob_df = db_conn.query(
-                            """
-                            SELECT receipt_file_name, receipt_mime_type, receipt_file_size_bytes, receipt_image_base64
-                            FROM expense_payments
-                            WHERE id = :pid
-                            LIMIT 1;
-                            """,
-                            params={"pid": selected_payment_id},
-                            ttl="0s"
-                        )
-                        if receipt_blob_df.empty or not str(receipt_blob_df.iloc[0].get("receipt_image_base64") or "").strip():
-                            st.info("Receipt image data is not available for this payment.")
-                        else:
-                            receipt_blob = receipt_blob_df.iloc[0]
-                            receipt_bytes = base64.b64decode(str(receipt_blob["receipt_image_base64"]))
-                            receipt_name = str(receipt_blob.get("receipt_file_name") or f"payment_{selected_payment_id}_receipt")
-                            st.image(
-                                receipt_bytes,
-                                caption=f"Payment #{selected_payment_id} — {receipt_name}",
-                                use_container_width=True
-                            )
-                            st.download_button(
-                                "⬇️ Download Receipt / Bill",
-                                data=receipt_bytes,
-                                file_name=receipt_name,
-                                mime=str(receipt_blob.get("receipt_mime_type") or "image/jpeg"),
-                                use_container_width=True,
-                                key=f"download_payment_receipt_{selected_payment_id}"
-                            )
-                    except Exception as e:
-                        st.error(f"Could not load receipt image: {e}")
 
     # ==================================================================
     # SECTION 3: SUMMARY & DATE REPORTS
