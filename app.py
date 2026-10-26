@@ -4894,6 +4894,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
     phys_base_rows = []
     tot_base_b, tot_rec_b, tot_added_b, tot_rem_b, tot_curr_b = 0, 0, 0, 0, 0
     tot_stock_value_cp = 0.0
+    tot_stock_value_mrp = 0.0
     phys_curr_map = get_physical_current_stock_map()
 
     for code in FLAVOR_CODES:
@@ -4911,10 +4912,12 @@ elif page == "Freezer Analysis" and user_role == "admin":
         tot_rem_b += removed_onward
         tot_curr_b += current_physical_base_stock
         stock_value_cp = float(current_physical_base_stock) * float(f_info["cost_price"])
+        stock_value_mrp = float(current_physical_base_stock) * float(f_info["mrp"])
         # Round each displayed flavour value first so the displayed TOTAL exactly
         # matches the sum of the values visible on screen.
         stock_value_display = int(stock_value_cp + 0.5) if stock_value_cp >= 0 else int(stock_value_cp - 0.5)
         tot_stock_value_cp += stock_value_cp
+        tot_stock_value_mrp += stock_value_mrp
 
         phys_base_rows.append({
             "Flavour": f_info["name"],
@@ -4929,6 +4932,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
     # Displayed freezer value total = sum of the individually displayed rounded
     # flavour values, avoiding a ₹1/₹2 visual mismatch caused by rounding only at total level.
     tot_stock_value_display = int(sum(int(r["Stock Value"]) for r in phys_base_rows))
+    tot_stock_value_mrp_display = int(tot_stock_value_mrp + 0.5) if tot_stock_value_mrp >= 0 else int(tot_stock_value_mrp - 0.5)
     phys_base_df = pd.DataFrame(phys_base_rows)
     phys_base_df = pd.concat([phys_base_df, pd.DataFrame([{
         "Flavour": "🔥 OVERALL TOTAL",
@@ -4984,6 +4988,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
     # Current cart stock = latest recorded closing position for each sales cart.
     current_cart_stock = 0
     current_cart_stock_value = 0.0
+    current_cart_stock_value_mrp = 0.0
     cart_stock_breakdown = {cart: {"units": 0, "value": 0.0} for cart in CARTS}
     try:
         cart_stock_df = db_conn.query(
@@ -5006,14 +5011,17 @@ elif page == "Freezer Analysis" and user_role == "admin":
                 code = str(r.get("flavor_code") or "").strip()
                 units = int(round(_num(r.get("closing_units"))))
                 value = units * float(FLAVOR_MAP[code]["cost_price"]) if code in FLAVOR_MAP else 0.0
+                value_mrp = units * float(FLAVOR_MAP[code]["mrp"]) if code in FLAVOR_MAP else 0.0
                 current_cart_stock += units
                 current_cart_stock_value += value
+                current_cart_stock_value_mrp += value_mrp
                 if cart_name in cart_stock_breakdown:
                     cart_stock_breakdown[cart_name]["units"] += units
                     cart_stock_breakdown[cart_name]["value"] += value
     except Exception:
         current_cart_stock = 0
         current_cart_stock_value = 0.0
+        current_cart_stock_value_mrp = 0.0
         cart_stock_breakdown = {cart: {"units": 0, "value": 0.0} for cart in CARTS}
 
     # Round each displayed cart total first and then add those displayed values for
@@ -5026,10 +5034,16 @@ elif page == "Freezer Analysis" and user_role == "admin":
     current_cart_stock_value_display = int(
         sum(cart_stock_breakdown[cart]["display_value"] for cart in CARTS)
     )
+    current_cart_stock_value_mrp_display = (
+        int(current_cart_stock_value_mrp + 0.5)
+        if current_cart_stock_value_mrp >= 0
+        else int(current_cart_stock_value_mrp - 0.5)
+    )
 
-    pv1, pv2 = st.columns(2)
+    pv1, pv2, pv3 = st.columns(3)
     pv1.metric("Current Total Stock", f"{tot_curr_b:,.0f} units")
-    pv2.metric("Current Stock Value", f"₹{tot_stock_value_display:,}")
+    pv2.metric("Current Stock Value (CP)", f"₹{tot_stock_value_display:,}")
+    pv3.metric("Current Stock Value (MRP)", f"₹{tot_stock_value_mrp_display:,}")
     if pending_stock_payment > 0:
         st.markdown(
             "Includes pending payment of "
@@ -5039,9 +5053,10 @@ elif page == "Freezer Analysis" and user_role == "admin":
             "units",
             unsafe_allow_html=True
         )
-    cv1, cv2 = st.columns(2)
+    cv1, cv2, cv3 = st.columns(3)
     cv1.metric("Current Cart Stock", f"{current_cart_stock:,.0f} units")
-    cv2.metric("Cart Stock Value", f"₹{current_cart_stock_value_display:,}")
+    cv2.metric("Cart Stock Value (CP)", f"₹{current_cart_stock_value_display:,}")
+    cv3.metric("Cart Stock Value (MRP)", f"₹{current_cart_stock_value_mrp_display:,}")
 
     # Compact cart-wise split. Keep the total row visible even though the two summary
     # metrics above also show the overall cart position.
