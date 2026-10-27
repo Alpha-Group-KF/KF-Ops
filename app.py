@@ -7628,6 +7628,7 @@ elif page == "Dashboard" and user_role == "admin":
         total_incurred_opex = tot_labour_incurred + other_opex_total
 
         gross_profit = total_rev - exact_cogs_sold
+        cogs_margin = (exact_cogs_sold / total_rev * 100) if total_rev > 0 else 0.0
         gross_margin = (gross_profit / total_rev * 100) if total_rev > 0 else 0.0
         net_profit = gross_profit - total_incurred_opex
         net_margin = (net_profit / total_rev * 100) if total_rev > 0 else 0.0
@@ -7655,9 +7656,9 @@ elif page == "Dashboard" and user_role == "admin":
         mc1.metric("Revenue", f"₹{total_rev:,.0f}")
         mc2.metric("Avg Rev / Day", f"₹{avg_rev_per_day:,.0f}")
         mc3.metric("Units Sold", f"{total_units:,}")
-        mc4.metric("COGS", f"₹{exact_cogs_sold:,.0f}")
+        mc4.metric(f"COGS ({cogs_margin:.1f}%)", f"₹{exact_cogs_sold:,.0f}")
         mc5.metric(f"Gr. Profit ({gross_margin:.1f}%)", f"₹{gross_profit:,.0f}")
-        mc6.metric(f"OPEX ({opex_margin:.1f}%)", f"₹{total_incurred_opex:,.1f}")
+        mc6.metric(f"OPEX ({opex_margin:.1f}%)", f"₹{total_incurred_opex:,.0f}")
         mc7.metric(f"Net Profit ({net_margin:.1f}%)", f"₹{net_profit:,.0f}")
         st.markdown('</div>', unsafe_allow_html=True)
 
