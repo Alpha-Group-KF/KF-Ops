@@ -7657,7 +7657,7 @@ elif page == "Dashboard" and user_role == "admin":
         mc3.metric("Units Sold", f"{total_units:,}")
         mc4.metric("COGS", f"₹{exact_cogs_sold:,.0f}")
         mc5.metric(f"Gr. Profit ({gross_margin:.1f}%)", f"₹{gross_profit:,.0f}")
-        mc6.metric(f"Total OPEX ({opex_margin:.1f}%)", f"₹{total_incurred_opex:,.0f}")
+        mc6.metric(f"Tot OPEX ({opex_margin:.1f}%)", f"₹{total_incurred_opex:,.0f}")
         mc7.metric(f"Net Profit ({net_margin:.1f}%)", f"₹{net_profit:,.0f}")
         st.markdown('</div>', unsafe_allow_html=True)
 
