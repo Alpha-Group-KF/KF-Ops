@@ -1314,6 +1314,38 @@ def load_db_expenses_list():
         return df.to_dict("records")
     except Exception: return []
 
+def load_ops_cash_spend_entries_df():
+    if db_conn is None:
+        return pd.DataFrame()
+    query = """
+    SELECT
+        s.id,
+        s.spend_date,
+        s.amount,
+        COALESCE(s.allocated_amount, 0) AS allocated_amount,
+        GREATEST(s.amount - COALESCE(s.allocated_amount, 0), 0) AS remaining_amount,
+        s.notes,
+        s.batch_id,
+        s.created_at,
+        e.id AS linked_expense_id,
+        e.category AS linked_expense_category,
+        e.sub_category AS linked_expense_subcategory
+    FROM public.cash_ops_spend_entries s
+    LEFT JOIN LATERAL (
+        SELECT id, category, sub_category
+        FROM public.expenses
+        WHERE remarks ILIKE ('%[Ops Cash Spend #' || s.id::text || ']%')
+        ORDER BY id DESC
+        LIMIT 1
+    ) e ON true
+    ORDER BY s.spend_date DESC, s.id DESC;
+    """
+    try:
+        return db_conn.query(query, ttl="0s")
+    except Exception:
+        return pd.DataFrame()
+
+
 def load_db_expenses_summary_df():
     if db_conn is None: return pd.DataFrame()
     query = """
@@ -3401,12 +3433,13 @@ elif page == "Cash Custody" and user_role == "admin":
     if st.session_state.pop("_clear_cash_collect_dates", False):
         st.session_state.pop("cash_collect_dates", None)
 
-    tab_position, tab_collect, tab_handover, tab_history, tab_cash_payments = st.tabs([
+    tab_position, tab_collect, tab_handover, tab_history, tab_cash_payments, tab_ops_spends = st.tabs([
         "📍 Current Position",
         "🧾 Collect from Ops Coordinator",
         "🤝 Handover to Srilalitha",
         "📚 Handover History",
         "💵 All Cash Payments",
+        "🧾 Ops Cash Spends",
     ])
 
     # ------------------------------------------------------------------
@@ -3892,6 +3925,58 @@ elif page == "Cash Custody" and user_role == "admin":
                 hide_index=True,
                 use_container_width=True,
             )
+
+    # ------------------------------------------------------------------
+    # TAB 6: OPS CASH SPENDS (VIEW & CONVERT TO EXPENSE + PAYMENT)
+    # ------------------------------------------------------------------
+    with tab_ops_spends:
+        st.markdown("#### Ops Cash Spend Entries (`cash_ops_spend_entries`)")
+        st.caption("View cash expenses recorded by the Ops Coordinator and convert any entry directly into a formal Expense + Immediate Cash Payment.")
+
+        ops_spends_custody_df = load_ops_cash_spend_entries_df()
+        if ops_spends_custody_df.empty:
+            st.info("No Ops cash spend entries have been recorded yet.")
+        else:
+            tot_ops_spend_amt = float(ops_spends_custody_df["amount"].fillna(0).astype(float).sum())
+            pending_exp_cnt = int(ops_spends_custody_df["linked_expense_id"].isna().sum())
+            os_c1, os_c2, os_c3 = st.columns(3)
+            os_c1.metric("Total Ops Cash Spends", f"₹{tot_ops_spend_amt:,.2f}")
+            os_c2.metric("Total Entries", len(ops_spends_custody_df))
+            os_c3.metric("Pending Expense Conversion", pending_exp_cnt)
+
+            for _, s_row in ops_spends_custody_df.iterrows():
+                sid = int(s_row["id"])
+                s_dt = pd.to_datetime(s_row["spend_date"]).strftime("%d-%b-%Y")
+                s_amt = float(s_row["amount"] or 0.0)
+                s_alloc = float(s_row["allocated_amount"] or 0.0)
+                s_rem = float(s_row["remaining_amount"] or 0.0)
+                s_notes = str(s_row.get("notes") or "—")
+                linked_eid = s_row.get("linked_expense_id")
+
+                with st.container(border=True):
+                    r1, r2, r3 = st.columns([2.8, 1.4, 1.4])
+                    with r1:
+                        st.markdown(f"**Ops Spend #{sid}** &nbsp;•&nbsp; 📅 **{s_dt}** &nbsp;•&nbsp; **₹{s_amt:,.2f}**")
+                        st.caption(f"Reason / Notes: {s_notes}")
+                    with r2:
+                        st.caption(f"Allocated to Handover: ₹{s_alloc:,.2f}")
+                        st.caption(f"Unhanded Remaining: ₹{s_rem:,.2f}")
+                    with r3:
+                        if pd.notna(linked_eid):
+                            st.success(f"✓ Expense #{int(linked_eid)} ({s_row.get('linked_expense_category') or ''})")
+                        else:
+                            st.warning("Pending Expense Entry")
+                        if st.button(
+                            "🧾 Create Expense & Payment →" if pd.isna(linked_eid) else "＋ Create Another →",
+                            key=f"conv_ops_spend_{sid}",
+                            type="primary" if pd.isna(linked_eid) else "secondary",
+                            use_container_width=True,
+                        ):
+                            st.session_state["_pending_ops_spend_to_load"] = s_row.to_dict()
+                            st.session_state["_pending_page_nav"] = "Expenses"
+                            st.session_state["_pending_exp_nav_sec"] = "📋 Expenses (Bills / Invoices)"
+                            st.session_state["_pending_e_sub_mode_rad"] = "Add New Expense"
+                            st.rerun()
 
 elif page == "Purchase Orders" and user_role == "admin":
     st.subheader("Purchase Order Estimator & Order Management")
@@ -5382,6 +5467,41 @@ elif page == "Expenses" and user_role == "admin":
         st.session_state["add_e_desc"] = _clean_str(src_exp.get("description"), "")
         st.session_state["add_e_remarks"] = _clean_str(src_exp.get("remarks"), "")
 
+    def _populate_expense_from_ops_spend(spend_row):
+        spend_id = int(spend_row["id"])
+        spend_dt = pd.to_datetime(spend_row["spend_date"]).date() if pd.notna(spend_row.get("spend_date")) else date.today()
+        spend_amt = float(_num(spend_row.get("amount")))
+        spend_notes = _clean_str(spend_row.get("notes"), "")
+        tag = f"[Ops Cash Spend #{spend_id}]"
+        remarks_tagged = spend_notes if tag in spend_notes else f"{spend_notes} {tag}".strip()
+
+        st.session_state["add_e_type"] = "OPEX"
+        st.session_state["add_e_cat"] = EXPENSE_CATEGORIES[0]
+        st.session_state["add_e_subcat"] = ""
+        st.session_state["add_e_date"] = spend_dt
+        st.session_state[f"add_e_month_{spend_dt.strftime('%Y%m')}"] = list(calendar.month_name)[spend_dt.month]
+        st.session_state["add_e_amt"] = spend_amt
+        st.session_state["add_e_attr"] = "Central / Freezer"
+        st.session_state["add_e_vendor"] = ""
+        st.session_state["add_e_staff"] = "Select Staff"
+        st.session_state["add_e_po"] = "None"
+        st.session_state["add_e_stat"] = "Paid"
+        st.session_state["add_e_desc"] = spend_notes
+        st.session_state["add_e_remarks"] = remarks_tagged
+        # Pre-enable immediate payment with Cash mode, spend_date and amount
+        st.session_state["add_e_direct_pay"] = True
+        st.session_state["add_p_date"] = spend_dt
+        st.session_state[f"add_p_amt_{spend_amt:.2f}"] = spend_amt
+        st.session_state["add_p_mode"] = "Cash"
+        st.session_state["add_p_ref"] = f"OPS-CASH-{spend_id}"
+        st.session_state["add_p_notes"] = f"Recorded from Ops Cash Spend #{spend_id}: {spend_notes}".strip()
+        st.session_state["_loaded_ops_spend_banner"] = {
+            "id": spend_id,
+            "date": spend_dt.strftime("%d-%b-%Y"),
+            "amount": spend_amt,
+            "notes": spend_notes,
+        }
+
     exp_nav = st.radio("Section", ["📋 Expenses (Bills / Invoices)", "💳 Payments (Cash Outflows)", "📊 Summary & Date Reports"], horizontal=True, key="exp_nav_sec")
 
     # ==================================================================
@@ -5393,10 +5513,66 @@ elif page == "Expenses" and user_role == "admin":
 
         if e_sub_mode == "Add New Expense":
             st.session_state.pop("_editing_expense_id", None)
+            if "_pending_ops_spend_to_load" in st.session_state:
+                _populate_expense_from_ops_spend(st.session_state.pop("_pending_ops_spend_to_load"))
+
             st.write("Record a new bill or obligation incurred:")
             pos_df = db_conn.query("SELECT id, order_date, location FROM purchase_orders ORDER BY order_date DESC;", ttl="0s") if db_conn else pd.DataFrame()
             po_opts = ["None"] + [f"PO #{r['id']} ({pd.to_datetime(r['order_date']).strftime('%d-%b')})" for _, r in pos_df.iterrows()] if not pos_df.empty else ["None"]
             staff_opts = load_active_staff_list()
+
+            ops_spends_df = load_ops_cash_spend_entries_df()
+            with st.expander("🧾 View & Convert Ops Cash Spend Entries into Expense + Immediate Payment", expanded=bool(st.session_state.get("_loaded_ops_spend_banner"))):
+                if ops_spends_df.empty:
+                    st.caption("No Ops cash spend entries recorded yet.")
+                else:
+                    ops_records = ops_spends_df.to_dict("records")
+                    ops_labels = [
+                        f"Ops Spend #{int(r['id'])} | {pd.to_datetime(r['spend_date']).strftime('%d-%b-%Y')} | "
+                        f"₹{float(r['amount']):,.2f} — {_clean_str(r.get('notes'), 'No notes')[:45]} "
+                        f"[{'✓ Expense #' + str(int(r['linked_expense_id'])) if pd.notna(r.get('linked_expense_id')) else 'Pending Expense'}]"
+                        for r in ops_records
+                    ]
+                    oc1, oc2 = st.columns([3.8, 1.2], gap="small")
+                    with oc1:
+                        sel_ops_spend_label = st.selectbox(
+                            "Select an Ops Cash Spend Entry to pre-fill Expense & Immediate Cash Payment",
+                            ops_labels,
+                            key="ops_spend_prefill_picker",
+                        )
+                    with oc2:
+                        st.markdown("<div style='height: 19px;'></div>", unsafe_allow_html=True)
+                        if st.button("🧾 Load Spend", type="primary", use_container_width=True, key="btn_load_ops_spend"):
+                            chosen_ops = ops_records[ops_labels.index(sel_ops_spend_label)]
+                            _populate_expense_from_ops_spend(chosen_ops)
+                            st.toast(f"Pre-filled Expense & Immediate Payment from Ops Spend #{int(chosen_ops['id'])}!", icon="🧾")
+                            st.rerun()
+
+                    disp_ops_df = ops_spends_df.copy()
+                    disp_ops_df["Spend Date"] = pd.to_datetime(disp_ops_df["spend_date"]).dt.strftime("%d-%b-%Y")
+                    disp_ops_df["Amount (₹)"] = disp_ops_df["amount"].astype(float).map(lambda x: f"₹{x:,.2f}")
+                    disp_ops_df["Allocated (₹)"] = disp_ops_df["allocated_amount"].astype(float).map(lambda x: f"₹{x:,.2f}")
+                    disp_ops_df["Unhanded (₹)"] = disp_ops_df["remaining_amount"].astype(float).map(lambda x: f"₹{x:,.2f}")
+                    disp_ops_df["Reason / Notes"] = disp_ops_df["notes"].fillna("—")
+                    disp_ops_df["Expense Status"] = disp_ops_df.apply(
+                        lambda r: f"✓ Expense #{int(r['linked_expense_id'])} ({r.get('linked_expense_category') or ''})"
+                        if pd.notna(r.get("linked_expense_id"))
+                        else "Pending Expense Entry",
+                        axis=1,
+                    )
+                    st.dataframe(
+                        disp_ops_df[["id", "Spend Date", "Amount (₹)", "Reason / Notes", "Allocated (₹)", "Unhanded (₹)", "Expense Status"]].rename(columns={"id": "Spend ID"}),
+                        hide_index=True,
+                        use_container_width=True,
+                    )
+
+            loaded_ops_banner = st.session_state.get("_loaded_ops_spend_banner")
+            if loaded_ops_banner:
+                st.info(
+                    f"🧾 **Pre-filled from Ops Cash Spend #{loaded_ops_banner['id']}** "
+                    f"({loaded_ops_banner['date']} • ₹{loaded_ops_banner['amount']:,.2f} • *{loaded_ops_banner['notes']}*). "
+                    "Choose **Category**, **Sub-Category**, **Vendor / Staff**, and any other fields below, then click **💾 Save Expense Entry**."
+                )
 
             with st.container(border=True):
                 cl_c1, cl_c2 = st.columns([3.8, 1.2], gap="small")
@@ -5521,6 +5697,7 @@ elif page == "Expenses" and user_role == "admin":
                                         payout_params
                                     )
                             s.commit()
+                        st.session_state.pop("_loaded_ops_spend_banner", None)
                         show_success_modal(f"Expense #{new_exp_id} of ₹{e_amount:,.2f} recorded successfully!")
                     except Exception as e: st.error(f"Could not save expense: {e}")
 
