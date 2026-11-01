@@ -520,8 +520,71 @@ div[data-testid="stHorizontalBlock"] .stButton button[kind="primary"] {
 # ----------------------------------------------------------------------
 # CONFIG & CANONICAL MAPPINGS
 # ----------------------------------------------------------------------
-CARTS = ["HOSUR CART 01", "HOSUR CART 02", "HOSUR CART 03"]
-CITY = "HOSUR"
+DEFAULT_LOCATION_CARTS_MAP = {
+    "HOSUR": ["HOSUR CART 01", "HOSUR CART 02", "HOSUR CART 03"],
+}
+
+def get_active_location_filter():
+    """Return 'ALL' when Admin selects All Locations (Aggregated), else the specific city uppercase."""
+    loc = st.session_state.get("current_location", st.session_state.get("assigned_location", "HOSUR"))
+    if not loc or str(loc).startswith("All Locations"):
+        return "ALL"
+    return str(loc).strip().upper()
+
+def get_default_write_city():
+    """Return concrete city name for INSERTs (defaults to HOSUR when viewing All Locations)."""
+    loc = get_active_location_filter()
+    return "HOSUR" if loc == "ALL" else loc
+
+def get_loc_sql_clause(col_expr="city", param_name="active_loc"):
+    """Return (sql_and_clause, params_dict) for filtering by active location."""
+    loc = get_active_location_filter()
+    if loc == "ALL":
+        return "", {}
+    return f" AND UPPER(TRIM(COALESCE({col_expr}, 'HOSUR'))) = :{param_name} ", {param_name: loc}
+
+def load_configured_locations_list(include_inactive=False):
+    """Load configured locations from public.operating_locations (with safe fallback)."""
+    locs = ["HOSUR"]
+    try:
+        conn = globals().get("db_conn")
+        if conn is not None:
+            where_sql = "" if include_inactive else "WHERE is_active = true"
+            df = conn.query(f"SELECT location_code FROM public.operating_locations {where_sql} ORDER BY location_code ASC;", ttl="30s")
+            if not df.empty:
+                locs = [str(x).strip().upper() for x in df["location_code"].dropna().tolist() if str(x).strip()]
+    except Exception:
+        pass
+    return locs if locs else ["HOSUR"]
+
+def get_carts_for_active_location(include_freezer=False):
+    """Load active carts (and optionally freezers) from public.location_assets for the selected location."""
+    loc = get_active_location_filter()
+    try:
+        conn = globals().get("db_conn")
+        if conn is not None:
+            type_clause = "AND asset_type IN ('CART', 'FREEZER')" if include_freezer else "AND asset_type = 'CART'"
+            if loc == "ALL":
+                df = conn.query(
+                    f"SELECT asset_name FROM public.location_assets WHERE is_active = true {type_clause} ORDER BY location_code ASC, sort_order ASC, asset_name ASC;",
+                    ttl="30s"
+                )
+            else:
+                df = conn.query(
+                    f"SELECT asset_name FROM public.location_assets WHERE is_active = true {type_clause} AND UPPER(TRIM(location_code)) = :loc ORDER BY sort_order ASC, asset_name ASC;",
+                    params={"loc": loc},
+                    ttl="30s"
+                )
+            if not df.empty:
+                return [str(x).strip() for x in df["asset_name"].dropna().tolist() if str(x).strip()]
+    except Exception:
+        pass
+    if loc == "ALL":
+        return DEFAULT_LOCATION_CARTS_MAP["HOSUR"]
+    return DEFAULT_LOCATION_CARTS_MAP.get(loc, [f"{loc} CART 01", f"{loc} CART 02", f"{loc} CART 03"])
+
+CITY = get_default_write_city()
+CARTS = get_carts_for_active_location(include_freezer=False)
 
 PAYMENT_STATUSES = ["Pending", "Partial", "Complete"]
 PO_STATUSES = ["Draft", "Placed", "Pending", "In Transit", "Completed", "Cancelled"]
@@ -769,7 +832,8 @@ FLAVOR_MAP = get_flavor_meta_by_code()
 def load_active_staff_list():
     if db_conn is not None:
         try:
-            df = db_conn.query("SELECT name FROM staff WHERE status = 'active' ORDER BY name ASC;", ttl="1m")
+            loc_sql, loc_params = get_loc_sql_clause("location")
+            df = db_conn.query(f"SELECT name FROM staff WHERE status = 'active' {loc_sql} ORDER BY name ASC;", params=loc_params, ttl="1m")
             if not df.empty:
                 return ["Select Staff"] + df["name"].tolist()
         except Exception:
@@ -812,12 +876,13 @@ def list_daily_entries_with_prefill():
             json_agg(json_build_object('code', i.flavor_code, 'open', i.opening_units, 'add', i.added_units, 'sold', i.sold_units, 'close', i.closing_units)) AS items
         FROM daily_cart_entries e
         LEFT JOIN daily_cart_items i ON e.id = i.daily_entry_id
+        WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(e.city, 'HOSUR'))) = :active_loc)
         GROUP BY e.id, e.entry_date, e.cart_name, e.staff_name, e.total_collection, e.phonepe, e.cash,
             e.staff_advance, e.food_tea_cash, e.cash_leakage, e.cash_leakage_explained,
             e.cash_leakage_unexplained, e.remarks
         ORDER BY e.entry_date DESC, e.cart_name ASC;
         """
-        df = db_conn.query(query, ttl="0s")
+        df = db_conn.query(query, params={"active_loc": get_active_location_filter()}, ttl="0s")
         if not df.empty:
             for _, r in df.iterrows():
                 raw_items = r.get("items") or []
@@ -1257,18 +1322,23 @@ def load_db_daily_df():
            COALESCE(SUM(i.closing_units), 0) AS "Closing_Total"
     FROM daily_cart_entries e 
     LEFT JOIN daily_cart_items i ON e.id = i.daily_entry_id
+    WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(e.city, 'HOSUR'))) = :active_loc)
     GROUP BY e.id, e.entry_date, e.cart_name, e.total_collection, e.phonepe, e.cash, 
              e.staff_name, e.staff_advance, e.food_tea_cash,
              e.cash_leakage_explained, e.cash_leakage_unexplained, e.cash_leakage, e.remarks 
     ORDER BY e.entry_date DESC;
     """
-    df = db_conn.query(query, ttl="0s")
+    df = db_conn.query(query, params={"active_loc": get_active_location_filter()}, ttl="0s")
     if not df.empty: df["Date"] = pd.to_datetime(df["Date"])
     return df
 
 def load_db_flavor_sales(start_date=None, end_date=None):
     if db_conn is None: return pd.DataFrame()
     where_clauses, params = [], {}
+    active_loc = get_active_location_filter()
+    if active_loc != "ALL":
+        where_clauses.append("UPPER(TRIM(COALESCE(e.city, 'HOSUR'))) = :active_loc")
+        params["active_loc"] = active_loc
     if start_date: where_clauses.append("e.entry_date >= :sdate"); params["sdate"] = start_date
     if end_date: where_clauses.append("e.entry_date <= :edate"); params["edate"] = end_date
     where_sql = ("WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
@@ -1304,10 +1374,10 @@ def load_db_expenses_list():
     if db_conn is None: return []
     query = """
     SELECT id, expense_date AS "Date", month AS "Month", description AS "Description", total_amount AS "Amount", category AS "Category", sub_category AS "Sub_Category", expense_type AS "Expense_Type", attributed_to AS "Attributed_To", vendor_name AS "Vendor", staff_name AS "Staff_Name", status AS "Status", remarks AS "Remarks"
-    FROM expenses ORDER BY expense_date DESC, id DESC;
+    FROM expenses WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(location, 'HOSUR'))) = :active_loc) ORDER BY expense_date DESC, id DESC;
     """
     try:
-        df = db_conn.query(query, ttl="0s")
+        df = db_conn.query(query, params={"active_loc": get_active_location_filter()}, ttl="0s")
         if df.empty: return []
         df["Date"] = pd.to_datetime(df["Date"])
         df["Amount"] = df["Amount"].astype(float)
@@ -1338,10 +1408,11 @@ def load_ops_cash_spend_entries_df():
         ORDER BY id DESC
         LIMIT 1
     ) e ON true
+    WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(s.location, 'HOSUR'))) = :active_loc)
     ORDER BY s.spend_date DESC, s.id DESC;
     """
     try:
-        return db_conn.query(query, ttl="0s")
+        return db_conn.query(query, params={"active_loc": get_active_location_filter()}, ttl="0s")
     except Exception:
         return pd.DataFrame()
 
@@ -1351,9 +1422,10 @@ def load_db_expenses_summary_df():
     query = """
     SELECT e.id, e.expense_date, e.month, e.expense_type, e.category, e.sub_category, e.description, e.total_amount, e.attributed_to, e.vendor_name, e.staff_name, e.purchase_order_id, e.status, e.remarks, COALESCE(SUM(p.amount_paid), 0) AS total_paid, e.total_amount - COALESCE(SUM(p.amount_paid), 0) AS balance_due, COUNT(p.id) AS payment_count
     FROM expenses e LEFT JOIN expense_payments p ON e.id = p.expense_id
+    WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(e.location, 'HOSUR'))) = :active_loc)
     GROUP BY e.id, e.expense_date, e.expense_type, e.category, e.sub_category, e.description, e.total_amount, e.attributed_to, e.vendor_name, e.staff_name, e.purchase_order_id, e.status, e.remarks ORDER BY e.expense_date DESC, e.id DESC;
     """
-    try: return db_conn.query(query, ttl="0s")
+    try: return db_conn.query(query, params={"active_loc": get_active_location_filter()}, ttl="0s")
     except Exception: return pd.DataFrame()
 
 def prepare_payment_receipt(uploaded_file):
@@ -1392,9 +1464,9 @@ def load_db_payments_df():
     SELECT p.id, p.expense_id, p.payment_date, p.amount_paid, p.payment_mode, p.ref_no, p.paid_to, p.paid_by, p.notes,
            p.receipt_file_name, p.receipt_mime_type, p.receipt_file_size_bytes, p.receipt_uploaded_at,
            e.category, e.sub_category, e.description AS expense_desc, e.total_amount AS expense_total, e.staff_name
-    FROM expense_payments p JOIN expenses e ON p.expense_id = e.id ORDER BY p.payment_date DESC, p.id DESC;
+    FROM expense_payments p JOIN expenses e ON p.expense_id = e.id WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(e.location, 'HOSUR'))) = :active_loc) ORDER BY p.payment_date DESC, p.id DESC;
     """
-    try: return db_conn.query(query, ttl="0s")
+    try: return db_conn.query(query, params={"active_loc": get_active_location_filter()}, ttl="0s")
     except Exception: return pd.DataFrame()
 
 def get_db_stock_removed_map():
@@ -1406,10 +1478,10 @@ def get_db_stock_removed_map():
         COALESCE(SUM(kb_units), 0) AS kb_units, COALESCE(SUM(bm_units), 0) AS bm_units, 
         COALESCE(SUM(sg_units), 0) AS sg_units, COALESCE(SUM(ch_units), 0) AS ch_units, 
         COALESCE(SUM(ra_units), 0) AS ra_units 
-    FROM stock_removed;
+    FROM stock_removed WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(location, 'HOSUR'))) = :active_loc);
     """
     try:
-        df = db_conn.query(query, ttl="0s")
+        df = db_conn.query(query, params={"active_loc": get_active_location_filter()}, ttl="0s")
         if not df.empty:
             r = df.iloc[0]
             return {code: int(r.get(FLAVOR_MAP[code]["audit_col"], 0)) for code in FLAVOR_CODES}
@@ -1420,10 +1492,10 @@ def get_db_stock_removed_map():
 def get_db_freezer_stock():
     if db_conn is None: return pd.DataFrame(columns=["code", "Units in freezer"])
     try:
-        rec_df = db_conn.query("SELECT flavor_code, SUM(received_units) AS total_recv FROM stock_received_items GROUP BY flavor_code;", ttl="0s")
+        rec_df = db_conn.query("SELECT ri.flavor_code, SUM(ri.received_units) AS total_recv FROM stock_received_items ri JOIN stock_received r ON r.id = ri.received_id WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(r.location, 'HOSUR'))) = :active_loc) GROUP BY ri.flavor_code;", params={"active_loc": get_active_location_filter()}, ttl="0s")
         rec_map = dict(zip(rec_df["flavor_code"], rec_df["total_recv"])) if not rec_df.empty else {}
 
-        added_df = db_conn.query("SELECT flavor_code, SUM(added_units) AS total_added FROM daily_cart_items GROUP BY flavor_code;", ttl="0s")
+        added_df = db_conn.query("SELECT i.flavor_code, SUM(i.added_units) AS total_added FROM daily_cart_items i JOIN daily_cart_entries e ON e.id = i.daily_entry_id WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(e.city, 'HOSUR'))) = :active_loc) GROUP BY i.flavor_code;", params={"active_loc": get_active_location_filter()}, ttl="0s")
         added_map = dict(zip(added_df["flavor_code"], added_df["total_added"])) if not added_df.empty else {}
 
         rem_map = get_db_stock_removed_map()
@@ -1439,7 +1511,7 @@ def get_db_freezer_stock():
 def get_physical_current_stock_map():
     if db_conn is None: return {}
     try:
-        audit_df = db_conn.query("SELECT * FROM stock_audits_wide ORDER BY audit_date DESC, audit_id DESC LIMIT 1;", ttl="0s")
+        audit_df = db_conn.query("SELECT * FROM stock_audits_wide WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(location, 'HOSUR'))) = :active_loc) ORDER BY audit_date DESC, audit_id DESC LIMIT 1;", params={"active_loc": get_active_location_filter()}, ttl="0s")
         if audit_df.empty: return {}
         audit_row = audit_df.iloc[0]
         audit_date = pd.to_datetime(audit_row["audit_date"]).date()
@@ -1509,9 +1581,10 @@ def load_full_staff_df():
         ORDER BY effective_from DESC, id DESC
         LIMIT 1
     ) c ON true
+    WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(s.location, 'HOSUR'))) = :active_loc)
     ORDER BY s.status ASC, s.name ASC;
     """
-    try: return db_conn.query(query, ttl="0s")
+    try: return db_conn.query(query, params={"active_loc": get_active_location_filter()}, ttl="0s")
     except Exception: return pd.DataFrame()
 
 def load_staff_comp_plan_as_of(staff_id, as_of_date):
@@ -2132,9 +2205,23 @@ def check_login():
             entry_user = str(st.secrets.get("entry_username", "entry")).strip().lower()
             entry_pass = str(st.secrets.get("entry_password", "")).strip()
             if admin_pass and hmac.compare_digest(user_clean, admin_user) and hmac.compare_digest(pass_clean, admin_pass):
-                st.session_state["authenticated"] = True; st.session_state["user_role"] = "admin"; st.rerun()
+                st.session_state["authenticated"] = True; st.session_state["user_role"] = "admin"; st.session_state["assigned_location"] = "ALL"; st.rerun()
             elif entry_pass and hmac.compare_digest(user_clean, entry_user) and hmac.compare_digest(pass_clean, entry_pass):
-                st.session_state["authenticated"] = True; st.session_state["user_role"] = "entry"; st.rerun()
+                st.session_state["authenticated"] = True; st.session_state["user_role"] = "entry"; st.session_state["assigned_location"] = str(st.secrets.get("entry_location", "HOSUR")).strip().upper(); st.session_state["current_location"] = st.session_state["assigned_location"]; st.rerun()
+            elif db_conn is not None:
+                try:
+                    auth_df = db_conn.query("SELECT is_valid, assigned_location FROM public.verify_app_login(:r, :p, NULL);", params={"r": user_clean, "p": pass_clean}, ttl="0s")
+                    if not auth_df.empty and bool(auth_df.iloc[0]["is_valid"]):
+                        assigned_loc = str(auth_df.iloc[0]["assigned_location"] or "HOSUR").strip().upper()
+                        st.session_state["authenticated"] = True
+                        st.session_state["user_role"] = "admin" if user_clean == "admin" else "entry"
+                        st.session_state["assigned_location"] = assigned_loc
+                        st.session_state["current_location"] = "All Locations (Aggregated)" if (user_clean == "admin" and assigned_loc == "ALL") else assigned_loc
+                        st.rerun()
+                    else:
+                        st.error("Incorrect username or password — try again.")
+                except Exception:
+                    st.error("Incorrect username or password — try again.")
             else: st.error("Incorrect username or password — try again.")
     return False
 
@@ -2146,6 +2233,10 @@ if not check_login(): st.stop()
 user_role = st.session_state.get("user_role", "admin")
 
 if user_role == "entry":
+    st.session_state["current_location"] = st.session_state.get("assigned_location", "HOSUR")
+    CITY = get_default_write_city()
+    CARTS = get_carts_for_active_location(include_freezer=False)
+    ATTRIBUTED_OPTIONS = ["Central / Freezer"] + CARTS
     page = "Daily Entry"
     top_nav_c1, top_nav_c2 = st.columns([6, 1])
     with top_nav_c1: st.title("🍦 Kulfi Ops — Daily Entry")
@@ -2163,18 +2254,297 @@ else:
     with st.sidebar:
         try: st.image("assets/logo.png", use_container_width=True)
         except Exception: st.markdown("## 🍦 Kulfi Ops")
-        nav_options = ["Dashboard", "Daily Entry", "Live Cart Tracking", "Cash Custody", "Purchase Orders", "Freezer Stock", "Cart Stock Plan", "Freezer Analysis", "Stock Removed", "Expenses", "Staff & Payroll", "Payslip Generator"]
+
+        # --- Multi-Location Selector for Admin ---
+        configured_locs = load_configured_locations_list(include_inactive=False)
+        loc_options = ["All Locations (Aggregated)"] + configured_locs
+        default_loc = st.session_state.get("current_location", "HOSUR")
+        if default_loc not in loc_options:
+            default_loc = "HOSUR" if "HOSUR" in loc_options else loc_options[0]
+        selected_location = st.selectbox(
+            "🌐 Operating Location",
+            loc_options,
+            index=loc_options.index(default_loc),
+            key="global_location_selector"
+        )
+        if st.session_state.get("current_location") != selected_location:
+            st.session_state["current_location"] = selected_location
+            st.session_state.pop("entry_cart_shared", None)
+        st.markdown("---")
+
+        nav_options = ["Dashboard", "Daily Entry", "Live Cart Tracking", "Cash Custody", "Purchase Orders", "Freezer Stock", "Cart Stock Plan", "Freezer Analysis", "Stock Removed", "Expenses", "Staff & Payroll", "Payslip Generator", "Locations & Logins"]
         page = st.radio("Go to", nav_options, label_visibility="collapsed", key="page_nav")
         st.markdown("---")
         if st.button("Log out", use_container_width=True):
             st.session_state["authenticated"] = False; st.session_state["user_role"] = None; st.rerun()
-    st.title(f"🍦 Kulfi Ops — {page}")
+
+    CITY = get_default_write_city()
+    CARTS = get_carts_for_active_location(include_freezer=False)
+    ATTRIBUTED_OPTIONS = ["Central / Freezer"] + CARTS
+    loc_badge = "All Locations" if get_active_location_filter() == "ALL" else get_active_location_filter()
+    st.title(f"🍦 Kulfi Ops — {page} ({loc_badge})")
 
 # ======================================================================
 # PAGE ROUTING
 # ======================================================================
 
-if page == "Daily Entry":
+if page == "Locations & Logins" and user_role == "admin":
+    st.subheader("🌐 Locations, Carts / Freezers & Logins Setup")
+    st.caption("Configure operating cities, carts, freezers, and role-based login passwords for both Web and Mobile apps.")
+
+    if db_conn is None:
+        st.error("Database connection is unavailable.")
+        st.stop()
+
+    cfg_tab1, cfg_tab2, cfg_tab3 = st.tabs([
+        "🏙️ Cities / Locations",
+        "🛒 Carts & Freezers",
+        "🔐 Logins & Passwords"
+    ])
+
+    # ------------------------------------------------------------------
+    # TAB 1: CITIES / LOCATIONS
+    # ------------------------------------------------------------------
+    with cfg_tab1:
+        c_left, c_right = st.columns([1.15, 1.35], gap="large")
+        with c_left:
+            st.markdown("#### ➕ Add New City / Location")
+            with st.form("add_operating_location_form"):
+                new_loc_code = st.text_input("Location Code (Uppercase) *", placeholder="e.g. BENGALURU")
+                new_loc_name = st.text_input("Display Name *", placeholder="e.g. Bengaluru")
+                new_loc_prefix = st.text_input("Cart Name Prefix (Optional)", placeholder="e.g. BLR (defaults to Location Code)")
+                auto_seed_assets = st.checkbox("Auto-create 3 Carts + Freezer for this city", value=True)
+                submit_new_loc = st.form_submit_button("💾 Save City / Location", type="primary", use_container_width=True)
+
+            if submit_new_loc:
+                code_clean = re.sub(r"[^A-Z0-9_ -]", "", str(new_loc_code or "").strip().upper())
+                name_clean = str(new_loc_name or "").strip() or code_clean.title()
+                prefix_clean = str(new_loc_prefix or "").strip().upper() or code_clean
+                if not code_clean:
+                    st.error("Please enter a valid Location Code.")
+                else:
+                    try:
+                        with db_conn.session as s:
+                            s.execute(
+                                text("""
+                                    INSERT INTO public.operating_locations (location_code, display_name, is_active)
+                                    VALUES (:code, :name, true)
+                                    ON CONFLICT (location_code) DO UPDATE
+                                    SET display_name = EXCLUDED.display_name, is_active = true;
+                                """),
+                                {"code": code_clean, "name": name_clean}
+                            )
+                            if auto_seed_assets:
+                                for idx in (1, 2, 3):
+                                    c_name = f"{prefix_clean} CART 0{idx}"
+                                    s.execute(
+                                        text("""
+                                            INSERT INTO public.location_assets (location_code, asset_name, asset_type, is_active, sort_order)
+                                            VALUES (:loc, :aname, 'CART', true, :ord)
+                                            ON CONFLICT (asset_name) DO NOTHING;
+                                        """),
+                                        {"loc": code_clean, "aname": c_name, "ord": idx}
+                                    )
+                                f_name = "Freezer" if code_clean == "HOSUR" else f"{prefix_clean} FREEZER"
+                                s.execute(
+                                    text("""
+                                        INSERT INTO public.location_assets (location_code, asset_name, asset_type, is_active, sort_order)
+                                        VALUES (:loc, :aname, 'FREEZER', true, 99)
+                                        ON CONFLICT (asset_name) DO NOTHING;
+                                    """),
+                                    {"loc": code_clean, "aname": f_name}
+                                )
+                            s.commit()
+                        st.cache_data.clear()
+                        show_success_modal(f"Location '{code_clean}' saved successfully!")
+                    except Exception as e:
+                        st.error(f"Could not save location: {e}")
+
+        with c_right:
+            st.markdown("#### 📋 Configured Cities / Locations")
+            try:
+                locs_df = db_conn.query(
+                    """
+                    SELECT l.location_code, l.display_name, l.is_active,
+                           COUNT(a.id) FILTER (WHERE a.asset_type = 'CART' AND a.is_active = true) AS active_carts,
+                           COUNT(a.id) FILTER (WHERE a.asset_type = 'FREEZER' AND a.is_active = true) AS active_freezers
+                    FROM public.operating_locations l
+                    LEFT JOIN public.location_assets a ON a.location_code = l.location_code
+                    GROUP BY l.location_code, l.display_name, l.is_active
+                    ORDER BY l.location_code ASC;
+                    """,
+                    ttl="0s"
+                )
+            except Exception as e:
+                locs_df = pd.DataFrame()
+                st.error(f"Could not query operating_locations: {e}")
+
+            if locs_df.empty:
+                st.info("No locations found. Run the SQL migration script first.")
+            else:
+                for _, lrow in locs_df.iterrows():
+                    lcode = str(lrow["location_code"])
+                    is_act = bool(lrow["is_active"])
+                    with st.container(border=True):
+                        lc1, lc2, lc3 = st.columns([2.2, 1.3, 1.1])
+                        with lc1:
+                            st.markdown(f"**{lcode}** — {lrow['display_name']}")
+                            st.caption(f"Active Carts: {int(lrow['active_carts'] or 0)} | Freezers: {int(lrow['active_freezers'] or 0)}")
+                        with lc2:
+                            st.markdown("🟢 **Active**" if is_act else "⚪ **Inactive**")
+                        with lc3:
+                            btn_label = "Deactivate" if is_act else "Activate"
+                            if st.button(btn_label, key=f"toggle_loc_{lcode}", use_container_width=True):
+                                with db_conn.session as s:
+                                    s.execute(
+                                        text("UPDATE public.operating_locations SET is_active = :st WHERE location_code = :c;"),
+                                        {"st": not is_act, "c": lcode}
+                                    )
+                                    s.commit()
+                                st.cache_data.clear()
+                                st.rerun()
+
+    # ------------------------------------------------------------------
+    # TAB 2: CARTS & FREEZERS
+    # ------------------------------------------------------------------
+    with cfg_tab2:
+        all_locs_for_assets = load_configured_locations_list(include_inactive=True)
+        a_left, a_right = st.columns([1.15, 1.45], gap="large")
+
+        with a_left:
+            st.markdown("#### ➕ Add Cart or Freezer")
+            with st.form("add_location_asset_form"):
+                asset_loc = st.selectbox("Location / City *", all_locs_for_assets)
+                asset_type = st.selectbox("Type *", ["CART", "FREEZER"])
+                asset_name = st.text_input("Cart / Freezer Name *", placeholder="e.g. BLR CART 01 or BLR FREEZER")
+                asset_order = st.number_input("Display Sort Order", min_value=1, max_value=999, value=10, step=1)
+                submit_asset = st.form_submit_button("💾 Save Cart / Freezer", type="primary", use_container_width=True)
+
+            if submit_asset:
+                aname_clean = str(asset_name or "").strip()
+                if not aname_clean:
+                    st.error("Cart / Freezer Name is required.")
+                else:
+                    try:
+                        with db_conn.session as s:
+                            s.execute(
+                                text("""
+                                    INSERT INTO public.location_assets (location_code, asset_name, asset_type, is_active, sort_order)
+                                    VALUES (:loc, :name, :atype, true, :ord)
+                                    ON CONFLICT (asset_name) DO UPDATE
+                                    SET location_code = EXCLUDED.location_code,
+                                        asset_type = EXCLUDED.asset_type,
+                                        sort_order = EXCLUDED.sort_order,
+                                        is_active = true;
+                                """),
+                                {"loc": asset_loc, "name": aname_clean, "atype": asset_type, "ord": int(asset_order)}
+                            )
+                            s.commit()
+                        st.cache_data.clear()
+                        show_success_modal(f"{asset_type} '{aname_clean}' saved under {asset_loc}!")
+                    except Exception as e:
+                        st.error(f"Could not save cart/freezer: {e}")
+
+        with a_right:
+            st.markdown("#### 📋 Configured Carts & Freezers")
+            filter_asset_loc = st.selectbox("Filter by Location", ["All"] + all_locs_for_assets, key="filter_asset_loc_sel")
+            try:
+                if filter_asset_loc == "All":
+                    assets_df = db_conn.query(
+                        "SELECT id, location_code, asset_name, asset_type, is_active, sort_order FROM public.location_assets ORDER BY location_code ASC, sort_order ASC, asset_name ASC;",
+                        ttl="0s"
+                    )
+                else:
+                    assets_df = db_conn.query(
+                        "SELECT id, location_code, asset_name, asset_type, is_active, sort_order FROM public.location_assets WHERE location_code = :loc ORDER BY sort_order ASC, asset_name ASC;",
+                        params={"loc": filter_asset_loc},
+                        ttl="0s"
+                    )
+            except Exception as e:
+                assets_df = pd.DataFrame()
+                st.error(f"Could not load location_assets: {e}")
+
+            if assets_df.empty:
+                st.info("No carts or freezers configured yet.")
+            else:
+                for _, arow in assets_df.iterrows():
+                    aid = int(arow["id"])
+                    a_act = bool(arow["is_active"])
+                    with st.container(border=True):
+                        ac1, ac2, ac3 = st.columns([2.3, 1.1, 1.1])
+                        with ac1:
+                            icon = "🛒" if str(arow["asset_type"]) == "CART" else "❄️"
+                            st.markdown(f"{icon} **{arow['asset_name']}**")
+                            st.caption(f"City: **{arow['location_code']}** | Type: {arow['asset_type']} | Order: {arow['sort_order']}")
+                        with ac2:
+                            st.markdown("🟢 Active" if a_act else "⚪ Inactive")
+                        with ac3:
+                            if st.button("Deactivate" if a_act else "Activate", key=f"toggle_asset_{aid}", use_container_width=True):
+                                with db_conn.session as s:
+                                    s.execute(
+                                        text("UPDATE public.location_assets SET is_active = :st WHERE id = :id;"),
+                                        {"st": not a_act, "id": aid}
+                                    )
+                                    s.commit()
+                                st.cache_data.clear()
+                                st.rerun()
+
+    # ------------------------------------------------------------------
+    # TAB 3: LOGINS & PASSWORDS
+    # ------------------------------------------------------------------
+    with cfg_tab3:
+        all_locs_for_login = load_configured_locations_list(include_inactive=True)
+        l_left, l_right = st.columns([1.15, 1.45], gap="large")
+
+        with l_left:
+            st.markdown("#### 🔐 Create / Reset Role Password")
+            with st.form("upsert_login_credential_form"):
+                cred_role = st.selectbox("Role *", ["ops_coordinator", "cart_staff", "admin"])
+                loc_choices = ["ALL"] + all_locs_for_login if cred_role == "admin" else all_locs_for_login + ["ALL"]
+                cred_loc = st.selectbox("Assigned Location *", loc_choices)
+                cred_pass = st.text_input("New Password / Passcode *", type="password", placeholder="Enter new password")
+                cred_active = st.checkbox("Login is Active", value=True)
+                submit_cred = st.form_submit_button("💾 Set / Update Password", type="primary", use_container_width=True)
+
+            if submit_cred:
+                if not cred_pass or len(cred_pass.strip()) < 3:
+                    st.error("Password must be at least 3 characters.")
+                else:
+                    try:
+                        with db_conn.session as s:
+                            s.execute(
+                                text("SELECT public.upsert_app_login_credential(:r, :l, :p, :a);"),
+                                {"r": cred_role, "l": cred_loc, "p": cred_pass.strip(), "a": bool(cred_active)}
+                            )
+                            s.commit()
+                        st.cache_data.clear()
+                        show_success_modal(f"Password updated for role '{cred_role}' at location '{cred_loc}'!")
+                    except Exception as e:
+                        st.error(f"Could not update credential: {e}")
+
+        with l_right:
+            st.markdown("#### 📋 Configured Role Logins")
+            try:
+                creds_df = db_conn.query("SELECT * FROM public.list_app_login_credentials();", ttl="0s")
+            except Exception as e:
+                creds_df = pd.DataFrame()
+                st.error(f"Could not load credentials list: {e}")
+
+            if creds_df.empty:
+                st.info("No login credentials found.")
+            else:
+                disp_creds = creds_df.copy()
+                disp_creds["Role"] = disp_creds["login_role"]
+                disp_creds["Location"] = disp_creds["location"]
+                disp_creds["Status"] = disp_creds["is_active"].apply(lambda v: "🟢 Active" if bool(v) else "⚪ Disabled")
+                disp_creds["Last Updated"] = pd.to_datetime(disp_creds["updated_at"]).dt.strftime("%d-%b-%Y %I:%M %p")
+                st.dataframe(
+                    disp_creds[["Location", "Role", "Status", "Last Updated"]],
+                    hide_index=True,
+                    use_container_width=True
+                )
+
+elif page == "Daily Entry":
     # Split Entry flow to mirror the mobile app: Sales Entry, Restock Entry, Extra Stock.
     if "daily_entry_mode" not in st.session_state:
         st.session_state["daily_entry_mode"] = None
@@ -4038,7 +4408,7 @@ elif page == "Purchase Orders" and user_role == "admin":
             border = f"┌{'─' * (flavour_width + 2)}┬{'─' * (qty_width + 2)}┐"
             divider = f"├{'─' * (flavour_width + 2)}┼{'─' * (qty_width + 2)}┤"
             bottom = f"└{'─' * (flavour_width + 2)}┴{'─' * (qty_width + 2)}┘"
-            wa_lines = [f"HOSUR:: KULFI ORDER - {order_date_text}", "", border,
+            wa_lines = [f"{str(location or CITY).strip().upper()}:: KULFI ORDER - {order_date_text}", "", border,
                         f"│ {'Flavour':<{flavour_width}} │ {'Qty':>{qty_width}} │", divider]
             for flavour, qty in whatsapp_rows:
                 wa_lines.append(f"│ {flavour:<{flavour_width}} │ {qty:>{qty_width}} │")
@@ -4810,11 +5180,12 @@ elif page == "Cart Stock Plan" and user_role == "admin":
                 COALESCE(i.sold_units, 0) AS sold_units
             FROM daily_cart_entries e
             JOIN daily_cart_items i ON i.daily_entry_id = e.id
-            WHERE e.cart_name IN ('HOSUR CART 01', 'HOSUR CART 02', 'HOSUR CART 03')
+            WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(e.city, 'HOSUR'))) = :active_loc)
               AND e.entry_date < CURRENT_DATE
               AND COALESCE(i.sold_units, 0) > 0
             ORDER BY e.entry_date, e.cart_name, i.flavor_code;
             """,
+            params={"active_loc": get_active_location_filter()},
             ttl="0s"
         )
 
@@ -4934,7 +5305,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
         flavor_sales_df = load_db_flavor_sales(start_date=cutoff_fa, end_date=today_fa)
         sales_pace_map = dict(zip(flavor_sales_df["code"], flavor_sales_df["Units sold"])) if not flavor_sales_df.empty else {}
 
-        latest_audit_df = db_conn.query("SELECT * FROM stock_audits_wide ORDER BY audit_date DESC, audit_id DESC LIMIT 1;", ttl="0s")
+        latest_audit_df = db_conn.query("SELECT * FROM stock_audits_wide WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(location, 'HOSUR'))) = :active_loc) ORDER BY audit_date DESC, audit_id DESC LIMIT 1;", params={"active_loc": get_active_location_filter()}, ttl="0s")
         if not latest_audit_df.empty:
             audit_row = latest_audit_df.iloc[0]
             audit_date_val = pd.to_datetime(audit_row["audit_date"]).date()
@@ -4943,10 +5314,10 @@ elif page == "Freezer Analysis" and user_role == "admin":
         else:
             audit_date_val, audit_map, audit_date_str = None, {}, "No audits logged"
 
-        rec_df = db_conn.query("SELECT flavor_code, SUM(received_units) AS total_recv FROM stock_received_items GROUP BY flavor_code;", ttl="0s")
+        rec_df = db_conn.query("SELECT ri.flavor_code, SUM(ri.received_units) AS total_recv FROM stock_received_items ri JOIN stock_received r ON r.id = ri.received_id WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(r.location, 'HOSUR'))) = :active_loc) GROUP BY ri.flavor_code;", params={"active_loc": get_active_location_filter()}, ttl="0s")
         rec_map = dict(zip(rec_df["flavor_code"], rec_df["total_recv"])) if not rec_df.empty else {}
 
-        added_df = db_conn.query("SELECT flavor_code, SUM(added_units) AS total_added FROM daily_cart_items GROUP BY flavor_code;", ttl="0s")
+        added_df = db_conn.query("SELECT i.flavor_code, SUM(i.added_units) AS total_added FROM daily_cart_items i JOIN daily_cart_entries e ON e.id = i.daily_entry_id WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(e.city, 'HOSUR'))) = :active_loc) GROUP BY i.flavor_code;", params={"active_loc": get_active_location_filter()}, ttl="0s")
         added_map = dict(zip(added_df["flavor_code"], added_df["total_added"])) if not added_df.empty else {}
 
         rem_map = get_db_stock_removed_map()
@@ -5105,13 +5476,14 @@ elif page == "Freezer Analysis" and user_role == "admin":
             WITH latest_cart_entries AS (
                 SELECT DISTINCT ON (cart_name) id, cart_name, entry_date
                 FROM daily_cart_entries
-                WHERE cart_name IN ('HOSUR CART 01', 'HOSUR CART 02', 'HOSUR CART 03')
+                WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(city, 'HOSUR'))) = :active_loc)
                 ORDER BY cart_name, entry_date DESC, id DESC
             )
             SELECT e.cart_name, i.flavor_code, COALESCE(i.closing_units, 0) AS closing_units
             FROM latest_cart_entries e
             JOIN daily_cart_items i ON i.daily_entry_id = e.id;
             """,
+            params={"active_loc": get_active_location_filter()},
             ttl="0s"
         )
         if not cart_stock_df.empty:
@@ -5245,7 +5617,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
         st.session_state["po_prefill_active"] = True
         st.session_state["new_po_order_date"] = date.today()
         st.session_state["new_po_exp_date"] = date.today() + timedelta(days=2)
-        st.session_state["new_po_loc"] = "HOSUR"
+        st.session_state["new_po_loc"] = CITY
         st.session_state["new_po_status"] = "Draft"
         st.session_state["new_po_discount"] = 2.0
         st.session_state["new_po_notes"] = ""
