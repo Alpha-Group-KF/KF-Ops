@@ -1396,6 +1396,7 @@ def load_ops_cash_spend_entries_df():
         GREATEST(s.amount - COALESCE(s.allocated_amount, 0), 0) AS remaining_amount,
         s.notes,
         s.batch_id,
+        COALESCE(s.spent_by, 'OPS_COORDINATOR') AS spent_by,
         s.created_at,
         e.id AS linked_expense_id,
         e.category AS linked_expense_category,
@@ -1405,6 +1406,7 @@ def load_ops_cash_spend_entries_df():
         SELECT id, category, sub_category
         FROM public.expenses
         WHERE remarks ILIKE ('%[Ops Cash Spend #' || s.id::text || ']%')
+           OR remarks ILIKE ('%[Admin 1 Cash Spend #' || s.id::text || ']%')
         ORDER BY id DESC
         LIMIT 1
     ) e ON true
@@ -4300,17 +4302,44 @@ elif page == "Cash Custody" and user_role == "admin":
     # TAB 6: OPS CASH SPENDS (VIEW & CONVERT TO EXPENSE + PAYMENT)
     # ------------------------------------------------------------------
     with tab_ops_spends:
-        st.markdown("#### Ops Cash Spend Entries (`cash_ops_spend_entries`)")
-        st.caption("View cash expenses recorded by the Ops Coordinator and convert any entry directly into a formal Expense + Immediate Cash Payment.")
+        st.markdown("#### Ops & Admin 1 Cash Spend Entries (`cash_ops_spend_entries`)")
+        st.caption("View cash expenses recorded by the Ops Coordinator or Admin 1 (Yogesh) and convert any entry directly into a formal Expense + Immediate Cash Payment.")
+
+        with st.expander("➕ Record New Admin 1 (Yogesh) Cash Spend", expanded=False):
+            with st.form("web_admin1_cash_spend_form"):
+                a1_c1, a1_c2 = st.columns(2)
+                with a1_c1:
+                    a1_spend_dt = st.date_input("Spend Date", value=date.today(), format="DD-MM-YYYY", key="web_a1_spend_dt")
+                with a1_c2:
+                    a1_spend_amt = st.number_input("Cash Spent Amount (₹)", min_value=0.0, step=10.0, format="%.2f", key="web_a1_spend_amt")
+                a1_spend_notes = st.text_input("Reason / Details *", placeholder="What was the cash spent for by Admin 1 (Yogesh)?", key="web_a1_spend_notes")
+                submit_a1_spend = st.form_submit_button("💾 Save Admin 1 Cash Spend", type="primary", use_container_width=True)
+            if submit_a1_spend:
+                if a1_spend_amt <= 0:
+                    st.error("Enter a cash-spent amount greater than zero.")
+                elif not a1_spend_notes.strip():
+                    st.error("Reason / Details is required.")
+                else:
+                    try:
+                        with db_conn.session as s:
+                            s.execute(
+                                text("INSERT INTO public.cash_ops_spend_entries (spend_date, amount, notes, location, spent_by) VALUES (:dt, :amt, :notes, :loc, 'ADMIN_1');"),
+                                {"dt": a1_spend_dt, "amt": float(a1_spend_amt), "notes": a1_spend_notes.strip(), "loc": CITY}
+                            )
+                            s.commit()
+                        st.cache_data.clear()
+                        show_success_modal(f"Admin 1 (Yogesh) cash spend of ₹{a1_spend_amt:,.2f} recorded!")
+                    except Exception as e:
+                        st.error(f"Could not save Admin 1 cash spend: {e}")
 
         ops_spends_custody_df = load_ops_cash_spend_entries_df()
         if ops_spends_custody_df.empty:
-            st.info("No Ops cash spend entries have been recorded yet.")
+            st.info("No Ops or Admin 1 cash spend entries have been recorded yet.")
         else:
             tot_ops_spend_amt = float(ops_spends_custody_df["amount"].fillna(0).astype(float).sum())
             pending_exp_cnt = int(ops_spends_custody_df["linked_expense_id"].isna().sum())
             os_c1, os_c2, os_c3 = st.columns(3)
-            os_c1.metric("Total Ops Cash Spends", f"₹{tot_ops_spend_amt:,.2f}")
+            os_c1.metric("Total Cash Spends (Ops + Admin 1)", f"₹{tot_ops_spend_amt:,.2f}")
             os_c2.metric("Total Entries", len(ops_spends_custody_df))
             os_c3.metric("Pending Expense Conversion", pending_exp_cnt)
 
@@ -4321,12 +4350,14 @@ elif page == "Cash Custody" and user_role == "admin":
                 s_alloc = float(s_row["allocated_amount"] or 0.0)
                 s_rem = float(s_row["remaining_amount"] or 0.0)
                 s_notes = str(s_row.get("notes") or "—")
+                s_by = str(s_row.get("spent_by") or "OPS_COORDINATOR").strip().upper()
+                s_badge = "🔵 Admin 1 (Yogesh)" if s_by == "ADMIN_1" else "🟠 Ops Coordinator"
                 linked_eid = s_row.get("linked_expense_id")
 
                 with st.container(border=True):
                     r1, r2, r3 = st.columns([2.8, 1.4, 1.4])
                     with r1:
-                        st.markdown(f"**Ops Spend #{sid}** &nbsp;•&nbsp; 📅 **{s_dt}** &nbsp;•&nbsp; **₹{s_amt:,.2f}**")
+                        st.markdown(f"**Spend #{sid}** ({s_badge}) &nbsp;•&nbsp; 📅 **{s_dt}** &nbsp;•&nbsp; **₹{s_amt:,.2f}**")
                         st.caption(f"Reason / Notes: {s_notes}")
                     with r2:
                         st.caption(f"Allocated to Handover: ₹{s_alloc:,.2f}")
@@ -5711,6 +5742,32 @@ elif page == "Stock Removed" and user_role == "admin":
                     with db_conn.session as s:
                         res = s.execute(text("INSERT INTO stock_removed (removal_date, location, ml_units, mm_units, ps_units, mn_units, kb_units, bm_units, sg_units, ch_units, ra_units, cost_price_of_removed_items, reason_for_removal, removed_by, verified_by) VALUES (:rd, :loc, :ml, :mm, :ps, :mn, :kb, :bm, :sg, :ch, :ra, :cost, :reason, :rby, :vby) RETURNING id;"), {"rd": removal_date, "loc": location, "ml": int(units_map.get("ML", 0)), "mm": int(units_map.get("MM", 0)), "ps": int(units_map.get("PS", 0)), "mn": int(units_map.get("MN", 0)), "kb": int(units_map.get("KB", 0)), "bm": int(units_map.get("BM", 0)), "sg": int(units_map.get("SG", 0)), "ch": int(units_map.get("CH", 0)), "ra": int(units_map.get("RA", 0)), "cost": tot_rem_cost, "reason": reason_for_removal.strip(), "rby": removed_by.strip(), "vby": verified_by.strip()})
                         new_rem_id = res.scalar()
+                        rem_tag = f"[Auto: Stock Removal #{new_rem_id}]"
+                        rem_month = list(calendar.month_name)[removal_date.month]
+                        s.execute(
+                            text("DELETE FROM expenses WHERE remarks LIKE :tag;"),
+                            {"tag": f"{rem_tag}%"}
+                        )
+                        if float(tot_rem_cost) > 0:
+                            s.execute(
+                                text("""
+                                INSERT INTO expenses (
+                                    expense_date, month, expense_type, category, sub_category,
+                                    description, total_amount, attributed_to, status, recorded_by, remarks
+                                ) VALUES (
+                                    :ed, :month, 'OPEX', 'Leakage Expense', 'Stock Removed',
+                                    :desc, :amt, 'Central / Freezer', 'Not Applicable', :recby, :rem
+                                );
+                                """),
+                                {
+                                    "ed": removal_date,
+                                    "month": rem_month,
+                                    "desc": reason_for_removal.strip(),
+                                    "amt": float(tot_rem_cost),
+                                    "recby": verified_by.strip() or "Stock Removed Auto",
+                                    "rem": rem_tag,
+                                }
+                            )
                         s.commit()
                     show_success_modal(f"Stock Removal #{new_rem_id} recorded successfully! Logged {tot_rem_units} units (₹{tot_rem_cost:,.2f}).")
                 except Exception as e: st.error(f"Could not save stock removal to database: {e}")
@@ -5771,6 +5828,60 @@ elif page == "Stock Removed" and user_role == "admin":
                         e_units_map = dict(zip(rem_edit_editor_df["Code"], rem_edit_editor_df["Units Removed"]))
                         with db_conn.session as s:
                             s.execute(text("UPDATE stock_removed SET removal_date = :rd, location = :loc, ml_units = :ml, mm_units = :mm, ps_units = :ps, mn_units = :mn, kb_units = :kb, bm_units = :bm, sg_units = :sg, ch_units = :ch, ra_units = :ra, cost_price_of_removed_items = :cost, reason_for_removal = :reason, removed_by = :rby, verified_by = :vby, updated_at = NOW() WHERE id = :id;"), {"rd": e_rem_date, "loc": e_rem_loc, "ml": int(e_units_map.get("ML", 0)), "mm": int(e_units_map.get("MM", 0)), "ps": int(e_units_map.get("PS", 0)), "mn": int(e_units_map.get("MN", 0)), "kb": int(e_units_map.get("KB", 0)), "bm": int(e_units_map.get("BM", 0)), "sg": int(e_units_map.get("SG", 0)), "ch": int(e_units_map.get("CH", 0)), "ra": int(e_units_map.get("RA", 0)), "cost": e_tot_rem_cost, "reason": e_rem_reason.strip(), "rby": e_rem_rby.strip(), "vby": e_rem_vby.strip(), "id": loaded_rem_id})
+                            rem_tag = f"[Auto: Stock Removal #{loaded_rem_id}]"
+                            rem_month = list(calendar.month_name)[e_rem_date.month]
+                            existing_exp = s.execute(
+                                text("SELECT id FROM expenses WHERE remarks LIKE :tag ORDER BY id DESC LIMIT 1;"),
+                                {"tag": f"{rem_tag}%"}
+                            ).fetchone()
+                            if existing_exp:
+                                s.execute(
+                                    text("""
+                                    UPDATE expenses
+                                    SET expense_date = :ed,
+                                        month = :month,
+                                        expense_type = 'OPEX',
+                                        category = 'Leakage Expense',
+                                        sub_category = 'Stock Removed',
+                                        description = :desc,
+                                        total_amount = :amt,
+                                        attributed_to = 'Central / Freezer',
+                                        status = 'Not Applicable',
+                                        recorded_by = :recby,
+                                        remarks = :rem,
+                                        updated_at = NOW()
+                                    WHERE id = :eid;
+                                    """),
+                                    {
+                                        "ed": e_rem_date,
+                                        "month": rem_month,
+                                        "desc": e_rem_reason.strip(),
+                                        "amt": float(e_tot_rem_cost),
+                                        "recby": e_rem_vby.strip() or "Stock Removed Auto",
+                                        "rem": rem_tag,
+                                        "eid": int(existing_exp[0]),
+                                    }
+                                )
+                            elif float(e_tot_rem_cost) > 0:
+                                s.execute(
+                                    text("""
+                                    INSERT INTO expenses (
+                                        expense_date, month, expense_type, category, sub_category,
+                                        description, total_amount, attributed_to, status, recorded_by, remarks
+                                    ) VALUES (
+                                        :ed, :month, 'OPEX', 'Leakage Expense', 'Stock Removed',
+                                        :desc, :amt, 'Central / Freezer', 'Not Applicable', :recby, :rem
+                                    );
+                                    """),
+                                    {
+                                        "ed": e_rem_date,
+                                        "month": rem_month,
+                                        "desc": e_rem_reason.strip(),
+                                        "amt": float(e_tot_rem_cost),
+                                        "recby": e_rem_vby.strip() or "Stock Removed Auto",
+                                        "rem": rem_tag,
+                                    }
+                                )
                             s.commit()
                         show_success_modal(f"Stock Removal #{loaded_rem_id} updated successfully! Final Value: ₹{e_tot_rem_cost:,.2f}.")
                     except Exception as e: st.error(f"Could not update stock removal entry: {e}")
@@ -5844,7 +5955,9 @@ elif page == "Expenses" and user_role == "admin":
         spend_dt = pd.to_datetime(spend_row["spend_date"]).date() if pd.notna(spend_row.get("spend_date")) else date.today()
         spend_amt = float(_num(spend_row.get("amount")))
         spend_notes = _clean_str(spend_row.get("notes"), "")
-        tag = f"[Ops Cash Spend #{spend_id}]"
+        spent_by_role = str(spend_row.get("spent_by") or "OPS_COORDINATOR").strip().upper()
+        tag_prefix = "Admin 1 Cash Spend" if spent_by_role == "ADMIN_1" else "Ops Cash Spend"
+        tag = f"[{tag_prefix} #{spend_id}]"
         remarks_tagged = spend_notes if tag in spend_notes else f"{spend_notes} {tag}".strip()
 
         st.session_state["add_e_type"] = "OPEX"
@@ -8441,6 +8554,153 @@ elif page == "Dashboard" and user_role == "admin":
                 _render_report_total_row(cart_total)
         else:
             st.caption("No sales data recorded in this period.")
+
+        # ------------------------------------------------------------------
+        # MONTH-WISE FULL-DATA COMPARISON TABLE & GRAPHIC VIEW
+        # ------------------------------------------------------------------
+        st.markdown("---")
+        st.markdown("#### 📅 Month-Wise Performance Comparison (Full-Data Months Only)")
+        st.caption("Includes only completed calendar months where full month data is available from the 1st through the end of the month (partial months are excluded).")
+
+        if not daily_df.empty:
+            m_daily = daily_df.copy()
+            m_daily["EntryDate"] = pd.to_datetime(m_daily["Date"]).dt.date
+            m_daily["YM"] = pd.to_datetime(m_daily["Date"]).dt.to_period("M")
+
+            today_d = date.today()
+            current_ym = pd.Period(today_d, freq="M")
+
+            # Pre-fetch monthly COGS from daily_cart_items joined with flavors
+            monthly_cogs_df = db_conn.query(
+                """
+                SELECT
+                    DATE_TRUNC('month', e.entry_date)::date AS month_start,
+                    COALESCE(SUM(i.sold_units * f.cost_price), 0) AS cogs_amount
+                FROM daily_cart_entries e
+                JOIN daily_cart_items i ON i.daily_entry_id = e.id
+                JOIN flavors f ON f.code = i.flavor_code
+                WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(e.city, 'HOSUR'))) = :active_loc)
+                GROUP BY DATE_TRUNC('month', e.entry_date)::date;
+                """,
+                params={"active_loc": get_active_location_filter()},
+                ttl="0s"
+            )
+            cogs_by_month_start = {}
+            if not monthly_cogs_df.empty:
+                for _, cr in monthly_cogs_df.iterrows():
+                    m_dt = pd.to_datetime(cr["month_start"]).date()
+                    cogs_by_month_start[(m_dt.year, m_dt.month)] = float(cr["cogs_amount"] or 0.0)
+
+            full_month_rows = []
+            for ym in sorted(m_daily["YM"].unique()):
+                # Never include current ongoing or future months
+                if ym >= current_ym:
+                    continue
+                yr, mo = int(ym.year), int(ym.month)
+                days_in_mo = calendar.monthrange(yr, mo)[1]
+                mo_start = date(yr, mo, 1)
+                mo_end = date(yr, mo, days_in_mo)
+
+                sub_d = m_daily[(m_daily["EntryDate"] >= mo_start) & (m_daily["EntryDate"] <= mo_end)]
+                if sub_d.empty:
+                    continue
+
+                min_logged = sub_d["EntryDate"].min()
+                max_logged = sub_d["EntryDate"].max()
+                distinct_days = sub_d["EntryDate"].nunique()
+
+                # Strict full-month check: data must start on day 1 and reach the final day of the month (or have all calendar days logged)
+                if not (min_logged == mo_start and max_logged == mo_end and distinct_days >= days_in_mo):
+                    continue
+
+                m_rev = float(sub_d["Total_Collection"].sum())
+                m_avg_rev = m_rev / float(days_in_mo)
+                m_units = int(round(sub_d["Sold_Total"].sum()))
+                m_cogs = float(cogs_by_month_start.get((yr, mo), 0.0))
+                m_gp = m_rev - m_cogs
+                m_gp_pct = (m_gp / m_rev * 100.0) if m_rev > 0 else 0.0
+
+                # OPEX for this full month (using exact same P&L methodology: incurred staff labour + unassigned labour + non-labour OPEX)
+                m_exp = exp_df[(exp_df["Date"].dt.date >= mo_start) & (exp_df["Date"].dt.date <= mo_end)] if not exp_df.empty else pd.DataFrame()
+                m_exp_types = m_exp["Expense_Type"].fillna("").astype(str).str.strip().str.upper() if not m_exp.empty else pd.Series(dtype=str)
+                m_exp_cats = m_exp["Category"].fillna("").astype(str).str.strip().str.casefold() if not m_exp.empty else pd.Series(dtype=str)
+
+                _, _, _, m_staff_pay = calculate_incurred_labour_for_range(mo_start, mo_end, limit_to_employment=True)
+                m_staff_sal = sum(float(st_info["incurred"]) for st_info in m_staff_pay.values())
+                m_unassigned_lab = float(
+                    m_exp[(m_exp_types == "OPEX") & (m_exp_cats == "labour charges") & m_exp["Staff_Name"].isna()]["Amount"].sum()
+                ) if not m_exp.empty else 0.0
+                m_other_opex = float(
+                    m_exp[(m_exp_types == "OPEX") & (~m_exp_cats.isin(["labour charges", "cost of goods"]))]["Amount"].sum()
+                ) if not m_exp.empty else 0.0
+                m_opex = m_staff_sal + m_unassigned_lab + m_other_opex
+                m_opex_pct = (m_opex / m_rev * 100.0) if m_rev > 0 else 0.0
+
+                m_np = m_gp - m_opex
+                m_np_pct = (m_np / m_rev * 100.0) if m_rev > 0 else 0.0
+
+                full_month_rows.append({
+                    "Month_Order": mo_start,
+                    "Month": mo_start.strftime("%b %Y"),
+                    "Revenue_Num": round(m_rev, 2),
+                    "Avg_Rev_Day_Num": round(m_avg_rev, 2),
+                    "Units_Sold_Num": m_units,
+                    "COGS_Num": round(m_cogs, 2),
+                    "Gross_Profit_Num": round(m_gp, 2),
+                    "Gross_Margin_Pct": round(m_gp_pct, 1),
+                    "OPEX_Num": round(m_opex, 2),
+                    "OPEX_Pct": round(m_opex_pct, 1),
+                    "Net_Profit_Num": round(m_np, 2),
+                    "Net_Profit_Pct": round(m_np_pct, 1),
+                    "Revenue": f"₹{m_rev:,.0f}",
+                    "Avg Rev / Day": f"₹{m_avg_rev:,.0f}",
+                    "Units Sold": f"{m_units:,}",
+                    "COGS": f"₹{m_cogs:,.0f}",
+                    "Gr. Profit": f"₹{m_gp:,.0f} ({m_gp_pct:.1f}%)",
+                    "OPEX": f"₹{m_opex:,.0f} ({m_opex_pct:.1f}%)",
+                    "Net Profit": f"₹{m_np:,.0f} ({m_np_pct:.1f}%)",
+                })
+
+            if not full_month_rows:
+                st.info("No completed calendar months with full-month data (from 1st to last day of the month) are available yet.")
+            else:
+                full_m_df = pd.DataFrame(full_month_rows).sort_values("Month_Order")
+                display_m_cols = ["Month", "Revenue", "Avg Rev / Day", "Units Sold", "COGS", "Gr. Profit", "OPEX", "Net Profit"]
+                st.dataframe(full_m_df[display_m_cols], hide_index=True, use_container_width=True)
+
+                st.markdown("##### 📈 Graphic View — Full-Data Months Comparison")
+                month_sort_order = full_m_df["Month"].tolist()
+
+                def _build_month_bar_chart(val_col, title_text, bar_color, val_format=",.0f", suffix=""):
+                    base_c = alt.Chart(full_m_df).encode(
+                        x=alt.X("Month:N", sort=month_sort_order, title="", axis=alt.Axis(labelAngle=0, labelFontWeight="bold"))
+                    )
+                    bars_c = base_c.mark_bar(color=bar_color, cornerRadiusTopLeft=5, cornerRadiusTopRight=5, size=42).encode(
+                        y=alt.Y(f"{val_col}:Q", title=title_text),
+                        tooltip=[
+                            alt.Tooltip("Month:N", title="Month"),
+                            alt.Tooltip(f"{val_col}:Q", title=title_text, format=val_format)
+                        ]
+                    )
+                    txt_c = base_c.mark_text(dy=-8, fontWeight="bold", fontSize=11.5, color="#2A1B10").encode(
+                        y=alt.Y(f"{val_col}:Q"),
+                        text=alt.Text(f"{val_col}:Q", format=val_format)
+                    )
+                    return (bars_c + txt_c).properties(title=title_text, height=235)
+
+                gc1, gc2 = st.columns(2)
+                with gc1:
+                    st.altair_chart(_build_month_bar_chart("Revenue_Num", "Revenue (₹)", "#E8542A", ",.0f"), use_container_width=True)
+                with gc2:
+                    st.altair_chart(_build_month_bar_chart("Avg_Rev_Day_Num", "Average Rev / Day (₹)", "#2A9D8F", ",.0f"), use_container_width=True)
+
+                gc3, gc4 = st.columns(2)
+                with gc3:
+                    st.altair_chart(_build_month_bar_chart("Units_Sold_Num", "Units Sold", "#70440E", ",.0f"), use_container_width=True)
+                with gc4:
+                    st.altair_chart(_build_month_bar_chart("Net_Profit_Pct", "Net Profit %", "#124A1D", ".1f"), use_container_width=True)
+        else:
+            st.info("No sales data available for month-wise comparison.")
 
         st.markdown("---")
         pl_c1, pl_c2 = st.columns([1.1, 1.2])
