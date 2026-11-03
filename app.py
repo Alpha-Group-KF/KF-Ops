@@ -1307,6 +1307,43 @@ def add_today_extra_stock_entry(today_date, cart_name, extra_map, staff_name="")
                         "closing": opening_units + extra_units,
                     },
                 )
+
+        tot_extra_logged = sum(max(0, int(extra_map.get(c, 0) or 0)) for c in FLAVOR_CODES)
+        if tot_extra_logged > 0:
+            rec_role = "Ops Coordinator" if st.session_state.get("user_role") == "entry" else "Admin"
+            s.execute(
+                text("""
+                    INSERT INTO public.cart_extra_stock_logs (
+                        entry_date, cart_name, location, staff_name, daily_entry_id,
+                        ml_units, mm_units, ps_units, mn_units, kb_units,
+                        bm_units, sg_units, ch_units, ra_units,
+                        total_extra_units, recorded_by, source_app
+                    ) VALUES (
+                        :dt, :cart, :loc, :staff, :eid,
+                        :ml, :mm, :ps, :mn, :kb,
+                        :bm, :sg, :ch, :ra,
+                        :tot, :recby, 'web app'
+                    );
+                """),
+                {
+                    "dt": today_date,
+                    "cart": cart_name,
+                    "loc": CITY,
+                    "staff": staff_to_use or None,
+                    "eid": today_id,
+                    "ml": max(0, int(extra_map.get("ML", 0) or 0)),
+                    "mm": max(0, int(extra_map.get("MM", 0) or 0)),
+                    "ps": max(0, int(extra_map.get("PS", 0) or 0)),
+                    "mn": max(0, int(extra_map.get("MN", 0) or 0)),
+                    "kb": max(0, int(extra_map.get("KB", 0) or 0)),
+                    "bm": max(0, int(extra_map.get("BM", 0) or 0)),
+                    "sg": max(0, int(extra_map.get("SG", 0) or 0)),
+                    "ch": max(0, int(extra_map.get("CH", 0) or 0)),
+                    "ra": max(0, int(extra_map.get("RA", 0) or 0)),
+                    "tot": tot_extra_logged,
+                    "recby": rec_role,
+                }
+            )
         s.commit()
 
 def load_db_daily_df():
@@ -1491,30 +1528,133 @@ def get_db_stock_removed_map():
         pass
     return {code: 0 for code in FLAVOR_CODES}
 
+def get_freezer_asset_name_for_location(loc_code=None):
+    loc = str(loc_code or get_default_write_city()).strip().upper()
+    if db_conn is not None:
+        try:
+            df = db_conn.query(
+                "SELECT asset_name FROM public.location_assets WHERE is_active = true AND asset_type = 'FREEZER' AND UPPER(TRIM(location_code)) = :loc ORDER BY sort_order ASC, asset_name ASC LIMIT 1;",
+                params={"loc": loc},
+                ttl="30s"
+            )
+            if not df.empty and str(df.iloc[0]["asset_name"]).strip():
+                return str(df.iloc[0]["asset_name"]).strip()
+        except Exception:
+            pass
+    return "Freezer" if loc == "HOSUR" else f"{loc} FREEZER"
+
+def is_freezer_cart_name_sql(col_expr="e.cart_name"):
+    return f"(UPPER(TRIM(COALESCE({col_expr}, ''))) LIKE '%FREEZER%' OR UPPER(TRIM(COALESCE({col_expr}, ''))) IN (SELECT UPPER(TRIM(asset_name)) FROM public.location_assets WHERE asset_type = 'FREEZER'))"
+
+def sync_freezer_sale_entry(sale_date, freezer_name, staff_name, sold_map, total_val, phonepe_val, cash_val, leakage_val, reason_text):
+    web_tag = "[Freezer Sale] [web app]"
+    clean_reason = str(reason_text or "").strip()
+    remarks_text = f"{clean_reason} {web_tag}".strip() if web_tag.lower() not in clean_reason.lower() else clean_reason
+    leakage_val = max(0.0, float(leakage_val or 0.0))
+
+    if db_conn is not None:
+        with db_conn.session as s:
+            res = s.execute(
+                text("""
+                INSERT INTO daily_cart_entries (
+                    entry_date, cart_name, city, staff_name, total_collection, phonepe, cash,
+                    staff_advance, food_tea_cash, cash_leakage_explained, cash_leakage_unexplained,
+                    cash_leakage, remarks
+                ) VALUES (
+                    :dt, :cart, :city, :staff, :tot, :ph, :cash,
+                    0, 0, :leak, 0, :leak, :rem
+                )
+                ON CONFLICT (entry_date, cart_name) DO UPDATE
+                SET staff_name = EXCLUDED.staff_name,
+                    total_collection = EXCLUDED.total_collection,
+                    phonepe = EXCLUDED.phonepe,
+                    cash = EXCLUDED.cash,
+                    cash_leakage_explained = EXCLUDED.cash_leakage_explained,
+                    cash_leakage_unexplained = 0,
+                    cash_leakage = EXCLUDED.cash_leakage,
+                    remarks = EXCLUDED.remarks
+                RETURNING id;
+                """),
+                {
+                    "dt": sale_date,
+                    "cart": freezer_name,
+                    "city": CITY,
+                    "staff": staff_name or None,
+                    "tot": float(total_val),
+                    "ph": float(phonepe_val),
+                    "cash": float(cash_val),
+                    "leak": leakage_val,
+                    "rem": remarks_text,
+                }
+            )
+            daily_id = res.scalar()
+
+            s.execute(text("DELETE FROM daily_cart_items WHERE daily_entry_id = :id;"), {"id": daily_id})
+            for code in FLAVOR_CODES:
+                s.execute(
+                    text("""
+                    INSERT INTO daily_cart_items (daily_entry_id, flavor_code, opening_units, added_units, sold_units, closing_units)
+                    VALUES (:eid, :code, 0, 0, :sold, 0);
+                    """),
+                    {"eid": daily_id, "code": code, "sold": max(0, int(sold_map.get(code, 0)))}
+                )
+
+            s.execute(text("DELETE FROM expenses WHERE remarks LIKE :tag;"), {"tag": f"[Auto: Daily Entry #{daily_id}]%"})
+            if leakage_val > 0.001:
+                s.execute(
+                    text("""
+                    INSERT INTO expenses (
+                        expense_date, month, expense_type, category, sub_category,
+                        description, total_amount, attributed_to, vendor_name,
+                        staff_name, status, recorded_by, remarks
+                    ) VALUES (
+                        :ed, :mo, 'OPEX', 'Leakage Expense', 'Cash Leakage',
+                        :desc, :amt, :attr, NULL, :staff, 'Not Applicable', 'Freezer Sale Auto', :rem
+                    );
+                    """),
+                    {
+                        "ed": sale_date,
+                        "mo": list(calendar.month_name)[sale_date.month],
+                        "desc": f"Freezer Sale Leakage ({freezer_name}): {clean_reason}" if clean_reason else f"Freezer Sale Leakage ({freezer_name})",
+                        "amt": float(leakage_val),
+                        "attr": "Central / Freezer",
+                        "staff": staff_name or None,
+                        "rem": f"[Auto: Daily Entry #{daily_id}] Freezer Leakage",
+                    }
+                )
+            s.commit()
+
 def get_db_freezer_stock():
     if db_conn is None: return pd.DataFrame(columns=["code", "Units in freezer"])
     try:
-        rec_df = db_conn.query("SELECT ri.flavor_code, SUM(ri.received_units) AS total_recv FROM stock_received_items ri JOIN stock_received r ON r.id = ri.received_id WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(r.location, 'HOSUR'))) = :active_loc) GROUP BY ri.flavor_code;", params={"active_loc": get_active_location_filter()}, ttl="0s")
+        active_loc = get_active_location_filter()
+        rec_df = db_conn.query("SELECT ri.flavor_code, SUM(ri.received_units) AS total_recv FROM stock_received_items ri JOIN stock_received r ON r.id = ri.received_id WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(r.location, 'HOSUR'))) = :active_loc) GROUP BY ri.flavor_code;", params={"active_loc": active_loc}, ttl="0s")
         rec_map = dict(zip(rec_df["flavor_code"], rec_df["total_recv"])) if not rec_df.empty else {}
 
-        added_df = db_conn.query("SELECT i.flavor_code, SUM(i.added_units) AS total_added FROM daily_cart_items i JOIN daily_cart_entries e ON e.id = i.daily_entry_id WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(e.city, 'HOSUR'))) = :active_loc) GROUP BY i.flavor_code;", params={"active_loc": get_active_location_filter()}, ttl="0s")
+        added_df = db_conn.query("SELECT i.flavor_code, SUM(i.added_units) AS total_added FROM daily_cart_items i JOIN daily_cart_entries e ON e.id = i.daily_entry_id WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(e.city, 'HOSUR'))) = :active_loc) GROUP BY i.flavor_code;", params={"active_loc": active_loc}, ttl="0s")
         added_map = dict(zip(added_df["flavor_code"], added_df["total_added"])) if not added_df.empty else {}
+
+        fzr_df = db_conn.query(f"SELECT i.flavor_code, COALESCE(SUM(i.sold_units), 0) AS total_fzr_sold FROM daily_cart_items i JOIN daily_cart_entries e ON e.id = i.daily_entry_id WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(e.city, 'HOSUR'))) = :active_loc) AND {is_freezer_cart_name_sql('e.cart_name')} GROUP BY i.flavor_code;", params={"active_loc": active_loc}, ttl="0s")
+        fzr_map = dict(zip(fzr_df["flavor_code"], fzr_df["total_fzr_sold"])) if not fzr_df.empty else {}
 
         rem_map = get_db_stock_removed_map()
         
         rows = []
         for code in FLAVOR_CODES:
-            calc_stock = int(rec_map.get(code, 0)) - int(added_map.get(code, 0)) - int(rem_map.get(code, 0))
+            calc_stock = int(rec_map.get(code, 0)) - int(added_map.get(code, 0)) - int(fzr_map.get(code, 0)) - int(rem_map.get(code, 0))
             rows.append({"code": code, "Units in freezer": calc_stock})
         return pd.DataFrame(rows)
     except Exception:
         return pd.DataFrame(columns=["code", "Units in freezer"])
 
-def get_physical_current_stock_map():
+def get_physical_current_stock_map(as_of_date=None):
     if db_conn is None: return {}
     try:
-        audit_df = db_conn.query("SELECT * FROM stock_audits_wide WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(location, 'HOSUR'))) = :active_loc) ORDER BY audit_date DESC, audit_id DESC LIMIT 1;", params={"active_loc": get_active_location_filter()}, ttl="0s")
-        if audit_df.empty: return {}
+        active_loc = get_active_location_filter()
+        audit_df = db_conn.query("SELECT * FROM stock_audits_wide WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(location, 'HOSUR'))) = :active_loc) ORDER BY audit_date DESC, audit_id DESC LIMIT 1;", params={"active_loc": active_loc}, ttl="0s")
+        if audit_df.empty:
+            fallback_df = get_db_freezer_stock()
+            return dict(zip(fallback_df["code"], fallback_df["Units in freezer"])) if not fallback_df.empty else {c: 0 for c in FLAVOR_CODES}
         audit_row = audit_df.iloc[0]
         audit_date = pd.to_datetime(audit_row["audit_date"]).date()
         audit_next_date = audit_date + timedelta(days=1)
@@ -1525,19 +1665,32 @@ def get_physical_current_stock_map():
             SELECT ri.flavor_code, COALESCE(SUM(ri.received_units), 0) AS recv 
             FROM stock_received_items ri 
             JOIN stock_received r ON ri.received_id = r.id 
-            WHERE r.received_date >= :adate 
+            WHERE r.received_date >= :adate
+              AND (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(r.location, 'HOSUR'))) = :active_loc)
             GROUP BY ri.flavor_code;
-        """, params={"adate": audit_date}, ttl="0s")
+        """, params={"adate": audit_date, "active_loc": active_loc}, ttl="0s")
         rec_map = dict(zip(rec_df["flavor_code"], rec_df["recv"])) if not rec_df.empty else {}
         
         added_df = db_conn.query("""
             SELECT i.flavor_code, COALESCE(SUM(i.added_units), 0) AS added 
             FROM daily_cart_items i 
             JOIN daily_cart_entries e ON i.daily_entry_id = e.id 
-            WHERE e.entry_date >= :anext 
+            WHERE e.entry_date >= :anext
+              AND (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(e.city, 'HOSUR'))) = :active_loc)
             GROUP BY i.flavor_code;
-        """, params={"anext": audit_next_date}, ttl="0s")
+        """, params={"anext": audit_next_date, "active_loc": active_loc}, ttl="0s")
         added_map = dict(zip(added_df["flavor_code"], added_df["added"])) if not added_df.empty else {}
+
+        fzr_df = db_conn.query(f"""
+            SELECT i.flavor_code, COALESCE(SUM(i.sold_units), 0) AS fzr_sold
+            FROM daily_cart_items i
+            JOIN daily_cart_entries e ON i.daily_entry_id = e.id
+            WHERE e.entry_date >= :anext
+              AND (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(e.city, 'HOSUR'))) = :active_loc)
+              AND {is_freezer_cart_name_sql('e.cart_name')}
+            GROUP BY i.flavor_code;
+        """, params={"anext": audit_next_date, "active_loc": active_loc}, ttl="0s")
+        fzr_map = dict(zip(fzr_df["flavor_code"], fzr_df["fzr_sold"])) if not fzr_df.empty else {}
         
         # Stock removed from audit date onwards (inclusive of audit date)
         rem_df = db_conn.query("""
@@ -1548,8 +1701,9 @@ def get_physical_current_stock_map():
                 COALESCE(SUM(sg_units), 0) AS sg_units, COALESCE(SUM(ch_units), 0) AS ch_units, 
                 COALESCE(SUM(ra_units), 0) AS ra_units 
             FROM stock_removed 
-            WHERE removal_date >= :adate;
-        """, params={"adate": audit_date}, ttl="0s")
+            WHERE removal_date >= :adate
+              AND (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(location, 'HOSUR'))) = :active_loc);
+        """, params={"adate": audit_date, "active_loc": active_loc}, ttl="0s")
         rem_map = {code: int(rem_df.iloc[0].get(FLAVOR_MAP[code]["audit_col"], 0)) for code in FLAVOR_CODES} if not rem_df.empty else {code: 0 for code in FLAVOR_CODES}
         
         phys_current_map = {}
@@ -1557,8 +1711,9 @@ def get_physical_current_stock_map():
             base = audit_map.get(code, 0)
             recv = rec_map.get(code, 0)
             added = added_map.get(code, 0)
+            fzr_sold = fzr_map.get(code, 0)
             removed = rem_map.get(code, 0)
-            phys_current_map[code] = base + recv - added - removed
+            phys_current_map[code] = base + recv - added - fzr_sold - removed
         return phys_current_map
     except Exception as e:
         return {}
@@ -2565,32 +2720,39 @@ elif page == "Daily Entry":
         st.caption("Choose what you want to record.")
         st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
 
-        em1, em2, em3 = st.columns(3, gap="medium")
+        em1, em2, em3, em4 = st.columns(4, gap="medium")
         with em1:
             with st.container(border=True):
-                st.markdown("### 🧾 Sales Entry")
-                st.caption("Closing stock, sales, collections, leakage and remarks")
-                if st.button("Open Sales Entry →", key="open_sales_entry", type="primary", use_container_width=True):
+                st.markdown("### 🧾 Sales Entry (Carts)")
+                st.caption("Closing stock, sales, collections, leakage and remarks for carts")
+                if st.button("Open Sales (Carts) →", key="open_sales_entry", type="primary", use_container_width=True):
                     st.session_state.pop("_last_mismatch_modal_target", None)
                     st.session_state["daily_entry_mode"] = "sales"
                     st.rerun()
         with em2:
             with st.container(border=True):
-                st.markdown("### 📦 Restock Entry")
+                st.markdown("### 📦 Restock (Carts)")
                 st.caption("Record today's normal opening stock added to each cart")
-                if st.button("Open Restock Entry →", key="open_restock_entry", type="primary", use_container_width=True):
+                if st.button("Open Restock (Carts) →", key="open_restock_entry", type="primary", use_container_width=True):
                     st.session_state["daily_entry_mode"] = "restock"
                     st.rerun()
         with em3:
             with st.container(border=True):
-                st.markdown("### ➕ Extra Stock")
+                st.markdown("### ➕ Extra Stock (Carts)")
                 st.caption("Add stock supplied later during the selling day")
-                if st.button("Open Extra Stock →", key="open_extra_stock", type="primary", use_container_width=True):
+                if st.button("Open Extra Stock (Carts) →", key="open_extra_stock", type="primary", use_container_width=True):
                     # Always enter Extra Stock with every input cleared to zero.
                     for _cart in CARTS:
                         for _code in FLAVOR_CODES:
                             st.session_state[f"extra_stock_{_cart}_{_code}"] = 0
                     st.session_state["daily_entry_mode"] = "extra"
+                    st.rerun()
+        with em4:
+            with st.container(border=True):
+                st.markdown("### ❄️ Sales Entry (Freezer)")
+                st.caption("Direct sales from Freezer stock with live MRP & leakage calculation")
+                if st.button("Open Sales (Freezer) →", key="open_freezer_sales_entry", type="primary", use_container_width=True):
+                    st.session_state["daily_entry_mode"] = "freezer_sales"
                     st.rerun()
     else:
         back_col, _ = st.columns([2.2, 4.8])
@@ -2902,6 +3064,198 @@ elif page == "Daily Entry":
                             st.error(f"Could not save Sales Entry - {e}")
 
         # --------------------------------------------------------------
+        # SALES ENTRY (FREEZER)
+        # --------------------------------------------------------------
+        elif entry_mode == "freezer_sales":
+            st.subheader("❄️ Sales Entry (Freezer)")
+            st.caption("Record direct kulfi sales from the location's Freezer.")
+
+            freezer_asset_name = get_freezer_asset_name_for_location(CITY)
+            staff_options = load_active_staff_list()
+
+            fs_top1, fs_top2 = st.columns([1, 1.2])
+            with fs_top1:
+                fzr_sale_date = st.date_input(
+                    "Sale Date",
+                    value=today_val,
+                    max_value=today_val,
+                    format="DD-MM-YYYY",
+                    key="fzr_sale_date_picker"
+                )
+            date_key_str = fzr_sale_date.strftime("%Y%m%d")
+
+            # Load any existing freezer sale for this date + location freezer
+            existing_fzr_entry = None
+            existing_fzr_items = {}
+            if db_conn is not None:
+                try:
+                    e_df = db_conn.query(
+                        "SELECT id, staff_name, total_collection, phonepe, cash, cash_leakage, remarks FROM daily_cart_entries WHERE entry_date = :dt AND cart_name = :cart LIMIT 1;",
+                        params={"dt": fzr_sale_date, "cart": freezer_asset_name},
+                        ttl="0s"
+                    )
+                    if not e_df.empty:
+                        existing_fzr_entry = e_df.iloc[0].to_dict()
+                        i_df = db_conn.query(
+                            "SELECT flavor_code, sold_units FROM daily_cart_items WHERE daily_entry_id = :eid;",
+                            params={"eid": int(existing_fzr_entry["id"])},
+                            ttl="0s"
+                        )
+                        for _, ir in i_df.iterrows():
+                            existing_fzr_items[str(ir["flavor_code"]).strip()] = int(_num(ir["sold_units"]))
+                except Exception:
+                    pass
+
+            default_fzr_staff = str(existing_fzr_entry.get("staff_name") or "") if existing_fzr_entry else ""
+            if default_fzr_staff and default_fzr_staff not in staff_options:
+                staff_options.append(default_fzr_staff)
+
+            with fs_top2:
+                fzr_staff_key = f"fzr_sale_staff_{freezer_asset_name}_{date_key_str}"
+                if fzr_staff_key not in st.session_state:
+                    st.session_state[fzr_staff_key] = default_fzr_staff if default_fzr_staff in staff_options else (staff_options[1] if len(staff_options) > 1 else "Select Staff")
+                fzr_sold_by = st.selectbox(
+                    "Sold By (Staff)",
+                    staff_options,
+                    index=staff_options.index(st.session_state[fzr_staff_key]) if st.session_state[fzr_staff_key] in staff_options else 0,
+                    key=fzr_staff_key
+                )
+
+            curr_fzr_stock_map = get_physical_current_stock_map()
+            fzr_sold_map = {}
+            fzr_val_map = {}
+
+            st.markdown(
+                f"<div class='header-box-sales'><span>❄️ Direct Freezer Sale — {_entry_date_display(fzr_sale_date)}</span><span><b>{escape(freezer_asset_name)}</b></span></div>",
+                unsafe_allow_html=True,
+            )
+            with st.container(border=True):
+                fhc1, fhc2, fhc3, fhc4, fhc5 = st.columns([2.0, 1.0, 0.9, 1.1, 1.2], gap="small")
+                fhc1.markdown("<div class='entry-grid-header' style='text-align:left;'>Flavour</div>", unsafe_allow_html=True)
+                fhc2.markdown("<div class='entry-grid-header'>Current Stock</div>", unsafe_allow_html=True)
+                fhc3.markdown("<div class='entry-grid-header'>MRP</div>", unsafe_allow_html=True)
+                fhc4.markdown("<div class='entry-grid-header'>Sold Units ✏️</div>", unsafe_allow_html=True)
+                fhc5.markdown("<div class='entry-grid-header' style='text-align:right;'>Value (₹)</div>", unsafe_allow_html=True)
+
+                for code in FLAVOR_CODES:
+                    f_info = FLAVOR_MAP[code]
+                    # Add back any already-saved sold units for this date so Current Stock before this sale is clear
+                    saved_qty = int(existing_fzr_items.get(code, 0))
+                    curr_stock_val = int(curr_fzr_stock_map.get(code, 0)) + saved_qty
+                    mrp_val = float(f_info["mrp"])
+                    k_sold = f"fzr_sold_{freezer_asset_name}_{date_key_str}_{code}"
+                    if k_sold not in st.session_state:
+                        st.session_state[k_sold] = saved_qty
+
+                    r1, r2, r3, r4, r5 = st.columns([2.0, 1.0, 0.9, 1.1, 1.2], gap="small")
+                    with r1:
+                        st.markdown(f"<div class='entry-grid-cell-flavour'><span>{f_info['name']}</span></div>", unsafe_allow_html=True)
+                    with r2:
+                        st.markdown(f"<div class='entry-grid-cell'>{curr_stock_val}</div>", unsafe_allow_html=True)
+                    with r3:
+                        st.markdown(f"<div class='entry-grid-cell'>₹{mrp_val:.0f}</div>", unsafe_allow_html=True)
+                    with r4:
+                        qty_sold = _int_num(
+                            st.number_input(
+                                f"Freezer Sold {f_info['name']}",
+                                min_value=0,
+                                step=1,
+                                format="%d",
+                                key=k_sold,
+                                label_visibility="collapsed"
+                            )
+                        )
+                    line_val = max(0, qty_sold) * mrp_val
+                    fzr_sold_map[code] = max(0, qty_sold)
+                    fzr_val_map[code] = line_val
+                    with r5:
+                        st.markdown(f"<div class='entry-grid-cell-amount'>₹{line_val:,.0f}</div>", unsafe_allow_html=True)
+
+                tot_fzr_stock = sum(int(curr_fzr_stock_map.get(c, 0)) + int(existing_fzr_items.get(c, 0)) for c in FLAVOR_CODES)
+                tot_fzr_sold = sum(fzr_sold_map.values())
+                tot_fzr_value = float(sum(fzr_val_map.values()))
+
+                ft1, ft2, ft3, ft4, ft5 = st.columns([2.0, 1.0, 0.9, 1.1, 1.2], gap="small")
+                ft1.markdown("<div class='entry-grid-total-row' style='text-align:left;'>TOTAL</div>", unsafe_allow_html=True)
+                ft2.markdown(f"<div class='entry-grid-total-row' style='text-align:center;'>{tot_fzr_stock}</div>", unsafe_allow_html=True)
+                ft3.markdown("<div class='entry-grid-total-row' style='text-align:center;'>—</div>", unsafe_allow_html=True)
+                ft4.markdown(f"<div class='entry-grid-total-row' style='text-align:center;color:#C43D17;'>{tot_fzr_sold}</div>", unsafe_allow_html=True)
+                ft5.markdown(f"<div class='entry-grid-total-row' style='text-align:right;color:#124A1D;'>₹{tot_fzr_value:,.0f}</div>", unsafe_allow_html=True)
+
+                st.markdown("---")
+                k_f_ph = f"fzr_ph_{freezer_asset_name}_{date_key_str}"
+                k_f_cs = f"fzr_cs_{freezer_asset_name}_{date_key_str}"
+                k_f_lk = f"fzr_lk_{freezer_asset_name}_{date_key_str}"
+                k_f_sig = f"fzr_sig_{freezer_asset_name}_{date_key_str}"
+                k_f_rsn = f"fzr_rsn_{freezer_asset_name}_{date_key_str}"
+
+                if k_f_ph not in st.session_state:
+                    st.session_state[k_f_ph] = f"{float(existing_fzr_entry.get('phonepe') or 0.0):.2f}" if existing_fzr_entry else "0.00"
+                if k_f_cs not in st.session_state:
+                    st.session_state[k_f_cs] = f"{float(existing_fzr_entry.get('cash') or 0.0):.2f}" if existing_fzr_entry else "0.00"
+                if k_f_rsn not in st.session_state:
+                    raw_rem = str(existing_fzr_entry.get("remarks") or "") if existing_fzr_entry else ""
+                    st.session_state[k_f_rsn] = re.sub(r"\[(?:Freezer Sale|web app|mobile app)\]", "", raw_rem, flags=re.IGNORECASE).strip()
+
+                fc1, fc2, fc3 = st.columns(3)
+                with fc1:
+                    fzr_phonepe_val = max(0.0, _num(st.text_input("PhonePe / UPI (₹)", key=k_f_ph)))
+                with fc2:
+                    fzr_cash_val = max(0.0, _num(st.text_input("Cash Collected (₹)", key=k_f_cs)))
+
+                # Recalculate leakage on the fly whenever total value, PhonePe, or Cash changes
+                auto_leakage = max(0.0, tot_fzr_value - fzr_phonepe_val - fzr_cash_val)
+                curr_sig = f"{tot_fzr_value:.2f}_{fzr_phonepe_val:.2f}_{fzr_cash_val:.2f}"
+                if st.session_state.get(k_f_sig) != curr_sig:
+                    st.session_state[k_f_lk] = f"{auto_leakage:.2f}"
+                    st.session_state[k_f_sig] = curr_sig
+
+                with fc3:
+                    fzr_leakage_val = max(0.0, _num(st.text_input("Leakage (₹) (Auto-calculated, editable)", key=k_f_lk)))
+
+                if fzr_leakage_val > 0.001:
+                    st.markdown(
+                        "<p style='color:#C41C1C; font-weight:bold; font-size:11.5px; margin: 2px 0 !important;'>"
+                        "⚠️ Reason for leakage is mandatory when leakage is greater than zero."
+                        "</p>",
+                        unsafe_allow_html=True,
+                    )
+
+                fzr_reason = st.text_input(
+                    "Reason / Remarks" + (" *" if fzr_leakage_val > 0.001 else ""),
+                    key=k_f_rsn,
+                    placeholder="Mandatory when leakage is positive (e.g. Discount / bulk order / wastage)..."
+                )
+
+            if st.button("💾 Submit Freezer Sale", type="primary", use_container_width=True, key=f"submit_fzr_sale_{date_key_str}"):
+                if tot_fzr_sold <= 0:
+                    st.error("Please enter Sold Units greater than 0 for at least one flavour.")
+                elif fzr_sold_by == "Select Staff" or not str(fzr_sold_by).strip():
+                    st.error("Please select the staff member in 'Sold By'.")
+                elif fzr_leakage_val > 0.001 and not str(fzr_reason or "").strip():
+                    st.error("Reason / Remarks is mandatory while Leakage is positive.")
+                else:
+                    try:
+                        sync_freezer_sale_entry(
+                            fzr_sale_date,
+                            freezer_asset_name,
+                            fzr_sold_by,
+                            fzr_sold_map,
+                            tot_fzr_value,
+                            fzr_phonepe_val,
+                            fzr_cash_val,
+                            fzr_leakage_val,
+                            fzr_reason
+                        )
+                        st.cache_data.clear()
+                        st.cache_resource.clear()
+                        show_success_modal(
+                            f"Freezer sale saved for {freezer_asset_name} on {_entry_date_display(fzr_sale_date)}! Sold: {tot_fzr_sold} units (₹{tot_fzr_value:,.0f})."
+                        )
+                    except Exception as e:
+                        st.error(f"Could not save Freezer sale: {e}")
+
+        # --------------------------------------------------------------
         # RESTOCK ENTRY
         # --------------------------------------------------------------
         elif entry_mode == "restock":
@@ -3084,6 +3438,44 @@ elif page == "Daily Entry":
                         )
                     except Exception as e:
                         st.error(f"Could not add Extra Stock - {e}")
+
+            st.markdown("---")
+            st.markdown(f"#### 📋 Extra Stock Audit Log — {cart_name}")
+            try:
+                extra_log_df = db_conn.query(
+                    """
+                    SELECT id, entry_date, cart_name, location, staff_name,
+                           ml_units, mm_units, ps_units, mn_units, kb_units,
+                           bm_units, sg_units, ch_units, ra_units,
+                           total_extra_units, recorded_by, source_app, created_at
+                    FROM public.cart_extra_stock_logs
+                    WHERE cart_name = :cart
+                    ORDER BY entry_date DESC, id DESC
+                    LIMIT 25;
+                    """,
+                    params={"cart": cart_name},
+                    ttl="0s"
+                )
+                if extra_log_df.empty:
+                    st.caption(f"No extra stock audit logs recorded for {cart_name} yet.")
+                else:
+                    disp_extra_logs = []
+                    for _, lr in extra_log_df.iterrows():
+                        row_d = {
+                            "Log #": f"#{int(lr['id'])}",
+                            "Date": pd.to_datetime(lr["entry_date"]).strftime("%d-%b-%y"),
+                            "Time": pd.to_datetime(lr["created_at"]).strftime("%I:%M %p") if pd.notna(lr.get("created_at")) else "—",
+                            "Cart": lr["cart_name"],
+                            "Staff": lr.get("staff_name") or "—",
+                            "Total Extra": int(lr.get("total_extra_units") or 0),
+                        }
+                        for c_code in FLAVOR_CODES:
+                            row_d[c_code] = int(lr.get(FLAVOR_MAP[c_code]["audit_col"], 0))
+                        row_d["By"] = f"{lr.get('recorded_by') or '—'} ({lr.get('source_app') or 'app'})"
+                        disp_extra_logs.append(row_d)
+                    st.dataframe(pd.DataFrame(disp_extra_logs), hide_index=True, use_container_width=True)
+            except Exception as e:
+                st.caption(f"Extra stock audit log unavailable: {e}")
 
 elif page == "Payslip Generator" and user_role == "admin":
     p_h_col1, p_h_col2 = st.columns([1, 6])
@@ -5381,14 +5773,27 @@ elif page == "Freezer Analysis" and user_role == "admin":
     """, params={"adate": audit_date_val if audit_date_val else date.today()}, ttl="0s")
     rec_since_map = dict(zip(rec_since_df["flavor_code"], rec_since_df["recv"])) if not rec_since_df.empty else {}
 
+    active_loc_fa = get_active_location_filter()
     added_since_df = db_conn.query("""
         SELECT i.flavor_code, COALESCE(SUM(i.added_units), 0) AS added 
         FROM daily_cart_items i 
         JOIN daily_cart_entries e ON i.daily_entry_id = e.id 
-        WHERE e.entry_date >= :anext 
+        WHERE e.entry_date >= :anext
+          AND (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(e.city, 'HOSUR'))) = :active_loc)
         GROUP BY i.flavor_code;
-    """, params={"anext": audit_next_dt_t2 if audit_next_dt_t2 else date.today()}, ttl="0s")
+    """, params={"anext": audit_next_dt_t2 if audit_next_dt_t2 else date.today(), "active_loc": active_loc_fa}, ttl="0s")
     added_since_map = dict(zip(added_since_df["flavor_code"], added_since_df["added"])) if not added_since_df.empty else {}
+
+    fzr_sale_since_df = db_conn.query(f"""
+        SELECT i.flavor_code, COALESCE(SUM(i.sold_units), 0) AS fzr_sold
+        FROM daily_cart_items i
+        JOIN daily_cart_entries e ON i.daily_entry_id = e.id
+        WHERE e.entry_date >= :anext
+          AND (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(e.city, 'HOSUR'))) = :active_loc)
+          AND {is_freezer_cart_name_sql('e.cart_name')}
+        GROUP BY i.flavor_code;
+    """, params={"anext": audit_next_dt_t2 if audit_next_dt_t2 else date.today(), "active_loc": active_loc_fa}, ttl="0s")
+    fzr_sale_since_map = dict(zip(fzr_sale_since_df["flavor_code"], fzr_sale_since_df["fzr_sold"])) if not fzr_sale_since_df.empty else {}
 
     rem_since_df = db_conn.query("""
         SELECT 
@@ -5398,12 +5803,13 @@ elif page == "Freezer Analysis" and user_role == "admin":
             COALESCE(SUM(sg_units), 0) AS sg_units, COALESCE(SUM(ch_units), 0) AS ch_units, 
             COALESCE(SUM(ra_units), 0) AS ra_units 
         FROM stock_removed 
-        WHERE removal_date >= :adate;
-    """, params={"adate": audit_date_val if audit_date_val else date.today()}, ttl="0s")
+        WHERE removal_date >= :adate
+          AND (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(location, 'HOSUR'))) = :active_loc);
+    """, params={"adate": audit_date_val if audit_date_val else date.today(), "active_loc": active_loc_fa}, ttl="0s")
     rem_since_map = {code: int(rem_since_df.iloc[0].get(FLAVOR_MAP[code]["audit_col"], 0)) for code in FLAVOR_CODES} if not rem_since_df.empty else {code: 0 for code in FLAVOR_CODES}
 
     phys_base_rows = []
-    tot_base_b, tot_rec_b, tot_added_b, tot_rem_b, tot_curr_b = 0, 0, 0, 0, 0
+    tot_base_b, tot_rec_b, tot_added_b, tot_fzr_b, tot_rem_b, tot_curr_b = 0, 0, 0, 0, 0, 0
     tot_stock_value_cp = 0.0
     tot_stock_value_mrp = 0.0
     phys_curr_map = get_physical_current_stock_map()
@@ -5411,21 +5817,21 @@ elif page == "Freezer Analysis" and user_role == "admin":
     for code in FLAVOR_CODES:
         f_info = FLAVOR_MAP[code]
         base_audit = audit_map.get(code, 0)
-        rec_onward = rec_since_map.get(code, 0)
-        added_onward = added_since_map.get(code, 0)
-        removed_onward = rem_since_map.get(code, 0)
+        rec_onward = int(rec_since_map.get(code, 0))
+        added_onward = int(added_since_map.get(code, 0))
+        fzr_sale_onward = int(fzr_sale_since_map.get(code, 0))
+        removed_onward = int(rem_since_map.get(code, 0))
         
-        current_physical_base_stock = base_audit + rec_onward - added_onward - removed_onward
+        current_physical_base_stock = base_audit + rec_onward - added_onward - fzr_sale_onward - removed_onward
         
         tot_base_b += base_audit
         tot_rec_b += rec_onward
         tot_added_b += added_onward
+        tot_fzr_b += fzr_sale_onward
         tot_rem_b += removed_onward
         tot_curr_b += current_physical_base_stock
         stock_value_cp = float(current_physical_base_stock) * float(f_info["cost_price"])
         stock_value_mrp = float(current_physical_base_stock) * float(f_info["mrp"])
-        # Round each displayed flavour value first so the displayed TOTAL exactly
-        # matches the sum of the values visible on screen.
         stock_value_display = int(stock_value_cp + 0.5) if stock_value_cp >= 0 else int(stock_value_cp - 0.5)
         tot_stock_value_cp += stock_value_cp
         tot_stock_value_mrp += stock_value_mrp
@@ -5434,14 +5840,13 @@ elif page == "Freezer Analysis" and user_role == "admin":
             "Flavour": f_info["name"],
             "Last Physical Audit": base_audit,
             "Stock Received": rec_onward,
-            "Cart Addition": added_onward,
+            "To Cart": added_onward,
+            "FZR Sale": fzr_sale_onward,
             "Stock Removed": removed_onward,
             "Current Stock": current_physical_base_stock,
             "Stock Value": stock_value_display
         })
 
-    # Displayed freezer value total = sum of the individually displayed rounded
-    # flavour values, avoiding a ₹1/₹2 visual mismatch caused by rounding only at total level.
     tot_stock_value_display = int(sum(int(r["Stock Value"]) for r in phys_base_rows))
     tot_stock_value_mrp_display = int(tot_stock_value_mrp + 0.5) if tot_stock_value_mrp >= 0 else int(tot_stock_value_mrp - 0.5)
     phys_base_df = pd.DataFrame(phys_base_rows)
@@ -5449,7 +5854,8 @@ elif page == "Freezer Analysis" and user_role == "admin":
         "Flavour": "🔥 OVERALL TOTAL",
         "Last Physical Audit": tot_base_b,
         "Stock Received": tot_rec_b,
-        "Cart Addition": tot_added_b,
+        "To Cart": tot_added_b,
+        "FZR Sale": tot_fzr_b,
         "Stock Removed": tot_rem_b,
         "Current Stock": tot_curr_b,
         "Stock Value": tot_stock_value_display
@@ -5658,7 +6064,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
         st.rerun()
 
     st.markdown("---"); st.markdown("### 3. Detailed Stock Movement Logs")
-    m_tab1, m_tab2, m_tab3, m_tab4 = st.tabs(["📋 Purchase Orders", "📦 Received Deliveries", "🔍 Physical Stock Audits", "🗑️ Stock Removed"])
+    m_tab1, m_tab2, m_tab3, m_tab4, m_tab5 = st.tabs(["📋 Purchase Orders", "📦 Received Deliveries", "🔍 Physical Stock Audits", "🗑️ Stock Removed", "➕ Cart Extra Stock"])
 
     with m_tab1:
         po_query_df = db_conn.query("SELECT p.id AS \"PO #\", p.order_date AS \"Order Date\", p.expected_date AS \"Expected Date\", p.location AS \"Location\", p.order_status AS \"Status\", json_agg(json_build_object('code', pi.flavor_code, 'qty', pi.ordered_units)) AS items FROM purchase_orders p LEFT JOIN purchase_order_items pi ON p.id = pi.order_id GROUP BY p.id ORDER BY p.order_date DESC;", ttl="0s")
@@ -5705,6 +6111,43 @@ elif page == "Freezer Analysis" and user_role == "admin":
                 rem_display.append(row_data)
             st.dataframe(pd.DataFrame(rem_display), hide_index=True, use_container_width=True)
         else: st.caption("No stock removals recorded in database.")
+
+    with m_tab5:
+        try:
+            extra_all_df = db_conn.query(
+                """
+                SELECT id, entry_date, cart_name, location, staff_name,
+                       ml_units, mm_units, ps_units, mn_units, kb_units,
+                       bm_units, sg_units, ch_units, ra_units,
+                       total_extra_units, recorded_by, source_app, created_at
+                FROM public.cart_extra_stock_logs
+                WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(location, 'HOSUR'))) = :active_loc)
+                ORDER BY entry_date DESC, id DESC;
+                """,
+                params={"active_loc": get_active_location_filter()},
+                ttl="0s"
+            )
+            if not extra_all_df.empty:
+                ext_display = []
+                for _, r in extra_all_df.iterrows():
+                    row_data = {
+                        "Log #": f"#{int(r['id'])}",
+                        "Date": pd.to_datetime(r["entry_date"]).strftime("%d-%b-%y"),
+                        "Time": pd.to_datetime(r["created_at"]).strftime("%I:%M %p") if pd.notna(r.get("created_at")) else "—",
+                        "Cart": r["cart_name"],
+                        "Location": r.get("location") or CITY,
+                        "Staff": r.get("staff_name") or "—",
+                        "Total Extra": int(r.get("total_extra_units") or 0),
+                    }
+                    for code in FLAVOR_CODES:
+                        row_data[code] = int(r.get(FLAVOR_MAP[code]["audit_col"], 0))
+                    row_data["Recorded By"] = f"{r.get('recorded_by') or '—'} ({r.get('source_app') or 'app'})"
+                    ext_display.append(row_data)
+                st.dataframe(pd.DataFrame(ext_display), hide_index=True, use_container_width=True)
+            else:
+                st.caption("No cart extra stock logs recorded in database yet.")
+        except Exception as e:
+            st.caption(f"Could not load cart_extra_stock_logs: {e}")
 
 elif page == "Stock Removed" and user_role == "admin":
     st.subheader("Stock Removed / Wastage Log")
@@ -5755,7 +6198,7 @@ elif page == "Stock Removed" and user_role == "admin":
                                     expense_date, month, expense_type, category, sub_category,
                                     description, total_amount, attributed_to, status, recorded_by, remarks
                                 ) VALUES (
-                                    :ed, :month, 'OPEX', 'Leakage Expense', 'Stock Removed',
+                                    :ed, :month, 'OPEX', 'Leakage Expense', 'Gift Goodwill',
                                     :desc, :amt, 'Central / Freezer', 'Not Applicable', :recby, :rem
                                 );
                                 """),
@@ -5842,7 +6285,7 @@ elif page == "Stock Removed" and user_role == "admin":
                                         month = :month,
                                         expense_type = 'OPEX',
                                         category = 'Leakage Expense',
-                                        sub_category = 'Stock Removed',
+                                        sub_category = 'Gift Goodwill',
                                         description = :desc,
                                         total_amount = :amt,
                                         attributed_to = 'Central / Freezer',
@@ -5869,7 +6312,7 @@ elif page == "Stock Removed" and user_role == "admin":
                                         expense_date, month, expense_type, category, sub_category,
                                         description, total_amount, attributed_to, status, recorded_by, remarks
                                     ) VALUES (
-                                        :ed, :month, 'OPEX', 'Leakage Expense', 'Stock Removed',
+                                        :ed, :month, 'OPEX', 'Leakage Expense', 'Gift Goodwill',
                                         :desc, :amt, 'Central / Freezer', 'Not Applicable', :recby, :rem
                                     );
                                     """),
@@ -8335,12 +8778,15 @@ elif page == "Dashboard" and user_role == "admin":
         else:
             st.caption("No revenue data available for this range to plot.")
 
-        # Sales report tables show completed sales dates only.
-        # Today is intentionally excluded; the latest possible report date is yesterday.
+        # Sales report tables show completed cart sales dates (<= yesterday) PLUS any direct Freezer sales in the range (including today).
         latest_completed_sales_date = date.today() - timedelta(days=1)
-        report_sales_df = range_df[
-            pd.to_datetime(range_df["Date"]).dt.date <= latest_completed_sales_date
-        ].copy() if not range_df.empty else pd.DataFrame()
+        if not range_df.empty:
+            is_fzr_mask = range_df["Cart"].astype(str).str.strip().str.upper().str.contains("FREEZER")
+            report_sales_df = range_df[
+                (pd.to_datetime(range_df["Date"]).dt.date <= latest_completed_sales_date) | is_fzr_mask
+            ].copy()
+        else:
+            report_sales_df = pd.DataFrame()
 
         st.markdown("#### Date-Wise Daily Sales Log")
         if not report_sales_df.empty:
@@ -8477,8 +8923,12 @@ elif page == "Dashboard" and user_role == "admin":
             sales_table["Units Sold"] = sales_table["Units Sold"].apply(lambda x: int(round(x)))
             sales_table["Date"] = pd.to_datetime(sales_table["Date"]).dt.date
 
-            for cart_name in CARTS:
+            all_carts_and_freezers = get_carts_for_active_location(include_freezer=True)
+            extra_logged_entities = [c for c in sales_table["Cart"].dropna().unique().tolist() if c not in all_carts_and_freezers]
+            for cart_name in (all_carts_and_freezers + extra_logged_entities):
                 cart_table = sales_table[sales_table["Cart"] == cart_name].copy()
+                if cart_table.empty and "FREEZER" in str(cart_name).upper():
+                    continue
                 cart_table = cart_table.sort_values("Date", ascending=False).reset_index(drop=True)
                 cart_units = int(cart_table["Units Sold"].sum()) if not cart_table.empty else 0
                 cart_revenue = float(cart_table["Revenue (₹)"].sum()) if not cart_table.empty else 0.0
