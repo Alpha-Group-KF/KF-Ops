@@ -1549,11 +1549,46 @@ def is_freezer_cart_name_sql(col_expr="e.cart_name"):
 def sync_freezer_sale_entry(sale_date, freezer_name, staff_name, sold_map, total_val, phonepe_val, cash_val, leakage_val, reason_text):
     web_tag = "[Freezer Sale] [web app]"
     clean_reason = str(reason_text or "").strip()
-    remarks_text = f"{clean_reason} {web_tag}".strip() if web_tag.lower() not in clean_reason.lower() else clean_reason
     leakage_val = max(0.0, float(leakage_val or 0.0))
 
     if db_conn is not None:
         with db_conn.session as s:
+            existing_row = s.execute(
+                text("""
+                SELECT id, total_collection, phonepe, cash, cash_leakage, remarks
+                FROM daily_cart_entries
+                WHERE entry_date = :dt AND cart_name = :cart
+                FOR UPDATE;
+                """),
+                {"dt": sale_date, "cart": freezer_name}
+            ).fetchone()
+
+            existing_sold_by_code = {}
+            if existing_row:
+                prev_id = int(existing_row[0])
+                prev_tot = float(existing_row[1] or 0.0)
+                prev_ph = float(existing_row[2] or 0.0)
+                prev_cs = float(existing_row[3] or 0.0)
+                prev_lk = float(existing_row[4] or 0.0)
+                prev_rem_raw = str(existing_row[5] or "")
+                prev_rem_clean = re.sub(r"\[(?:Freezer Sale|web app|mobile app)\]", "", prev_rem_raw, flags=re.IGNORECASE).strip()
+
+                item_rows = s.execute(
+                    text("SELECT flavor_code, sold_units FROM daily_cart_items WHERE daily_entry_id = :eid;"),
+                    {"eid": prev_id}
+                ).fetchall()
+                for ir in item_rows:
+                    existing_sold_by_code[str(ir[0]).strip()] = int(ir[1] or 0)
+            else:
+                prev_tot, prev_ph, prev_cs, prev_lk, prev_rem_clean = 0.0, 0.0, 0.0, 0.0, ""
+
+            combined_tot = prev_tot + float(total_val or 0.0)
+            combined_ph = prev_ph + float(phonepe_val or 0.0)
+            combined_cs = prev_cs + float(cash_val or 0.0)
+            combined_lk = prev_lk + leakage_val
+            combined_reason = " | ".join([r for r in (prev_rem_clean, clean_reason) if r])
+            remarks_text = f"{combined_reason} {web_tag}".strip() if combined_reason else web_tag
+
             res = s.execute(
                 text("""
                 INSERT INTO daily_cart_entries (
@@ -1580,10 +1615,10 @@ def sync_freezer_sale_entry(sale_date, freezer_name, staff_name, sold_map, total
                     "cart": freezer_name,
                     "city": CITY,
                     "staff": staff_name or None,
-                    "tot": float(total_val),
-                    "ph": float(phonepe_val),
-                    "cash": float(cash_val),
-                    "leak": leakage_val,
+                    "tot": combined_tot,
+                    "ph": combined_ph,
+                    "cash": combined_cs,
+                    "leak": combined_lk,
                     "rem": remarks_text,
                 }
             )
@@ -1591,16 +1626,61 @@ def sync_freezer_sale_entry(sale_date, freezer_name, staff_name, sold_map, total
 
             s.execute(text("DELETE FROM daily_cart_items WHERE daily_entry_id = :id;"), {"id": daily_id})
             for code in FLAVOR_CODES:
+                new_sold_qty = int(existing_sold_by_code.get(code, 0)) + max(0, int(sold_map.get(code, 0)))
                 s.execute(
                     text("""
                     INSERT INTO daily_cart_items (daily_entry_id, flavor_code, opening_units, added_units, sold_units, closing_units)
                     VALUES (:eid, :code, 0, 0, :sold, 0);
                     """),
-                    {"eid": daily_id, "code": code, "sold": max(0, int(sold_map.get(code, 0)))}
+                    {"eid": daily_id, "code": code, "sold": new_sold_qty}
                 )
 
+            # Log this individual transaction into public.freezer_sale_transactions
+            tot_units_txn = sum(max(0, int(sold_map.get(c, 0))) for c in FLAVOR_CODES)
+            rec_role = "Ops Coordinator" if st.session_state.get("user_role") == "entry" else "Admin"
+            s.execute(
+                text("""
+                INSERT INTO public.freezer_sale_transactions (
+                    sale_date, freezer_name, location, sold_by, daily_entry_id,
+                    ml_units, mm_units, ps_units, mn_units, kb_units,
+                    bm_units, sg_units, ch_units, ra_units,
+                    total_units, total_value, phonepe, cash, leakage,
+                    reason, recorded_by, source_app
+                ) VALUES (
+                    :dt, :fname, :loc, :staff, :eid,
+                    :ml, :mm, :ps, :mn, :kb,
+                    :bm, :sg, :ch, :ra,
+                    :tunits, :tval, :ph, :cs, :lk,
+                    :reason, :recby, 'web app'
+                );
+                """),
+                {
+                    "dt": sale_date,
+                    "fname": freezer_name,
+                    "loc": CITY,
+                    "staff": staff_name or None,
+                    "eid": daily_id,
+                    "ml": max(0, int(sold_map.get("ML", 0))),
+                    "mm": max(0, int(sold_map.get("MM", 0))),
+                    "ps": max(0, int(sold_map.get("PS", 0))),
+                    "mn": max(0, int(sold_map.get("MN", 0))),
+                    "kb": max(0, int(sold_map.get("KB", 0))),
+                    "bm": max(0, int(sold_map.get("BM", 0))),
+                    "sg": max(0, int(sold_map.get("SG", 0))),
+                    "ch": max(0, int(sold_map.get("CH", 0))),
+                    "ra": max(0, int(sold_map.get("RA", 0))),
+                    "tunits": tot_units_txn,
+                    "tval": float(total_val or 0.0),
+                    "ph": float(phonepe_val or 0.0),
+                    "cs": float(cash_val or 0.0),
+                    "lk": leakage_val,
+                    "reason": clean_reason or None,
+                    "recby": rec_role,
+                }
+            )
+
             s.execute(text("DELETE FROM expenses WHERE remarks LIKE :tag;"), {"tag": f"[Auto: Daily Entry #{daily_id}]%"})
-            if leakage_val > 0.001:
+            if combined_lk > 0.001:
                 s.execute(
                     text("""
                     INSERT INTO expenses (
@@ -1615,14 +1695,47 @@ def sync_freezer_sale_entry(sale_date, freezer_name, staff_name, sold_map, total
                     {
                         "ed": sale_date,
                         "mo": list(calendar.month_name)[sale_date.month],
-                        "desc": f"Freezer Sale Leakage ({freezer_name}): {clean_reason}" if clean_reason else f"Freezer Sale Leakage ({freezer_name})",
-                        "amt": float(leakage_val),
+                        "desc": f"Freezer Sale Leakage ({freezer_name}): {combined_reason}" if combined_reason else f"Freezer Sale Leakage ({freezer_name})",
+                        "amt": float(combined_lk),
                         "attr": "Central / Freezer",
                         "staff": staff_name or None,
                         "rem": f"[Auto: Daily Entry #{daily_id}] Freezer Leakage",
                     }
                 )
             s.commit()
+
+def load_freezer_sale_transactions_df(start_date=None, end_date=None):
+    if db_conn is None:
+        return pd.DataFrame()
+    where_clauses, params = [], {}
+    active_loc = get_active_location_filter()
+    if active_loc != "ALL":
+        where_clauses.append("UPPER(TRIM(COALESCE(location, 'HOSUR'))) = :active_loc")
+        params["active_loc"] = active_loc
+    if start_date:
+        where_clauses.append("sale_date >= :sdate")
+        params["sdate"] = start_date
+    if end_date:
+        where_clauses.append("sale_date <= :edate")
+        params["edate"] = end_date
+    where_sql = ("WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
+    try:
+        return db_conn.query(
+            f"""
+            SELECT id, sale_date, freezer_name, location, sold_by,
+                   ml_units, mm_units, ps_units, mn_units, kb_units,
+                   bm_units, sg_units, ch_units, ra_units,
+                   total_units, total_value, phonepe, cash, leakage,
+                   reason, recorded_by, source_app, created_at
+            FROM public.freezer_sale_transactions
+            {where_sql}
+            ORDER BY sale_date DESC, id DESC;
+            """,
+            params=params,
+            ttl="0s"
+        )
+    except Exception:
+        return pd.DataFrame()
 
 def get_db_freezer_stock():
     if db_conn is None: return pd.DataFrame(columns=["code", "Units in freezer"])
@@ -2752,6 +2865,7 @@ elif page == "Daily Entry":
                 st.markdown("### ❄️ Sales Entry (Freezer)")
                 st.caption("Direct sales from Freezer stock with live MRP & leakage calculation")
                 if st.button("Open Sales (Freezer) →", key="open_freezer_sales_entry", type="primary", use_container_width=True):
+                    st.session_state["fzr_sale_form_nonce"] = int(st.session_state.get("fzr_sale_form_nonce", 0)) + 1
                     st.session_state["daily_entry_mode"] = "freezer_sales"
                     st.rerun()
     else:
@@ -3064,14 +3178,15 @@ elif page == "Daily Entry":
                             st.error(f"Could not save Sales Entry - {e}")
 
         # --------------------------------------------------------------
-        # SALES ENTRY (FREEZER)
+        # SALES ENTRY (FREEZER) — Always a fresh transaction entry
         # --------------------------------------------------------------
         elif entry_mode == "freezer_sales":
             st.subheader("❄️ Sales Entry (Freezer)")
-            st.caption("Record direct kulfi sales from the location's Freezer.")
+            st.caption("Record a new direct kulfi sale transaction from the location's Freezer.")
 
             freezer_asset_name = get_freezer_asset_name_for_location(CITY)
             staff_options = load_active_staff_list()
+            form_nonce = int(st.session_state.get("fzr_sale_form_nonce", 0))
 
             fs_top1, fs_top2 = st.columns([1, 1.2])
             with fs_top1:
@@ -3080,40 +3195,14 @@ elif page == "Daily Entry":
                     value=today_val,
                     max_value=today_val,
                     format="DD-MM-YYYY",
-                    key="fzr_sale_date_picker"
+                    key=f"fzr_sale_date_picker_{form_nonce}"
                 )
-            date_key_str = fzr_sale_date.strftime("%Y%m%d")
-
-            # Load any existing freezer sale for this date + location freezer
-            existing_fzr_entry = None
-            existing_fzr_items = {}
-            if db_conn is not None:
-                try:
-                    e_df = db_conn.query(
-                        "SELECT id, staff_name, total_collection, phonepe, cash, cash_leakage, remarks FROM daily_cart_entries WHERE entry_date = :dt AND cart_name = :cart LIMIT 1;",
-                        params={"dt": fzr_sale_date, "cart": freezer_asset_name},
-                        ttl="0s"
-                    )
-                    if not e_df.empty:
-                        existing_fzr_entry = e_df.iloc[0].to_dict()
-                        i_df = db_conn.query(
-                            "SELECT flavor_code, sold_units FROM daily_cart_items WHERE daily_entry_id = :eid;",
-                            params={"eid": int(existing_fzr_entry["id"])},
-                            ttl="0s"
-                        )
-                        for _, ir in i_df.iterrows():
-                            existing_fzr_items[str(ir["flavor_code"]).strip()] = int(_num(ir["sold_units"]))
-                except Exception:
-                    pass
-
-            default_fzr_staff = str(existing_fzr_entry.get("staff_name") or "") if existing_fzr_entry else ""
-            if default_fzr_staff and default_fzr_staff not in staff_options:
-                staff_options.append(default_fzr_staff)
+            date_key_str = f"{fzr_sale_date.strftime('%Y%m%d')}_{form_nonce}"
 
             with fs_top2:
                 fzr_staff_key = f"fzr_sale_staff_{freezer_asset_name}_{date_key_str}"
                 if fzr_staff_key not in st.session_state:
-                    st.session_state[fzr_staff_key] = default_fzr_staff if default_fzr_staff in staff_options else (staff_options[1] if len(staff_options) > 1 else "Select Staff")
+                    st.session_state[fzr_staff_key] = staff_options[1] if len(staff_options) > 1 else "Select Staff"
                 fzr_sold_by = st.selectbox(
                     "Sold By (Staff)",
                     staff_options,
@@ -3126,7 +3215,7 @@ elif page == "Daily Entry":
             fzr_val_map = {}
 
             st.markdown(
-                f"<div class='header-box-sales'><span>❄️ Direct Freezer Sale — {_entry_date_display(fzr_sale_date)}</span><span><b>{escape(freezer_asset_name)}</b></span></div>",
+                f"<div class='header-box-sales'><span>❄️ New Direct Freezer Sale — {_entry_date_display(fzr_sale_date)}</span><span><b>{escape(freezer_asset_name)}</b></span></div>",
                 unsafe_allow_html=True,
             )
             with st.container(border=True):
@@ -3139,13 +3228,11 @@ elif page == "Daily Entry":
 
                 for code in FLAVOR_CODES:
                     f_info = FLAVOR_MAP[code]
-                    # Add back any already-saved sold units for this date so Current Stock before this sale is clear
-                    saved_qty = int(existing_fzr_items.get(code, 0))
-                    curr_stock_val = int(curr_fzr_stock_map.get(code, 0)) + saved_qty
+                    curr_stock_val = int(curr_fzr_stock_map.get(code, 0))
                     mrp_val = float(f_info["mrp"])
                     k_sold = f"fzr_sold_{freezer_asset_name}_{date_key_str}_{code}"
                     if k_sold not in st.session_state:
-                        st.session_state[k_sold] = saved_qty
+                        st.session_state[k_sold] = 0
 
                     r1, r2, r3, r4, r5 = st.columns([2.0, 1.0, 0.9, 1.1, 1.2], gap="small")
                     with r1:
@@ -3171,7 +3258,7 @@ elif page == "Daily Entry":
                     with r5:
                         st.markdown(f"<div class='entry-grid-cell-amount'>₹{line_val:,.0f}</div>", unsafe_allow_html=True)
 
-                tot_fzr_stock = sum(int(curr_fzr_stock_map.get(c, 0)) + int(existing_fzr_items.get(c, 0)) for c in FLAVOR_CODES)
+                tot_fzr_stock = sum(int(curr_fzr_stock_map.get(c, 0)) for c in FLAVOR_CODES)
                 tot_fzr_sold = sum(fzr_sold_map.values())
                 tot_fzr_value = float(sum(fzr_val_map.values()))
 
@@ -3190,12 +3277,11 @@ elif page == "Daily Entry":
                 k_f_rsn = f"fzr_rsn_{freezer_asset_name}_{date_key_str}"
 
                 if k_f_ph not in st.session_state:
-                    st.session_state[k_f_ph] = f"{float(existing_fzr_entry.get('phonepe') or 0.0):.2f}" if existing_fzr_entry else "0.00"
+                    st.session_state[k_f_ph] = "0.00"
                 if k_f_cs not in st.session_state:
-                    st.session_state[k_f_cs] = f"{float(existing_fzr_entry.get('cash') or 0.0):.2f}" if existing_fzr_entry else "0.00"
+                    st.session_state[k_f_cs] = "0.00"
                 if k_f_rsn not in st.session_state:
-                    raw_rem = str(existing_fzr_entry.get("remarks") or "") if existing_fzr_entry else ""
-                    st.session_state[k_f_rsn] = re.sub(r"\[(?:Freezer Sale|web app|mobile app)\]", "", raw_rem, flags=re.IGNORECASE).strip()
+                    st.session_state[k_f_rsn] = ""
 
                 fc1, fc2, fc3 = st.columns(3)
                 with fc1:
@@ -3247,10 +3333,11 @@ elif page == "Daily Entry":
                             fzr_leakage_val,
                             fzr_reason
                         )
+                        st.session_state["fzr_sale_form_nonce"] = form_nonce + 1
                         st.cache_data.clear()
                         st.cache_resource.clear()
                         show_success_modal(
-                            f"Freezer sale saved for {freezer_asset_name} on {_entry_date_display(fzr_sale_date)}! Sold: {tot_fzr_sold} units (₹{tot_fzr_value:,.0f})."
+                            f"Freezer sale transaction saved for {freezer_asset_name} on {_entry_date_display(fzr_sale_date)}! Added +{tot_fzr_sold} units (₹{tot_fzr_value:,.0f})."
                         )
                     except Exception as e:
                         st.error(f"Could not save Freezer sale: {e}")
@@ -6064,7 +6151,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
         st.rerun()
 
     st.markdown("---"); st.markdown("### 3. Detailed Stock Movement Logs")
-    m_tab1, m_tab2, m_tab3, m_tab4, m_tab5 = st.tabs(["📋 Purchase Orders", "📦 Received Deliveries", "🔍 Physical Stock Audits", "🗑️ Stock Removed", "➕ Cart Extra Stock"])
+    m_tab1, m_tab2, m_tab3, m_tab4, m_tab5, m_tab6 = st.tabs(["📋 Purchase Orders", "📦 Received Deliveries", "🔍 Physical Stock Audits", "🗑️ Stock Removed", "➕ Cart Extra Stock", "❄️ Freezer Sales"])
 
     with m_tab1:
         po_query_df = db_conn.query("SELECT p.id AS \"PO #\", p.order_date AS \"Order Date\", p.expected_date AS \"Expected Date\", p.location AS \"Location\", p.order_status AS \"Status\", json_agg(json_build_object('code', pi.flavor_code, 'qty', pi.ordered_units)) AS items FROM purchase_orders p LEFT JOIN purchase_order_items pi ON p.id = pi.order_id GROUP BY p.id ORDER BY p.order_date DESC;", ttl="0s")
@@ -6148,6 +6235,76 @@ elif page == "Freezer Analysis" and user_role == "admin":
                 st.caption("No cart extra stock logs recorded in database yet.")
         except Exception as e:
             st.caption(f"Could not load cart_extra_stock_logs: {e}")
+
+    with m_tab6:
+        ft_c1, ft_c2, ft_c3 = st.columns([1.2, 1.4, 1.4])
+        with ft_c1:
+            fa_fzr_mode = st.radio("Filter Mode", ["Month", "Custom Date Range"], horizontal=True, key="fa_fzr_txn_filter_mode")
+        today_ft = date.today()
+        if fa_fzr_mode == "Month":
+            month_names_ft = list(calendar.month_name)[1:]
+            with ft_c2:
+                sel_m_name = st.selectbox("Month", month_names_ft, index=today_ft.month - 1, key="fa_fzr_txn_month")
+                sel_m_num = month_names_ft.index(sel_m_name) + 1
+            with ft_c3:
+                sel_y_num = st.number_input("Year", min_value=2024, max_value=2035, value=today_ft.year, step=1, key="fa_fzr_txn_year")
+            ft_start = date(int(sel_y_num), int(sel_m_num), 1)
+            ft_end = date(int(sel_y_num), int(sel_m_num), calendar.monthrange(int(sel_y_num), int(sel_m_num))[1])
+        else:
+            with ft_c2:
+                ft_start = st.date_input("From Date", value=today_ft.replace(day=1), format="DD-MM-YYYY", key="fa_fzr_txn_from")
+            with ft_c3:
+                ft_end = st.date_input("To Date", value=today_ft, format="DD-MM-YYYY", key="fa_fzr_txn_to")
+
+        fa_fzr_df = load_freezer_sale_transactions_df(start_date=ft_start, end_date=ft_end)
+        if fa_fzr_df.empty:
+            st.caption("No Freezer sale transactions recorded in the selected date range.")
+        else:
+            fa_rows = []
+            for _, r in fa_fzr_df.iterrows():
+                row_d = {
+                    "Txn #": f"#{int(r['id'])}",
+                    "Date": pd.to_datetime(r["sale_date"]).strftime("%d-%b-%y"),
+                    "Time": pd.to_datetime(r["created_at"]).strftime("%I:%M %p") if pd.notna(r.get("created_at")) else "—",
+                    "Freezer": r["freezer_name"],
+                    "Sold By": r.get("sold_by") or "—",
+                    "Units Sold": int(r.get("total_units") or 0),
+                    "Total Value (₹)": f"₹{float(r.get('total_value') or 0):,.0f}",
+                    "PhonePe (₹)": f"₹{float(r.get('phonepe') or 0):,.0f}",
+                    "Cash (₹)": f"₹{float(r.get('cash') or 0):,.0f}",
+                    "Leakage (₹)": f"₹{float(r.get('leakage') or 0):,.0f}",
+                }
+                for code in FLAVOR_CODES:
+                    row_d[code] = int(r.get(FLAVOR_MAP[code]["audit_col"], 0))
+                row_d["Reason"] = r.get("reason") or "—"
+                fa_rows.append(row_d)
+
+            tot_row = {
+                "Txn #": "SUMMARY TOTAL",
+                "Date": f"{len(fa_fzr_df)} txn(s)",
+                "Time": "—",
+                "Freezer": "—",
+                "Sold By": "—",
+                "Units Sold": int(fa_fzr_df["total_units"].sum()),
+                "Total Value (₹)": f"₹{float(fa_fzr_df['total_value'].sum()):,.0f}",
+                "PhonePe (₹)": f"₹{float(fa_fzr_df['phonepe'].sum()):,.0f}",
+                "Cash (₹)": f"₹{float(fa_fzr_df['cash'].sum()):,.0f}",
+                "Leakage (₹)": f"₹{float(fa_fzr_df['leakage'].sum()):,.0f}",
+            }
+            for code in FLAVOR_CODES:
+                tot_row[code] = int(fa_fzr_df[FLAVOR_MAP[code]["audit_col"]].sum())
+            tot_row["Reason"] = "—"
+            fa_rows.append(tot_row)
+
+            fa_disp_df = pd.DataFrame(fa_rows)
+            st.dataframe(
+                fa_disp_df.style.apply(
+                    lambda r: ["background-color:#FFF2DC;font-weight:900;color:#4A2418;" if r.get("Txn #") == "SUMMARY TOTAL" else "" for _ in r],
+                    axis=1
+                ),
+                hide_index=True,
+                use_container_width=True
+            )
 
 elif page == "Stock Removed" and user_role == "admin":
     st.subheader("Stock Removed / Wastage Log")
@@ -9004,6 +9161,108 @@ elif page == "Dashboard" and user_role == "admin":
                 _render_report_total_row(cart_total)
         else:
             st.caption("No sales data recorded in this period.")
+
+        # ------------------------------------------------------------------
+        # FREEZER SALE TRANSACTIONS & SUMMARY (Filtered by Dashboard Month / Custom Date Range)
+        # ------------------------------------------------------------------
+        st.markdown("---")
+        with st.expander(f"❄️ View Freezer Sale Transactions & Summary ({range_start.strftime('%d-%b-%y')} – {range_end.strftime('%d-%b-%y')})", expanded=True):
+            fzr_txns_df = load_freezer_sale_transactions_df(start_date=range_start, end_date=range_end)
+            if fzr_txns_df.empty:
+                st.caption("No direct Freezer sale transactions recorded in this period.")
+            else:
+                # 1. Date-wise Summary of Freezer Sales
+                st.markdown("##### 📊 Freezer Sales Summary (By Date)")
+                fzr_date_grp = (
+                    fzr_txns_df.groupby(["sale_date", "freezer_name"], as_index=False)
+                    .agg(
+                        txns_count=("id", "count"),
+                        total_units=("total_units", "sum"),
+                        total_value=("total_value", "sum"),
+                        phonepe=("phonepe", "sum"),
+                        cash=("cash", "sum"),
+                        leakage=("leakage", "sum"),
+                    )
+                    .sort_values("sale_date", ascending=False)
+                )
+                sum_rows = []
+                for _, sr in fzr_date_grp.iterrows():
+                    sum_rows.append({
+                        "Date": pd.to_datetime(sr["sale_date"]).strftime("%d-%b-%y"),
+                        "Freezer": sr["freezer_name"],
+                        "Txns": int(sr["txns_count"]),
+                        "Units Sold": int(sr["total_units"]),
+                        "Total Value (₹)": f"₹{float(sr['total_value']):,.0f}",
+                        "PhonePe (₹)": f"₹{float(sr['phonepe']):,.0f}",
+                        "Cash (₹)": f"₹{float(sr['cash']):,.0f}",
+                        "Leakage (₹)": f"₹{float(sr['leakage']):,.0f}",
+                    })
+                sum_rows.append({
+                    "Date": "SUMMARY TOTAL",
+                    "Freezer": "—",
+                    "Txns": int(fzr_date_grp["txns_count"].sum()),
+                    "Units Sold": int(fzr_date_grp["total_units"].sum()),
+                    "Total Value (₹)": f"₹{float(fzr_date_grp['total_value'].sum()):,.0f}",
+                    "PhonePe (₹)": f"₹{float(fzr_date_grp['phonepe'].sum()):,.0f}",
+                    "Cash (₹)": f"₹{float(fzr_date_grp['cash'].sum()):,.0f}",
+                    "Leakage (₹)": f"₹{float(fzr_date_grp['leakage'].sum()):,.0f}",
+                })
+                sum_table_df = pd.DataFrame(sum_rows)
+                st.dataframe(
+                    sum_table_df.style.apply(
+                        lambda r: ["background-color:#FFF2DC;font-weight:900;color:#4A2418;" if r.get("Date") == "SUMMARY TOTAL" else "" for _ in r],
+                        axis=1
+                    ),
+                    hide_index=True,
+                    use_container_width=True
+                )
+
+                # 2. Individual Freezer Sale Transactions Table
+                st.markdown("##### 🧾 Individual Freezer Sale Transactions")
+                txn_rows = []
+                for _, tr in fzr_txns_df.iterrows():
+                    flv_parts = [
+                        f"{code}:{int(tr.get(FLAVOR_MAP[code]['audit_col'], 0))}"
+                        for code in FLAVOR_CODES
+                        if int(tr.get(FLAVOR_MAP[code]["audit_col"], 0)) > 0
+                    ]
+                    txn_rows.append({
+                        "Txn #": f"#{int(tr['id'])}",
+                        "Date": pd.to_datetime(tr["sale_date"]).strftime("%d-%b-%y"),
+                        "Time": pd.to_datetime(tr["created_at"]).strftime("%I:%M %p") if pd.notna(tr.get("created_at")) else "—",
+                        "Freezer": tr["freezer_name"],
+                        "Sold By": tr.get("sold_by") or "—",
+                        "Units": int(tr.get("total_units") or 0),
+                        "Total Value (₹)": f"₹{float(tr.get('total_value') or 0):,.0f}",
+                        "PhonePe (₹)": f"₹{float(tr.get('phonepe') or 0):,.0f}",
+                        "Cash (₹)": f"₹{float(tr.get('cash') or 0):,.0f}",
+                        "Leakage (₹)": f"₹{float(tr.get('leakage') or 0):,.0f}",
+                        "Flavours": " • ".join(flv_parts) if flv_parts else "—",
+                        "Reason": tr.get("reason") or "—",
+                    })
+                txn_rows.append({
+                    "Txn #": "SUMMARY TOTAL",
+                    "Date": f"{len(fzr_txns_df)} txn(s)",
+                    "Time": "—",
+                    "Freezer": "—",
+                    "Sold By": "—",
+                    "Units": int(fzr_txns_df["total_units"].sum()),
+                    "Total Value (₹)": f"₹{float(fzr_txns_df['total_value'].sum()):,.0f}",
+                    "PhonePe (₹)": f"₹{float(fzr_txns_df['phonepe'].sum()):,.0f}",
+                    "Cash (₹)": f"₹{float(fzr_txns_df['cash'].sum()):,.0f}",
+                    "Leakage (₹)": f"₹{float(fzr_txns_df['leakage'].sum()):,.0f}",
+                    "Flavours": "—",
+                    "Reason": "—",
+                })
+                txn_table_df = pd.DataFrame(txn_rows)
+                st.dataframe(
+                    txn_table_df.style.apply(
+                        lambda r: ["background-color:#FFF2DC;font-weight:900;color:#4A2418;" if r.get("Txn #") == "SUMMARY TOTAL" else "" for _ in r],
+                        axis=1
+                    ),
+                    hide_index=True,
+                    use_container_width=True
+                )
 
         # ------------------------------------------------------------------
         # MONTH-WISE FULL-DATA COMPARISON TABLE & GRAPHIC VIEW
