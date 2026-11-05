@@ -1704,6 +1704,253 @@ def sync_freezer_sale_entry(sale_date, freezer_name, staff_name, sold_map, total
                 )
             s.commit()
 
+def reconcile_freezer_daily_entry(s, sale_date, freezer_name, loc_code=None):
+    """Recompute daily_cart_entries + daily_cart_items + auto leakage expense for (sale_date, freezer_name)
+    from all remaining rows in public.freezer_sale_transactions."""
+    web_tag = "[Freezer Sale] [web app]"
+    loc_val = str(loc_code or CITY).strip().upper()
+
+    txns = s.execute(
+        text("""
+        SELECT id, sold_by, ml_units, mm_units, ps_units, mn_units, kb_units,
+               bm_units, sg_units, ch_units, ra_units,
+               total_units, total_value, phonepe, cash, leakage, reason
+        FROM public.freezer_sale_transactions
+        WHERE sale_date = :dt AND freezer_name = :fname
+        ORDER BY id ASC;
+        """),
+        {"dt": sale_date, "fname": freezer_name}
+    ).mappings().all()
+
+    existing_entry = s.execute(
+        text("SELECT id FROM daily_cart_entries WHERE entry_date = :dt AND cart_name = :cart FOR UPDATE;"),
+        {"dt": sale_date, "cart": freezer_name}
+    ).fetchone()
+
+    if not txns:
+        if existing_entry:
+            eid = int(existing_entry[0])
+            s.execute(text("DELETE FROM expenses WHERE remarks LIKE :tag;"), {"tag": f"[Auto: Daily Entry #{eid}]%"})
+            s.execute(text("DELETE FROM daily_cart_items WHERE daily_entry_id = :eid;"), {"eid": eid})
+            has_handover = s.execute(
+                text("SELECT 1 FROM public.cash_handover_items WHERE daily_entry_id = :eid LIMIT 1;"),
+                {"eid": eid}
+            ).fetchone()
+            if has_handover:
+                s.execute(
+                    text("""
+                    UPDATE daily_cart_entries
+                    SET total_collection = 0, phonepe = 0, cash = 0,
+                        cash_leakage_explained = 0, cash_leakage_unexplained = 0,
+                        cash_leakage = 0, remarks = '[Freezer Sale Cleared]'
+                    WHERE id = :eid;
+                    """),
+                    {"eid": eid}
+                )
+            else:
+                s.execute(text("DELETE FROM daily_cart_entries WHERE id = :eid;"), {"eid": eid})
+        return None
+
+    sum_tot = sum(float(r["total_value"] or 0.0) for r in txns)
+    sum_ph = sum(float(r["phonepe"] or 0.0) for r in txns)
+    sum_cs = sum(float(r["cash"] or 0.0) for r in txns)
+    sum_lk = sum(float(r["leakage"] or 0.0) for r in txns)
+    latest_staff = next((str(r["sold_by"]).strip() for r in reversed(txns) if r.get("sold_by")), None)
+    reasons_list = [str(r["reason"]).strip() for r in txns if r.get("reason") and str(r["reason"]).strip()]
+    combined_reason = " | ".join(reasons_list)
+    remarks_text = f"{combined_reason} {web_tag}".strip() if combined_reason else web_tag
+
+    res = s.execute(
+        text("""
+        INSERT INTO daily_cart_entries (
+            entry_date, cart_name, city, staff_name, total_collection, phonepe, cash,
+            staff_advance, food_tea_cash, cash_leakage_explained, cash_leakage_unexplained,
+            cash_leakage, remarks
+        ) VALUES (
+            :dt, :cart, :city, :staff, :tot, :ph, :cash,
+            0, 0, :leak, 0, :leak, :rem
+        )
+        ON CONFLICT (entry_date, cart_name) DO UPDATE
+        SET staff_name = EXCLUDED.staff_name,
+            total_collection = EXCLUDED.total_collection,
+            phonepe = EXCLUDED.phonepe,
+            cash = EXCLUDED.cash,
+            cash_leakage_explained = EXCLUDED.cash_leakage_explained,
+            cash_leakage_unexplained = 0,
+            cash_leakage = EXCLUDED.cash_leakage,
+            remarks = EXCLUDED.remarks
+        RETURNING id;
+        """),
+        {
+            "dt": sale_date,
+            "cart": freezer_name,
+            "city": loc_val,
+            "staff": latest_staff,
+            "tot": sum_tot,
+            "ph": sum_ph,
+            "cash": sum_cs,
+            "leak": sum_lk,
+            "rem": remarks_text,
+        }
+    )
+    daily_id = int(res.scalar())
+
+    s.execute(text("DELETE FROM daily_cart_items WHERE daily_entry_id = :id;"), {"id": daily_id})
+    for code in FLAVOR_CODES:
+        col_name = FLAVOR_MAP[code]["audit_col"]
+        code_qty = sum(max(0, int(r.get(col_name) or 0)) for r in txns)
+        s.execute(
+            text("""
+            INSERT INTO daily_cart_items (daily_entry_id, flavor_code, opening_units, added_units, sold_units, closing_units)
+            VALUES (:eid, :code, 0, 0, :sold, 0);
+            """),
+            {"eid": daily_id, "code": code, "sold": code_qty}
+        )
+
+    s.execute(
+        text("UPDATE public.freezer_sale_transactions SET daily_entry_id = :eid WHERE sale_date = :dt AND freezer_name = :fname;"),
+        {"eid": daily_id, "dt": sale_date, "fname": freezer_name}
+    )
+
+    s.execute(text("DELETE FROM expenses WHERE remarks LIKE :tag;"), {"tag": f"[Auto: Daily Entry #{daily_id}]%"})
+    if sum_lk > 0.001:
+        s.execute(
+            text("""
+            INSERT INTO expenses (
+                expense_date, month, expense_type, category, sub_category,
+                description, total_amount, attributed_to, vendor_name,
+                staff_name, status, recorded_by, remarks
+            ) VALUES (
+                :ed, :mo, 'OPEX', 'Leakage Expense', 'Cash Leakage',
+                :desc, :amt, :attr, NULL, :staff, 'Not Applicable', 'Freezer Sale Auto', :rem
+            );
+            """),
+            {
+                "ed": sale_date,
+                "mo": list(calendar.month_name)[sale_date.month],
+                "desc": f"Freezer Sale Leakage ({freezer_name}): {combined_reason}" if combined_reason else f"Freezer Sale Leakage ({freezer_name})",
+                "amt": float(sum_lk),
+                "attr": "Central / Freezer",
+                "staff": latest_staff,
+                "rem": f"[Auto: Daily Entry #{daily_id}] Freezer Leakage",
+            }
+        )
+    return daily_id
+
+
+def update_freezer_sale_transaction(txn_id, new_sale_date, freezer_name, staff_name, sold_map, total_val, phonepe_val, cash_val, leakage_val, reason_text):
+    if db_conn is None:
+        return
+    clean_reason = str(reason_text or "").strip()
+    leakage_val = max(0.0, float(leakage_val or 0.0))
+    tot_units = sum(max(0, int(sold_map.get(c, 0))) for c in FLAVOR_CODES)
+
+    with db_conn.session as s:
+        old_row = s.execute(
+            text("SELECT sale_date, freezer_name, location FROM public.freezer_sale_transactions WHERE id = :tid FOR UPDATE;"),
+            {"tid": int(txn_id)}
+        ).fetchone()
+        if not old_row:
+            raise ValueError(f"Freezer sale transaction #{txn_id} was not found.")
+        old_date = pd.to_datetime(old_row[0]).date()
+        old_freezer = str(old_row[1] or freezer_name)
+        old_loc = str(old_row[2] or CITY)
+
+        s.execute(
+            text("""
+            UPDATE public.freezer_sale_transactions
+            SET sale_date = :dt,
+                freezer_name = :fname,
+                sold_by = :staff,
+                ml_units = :ml, mm_units = :mm, ps_units = :ps, mn_units = :mn, kb_units = :kb,
+                bm_units = :bm, sg_units = :sg, ch_units = :ch, ra_units = :ra,
+                total_units = :tunits,
+                total_value = :tval,
+                phonepe = :ph,
+                cash = :cs,
+                leakage = :lk,
+                reason = :reason
+            WHERE id = :tid;
+            """),
+            {
+                "tid": int(txn_id),
+                "dt": new_sale_date,
+                "fname": freezer_name,
+                "staff": staff_name or None,
+                "ml": max(0, int(sold_map.get("ML", 0))),
+                "mm": max(0, int(sold_map.get("MM", 0))),
+                "ps": max(0, int(sold_map.get("PS", 0))),
+                "mn": max(0, int(sold_map.get("MN", 0))),
+                "kb": max(0, int(sold_map.get("KB", 0))),
+                "bm": max(0, int(sold_map.get("BM", 0))),
+                "sg": max(0, int(sold_map.get("SG", 0))),
+                "ch": max(0, int(sold_map.get("CH", 0))),
+                "ra": max(0, int(sold_map.get("RA", 0))),
+                "tunits": tot_units,
+                "tval": float(total_val or 0.0),
+                "ph": float(phonepe_val or 0.0),
+                "cs": float(cash_val or 0.0),
+                "lk": leakage_val,
+                "reason": clean_reason or None,
+            }
+        )
+
+        if old_date != new_sale_date or old_freezer != freezer_name:
+            reconcile_freezer_daily_entry(s, old_date, old_freezer, old_loc)
+        reconcile_freezer_daily_entry(s, new_sale_date, freezer_name, old_loc)
+        s.commit()
+
+
+def delete_freezer_sale_transaction(txn_id):
+    if db_conn is None:
+        return
+    with db_conn.session as s:
+        old_row = s.execute(
+            text("SELECT sale_date, freezer_name, location FROM public.freezer_sale_transactions WHERE id = :tid FOR UPDATE;"),
+            {"tid": int(txn_id)}
+        ).fetchone()
+        if not old_row:
+            return
+        old_date = pd.to_datetime(old_row[0]).date()
+        old_freezer = str(old_row[1])
+        old_loc = str(old_row[2] or CITY)
+
+        s.execute(text("DELETE FROM public.freezer_sale_transactions WHERE id = :tid;"), {"tid": int(txn_id)})
+        reconcile_freezer_daily_entry(s, old_date, old_freezer, old_loc)
+        s.commit()
+
+
+@st.dialog("⚠️ Confirm Delete Freezer Sale")
+def confirm_delete_freezer_sale_modal(txn_row):
+    tid = int(txn_row["id"])
+    t_dt = pd.to_datetime(txn_row["sale_date"]).strftime("%d-%b-%Y")
+    st.warning(f"Are you sure you want to permanently delete **Freezer Sale #{tid}**?")
+    st.markdown(
+        f'''
+        <div style="background:#FFFBF2;border:1px solid #E3CBA0;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:13px;">
+            <div><b>Date:</b> {t_dt} &nbsp;|&nbsp; <b>Freezer:</b> {escape(str(txn_row.get("freezer_name") or "Freezer"))} &nbsp;|&nbsp; <b>Sold By:</b> {escape(str(txn_row.get("sold_by") or "—"))}</div>
+            <div><b>Total Units:</b> {int(txn_row.get("total_units") or 0)} pcs &nbsp;|&nbsp; <b>Total Value:</b> ₹{float(txn_row.get("total_value") or 0):,.0f}</div>
+            <div><b>PhonePe:</b> ₹{float(txn_row.get("phonepe") or 0):,.0f} &nbsp;|&nbsp; <b>Cash:</b> ₹{float(txn_row.get("cash") or 0):,.0f} &nbsp;|&nbsp; <b>Leakage:</b> ₹{float(txn_row.get("leakage") or 0):,.0f}</div>
+        </div>
+        ''',
+        unsafe_allow_html=True,
+    )
+    c1, c2 = st.columns(2)
+    with c1:
+        if st.button("🗑️ Yes, Delete Freezer Sale", type="primary", use_container_width=True, key=f"confirm_del_fzr_txn_{tid}"):
+            try:
+                delete_freezer_sale_transaction(tid)
+                st.session_state.pop("_editing_freezer_txn_id", None)
+                st.cache_data.clear()
+                st.cache_resource.clear()
+                st.rerun()
+            except Exception as e:
+                st.error(f"Could not delete Freezer sale: {e}")
+    with c2:
+        if st.button("Cancel", use_container_width=True, key=f"cancel_del_fzr_txn_{tid}"):
+            st.rerun()
+
+
 def load_freezer_sale_transactions_df(start_date=None, end_date=None):
     if db_conn is None:
         return pd.DataFrame()
@@ -2866,6 +3113,8 @@ elif page == "Daily Entry":
                 st.caption("Direct sales from Freezer stock with live MRP & leakage calculation")
                 if st.button("Open Sales (Freezer) →", key="open_freezer_sales_entry", type="primary", use_container_width=True):
                     st.session_state["fzr_sale_form_nonce"] = int(st.session_state.get("fzr_sale_form_nonce", 0)) + 1
+                    st.session_state["fzr_entry_sub_mode"] = "new"
+                    st.session_state.pop("_editing_freezer_txn_id", None)
                     st.session_state["daily_entry_mode"] = "freezer_sales"
                     st.rerun()
     else:
@@ -3178,169 +3427,346 @@ elif page == "Daily Entry":
                             st.error(f"Could not save Sales Entry - {e}")
 
         # --------------------------------------------------------------
-        # SALES ENTRY (FREEZER) — Always a fresh transaction entry
+        # SALES ENTRY (FREEZER) — New Entry (Default) + Edit/Delete Previous Entries
         # --------------------------------------------------------------
         elif entry_mode == "freezer_sales":
-            st.subheader("❄️ Sales Entry (Freezer)")
-            st.caption("Record a new direct kulfi sale transaction from the location's Freezer.")
+            if "fzr_entry_sub_mode" not in st.session_state:
+                st.session_state["fzr_entry_sub_mode"] = "new"
+
+            fzr_sub_mode = st.session_state["fzr_entry_sub_mode"]
+            editing_txn_id = st.session_state.get("_editing_freezer_txn_id")
+
+            hdr_c1, hdr_c2, hdr_c3 = st.columns([2.4, 1.3, 1.3], gap="small")
+            with hdr_c1:
+                st.subheader("❄️ Sales Entry (Freezer)")
+                st.caption("Record a new direct Freezer sale or edit/delete previous Freezer sale transactions.")
+            with hdr_c2:
+                st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
+                if st.button(
+                    "➕ New Freezer Sale Entry",
+                    key="btn_fzr_mode_new",
+                    type="primary" if fzr_sub_mode == "new" else "secondary",
+                    use_container_width=True
+                ):
+                    st.session_state["fzr_entry_sub_mode"] = "new"
+                    st.session_state.pop("_editing_freezer_txn_id", None)
+                    st.session_state["fzr_sale_form_nonce"] = int(st.session_state.get("fzr_sale_form_nonce", 0)) + 1
+                    st.rerun()
+            with hdr_c3:
+                st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
+                if st.button(
+                    f"✏️ Editing Sale #{editing_txn_id}" if (fzr_sub_mode == "edit" and editing_txn_id) else "✏️ Edit Previous Entries",
+                    key="btn_fzr_mode_list",
+                    type="primary" if fzr_sub_mode in ("list", "edit") else "secondary",
+                    use_container_width=True
+                ):
+                    st.session_state["fzr_entry_sub_mode"] = "list"
+                    st.session_state.pop("_editing_freezer_txn_id", None)
+                    st.rerun()
 
             freezer_asset_name = get_freezer_asset_name_for_location(CITY)
             staff_options = load_active_staff_list()
-            form_nonce = int(st.session_state.get("fzr_sale_form_nonce", 0))
 
-            fs_top1, fs_top2 = st.columns([1, 1.2])
-            with fs_top1:
-                fzr_sale_date = st.date_input(
-                    "Sale Date",
-                    value=today_val,
-                    max_value=today_val,
-                    format="DD-MM-YYYY",
-                    key=f"fzr_sale_date_picker_{form_nonce}"
-                )
-            date_key_str = f"{fzr_sale_date.strftime('%Y%m%d')}_{form_nonce}"
+            # ==========================================================
+            # MODE A: LIST OF PREVIOUS FREEZER SALE TRANSACTIONS
+            # ==========================================================
+            if fzr_sub_mode == "list":
+                prev_txns_df = load_freezer_sale_transactions_df()
+                if prev_txns_df.empty:
+                    st.info("No previous Freezer sale transactions found.")
+                else:
+                    st.caption("💡 Actions per row: **✏️** Edit Transaction &nbsp;|&nbsp; **❌** Delete Transaction")
+                    col_w = [0.65, 0.85, 0.80, 1.05, 1.05, 0.65, 0.85, 0.85, 0.85, 0.85, 1.55, 1.15, 0.42, 0.42]
+                    hdrs = [
+                        ("Txn #", "Transaction ID"),
+                        ("Date", "Sale Date"),
+                        ("Time", "Submitted Time"),
+                        ("Freezer", "Freezer Name"),
+                        ("Sold By", "Staff Member"),
+                        ("Units", "Total Units Sold"),
+                        ("Value", "Total Sale Value"),
+                        ("PhonePe", "PhonePe Collected"),
+                        ("Cash", "Cash Collected"),
+                        ("Leakage", "Leakage Amount"),
+                        ("Flavours", "Flavour Breakdown"),
+                        ("Reason", "Reason / Remarks"),
+                        ("Edit", "Edit Transaction"),
+                        ("Del", "Delete Transaction"),
+                    ]
+                    h_cols = st.columns(col_w, gap="small")
+                    for hc, (h_txt, h_tip) in zip(h_cols, hdrs):
+                        align = "justify-content:flex-end;" if h_txt in ("Value", "PhonePe", "Cash", "Leakage") else ("justify-content:center;" if h_txt in ("Txn #", "Date", "Time", "Units", "Edit", "Del") else "")
+                        hc.markdown(f"<div class='ledger-tbl-header' style='{align}' title='{escape(h_tip)}'>{h_txt}</div>", unsafe_allow_html=True)
 
-            with fs_top2:
-                fzr_staff_key = f"fzr_sale_staff_{freezer_asset_name}_{date_key_str}"
-                if fzr_staff_key not in st.session_state:
-                    st.session_state[fzr_staff_key] = staff_options[1] if len(staff_options) > 1 else "Select Staff"
-                fzr_sold_by = st.selectbox(
-                    "Sold By (Staff)",
-                    staff_options,
-                    index=staff_options.index(st.session_state[fzr_staff_key]) if st.session_state[fzr_staff_key] in staff_options else 0,
-                    key=fzr_staff_key
-                )
+                    for _, tr in prev_txns_df.head(100).iterrows():
+                        tid = int(tr["id"])
+                        dt_s = pd.to_datetime(tr["sale_date"]).strftime("%d-%b-%y")
+                        tm_s = pd.to_datetime(tr["created_at"]).strftime("%I:%M %p") if pd.notna(tr.get("created_at")) else "—"
+                        fn_s = str(tr.get("freezer_name") or freezer_asset_name)
+                        sb_s = str(tr.get("sold_by") or "—")
+                        un_v = int(tr.get("total_units") or 0)
+                        vl_v = float(tr.get("total_value") or 0.0)
+                        ph_v = float(tr.get("phonepe") or 0.0)
+                        cs_v = float(tr.get("cash") or 0.0)
+                        lk_v = float(tr.get("leakage") or 0.0)
+                        flv_str = " • ".join([
+                            f"{code}:{int(tr.get(FLAVOR_MAP[code]['audit_col'], 0))}"
+                            for code in FLAVOR_CODES
+                            if int(tr.get(FLAVOR_MAP[code]["audit_col"], 0)) > 0
+                        ]) or "—"
+                        rsn_s = str(tr.get("reason") or "—")
 
-            curr_fzr_stock_map = get_physical_current_stock_map()
-            fzr_sold_map = {}
-            fzr_val_map = {}
+                        rc = st.columns(col_w, gap="small")
+                        rc[0].markdown(f"<div class='ledger-cell' style='justify-content:center;'>#{tid}</div>", unsafe_allow_html=True)
+                        rc[1].markdown(f"<div class='ledger-cell' style='justify-content:center;'>{dt_s}</div>", unsafe_allow_html=True)
+                        rc[2].markdown(f"<div class='ledger-cell' style='justify-content:center;'>{tm_s}</div>", unsafe_allow_html=True)
+                        rc[3].markdown(f"<div class='ledger-cell' title='{escape(fn_s)}'>{escape(fn_s)}</div>", unsafe_allow_html=True)
+                        rc[4].markdown(f"<div class='ledger-cell' title='{escape(sb_s)}'>{escape(sb_s)}</div>", unsafe_allow_html=True)
+                        rc[5].markdown(f"<div class='ledger-cell' style='justify-content:center;font-weight:900;'>{un_v}</div>", unsafe_allow_html=True)
+                        rc[6].markdown(f"<div class='ledger-amt-paid'>₹{vl_v:,.0f}</div>", unsafe_allow_html=True)
+                        rc[7].markdown(f"<div class='ledger-amt-total'>₹{ph_v:,.0f}</div>", unsafe_allow_html=True)
+                        rc[8].markdown(f"<div class='ledger-amt-total'>₹{cs_v:,.0f}</div>", unsafe_allow_html=True)
+                        lk_cls = "ledger-amt-due" if lk_v > 0.009 else "ledger-cell"
+                        rc[9].markdown(f"<div class='{lk_cls}' style='justify-content:flex-end;'>₹{lk_v:,.0f}</div>", unsafe_allow_html=True)
+                        rc[10].markdown(f"<div class='ledger-cell-desc' title='{escape(flv_str)}'><span>{escape(flv_str)}</span></div>", unsafe_allow_html=True)
+                        rc[11].markdown(f"<div class='ledger-cell-desc' title='{escape(rsn_s)}'><span>{escape(rsn_s)}</span></div>", unsafe_allow_html=True)
 
-            st.markdown(
-                f"<div class='header-box-sales'><span>❄️ New Direct Freezer Sale — {_entry_date_display(fzr_sale_date)}</span><span><b>{escape(freezer_asset_name)}</b></span></div>",
-                unsafe_allow_html=True,
-            )
-            with st.container(border=True):
-                fhc1, fhc2, fhc3, fhc4, fhc5 = st.columns([2.0, 1.0, 0.9, 1.1, 1.2], gap="small")
-                fhc1.markdown("<div class='entry-grid-header' style='text-align:left;'>Flavour</div>", unsafe_allow_html=True)
-                fhc2.markdown("<div class='entry-grid-header'>Current Stock</div>", unsafe_allow_html=True)
-                fhc3.markdown("<div class='entry-grid-header'>MRP</div>", unsafe_allow_html=True)
-                fhc4.markdown("<div class='entry-grid-header'>Sold Units ✏️</div>", unsafe_allow_html=True)
-                fhc5.markdown("<div class='entry-grid-header' style='text-align:right;'>Value (₹)</div>", unsafe_allow_html=True)
+                        if rc[12].button("✏️", key=f"row_edit_fzr_txn_{tid}", help="Edit Freezer Sale", use_container_width=True):
+                            st.session_state["_editing_freezer_txn_id"] = tid
+                            st.session_state["fzr_entry_sub_mode"] = "edit"
+                            st.session_state["fzr_sale_form_nonce"] = int(st.session_state.get("fzr_sale_form_nonce", 0)) + 1
+                            st.rerun()
+                        if rc[13].button("❌", key=f"row_del_fzr_txn_{tid}", help="Delete Freezer Sale", use_container_width=True):
+                            confirm_delete_freezer_sale_modal(tr.to_dict())
 
-                for code in FLAVOR_CODES:
-                    f_info = FLAVOR_MAP[code]
-                    curr_stock_val = int(curr_fzr_stock_map.get(code, 0))
-                    mrp_val = float(f_info["mrp"])
-                    k_sold = f"fzr_sold_{freezer_asset_name}_{date_key_str}_{code}"
-                    if k_sold not in st.session_state:
-                        st.session_state[k_sold] = 0
+            # ==========================================================
+            # MODE B & C: NEW FREEZER SALE ENTRY OR EDIT EXISTING ENTRY
+            # ==========================================================
+            else:
+                editing_row = None
+                if fzr_sub_mode == "edit" and editing_txn_id is not None:
+                    all_txns_df = load_freezer_sale_transactions_df()
+                    match_df = all_txns_df[all_txns_df["id"] == int(editing_txn_id)] if not all_txns_df.empty else pd.DataFrame()
+                    if match_df.empty:
+                        st.session_state["fzr_entry_sub_mode"] = "list"
+                        st.session_state.pop("_editing_freezer_txn_id", None)
+                        st.rerun()
+                    else:
+                        editing_row = match_df.iloc[0].to_dict()
+                        freezer_asset_name = str(editing_row.get("freezer_name") or freezer_asset_name)
 
-                    r1, r2, r3, r4, r5 = st.columns([2.0, 1.0, 0.9, 1.1, 1.2], gap="small")
-                    with r1:
-                        st.markdown(f"<div class='entry-grid-cell-flavour'><span>{f_info['name']}</span></div>", unsafe_allow_html=True)
-                    with r2:
-                        st.markdown(f"<div class='entry-grid-cell'>{curr_stock_val}</div>", unsafe_allow_html=True)
-                    with r3:
-                        st.markdown(f"<div class='entry-grid-cell'>₹{mrp_val:.0f}</div>", unsafe_allow_html=True)
-                    with r4:
-                        qty_sold = _int_num(
-                            st.number_input(
-                                f"Freezer Sold {f_info['name']}",
-                                min_value=0,
-                                step=1,
-                                format="%d",
-                                key=k_sold,
-                                label_visibility="collapsed"
-                            )
+                if editing_row:
+                    eb1, eb2 = st.columns([3.8, 1.2])
+                    with eb1:
+                        st.info(
+                            f"✏️ **Editing Freezer Sale #{int(editing_row['id'])}** "
+                            f"(Originally recorded on {pd.to_datetime(editing_row['sale_date']).strftime('%d-%b-%Y')} for {freezer_asset_name})"
                         )
-                    line_val = max(0, qty_sold) * mrp_val
-                    fzr_sold_map[code] = max(0, qty_sold)
-                    fzr_val_map[code] = line_val
-                    with r5:
-                        st.markdown(f"<div class='entry-grid-cell-amount'>₹{line_val:,.0f}</div>", unsafe_allow_html=True)
+                    with eb2:
+                        st.markdown("<div style='height: 4px;'></div>", unsafe_allow_html=True)
+                        if st.button("⬅ Cancel Edit", key="cancel_fzr_txn_edit_btn", use_container_width=True):
+                            st.session_state["fzr_entry_sub_mode"] = "list"
+                            st.session_state.pop("_editing_freezer_txn_id", None)
+                            st.rerun()
 
-                tot_fzr_stock = sum(int(curr_fzr_stock_map.get(c, 0)) for c in FLAVOR_CODES)
-                tot_fzr_sold = sum(fzr_sold_map.values())
-                tot_fzr_value = float(sum(fzr_val_map.values()))
+                form_nonce = int(st.session_state.get("fzr_sale_form_nonce", 0))
+                mode_tag = f"edit_{int(editing_row['id'])}_{form_nonce}" if editing_row else f"new_{form_nonce}"
+                default_sale_dt = pd.to_datetime(editing_row["sale_date"]).date() if editing_row else today_val
 
-                ft1, ft2, ft3, ft4, ft5 = st.columns([2.0, 1.0, 0.9, 1.1, 1.2], gap="small")
-                ft1.markdown("<div class='entry-grid-total-row' style='text-align:left;'>TOTAL</div>", unsafe_allow_html=True)
-                ft2.markdown(f"<div class='entry-grid-total-row' style='text-align:center;'>{tot_fzr_stock}</div>", unsafe_allow_html=True)
-                ft3.markdown("<div class='entry-grid-total-row' style='text-align:center;'>—</div>", unsafe_allow_html=True)
-                ft4.markdown(f"<div class='entry-grid-total-row' style='text-align:center;color:#C43D17;'>{tot_fzr_sold}</div>", unsafe_allow_html=True)
-                ft5.markdown(f"<div class='entry-grid-total-row' style='text-align:right;color:#124A1D;'>₹{tot_fzr_value:,.0f}</div>", unsafe_allow_html=True)
+                fs_top1, fs_top2 = st.columns([1, 1.2])
+                with fs_top1:
+                    fzr_sale_date = st.date_input(
+                        "Sale Date",
+                        value=default_sale_dt,
+                        max_value=today_val,
+                        format="DD-MM-YYYY",
+                        key=f"fzr_sale_date_picker_{mode_tag}"
+                    )
+                date_key_str = f"{fzr_sale_date.strftime('%Y%m%d')}_{mode_tag}"
 
-                st.markdown("---")
-                k_f_ph = f"fzr_ph_{freezer_asset_name}_{date_key_str}"
-                k_f_cs = f"fzr_cs_{freezer_asset_name}_{date_key_str}"
-                k_f_lk = f"fzr_lk_{freezer_asset_name}_{date_key_str}"
-                k_f_sig = f"fzr_sig_{freezer_asset_name}_{date_key_str}"
-                k_f_rsn = f"fzr_rsn_{freezer_asset_name}_{date_key_str}"
+                default_staff = str(editing_row.get("sold_by") or "") if editing_row else ""
+                if default_staff and default_staff not in staff_options:
+                    staff_options.append(default_staff)
 
-                if k_f_ph not in st.session_state:
-                    st.session_state[k_f_ph] = "0.00"
-                if k_f_cs not in st.session_state:
-                    st.session_state[k_f_cs] = "0.00"
-                if k_f_rsn not in st.session_state:
-                    st.session_state[k_f_rsn] = ""
-
-                fc1, fc2, fc3 = st.columns(3)
-                with fc1:
-                    fzr_phonepe_val = max(0.0, _num(st.text_input("PhonePe / UPI (₹)", key=k_f_ph)))
-                with fc2:
-                    fzr_cash_val = max(0.0, _num(st.text_input("Cash Collected (₹)", key=k_f_cs)))
-
-                # Recalculate leakage on the fly whenever total value, PhonePe, or Cash changes
-                auto_leakage = max(0.0, tot_fzr_value - fzr_phonepe_val - fzr_cash_val)
-                curr_sig = f"{tot_fzr_value:.2f}_{fzr_phonepe_val:.2f}_{fzr_cash_val:.2f}"
-                if st.session_state.get(k_f_sig) != curr_sig:
-                    st.session_state[k_f_lk] = f"{auto_leakage:.2f}"
-                    st.session_state[k_f_sig] = curr_sig
-
-                with fc3:
-                    fzr_leakage_val = max(0.0, _num(st.text_input("Leakage (₹) (Auto-calculated, editable)", key=k_f_lk)))
-
-                if fzr_leakage_val > 0.001:
-                    st.markdown(
-                        "<p style='color:#C41C1C; font-weight:bold; font-size:11.5px; margin: 2px 0 !important;'>"
-                        "⚠️ Reason for leakage is mandatory when leakage is greater than zero."
-                        "</p>",
-                        unsafe_allow_html=True,
+                with fs_top2:
+                    fzr_staff_key = f"fzr_sale_staff_{freezer_asset_name}_{date_key_str}"
+                    if fzr_staff_key not in st.session_state:
+                        if editing_row and default_staff in staff_options:
+                            st.session_state[fzr_staff_key] = default_staff
+                        else:
+                            st.session_state[fzr_staff_key] = staff_options[1] if len(staff_options) > 1 else "Select Staff"
+                    fzr_sold_by = st.selectbox(
+                        "Sold By (Staff)",
+                        staff_options,
+                        index=staff_options.index(st.session_state[fzr_staff_key]) if st.session_state[fzr_staff_key] in staff_options else 0,
+                        key=fzr_staff_key
                     )
 
-                fzr_reason = st.text_input(
-                    "Reason / Remarks" + (" *" if fzr_leakage_val > 0.001 else ""),
-                    key=k_f_rsn,
-                    placeholder="Mandatory when leakage is positive (e.g. Discount / bulk order / wastage)..."
-                )
+                curr_fzr_stock_map = get_physical_current_stock_map()
+                fzr_sold_map = {}
+                fzr_val_map = {}
 
-            if st.button("💾 Submit Freezer Sale", type="primary", use_container_width=True, key=f"submit_fzr_sale_{date_key_str}"):
-                if tot_fzr_sold <= 0:
-                    st.error("Please enter Sold Units greater than 0 for at least one flavour.")
-                elif fzr_sold_by == "Select Staff" or not str(fzr_sold_by).strip():
-                    st.error("Please select the staff member in 'Sold By'.")
-                elif fzr_leakage_val > 0.001 and not str(fzr_reason or "").strip():
-                    st.error("Reason / Remarks is mandatory while Leakage is positive.")
-                else:
-                    try:
-                        sync_freezer_sale_entry(
-                            fzr_sale_date,
-                            freezer_asset_name,
-                            fzr_sold_by,
-                            fzr_sold_map,
-                            tot_fzr_value,
-                            fzr_phonepe_val,
-                            fzr_cash_val,
-                            fzr_leakage_val,
-                            fzr_reason
+                header_label = (
+                    f"✏️ Edit Freezer Sale #{int(editing_row['id'])} — {_entry_date_display(fzr_sale_date)}"
+                    if editing_row
+                    else f"❄️ New Direct Freezer Sale — {_entry_date_display(fzr_sale_date)}"
+                )
+                st.markdown(
+                    f"<div class='header-box-sales'><span>{header_label}</span><span><b>{escape(freezer_asset_name)}</b></span></div>",
+                    unsafe_allow_html=True,
+                )
+                with st.container(border=True):
+                    fhc1, fhc2, fhc3, fhc4, fhc5 = st.columns([2.0, 1.0, 0.9, 1.1, 1.2], gap="small")
+                    fhc1.markdown("<div class='entry-grid-header' style='text-align:left;'>Flavour</div>", unsafe_allow_html=True)
+                    fhc2.markdown("<div class='entry-grid-header'>Current Stock</div>", unsafe_allow_html=True)
+                    fhc3.markdown("<div class='entry-grid-header'>MRP</div>", unsafe_allow_html=True)
+                    fhc4.markdown("<div class='entry-grid-header'>Sold Units ✏️</div>", unsafe_allow_html=True)
+                    fhc5.markdown("<div class='entry-grid-header' style='text-align:right;'>Value (₹)</div>", unsafe_allow_html=True)
+
+                    for code in FLAVOR_CODES:
+                        f_info = FLAVOR_MAP[code]
+                        orig_edit_qty = int(editing_row.get(f_info["audit_col"], 0)) if editing_row else 0
+                        curr_stock_val = int(curr_fzr_stock_map.get(code, 0)) + orig_edit_qty
+                        mrp_val = float(f_info["mrp"])
+                        k_sold = f"fzr_sold_{freezer_asset_name}_{date_key_str}_{code}"
+                        if k_sold not in st.session_state:
+                            st.session_state[k_sold] = orig_edit_qty
+
+                        r1, r2, r3, r4, r5 = st.columns([2.0, 1.0, 0.9, 1.1, 1.2], gap="small")
+                        with r1:
+                            st.markdown(f"<div class='entry-grid-cell-flavour'><span>{f_info['name']}</span></div>", unsafe_allow_html=True)
+                        with r2:
+                            st.markdown(f"<div class='entry-grid-cell'>{curr_stock_val}</div>", unsafe_allow_html=True)
+                        with r3:
+                            st.markdown(f"<div class='entry-grid-cell'>₹{mrp_val:.0f}</div>", unsafe_allow_html=True)
+                        with r4:
+                            qty_sold = _int_num(
+                                st.number_input(
+                                    f"Freezer Sold {f_info['name']}",
+                                    min_value=0,
+                                    step=1,
+                                    format="%d",
+                                    key=k_sold,
+                                    label_visibility="collapsed"
+                                )
+                            )
+                        line_val = max(0, qty_sold) * mrp_val
+                        fzr_sold_map[code] = max(0, qty_sold)
+                        fzr_val_map[code] = line_val
+                        with r5:
+                            st.markdown(f"<div class='entry-grid-cell-amount'>₹{line_val:,.0f}</div>", unsafe_allow_html=True)
+
+                    tot_fzr_stock = sum(
+                        int(curr_fzr_stock_map.get(c, 0)) + (int(editing_row.get(FLAVOR_MAP[c]["audit_col"], 0)) if editing_row else 0)
+                        for c in FLAVOR_CODES
+                    )
+                    tot_fzr_sold = sum(fzr_sold_map.values())
+                    tot_fzr_value = float(sum(fzr_val_map.values()))
+
+                    ft1, ft2, ft3, ft4, ft5 = st.columns([2.0, 1.0, 0.9, 1.1, 1.2], gap="small")
+                    ft1.markdown("<div class='entry-grid-total-row' style='text-align:left;'>TOTAL</div>", unsafe_allow_html=True)
+                    ft2.markdown(f"<div class='entry-grid-total-row' style='text-align:center;'>{tot_fzr_stock}</div>", unsafe_allow_html=True)
+                    ft3.markdown("<div class='entry-grid-total-row' style='text-align:center;'>—</div>", unsafe_allow_html=True)
+                    ft4.markdown(f"<div class='entry-grid-total-row' style='text-align:center;color:#C43D17;'>{tot_fzr_sold}</div>", unsafe_allow_html=True)
+                    ft5.markdown(f"<div class='entry-grid-total-row' style='text-align:right;color:#124A1D;'>₹{tot_fzr_value:,.0f}</div>", unsafe_allow_html=True)
+
+                    st.markdown("---")
+                    k_f_ph = f"fzr_ph_{freezer_asset_name}_{date_key_str}"
+                    k_f_cs = f"fzr_cs_{freezer_asset_name}_{date_key_str}"
+                    k_f_lk = f"fzr_lk_{freezer_asset_name}_{date_key_str}"
+                    k_f_sig = f"fzr_sig_{freezer_asset_name}_{date_key_str}"
+                    k_f_rsn = f"fzr_rsn_{freezer_asset_name}_{date_key_str}"
+
+                    if k_f_ph not in st.session_state:
+                        st.session_state[k_f_ph] = f"{float(editing_row.get('phonepe') or 0.0):.2f}" if editing_row else "0.00"
+                    if k_f_cs not in st.session_state:
+                        st.session_state[k_f_cs] = f"{float(editing_row.get('cash') or 0.0):.2f}" if editing_row else "0.00"
+                    if k_f_rsn not in st.session_state:
+                        st.session_state[k_f_rsn] = str(editing_row.get("reason") or "") if editing_row else ""
+
+                    fc1, fc2, fc3 = st.columns(3)
+                    with fc1:
+                        fzr_phonepe_val = max(0.0, _num(st.text_input("PhonePe / UPI (₹)", key=k_f_ph)))
+                    with fc2:
+                        fzr_cash_val = max(0.0, _num(st.text_input("Cash Collected (₹)", key=k_f_cs)))
+
+                    auto_leakage = max(0.0, tot_fzr_value - fzr_phonepe_val - fzr_cash_val)
+                    curr_sig = f"{tot_fzr_value:.2f}_{fzr_phonepe_val:.2f}_{fzr_cash_val:.2f}"
+                    if st.session_state.get(k_f_sig) != curr_sig:
+                        if editing_row and st.session_state.get(k_f_sig) is None:
+                            st.session_state[k_f_lk] = f"{float(editing_row.get('leakage') or auto_leakage):.2f}"
+                        else:
+                            st.session_state[k_f_lk] = f"{auto_leakage:.2f}"
+                        st.session_state[k_f_sig] = curr_sig
+
+                    with fc3:
+                        fzr_leakage_val = max(0.0, _num(st.text_input("Leakage (₹) (Auto-calculated, editable)", key=k_f_lk)))
+
+                    if fzr_leakage_val > 0.001:
+                        st.markdown(
+                            "<p style='color:#C41C1C; font-weight:bold; font-size:11.5px; margin: 2px 0 !important;'>"
+                            "⚠️ Reason for leakage is mandatory when leakage is greater than zero."
+                            "</p>",
+                            unsafe_allow_html=True,
                         )
-                        st.session_state["fzr_sale_form_nonce"] = form_nonce + 1
-                        st.cache_data.clear()
-                        st.cache_resource.clear()
-                        show_success_modal(
-                            f"Freezer sale transaction saved for {freezer_asset_name} on {_entry_date_display(fzr_sale_date)}! Added +{tot_fzr_sold} units (₹{tot_fzr_value:,.0f})."
-                        )
-                    except Exception as e:
-                        st.error(f"Could not save Freezer sale: {e}")
+
+                    fzr_reason = st.text_input(
+                        "Reason / Remarks" + (" *" if fzr_leakage_val > 0.001 else ""),
+                        key=k_f_rsn,
+                        placeholder="Mandatory when leakage is positive (e.g. Discount / bulk order / wastage)..."
+                    )
+
+                submit_label = "💾 Update Freezer Sale Entry" if editing_row else "💾 Submit Freezer Sale"
+                if st.button(submit_label, type="primary", use_container_width=True, key=f"submit_fzr_sale_{date_key_str}"):
+                    if tot_fzr_sold <= 0:
+                        st.error("Please enter Sold Units greater than 0 for at least one flavour.")
+                    elif fzr_sold_by == "Select Staff" or not str(fzr_sold_by).strip():
+                        st.error("Please select the staff member in 'Sold By'.")
+                    elif fzr_leakage_val > 0.001 and not str(fzr_reason or "").strip():
+                        st.error("Reason / Remarks is mandatory while Leakage is positive.")
+                    else:
+                        try:
+                            if editing_row:
+                                update_freezer_sale_transaction(
+                                    int(editing_row["id"]),
+                                    fzr_sale_date,
+                                    freezer_asset_name,
+                                    fzr_sold_by,
+                                    fzr_sold_map,
+                                    tot_fzr_value,
+                                    fzr_phonepe_val,
+                                    fzr_cash_val,
+                                    fzr_leakage_val,
+                                    fzr_reason
+                                )
+                                st.session_state["fzr_entry_sub_mode"] = "list"
+                                st.session_state.pop("_editing_freezer_txn_id", None)
+                                st.session_state["fzr_sale_form_nonce"] = form_nonce + 1
+                                st.cache_data.clear()
+                                st.cache_resource.clear()
+                                show_success_modal(
+                                    f"Freezer Sale #{int(editing_row['id'])} updated! Total: {tot_fzr_sold} units (₹{tot_fzr_value:,.0f})."
+                                )
+                            else:
+                                sync_freezer_sale_entry(
+                                    fzr_sale_date,
+                                    freezer_asset_name,
+                                    fzr_sold_by,
+                                    fzr_sold_map,
+                                    tot_fzr_value,
+                                    fzr_phonepe_val,
+                                    fzr_cash_val,
+                                    fzr_leakage_val,
+                                    fzr_reason
+                                )
+                                st.session_state["fzr_sale_form_nonce"] = form_nonce + 1
+                                st.cache_data.clear()
+                                st.cache_resource.clear()
+                                show_success_modal(
+                                    f"Freezer sale transaction saved for {freezer_asset_name} on {_entry_date_display(fzr_sale_date)}! Added +{tot_fzr_sold} units (₹{tot_fzr_value:,.0f})."
+                                )
+                        except Exception as e:
+                            st.error(f"Could not save Freezer sale: {e}")
 
         # --------------------------------------------------------------
         # RESTOCK ENTRY
