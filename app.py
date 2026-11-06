@@ -5957,22 +5957,16 @@ elif page == "Freezer Stock" and user_role == "admin":
                             if rec["discount_pct"] > 0
                             else ""
                         )
-                        st.markdown(
-                            f"""
-                            <div style='background:#EAF4EC;border:1.5px solid #A8D5AF;border-radius:8px;padding:8px 14px;
-                                        display:flex;justify-content:space-between;align-items:center;margin-top:4px;'>
-                                <span style='font-weight:800;color:#124A1D;font-size:13px;'>
-                                    Total Units Received: <b>{rec['total_units']:,} pcs</b>
-                                    {f" (Damaged: {rec['total_damaged']} pcs)" if rec['total_damaged'] > 0 else ""}
-                                </span>
-                                <span style='font-weight:900;color:#124A1D;font-size:14px;'>
-                                    💰 Total Gross Cost: ₹{rec['gross_cost']:,.2f}
-                                    <span style='font-weight:700;font-size:12px;color:#4A2418;'>{disc_badge}</span>
-                                </span>
-                            </div>
-                            """,
-                            unsafe_allow_html=True,
+                        dam_txt = f" (Damaged: {rec['total_damaged']} pcs)" if rec["total_damaged"] > 0 else ""
+                        footer_html = (
+                            "<div style='background:#EAF4EC;border:1.5px solid #A8D5AF;border-radius:8px;padding:8px 14px;"
+                            "display:flex;justify-content:space-between;align-items:center;margin-top:4px;'>"
+                            f"<span style='font-weight:800;color:#124A1D;font-size:13px;'>Total Units Received: <b>{rec['total_units']:,} pcs</b>{dam_txt}</span>"
+                            f"<span style='font-weight:900;color:#124A1D;font-size:14px;'>💰 Total Gross Cost: ₹{rec['gross_cost']:,.2f}"
+                            f"<span style='font-weight:700;font-size:12px;color:#4A2418;'>{disc_badge}</span></span>"
+                            "</div>"
                         )
+                        st.markdown(footer_html, unsafe_allow_html=True)
 
     elif freezer_tab_choice == "Stock Audit (Physical Count)":
         st.write("Log a new physical stock count, or view and edit a previously saved audit.")
