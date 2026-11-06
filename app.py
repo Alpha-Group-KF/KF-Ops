@@ -2700,6 +2700,235 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
     story.append(Paragraph("<i>This is a computer-generated payslip for Kulfi Factory - Hosur Franchise.</i>", ParagraphStyle('Footer', fontName='Helvetica-Oblique', fontSize=8, textColor=colors.gray, alignment=1)))
     doc.build(story); buffer.seek(0); return buffer.getvalue()
 
+def generate_stock_received_report_pdf(receipts_list, location_label="All Locations"):
+    if not REPORTLAB_AVAILABLE:
+        return None
+    from reportlab.platypus import KeepTogether
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=letter,
+        rightMargin=36,
+        leftMargin=36,
+        topMargin=36,
+        bottomMargin=36,
+    )
+    story, styles = [], getSampleStyleSheet()
+
+    title_style = ParagraphStyle(
+        "SRTitleStyle",
+        parent=styles["Heading1"],
+        fontName="Helvetica-Bold",
+        fontSize=15,
+        textColor=colors.HexColor("#8A5E17"),
+        alignment=1,
+    )
+    sub_style = ParagraphStyle(
+        "SRSubStyle",
+        parent=styles["Normal"],
+        fontName="Helvetica",
+        fontSize=9.5,
+        textColor=colors.HexColor("#2A1B10"),
+        alignment=1,
+    )
+    sec_hdr_style = ParagraphStyle(
+        "SRSectionHeader",
+        parent=styles["Heading3"],
+        fontName="Helvetica-Bold",
+        fontSize=10.5,
+        textColor=colors.HexColor("#4A2206"),
+        spaceAfter=4,
+    )
+
+    logo_path = "assets/logo.png"
+    if os.path.exists(logo_path):
+        try:
+            img = RLImage(logo_path, width=46, height=46)
+            header_table = Table(
+                [[img, Paragraph(f"<b>Kulfi Factory — Stock Received Report</b><br/><font size=9>Operating Location: {escape(str(location_label))}</font>", title_style)]],
+                colWidths=[56, 484],
+            )
+        except Exception:
+            header_table = Table(
+                [[Paragraph("<b>Kulfi Factory</b>", title_style), Paragraph(f"<b>Kulfi Factory — Stock Received Report</b><br/><font size=9>Operating Location: {escape(str(location_label))}</font>", title_style)]],
+                colWidths=[80, 460],
+            )
+    else:
+        header_table = Table(
+            [[Paragraph("<b>Kulfi Factory</b>", title_style), Paragraph(f"<b>Kulfi Factory — Stock Received Report</b><br/><font size=9>Operating Location: {escape(str(location_label))}</font>", title_style)]],
+            colWidths=[80, 460],
+        )
+
+    header_table.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "MIDDLE"), ("ALIGN", (1, 0), (1, 0), "CENTER")]))
+    header_table.hAlign = "LEFT"
+    story.append(header_table)
+    story.append(Spacer(1, 8))
+
+    overall_units = sum(int(r["total_units"]) for r in receipts_list)
+    overall_gross = sum(float(r["gross_cost"]) for r in receipts_list)
+    overall_net = sum(float(r["net_cost"]) for r in receipts_list)
+
+    story.append(
+        Paragraph(
+            f"<b>Generated On:</b> {date.today().strftime('%d-%b-%Y')} &nbsp;|&nbsp; "
+            f"<b>Total Receipts:</b> {len(receipts_list)} &nbsp;|&nbsp; "
+            f"<b>Total Units Received:</b> {overall_units:,} pcs &nbsp;|&nbsp; "
+            f"<b>Overall Gross Cost:</b> Rs. {overall_gross:,.2f}",
+            sub_style,
+        )
+    )
+    story.append(Spacer(1, 14))
+
+    for idx, rec in enumerate(receipts_list, start=1):
+        block = []
+        rec_date_str = rec["date_str"]
+        rec_id = rec["id"]
+        loc_str = rec["location"]
+        po_str = rec["po_label"]
+
+        # Receipt Date Header Box
+        hdr_banner = Table(
+            [[
+                Paragraph(
+                    f"<b>{idx}. Stock Receipt Date: {escape(rec_date_str)}</b> &nbsp;&nbsp;"
+                    f"<font size=9 color='#70440E'>(Receipt #{rec_id} • Location: {escape(loc_str)} • {escape(po_str)})</font>",
+                    sec_hdr_style,
+                )
+            ]],
+            colWidths=[540],
+        )
+        hdr_banner.setStyle(
+            TableStyle([
+                ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#FFF2DC")),
+                ("BOX", (0, 0), (-1, -1), 1, colors.HexColor("#DEB887")),
+                ("LEFTPADDING", (0, 0), (-1, -1), 8),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+                ("TOPPADDING", (0, 0), (-1, -1), 5),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+            ])
+        )
+        block.append(hdr_banner)
+        block.append(Spacer(1, 4))
+
+        # Flavour-wise Unit Count Table
+        tbl_rows = [["Flavour", "Code", "Unit Cost (Rs.)", "Units Received", "Damaged", "Gross Cost (Rs.)"]]
+        for f_row in rec["flavor_rows"]:
+            tbl_rows.append([
+                f_row["Flavour"],
+                f_row["Code"],
+                f"Rs. {f_row['Unit Cost (₹)']:,.2f}",
+                f"{int(f_row['Units Received']):,}",
+                f"{int(f_row['Damaged Units']):,}" if int(f_row["Damaged Units"]) > 0 else "—",
+                f"Rs. {f_row['Gross Cost (₹)']:,.2f}",
+            ])
+
+        tbl_rows.append([
+            "TOTAL",
+            "—",
+            "—",
+            f"{int(rec['total_units']):,} pcs",
+            f"{int(rec['total_damaged']):,}" if int(rec["total_damaged"]) > 0 else "—",
+            f"Rs. {float(rec['gross_cost']):,.2f}",
+        ])
+
+        t_flavors = Table(tbl_rows, colWidths=[145, 50, 85, 85, 65, 110])
+        t_flavors.hAlign = "LEFT"
+        t_flavors.setStyle(
+            TableStyle([
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#70440E")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, 0), 8.5),
+                ("ALIGN", (0, 0), (0, -1), "LEFT"),
+                ("ALIGN", (1, 0), (1, -1), "CENTER"),
+                ("ALIGN", (2, 0), (-1, -1), "RIGHT"),
+                ("FONTNAME", (0, 1), (-1, -2), "Helvetica"),
+                ("FONTSIZE", (0, 1), (-1, -2), 8.5),
+                ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#FFF2DC")),
+                ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
+                ("FONTSIZE", (0, -1), (-1, -1), 9),
+                ("TEXTCOLOR", (0, -1), (-1, -1), colors.HexColor("#4A2418")),
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#E3CBA0")),
+                ("TOPPADDING", (0, 0), (-1, -1), 3.5),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 3.5),
+            ])
+        )
+        block.append(t_flavors)
+        block.append(Spacer(1, 3))
+
+        # Total Gross Cost Summary Strip
+        disc_txt = (
+            f" &nbsp;|&nbsp; Discount ({rec['discount_pct']:.1f}%): -Rs. {rec['discount_amt']:,.2f} "
+            f"&nbsp;|&nbsp; Net Payable: Rs. {rec['net_cost']:,.2f}"
+            if rec["discount_pct"] > 0
+            else ""
+        )
+        gross_strip = Table(
+            [[
+                Paragraph(
+                    f"<b>Total Gross Cost: Rs. {float(rec['gross_cost']):,.2f}</b>"
+                    f"<font size=8.5 color='#5A3E1B'>{disc_txt} &nbsp;|&nbsp; Payment Status: {escape(rec['payment_status'])}</font>",
+                    ParagraphStyle(
+                        "SRGrossFoot",
+                        parent=styles["Normal"],
+                        fontName="Helvetica-Bold",
+                        fontSize=9.5,
+                        textColor=colors.HexColor("#124A1D"),
+                    ),
+                )
+            ]],
+            colWidths=[540],
+        )
+        gross_strip.setStyle(
+            TableStyle([
+                ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#EAF4EC")),
+                ("BOX", (0, 0), (-1, -1), 1, colors.HexColor("#A8D5AF")),
+                ("LEFTPADDING", (0, 0), (-1, -1), 8),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+                ("TOPPADDING", (0, 0), (-1, -1), 4),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+            ])
+        )
+        block.append(gross_strip)
+        block.append(Spacer(1, 12))
+
+        story.append(KeepTogether(block))
+
+    # Grand Total Summary Table at the end of the PDF
+    grand_tbl = Table(
+        [
+            ["OVERALL STOCK RECEIVED SUMMARY", "Total Receipts", "Total Units Received", "Total Gross Cost", "Total Net Cost"],
+            [
+                str(location_label),
+                f"{len(receipts_list)}",
+                f"{overall_units:,} units",
+                f"Rs. {overall_gross:,.2f}",
+                f"Rs. {overall_net:,.2f}",
+            ],
+        ],
+        colWidths=[170, 80, 100, 95, 95],
+    )
+    grand_tbl.setStyle(
+        TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#124A1D")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("FONTNAME", (0, 0), (-1, -1), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, -1), 9),
+            ("BACKGROUND", (0, 1), (-1, 1), colors.HexColor("#EAF4EC")),
+            ("ALIGN", (1, 0), (-1, -1), "RIGHT"),
+            ("GRID", (0, 0), (-1, -1), 0.6, colors.HexColor("#A8D5AF")),
+            ("TOPPADDING", (0, 0), (-1, -1), 5),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+        ])
+    )
+    story.append(grand_tbl)
+
+    doc.build(story)
+    buffer.seek(0)
+    return buffer.getvalue()
+
+
 # ----------------------------------------------------------------------
 # AUTHENTICATION
 # ----------------------------------------------------------------------
@@ -5447,93 +5676,303 @@ elif page == "Freezer Stock" and user_role == "admin":
     freezer_tab_choice = st.radio("Section", ["Stock Received (Inward)", "Stock Audit (Physical Count)"], horizontal=True)
 
     if freezer_tab_choice == "Stock Received (Inward)":
-        stock_mode = st.radio("Mode", ["New entry", "Edit past entry"], horizontal=True, key="db_stock_mode")
+        stock_mode = st.radio(
+            "Mode",
+            ["New entry", "Edit past entry", "📊 Stock Received Report & PDF"],
+            horizontal=True,
+            key="db_stock_mode",
+        )
 
-        past_receipts_df = db_conn.query("SELECT r.id, r.received_date, r.location, r.purchase_order_id, r.payment_amount, r.payment_status, r.payment_date, r.payment_details, r.damaged_returned_on, r.notes, json_agg(json_build_object('code', i.flavor_code, 'rec', i.received_units, 'dam', i.damaged_units, 'cost', i.unit_cost_price)) AS items FROM stock_received r LEFT JOIN stock_received_items i ON r.id = i.received_id GROUP BY r.id ORDER BY r.received_date DESC, r.id DESC;", ttl="0s")
+        past_receipts_df = db_conn.query(
+            """
+            SELECT r.id, r.received_date, r.location, r.purchase_order_id,
+                   r.payment_amount, r.payment_status, r.payment_date,
+                   r.payment_details, r.damaged_returned_on, r.notes,
+                   json_agg(json_build_object('code', i.flavor_code, 'rec', i.received_units, 'dam', i.damaged_units, 'cost', i.unit_cost_price)) AS items
+            FROM stock_received r
+            LEFT JOIN stock_received_items i ON r.id = i.received_id
+            WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(r.location, 'HOSUR'))) = :active_loc)
+            GROUP BY r.id
+            ORDER BY r.received_date DESC, r.id DESC;
+            """,
+            params={"active_loc": get_active_location_filter()},
+            ttl="0s",
+        )
         past_receipts = past_receipts_df.to_dict("records") if not past_receipts_df.empty else []
 
-        stock_loaded, loaded_id = None, None
-        if stock_mode == "Edit past entry":
-            if not past_receipts: st.info("No past delivery receipts found in database.")
-            else:
-                labels = [f"Receipt #{r['id']} — {pd.to_datetime(r['received_date']).strftime('%d-%b-%y')} ({r['location']})" for r in past_receipts]
-                selected_rec = st.selectbox("Select delivery receipt to edit", labels, key="db_stock_select")
-                stock_loaded = past_receipts[labels.index(selected_rec)]; loaded_id = stock_loaded["id"]
+        if stock_mode in ("New entry", "Edit past entry"):
+            stock_loaded, loaded_id = None, None
+            if stock_mode == "Edit past entry":
+                if not past_receipts: st.info("No past delivery receipts found in database.")
+                else:
+                    labels = [f"Receipt #{r['id']} — {pd.to_datetime(r['received_date']).strftime('%d-%b-%y')} ({r['location']})" for r in past_receipts]
+                    selected_rec = st.selectbox("Select delivery receipt to edit", labels, key="db_stock_select")
+                    stock_loaded = past_receipts[labels.index(selected_rec)]; loaded_id = stock_loaded["id"]
 
-        sk = f"_{loaded_id}" if loaded_id else "_new"
-        existing_rec_notes = str(stock_loaded.get("notes") or "") if stock_loaded else ""
-        default_rec_disc, clean_rec_notes = 2.0, existing_rec_notes
-        if stock_loaded:
-            disc_match = re.search(r"\[Discount:\s*([\d.]+)%[^\]]*\]", existing_rec_notes)
-            if disc_match:
-                try: default_rec_disc = float(re.search(r"([\d.]+)", disc_match.group(0)).group(1)); clean_rec_notes = re.sub(r"\[Discount:[^\]]*\]\s*", "", existing_rec_notes).strip()
-                except Exception: default_rec_disc = 2.0
+            sk = f"_{loaded_id}" if loaded_id else "_new"
+            existing_rec_notes = str(stock_loaded.get("notes") or "") if stock_loaded else ""
+            default_rec_disc, clean_rec_notes = 2.0, existing_rec_notes
+            if stock_loaded:
+                disc_match = re.search(r"\[Discount:\s*([\d.]+)%[^\]]*\]", existing_rec_notes)
+                if disc_match:
+                    try: default_rec_disc = float(re.search(r"([\d.]+)", disc_match.group(0)).group(1)); clean_rec_notes = re.sub(r"\[Discount:[^\]]*\]\s*", "", existing_rec_notes).strip()
+                    except Exception: default_rec_disc = 2.0
 
-        pos_df = db_conn.query("SELECT id, order_date, location FROM purchase_orders WHERE order_status != 'Completed' ORDER BY order_date DESC;", ttl="0s")
-        po_options = ["None (Ad-hoc delivery)"] + [f"PO #{r['id']} ({pd.to_datetime(r['order_date']).strftime('%d-%b')})" for _, r in pos_df.iterrows()]
-        
-        default_po_idx = 0
-        poid_raw = stock_loaded.get("purchase_order_id") if stock_loaded else None
-        if poid_raw is not None and pd.notna(poid_raw) and str(poid_raw).strip() != "":
-            try:
-                poid_int = int(float(poid_raw))
-                for idx, opt in enumerate(po_options):
-                    if opt.startswith(f"PO #{poid_int} "): default_po_idx = idx; break
-            except Exception: default_po_idx = 0
+            pos_df = db_conn.query("SELECT id, order_date, location FROM purchase_orders WHERE order_status != 'Completed' ORDER BY order_date DESC;", ttl="0s")
+            po_options = ["None (Ad-hoc delivery)"] + [f"PO #{r['id']} ({pd.to_datetime(r['order_date']).strftime('%d-%b')})" for _, r in pos_df.iterrows()]
 
-        c1, c2, c3, c4 = st.columns(4)
-        with c1: received_date = st.date_input("Received date", value=pd.to_datetime(stock_loaded["received_date"]).date() if (stock_loaded and stock_loaded.get("received_date")) else date.today(), key=f"rec_date{sk}", format="DD-MM-YYYY")
-        with c2: location = st.text_input("Location", value=str(stock_loaded["location"]) if (stock_loaded and stock_loaded.get("location")) else CITY, key=f"rec_loc{sk}")
-        with c3: selected_po = st.selectbox("Link to Purchase Order (Optional)", po_options, index=default_po_idx, key=f"rec_po{sk}")
-        with c4: rec_discount_pct = st.number_input("Overall Discount (%)", min_value=0.0, max_value=100.0, value=default_rec_disc, step=0.5, format="%.2f", key=f"rec_disc{sk}")
-
-        items_map = {itm["code"]: itm for itm in stock_loaded["items"] if isinstance(itm, dict) and "code" in itm} if stock_loaded and stock_loaded.get("items") and isinstance(stock_loaded["items"], list) else {}
-        grid_rows = [{"Flavour": FLAVOR_MAP[code]["name"], "Code": code, "Unit Cost Price (₹)": float(FLAVOR_MAP[code]["cost_price"]), "Received": int(items_map[code]["rec"]) if (code in items_map and items_map[code].get("rec") is not None) else 0, "Damaged": int(items_map[code]["dam"]) if (code in items_map and items_map[code].get("dam") is not None) else 0} for code in FLAVOR_CODES]
-
-        st.write("Enter units received per flavour:")
-        stock_edited = st.data_editor(pd.DataFrame(grid_rows), column_config={"Flavour": st.column_config.TextColumn(disabled=True), "Code": st.column_config.TextColumn(disabled=True), "Unit Cost Price (₹)": st.column_config.NumberColumn(format="₹%,.2f", disabled=True), "Received": st.column_config.NumberColumn(min_value=0, step=1, format="%d"), "Damaged": st.column_config.NumberColumn(min_value=0, step=1, format="%d")}, hide_index=True, use_container_width=True, key=f"db_stock_editor{sk}")
-
-        tot_received, tot_damaged = int(stock_edited["Received"].sum()), int(stock_edited["Damaged"].sum())
-        gross_cost_val = float(sum(stock_edited["Received"] * stock_edited["Unit Cost Price (₹)"]))
-        rec_discount_amount = gross_cost_val * (rec_discount_pct / 100.0)
-        net_cost_val = gross_cost_val - rec_discount_amount
-
-        st.markdown("#### Entry Summary")
-        s_col1, s_col2, s_col3, s_col4 = st.columns(4)
-        s_col1.metric("Total Received", f"{tot_received} units"); s_col2.metric("Total Damaged", f"{tot_damaged} units"); s_col3.metric("Gross Cost", f"₹{gross_cost_val:,.2f}"); s_col4.metric(f"Net Cost ({rec_discount_pct:.1f}% off)", f"₹{net_cost_val:,.2f}")
-
-        st.markdown("---"); st.write("**Payment & Logistics**")
-        c5, c6 = st.columns(2)
-        with c5: payment_amount = st.number_input("Payment amount (₹)", min_value=0.0, value=float(stock_loaded["payment_amount"]) if (stock_loaded and stock_loaded.get("payment_amount") is not None) else float(net_cost_val), step=10.0, key=f"db_rec_pay{sk}")
-        with c6: payment_status = st.selectbox("Payment status", PAYMENT_STATUSES, index=PAYMENT_STATUSES.index(stock_loaded["payment_status"]) if (stock_loaded and stock_loaded.get("payment_status") in PAYMENT_STATUSES) else 0, key=f"db_rec_status{sk}")
-
-        has_payment_date = st.checkbox("Add payment date", value=bool(stock_loaded and stock_loaded.get("payment_date")), key=f"db_rec_has_pdate{sk}")
-        payment_date = st.date_input("Payment date", value=pd.to_datetime(stock_loaded["payment_date"]).date() if (stock_loaded and stock_loaded.get("payment_date")) else date.today(), key=f"db_rec_pdate{sk}", format="DD-MM-YYYY") if has_payment_date else None
-        payment_details = st.text_input("Payment details (optional)", value=str(stock_loaded["payment_details"]) if (stock_loaded and stock_loaded.get("payment_details")) else "", key=f"db_rec_pdet{sk}")
-        has_dam_ret = st.checkbox("Damaged items were returned", value=bool(stock_loaded and stock_loaded.get("damaged_returned_on")), key=f"db_rec_has_dam{sk}")
-        damaged_returned_on = st.date_input("Damaged returned date", value=pd.to_datetime(stock_loaded["damaged_returned_on"]).date() if (stock_loaded and stock_loaded.get("damaged_returned_on")) else date.today(), key=f"db_rec_damdate{sk}", format="DD-MM-YYYY") if has_dam_ret else None
-        notes = st.text_input("Notes (optional)", value=clean_rec_notes, key=f"db_rec_notes{sk}")
-
-        if st.button("Update delivery entry" if loaded_id else "Save stock received", type="primary", use_container_width=True):
-            if tot_received == 0: st.error("Enter at least one quantity received before saving.")
-            else:
-                po_id = int(selected_po.split("#")[1].split(" ")[0]) if "PO #" in selected_po else None
+            default_po_idx = 0
+            poid_raw = stock_loaded.get("purchase_order_id") if stock_loaded else None
+            if poid_raw is not None and pd.notna(poid_raw) and str(poid_raw).strip() != "":
                 try:
-                    combined_rec_notes = notes.strip()
-                    if rec_discount_pct > 0: combined_rec_notes = f"[Discount: {rec_discount_pct:.2f}% | Net: ₹{net_cost_val:,.2f}] {combined_rec_notes}".strip()
-                    with db_conn.session as s:
-                        if loaded_id:
-                            s.execute(text("UPDATE stock_received SET received_date = :rd, location = :loc, purchase_order_id = :poid, payment_amount = :amt, payment_status = :stat, payment_date = :pdate, payment_details = :pdet, damaged_returned_on = :dret, notes = :notes WHERE id = :id;"), {"rd": received_date, "loc": location, "poid": po_id, "amt": payment_amount, "stat": payment_status, "pdate": payment_date, "pdet": payment_details, "dret": damaged_returned_on, "notes": combined_rec_notes, "id": loaded_id})
-                            s.execute(text("DELETE FROM stock_received_items WHERE received_id = :id;"), {"id": loaded_id})
-                            rec_id = loaded_id
-                        else:
-                            res = s.execute(text("INSERT INTO stock_received (received_date, location, purchase_order_id, payment_amount, payment_status, payment_date, payment_details, damaged_returned_on, notes) VALUES (:rd, :loc, :poid, :amt, :stat, :pdate, :pdet, :dret, :notes) RETURNING id;"), {"rd": received_date, "loc": location, "poid": po_id, "amt": payment_amount, "stat": payment_status, "pdate": payment_date, "pdet": payment_details, "dret": damaged_returned_on, "notes": combined_rec_notes})
-                            rec_id = res.scalar()
-                        for _, row in stock_edited.iterrows():
-                            if int(row["Received"]) > 0 or int(row["Damaged"]) > 0: s.execute(text("INSERT INTO stock_received_items (received_id, flavor_code, received_units, damaged_units, unit_cost_price) VALUES (:rid, :code, :rec, :dam, :cost);"), {"rid": rec_id, "code": row["Code"], "rec": int(row["Received"]), "dam": int(row["Damaged"]), "cost": float(row["Unit Cost Price (₹)"])})
-                        s.commit()
-                    show_success_modal(f"Stock delivery #{rec_id} saved successfully! Logged {tot_received} units (Net Cost: ₹{net_cost_val:,.2f}).")
-                except Exception as e: st.error(f"Could not save to database: {e}")
+                    poid_int = int(float(poid_raw))
+                    for idx, opt in enumerate(po_options):
+                        if opt.startswith(f"PO #{poid_int} "): default_po_idx = idx; break
+                except Exception: default_po_idx = 0
+
+            c1, c2, c3, c4 = st.columns(4)
+            with c1: received_date = st.date_input("Received date", value=pd.to_datetime(stock_loaded["received_date"]).date() if (stock_loaded and stock_loaded.get("received_date")) else date.today(), key=f"rec_date{sk}", format="DD-MM-YYYY")
+            with c2: location = st.text_input("Location", value=str(stock_loaded["location"]) if (stock_loaded and stock_loaded.get("location")) else CITY, key=f"rec_loc{sk}")
+            with c3: selected_po = st.selectbox("Link to Purchase Order (Optional)", po_options, index=default_po_idx, key=f"rec_po{sk}")
+            with c4: rec_discount_pct = st.number_input("Overall Discount (%)", min_value=0.0, max_value=100.0, value=default_rec_disc, step=0.5, format="%.2f", key=f"rec_disc{sk}")
+
+            items_map = {itm["code"]: itm for itm in stock_loaded["items"] if isinstance(itm, dict) and "code" in itm} if stock_loaded and stock_loaded.get("items") and isinstance(stock_loaded["items"], list) else {}
+            grid_rows = [{"Flavour": FLAVOR_MAP[code]["name"], "Code": code, "Unit Cost Price (₹)": float(FLAVOR_MAP[code]["cost_price"]), "Received": int(items_map[code]["rec"]) if (code in items_map and items_map[code].get("rec") is not None) else 0, "Damaged": int(items_map[code]["dam"]) if (code in items_map and items_map[code].get("dam") is not None) else 0} for code in FLAVOR_CODES]
+
+            st.write("Enter units received per flavour:")
+            stock_edited = st.data_editor(pd.DataFrame(grid_rows), column_config={"Flavour": st.column_config.TextColumn(disabled=True), "Code": st.column_config.TextColumn(disabled=True), "Unit Cost Price (₹)": st.column_config.NumberColumn(format="₹%,.2f", disabled=True), "Received": st.column_config.NumberColumn(min_value=0, step=1, format="%d"), "Damaged": st.column_config.NumberColumn(min_value=0, step=1, format="%d")}, hide_index=True, use_container_width=True, key=f"db_stock_editor{sk}")
+
+            tot_received, tot_damaged = int(stock_edited["Received"].sum()), int(stock_edited["Damaged"].sum())
+            gross_cost_val = float(sum(stock_edited["Received"] * stock_edited["Unit Cost Price (₹)"]))
+            rec_discount_amount = gross_cost_val * (rec_discount_pct / 100.0)
+            net_cost_val = gross_cost_val - rec_discount_amount
+
+            st.markdown("#### Entry Summary")
+            s_col1, s_col2, s_col3, s_col4 = st.columns(4)
+            s_col1.metric("Total Received", f"{tot_received} units"); s_col2.metric("Total Damaged", f"{tot_damaged} units"); s_col3.metric("Gross Cost", f"₹{gross_cost_val:,.2f}"); s_col4.metric(f"Net Cost ({rec_discount_pct:.1f}% off)", f"₹{net_cost_val:,.2f}")
+
+            st.markdown("---"); st.write("**Payment & Logistics**")
+            c5, c6 = st.columns(2)
+            with c5: payment_amount = st.number_input("Payment amount (₹)", min_value=0.0, value=float(stock_loaded["payment_amount"]) if (stock_loaded and stock_loaded.get("payment_amount") is not None) else float(net_cost_val), step=10.0, key=f"db_rec_pay{sk}")
+            with c6: payment_status = st.selectbox("Payment status", PAYMENT_STATUSES, index=PAYMENT_STATUSES.index(stock_loaded["payment_status"]) if (stock_loaded and stock_loaded.get("payment_status") in PAYMENT_STATUSES) else 0, key=f"db_rec_status{sk}")
+
+            has_payment_date = st.checkbox("Add payment date", value=bool(stock_loaded and stock_loaded.get("payment_date")), key=f"db_rec_has_pdate{sk}")
+            payment_date = st.date_input("Payment date", value=pd.to_datetime(stock_loaded["payment_date"]).date() if (stock_loaded and stock_loaded.get("payment_date")) else date.today(), key=f"db_rec_pdate{sk}", format="DD-MM-YYYY") if has_payment_date else None
+            payment_details = st.text_input("Payment details (optional)", value=str(stock_loaded["payment_details"]) if (stock_loaded and stock_loaded.get("payment_details")) else "", key=f"db_rec_pdet{sk}")
+            has_dam_ret = st.checkbox("Damaged items were returned", value=bool(stock_loaded and stock_loaded.get("damaged_returned_on")), key=f"db_rec_has_dam{sk}")
+            damaged_returned_on = st.date_input("Damaged returned date", value=pd.to_datetime(stock_loaded["damaged_returned_on"]).date() if (stock_loaded and stock_loaded.get("damaged_returned_on")) else date.today(), key=f"db_rec_damdate{sk}", format="DD-MM-YYYY") if has_dam_ret else None
+            notes = st.text_input("Notes (optional)", value=clean_rec_notes, key=f"db_rec_notes{sk}")
+
+            if st.button("Update delivery entry" if loaded_id else "Save stock received", type="primary", use_container_width=True):
+                if tot_received == 0: st.error("Enter at least one quantity received before saving.")
+                else:
+                    po_id = int(selected_po.split("#")[1].split(" ")[0]) if "PO #" in selected_po else None
+                    try:
+                        combined_rec_notes = notes.strip()
+                        if rec_discount_pct > 0: combined_rec_notes = f"[Discount: {rec_discount_pct:.2f}% | Net: ₹{net_cost_val:,.2f}] {combined_rec_notes}".strip()
+                        with db_conn.session as s:
+                            if loaded_id:
+                                s.execute(text("UPDATE stock_received SET received_date = :rd, location = :loc, purchase_order_id = :poid, payment_amount = :amt, payment_status = :stat, payment_date = :pdate, payment_details = :pdet, damaged_returned_on = :dret, notes = :notes WHERE id = :id;"), {"rd": received_date, "loc": location, "poid": po_id, "amt": payment_amount, "stat": payment_status, "pdate": payment_date, "pdet": payment_details, "dret": damaged_returned_on, "notes": combined_rec_notes, "id": loaded_id})
+                                s.execute(text("DELETE FROM stock_received_items WHERE received_id = :id;"), {"id": loaded_id})
+                                rec_id = loaded_id
+                            else:
+                                res = s.execute(text("INSERT INTO stock_received (received_date, location, purchase_order_id, payment_amount, payment_status, payment_date, payment_details, damaged_returned_on, notes) VALUES (:rd, :loc, :poid, :amt, :stat, :pdate, :pdet, :dret, :notes) RETURNING id;"), {"rd": received_date, "loc": location, "poid": po_id, "amt": payment_amount, "stat": payment_status, "pdate": payment_date, "pdet": payment_details, "dret": damaged_returned_on, "notes": combined_rec_notes})
+                                rec_id = res.scalar()
+                            for _, row in stock_edited.iterrows():
+                                if int(row["Received"]) > 0 or int(row["Damaged"]) > 0: s.execute(text("INSERT INTO stock_received_items (received_id, flavor_code, received_units, damaged_units, unit_cost_price) VALUES (:rid, :code, :rec, :dam, :cost);"), {"rid": rec_id, "code": row["Code"], "rec": int(row["Received"]), "dam": int(row["Damaged"]), "cost": float(row["Unit Cost Price (₹)"])})
+                            s.commit()
+                        show_success_modal(f"Stock delivery #{rec_id} saved successfully! Logged {tot_received} units (Net Cost: ₹{net_cost_val:,.2f}).")
+                    except Exception as e: st.error(f"Could not save to database: {e}")
+        else:
+            st.markdown("#### 📊 All Stock Received Report")
+            st.caption("Chronological breakdown of every stock delivery receipt, flavour-wise unit count table, and total gross cost.")
+
+            if not past_receipts:
+                st.info("No stock received records found for the selected location.")
+            else:
+                ctl_c1, ctl_c2, ctl_c3 = st.columns([1.4, 1.4, 2.2])
+                with ctl_c1:
+                    sort_order = st.radio(
+                        "Display Order",
+                        ["Oldest First (Receipt 1, 2, …)", "Latest First"],
+                        horizontal=True,
+                        key="sr_report_sort_order",
+                    )
+                with ctl_c2:
+                    include_zero_flavors = st.checkbox(
+                        "Show flavours with 0 units",
+                        value=False,
+                        key="sr_report_show_zero_flavors",
+                    )
+
+                ordered_receipts = list(reversed(past_receipts)) if sort_order.startswith("Oldest") else list(past_receipts)
+
+                structured_receipts = []
+                for r in ordered_receipts:
+                    rid = int(r["id"])
+                    r_date_obj = pd.to_datetime(r["received_date"]).date() if r.get("received_date") else date.today()
+                    r_date_str = r_date_obj.strftime("%d-%b-%Y")
+                    r_loc = str(r.get("location") or CITY)
+                    r_po = f"PO #{int(r['purchase_order_id'])}" if pd.notna(r.get("purchase_order_id")) else "Ad-hoc Delivery"
+                    r_notes = str(r.get("notes") or "")
+                    disc_pct = 0.0
+                    disc_match = re.search(r"\[Discount:\s*([\d.]+)%[^\]]*\]", r_notes)
+                    if disc_match:
+                        try:
+                            disc_pct = float(disc_match.group(1))
+                        except Exception:
+                            disc_pct = 0.0
+
+                    raw_items = r.get("items") if isinstance(r.get("items"), list) else []
+                    items_by_code = {
+                        str(itm.get("code")).strip(): itm
+                        for itm in raw_items
+                        if isinstance(itm, dict) and itm.get("code")
+                    }
+
+                    flavor_rows = []
+                    rec_tot_units = 0
+                    rec_tot_damaged = 0
+                    rec_gross_cost = 0.0
+
+                    for code in FLAVOR_CODES:
+                        f_meta = FLAVOR_MAP[code]
+                        itm = items_by_code.get(code, {})
+                        rec_u = int(itm.get("rec") or 0) if itm else 0
+                        dam_u = int(itm.get("dam") or 0) if itm else 0
+                        unit_cp = float(itm.get("cost") if (itm and itm.get("cost") is not None) else f_meta["cost_price"])
+                        line_gross = float(rec_u) * unit_cp
+
+                        rec_tot_units += rec_u
+                        rec_tot_damaged += dam_u
+                        rec_gross_cost += line_gross
+
+                        if include_zero_flavors or rec_u > 0 or dam_u > 0:
+                            flavor_rows.append({
+                                "Flavour": f_meta["name"],
+                                "Code": code,
+                                "Unit Cost (₹)": unit_cp,
+                                "Units Received": rec_u,
+                                "Damaged Units": dam_u,
+                                "Gross Cost (₹)": line_gross,
+                            })
+
+                    disc_amt = rec_gross_cost * (disc_pct / 100.0)
+                    net_cost = rec_gross_cost - disc_amt
+
+                    structured_receipts.append({
+                        "id": rid,
+                        "date_obj": r_date_obj,
+                        "date_str": r_date_str,
+                        "location": r_loc,
+                        "po_label": r_po,
+                        "payment_status": str(r.get("payment_status") or "Pending"),
+                        "flavor_rows": flavor_rows,
+                        "total_units": rec_tot_units,
+                        "total_damaged": rec_tot_damaged,
+                        "gross_cost": rec_gross_cost,
+                        "discount_pct": disc_pct,
+                        "discount_amt": disc_amt,
+                        "net_cost": net_cost,
+                    })
+
+                overall_rec_count = len(structured_receipts)
+                overall_units_sum = sum(x["total_units"] for x in structured_receipts)
+                overall_gross_sum = sum(x["gross_cost"] for x in structured_receipts)
+                overall_net_sum = sum(x["net_cost"] for x in structured_receipts)
+
+                with ctl_c3:
+                    loc_label = "All Locations" if get_active_location_filter() == "ALL" else get_active_location_filter()
+                    if REPORTLAB_AVAILABLE:
+                        pdf_bytes = generate_stock_received_report_pdf(structured_receipts, location_label=loc_label)
+                        if pdf_bytes:
+                            st.download_button(
+                                label="📥 Download Stock Received Report (PDF)",
+                                data=pdf_bytes,
+                                file_name=f"Stock_Received_Report_{loc_label.replace(' ', '_')}_{date.today().strftime('%Y%m%d')}.pdf",
+                                mime="application/pdf",
+                                type="primary",
+                                use_container_width=True,
+                            )
+                    else:
+                        st.warning("Install `reportlab` to enable PDF download.")
+
+                k1, k2, k3, k4 = st.columns(4)
+                k1.metric("Total Receipts", f"{overall_rec_count}")
+                k2.metric("Total Units Received", f"{overall_units_sum:,} units")
+                k3.metric("Overall Gross Cost", f"₹{overall_gross_sum:,.2f}")
+                k4.metric("Overall Net Cost (After Disc.)", f"₹{overall_net_sum:,.2f}")
+
+                st.markdown("---")
+
+                for idx, rec in enumerate(structured_receipts, start=1):
+                    with st.container(border=True):
+                        st.markdown(
+                            f"""
+                            <div class='header-box-sales' style='margin-bottom:8px;'>
+                                <span>📦 <b>Stock Receipt Date {idx}: {escape(rec['date_str'])}</b> &nbsp;•&nbsp; Receipt #{rec['id']} ({escape(rec['location'])})</span>
+                                <span>{escape(rec['po_label'])} &nbsp;|&nbsp; Payment: <b>{escape(rec['payment_status'])}</b></span>
+                            </div>
+                            """,
+                            unsafe_allow_html=True,
+                        )
+
+                        disp_rows = []
+                        for fr in rec["flavor_rows"]:
+                            disp_rows.append({
+                                "Flavour": fr["Flavour"],
+                                "Code": fr["Code"],
+                                "Unit Cost (₹)": f"₹{fr['Unit Cost (₹)']:,.2f}",
+                                "Units Received": int(fr["Units Received"]),
+                                "Damaged Units": int(fr["Damaged Units"]),
+                                "Gross Cost (₹)": f"₹{fr['Gross Cost (₹)']:,.2f}",
+                            })
+                        disp_rows.append({
+                            "Flavour": "TOTAL",
+                            "Code": "—",
+                            "Unit Cost (₹)": "—",
+                            "Units Received": int(rec["total_units"]),
+                            "Damaged Units": int(rec["total_damaged"]),
+                            "Gross Cost (₹)": f"₹{rec['gross_cost']:,.2f}",
+                        })
+                        disp_df = pd.DataFrame(disp_rows)
+
+                        st.dataframe(
+                            disp_df.style.apply(
+                                lambda row: [
+                                    "background-color:#FFF2DC;font-weight:900;color:#4A2418;"
+                                    if row.get("Flavour") == "TOTAL"
+                                    else ""
+                                    for _ in row
+                                ],
+                                axis=1,
+                            ),
+                            hide_index=True,
+                            use_container_width=True,
+                        )
+
+                        disc_badge = (
+                            f"&nbsp;&nbsp;|&nbsp;&nbsp; Discount ({rec['discount_pct']:.1f}%): <b>-₹{rec['discount_amt']:,.2f}</b> "
+                            f"&nbsp;&nbsp;|&nbsp;&nbsp; Net Cost: <b>₹{rec['net_cost']:,.2f}</b>"
+                            if rec["discount_pct"] > 0
+                            else ""
+                        )
+                        st.markdown(
+                            f"""
+                            <div style='background:#EAF4EC;border:1.5px solid #A8D5AF;border-radius:8px;padding:8px 14px;
+                                        display:flex;justify-content:space-between;align-items:center;margin-top:4px;'>
+                                <span style='font-weight:800;color:#124A1D;font-size:13px;'>
+                                    Total Units Received: <b>{rec['total_units']:,} pcs</b>
+                                    {f" (Damaged: {rec['total_damaged']} pcs)" if rec['total_damaged'] > 0 else ""}
+                                </span>
+                                <span style='font-weight:900;color:#124A1D;font-size:14px;'>
+                                    💰 Total Gross Cost: ₹{rec['gross_cost']:,.2f}
+                                    <span style='font-weight:700;font-size:12px;color:#4A2418;'>{disc_badge}</span>
+                                </span>
+                            </div>
+                            """,
+                            unsafe_allow_html=True,
+                        )
 
     elif freezer_tab_choice == "Stock Audit (Physical Count)":
         st.write("Log a new physical stock count, or view and edit a previously saved audit.")
