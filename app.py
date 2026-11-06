@@ -2749,13 +2749,15 @@ def generate_stock_received_report_pdf(monthly_sections, overall_units, overall_
     story.append(Paragraph(f"<b>Kulfi Factory — Stock Received Report ({escape(str(location_label))})</b>", title_style))
     story.append(Paragraph(f"Generated on {date.today().strftime('%d-%b-%Y')}", sub_style))
 
-    # Top Overall Summary Box (Overall Units & Overall Cost So Far)
+    usable_width = 736.0
+
+    # Top Overall Summary Box
     overall_box = Table(
         [
             ["OVERALL UNITS RECEIVED (SO FAR)", "OVERALL COST (SO FAR)"],
             [f"{int(overall_units):,} units", f"Rs. {float(overall_cost):,.0f}"],
         ],
-        colWidths=[368.0, 368.0],
+        colWidths=[usable_width / 2.0, usable_width / 2.0],
     )
     overall_box.hAlign = "LEFT"
     overall_box.setStyle(
@@ -2781,10 +2783,6 @@ def generate_stock_received_report_pdf(monthly_sections, overall_units, overall_
     story.append(overall_box)
     story.append(Spacer(1, 14))
 
-    usable_width = 736.0
-    flavour_col_w = 120.0
-    chunk_size = 9
-
     for sec in monthly_sections:
         m_name = sec["month_name"]
         matrix_cols = sec["matrix_cols"]
@@ -2793,66 +2791,86 @@ def generate_stock_received_report_pdf(monthly_sections, overall_units, overall_
         m_cost = float(sec["month_total_cost"])
 
         date_cols = matrix_cols[1:]
-        chunks = [date_cols[i : i + chunk_size] for i in range(0, len(date_cols), chunk_size)] or [[]]
+        n_dates = max(1, len(date_cols))
 
-        month_flowables = [Paragraph(f"<b>{escape(m_name)}</b>", month_hdr_style)]
+        # Dynamically scale Flavour column, date column width, font size, and padding
+        # so ALL dates for the month always fit in ONE single table without wrapping.
+        if n_dates <= 8:
+            flavour_col_w = 115.0
+            date_col_w = min(82.0, (usable_width - flavour_col_w) / n_dates)
+            hdr_font, body_font, tot_font, h_pad = 9.0, 8.5, 9.0, 5
+        elif n_dates <= 11:
+            flavour_col_w = 102.0
+            date_col_w = (usable_width - flavour_col_w) / n_dates
+            hdr_font, body_font, tot_font, h_pad = 8.0, 8.0, 8.2, 4
+        elif n_dates <= 14:
+            flavour_col_w = 92.0
+            date_col_w = (usable_width - flavour_col_w) / n_dates
+            hdr_font, body_font, tot_font, h_pad = 7.2, 7.2, 7.5, 3
+        else:
+            flavour_col_w = 84.0
+            date_col_w = (usable_width - flavour_col_w) / n_dates
+            hdr_font, body_font, tot_font, h_pad = 6.5, 6.5, 6.8, 2
 
-        for c_idx, d_chunk in enumerate(chunks):
-            sub_cols = ["Flavour"] + d_chunk
-            n_dates = len(d_chunk)
-            date_col_w = max(55.0, min(88.0, (usable_width - flavour_col_w) / max(1, n_dates)))
-            col_widths = [flavour_col_w] + [date_col_w] * n_dates
+        col_widths = [flavour_col_w] + [date_col_w] * len(date_cols)
+        actual_table_width = sum(col_widths)
 
-            tbl_data = [sub_cols]
-            for r in pdf_rows:
-                tbl_data.append([str(r.get(col, "")) for col in sub_cols])
+        # Ensure the summary boxes below are wide enough for their text while matching
+        # the month table's width (minimum 300pt if there is only 1 date column).
+        if actual_table_width < 300.0 and len(date_cols) > 0:
+            extra_per_col = (300.0 - flavour_col_w) / len(date_cols)
+            col_widths = [flavour_col_w] + [max(date_col_w, extra_per_col)] * len(date_cols)
+            actual_table_width = sum(col_widths)
 
-            t = Table(tbl_data, colWidths=col_widths, repeatRows=1)
-            t.hAlign = "LEFT"
-            t.setStyle(
-                TableStyle([
-                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#70440E")),
-                    ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                    ("FONTSIZE", (0, 0), (-1, 0), 9),
-                    ("ALIGN", (0, 0), (0, -1), "LEFT"),
-                    ("ALIGN", (1, 0), (-1, -1), "CENTER"),
-                    ("FONTNAME", (0, 1), (-1, -3), "Helvetica"),
-                    ("FONTSIZE", (0, 1), (-1, -3), 8.5),
-                    ("TEXTCOLOR", (0, 1), (-1, -3), colors.HexColor("#2A1B10")),
-                    ("ROWBACKGROUNDS", (0, 1), (-1, -3), [colors.white, colors.HexColor("#FFFBF2")]),
-                    # Total Units row (-2)
-                    ("BACKGROUND", (0, -2), (-1, -2), colors.HexColor("#FFF2DC")),
-                    ("FONTNAME", (0, -2), (-1, -2), "Helvetica-Bold"),
-                    ("FONTSIZE", (0, -2), (-1, -2), 9),
-                    ("TEXTCOLOR", (0, -2), (-1, -2), colors.HexColor("#4A2418")),
-                    ("LINEABOVE", (0, -2), (-1, -2), 1.1, colors.HexColor("#B47A2B")),
-                    # Total Cost (Rs.) row (-1)
-                    ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#EAF4EC")),
-                    ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
-                    ("FONTSIZE", (0, -1), (-1, -1), 9),
-                    ("TEXTCOLOR", (0, -1), (-1, -1), colors.HexColor("#124A1D")),
-                    ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#D8C29D")),
-                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                    ("TOPPADDING", (0, 0), (-1, -1), 4),
-                    ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
-                    ("LEFTPADDING", (0, 0), (-1, -1), 6),
-                    ("RIGHTPADDING", (0, 0), (-1, -1), 6),
-                ])
-            )
-            month_flowables.append(t)
-            if c_idx < len(chunks) - 1:
-                month_flowables.append(Spacer(1, 6))
+        tbl_data = [matrix_cols]
+        for r in pdf_rows:
+            tbl_data.append([str(r.get(col, "")) for col in matrix_cols])
 
-        month_flowables.append(Spacer(1, 5))
+        t = Table(tbl_data, colWidths=col_widths, repeatRows=1)
+        t.hAlign = "LEFT"
+        t.setStyle(
+            TableStyle([
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#70440E")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, 0), hdr_font),
+                ("ALIGN", (0, 0), (0, -1), "LEFT"),
+                ("ALIGN", (1, 0), (-1, -1), "CENTER"),
+                ("FONTNAME", (0, 1), (-1, -3), "Helvetica"),
+                ("FONTSIZE", (0, 1), (-1, -3), body_font),
+                ("TEXTCOLOR", (0, 1), (-1, -3), colors.HexColor("#2A1B10")),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -3), [colors.white, colors.HexColor("#FFFBF2")]),
+                # Total Units row (-2)
+                ("BACKGROUND", (0, -2), (-1, -2), colors.HexColor("#FFF2DC")),
+                ("FONTNAME", (0, -2), (-1, -2), "Helvetica-Bold"),
+                ("FONTSIZE", (0, -2), (-1, -2), tot_font),
+                ("TEXTCOLOR", (0, -2), (-1, -2), colors.HexColor("#4A2418")),
+                ("LINEABOVE", (0, -2), (-1, -2), 1.1, colors.HexColor("#B47A2B")),
+                # Total Cost (Rs.) row (-1)
+                ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#EAF4EC")),
+                ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
+                ("FONTSIZE", (0, -1), (-1, -1), tot_font),
+                ("TEXTCOLOR", (0, -1), (-1, -1), colors.HexColor("#124A1D")),
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#D8C29D")),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("TOPPADDING", (0, 0), (-1, -1), 4),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+                ("LEFTPADDING", (0, 0), (-1, -1), h_pad),
+                ("RIGHTPADDING", (0, 0), (-1, -1), h_pad),
+            ])
+        )
 
-        # Two boxes below each month's table: Month Overall Units & Month Overall Cost
+        # Summary box below the month table: exact same total width as the month table above
+        half_w = actual_table_width / 2.0
+        lbl_font = 8.0 if actual_table_width < 420.0 else 8.5
+        val_font = 10.0 if actual_table_width < 420.0 else 10.5
+
         month_summary_box = Table(
             [
                 [f"{m_name.upper()} — OVERALL UNITS", f"{m_name.upper()} — OVERALL COST (RS.)"],
                 [f"{m_units:,} units", f"Rs. {m_cost:,.0f}"],
             ],
-            colWidths=[368.0, 368.0],
+            colWidths=[half_w, half_w],
         )
         month_summary_box.hAlign = "LEFT"
         month_summary_box.setStyle(
@@ -2862,24 +2880,32 @@ def generate_stock_received_report_pdf(monthly_sections, overall_units, overall_
                 ("TEXTCOLOR", (0, 0), (0, 0), colors.HexColor("#70440E")),
                 ("TEXTCOLOR", (1, 0), (1, 0), colors.HexColor("#124A1D")),
                 ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                ("FONTSIZE", (0, 0), (-1, 0), 8.5),
+                ("FONTSIZE", (0, 0), (-1, 0), lbl_font),
                 ("BACKGROUND", (0, 1), (0, 1), colors.HexColor("#FFFBF2")),
                 ("BACKGROUND", (1, 1), (1, 1), colors.HexColor("#F3FAF4")),
                 ("TEXTCOLOR", (0, 1), (0, 1), colors.HexColor("#4A2418")),
                 ("TEXTCOLOR", (1, 1), (1, 1), colors.HexColor("#124A1D")),
                 ("FONTNAME", (0, 1), (-1, 1), "Helvetica-Bold"),
-                ("FONTSIZE", (0, 1), (-1, 1), 10.5),
+                ("FONTSIZE", (0, 1), (-1, 1), val_font),
                 ("ALIGN", (0, 0), (-1, -1), "CENTER"),
                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
                 ("GRID", (0, 0), (-1, -1), 0.6, colors.HexColor("#D8C29D")),
                 ("TOPPADDING", (0, 0), (-1, -1), 4.5),
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 4.5),
+                ("LEFTPADDING", (0, 0), (-1, -1), 4),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 4),
             ])
         )
-        month_flowables.append(month_summary_box)
-        month_flowables.append(Spacer(1, 14))
 
-        # KeepTogether guarantees a month table never splits across pages
+        month_flowables = [
+            Paragraph(f"<b>{escape(m_name)}</b>", month_hdr_style),
+            t,
+            Spacer(1, 5),
+            month_summary_box,
+            Spacer(1, 14),
+        ]
+
+        # KeepTogether ensures a month table + its summary boxes never split across pages
         story.append(KeepTogether(month_flowables))
 
     doc.build(story)
