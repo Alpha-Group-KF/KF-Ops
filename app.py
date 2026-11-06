@@ -5659,155 +5659,196 @@ elif page == "Freezer Stock" and user_role == "admin":
             if not past_receipts:
                 st.info("No stock received records found.")
             else:
-                # Sort chronologically (Date 1, Date 2, Date 3, ...)
+                # Group receipts by month (e.g., 'November 2026')
                 chronological_receipts = list(reversed(past_receipts))
-
-                # Build unique column headers for each receipt date
-                date_label_counts = {}
-                receipt_columns = []
+                
+                receipts_by_month = {}
                 for r in chronological_receipts:
-                    base_dt = pd.to_datetime(r["received_date"]).strftime("%d-%b-%y") if r.get("received_date") else "Date"
-                    date_label_counts[base_dt] = date_label_counts.get(base_dt, 0) + 1
-                    col_label = base_dt if date_label_counts[base_dt] == 1 else f"{base_dt} ({date_label_counts[base_dt]})"
+                    dt = pd.to_datetime(r["received_date"]).date() if r.get("received_date") else date.today()
+                    month_key = dt.strftime("%B %Y")
+                    if month_key not in receipts_by_month:
+                        receipts_by_month[month_key] = []
+                    receipts_by_month[month_key].append((dt, r))
 
+                # Sort months chronologically
+                sorted_months = sorted(receipts_by_month.keys(), key=lambda m: datetime.strptime(m, "%B %Y"))
+
+                loc_label = "All Locations" if get_active_location_filter() == "ALL" else get_active_location_filter()
+
+                for m_idx, m_name in enumerate(sorted_months):
+                    st.markdown(f"#### 📅 {m_name}")
+                    m_receipts = receipts_by_month[m_name]
+
+                    date_label_counts = {}
+                    receipt_columns = []
+                    for dt, r in m_receipts:
+                        base_dt = dt.strftime("%d-%b-%y")
+                        date_label_counts[base_dt] = date_label_counts.get(base_dt, 0) + 1
+                        col_label = base_dt if date_label_counts[base_dt] == 1 else f"{base_dt} ({date_label_counts[base_dt]})"
+
+                        raw_items = r.get("items") if isinstance(r.get("items"), list) else []
+                        qty_by_code = {}
+                        gross_cost = 0.0
+                        tot_units = 0
+                        for itm in raw_items:
+                            if not isinstance(itm, dict) or not itm.get("code"):
+                                continue
+                            c = str(itm["code"]).strip()
+                            rec_u = int(itm.get("rec") or 0)
+                            unit_cp = float(
+                                itm.get("cost")
+                                if itm.get("cost") is not None
+                                else FLAVOR_MAP.get(c, {}).get("cost_price", 0.0)
+                            )
+                            qty_by_code[c] = qty_by_code.get(c, 0) + rec_u
+                            tot_units += rec_u
+                            gross_cost += rec_u * unit_cp
+
+                        receipt_columns.append({
+                            "col_label": col_label,
+                            "qty_by_code": qty_by_code,
+                            "total_units": tot_units,
+                            "gross_cost": gross_cost,
+                        })
+
+                    matrix_cols = ["Flavour"] + [rc["col_label"] for rc in receipt_columns]
+                    matrix_rows = []
+
+                    for code in FLAVOR_CODES:
+                        row_dict = {"Flavour": FLAVOR_MAP[code]["name"]}
+                        for rc in receipt_columns:
+                            qty = int(rc["qty_by_code"].get(code, 0))
+                            row_dict[rc["col_label"]] = f"{qty:,}" if qty > 0 else "0"
+                        matrix_rows.append(row_dict)
+
+                    tot_units_row = {"Flavour": "Total Units"}
+                    tot_cost_row = {"Flavour": "Total Cost (Rs.)"}
+                    for rc in receipt_columns:
+                        tot_units_row[rc["col_label"]] = f"{int(rc['total_units']):,}"
+                        tot_cost_row[rc["col_label"]] = f"₹{rc['gross_cost']:,.0f}"
+
+                    matrix_rows.append(tot_units_row)
+                    matrix_rows.append(tot_cost_row)
+
+                    th_cells = "".join(
+                        f"<th style='text-align:{'left' if i == 0 else 'center'};'>{escape(col)}</th>"
+                        for i, col in enumerate(matrix_cols)
+                    )
+                    body_trs = []
+                    for r_idx, r in enumerate(matrix_rows):
+                        is_units_tot = r["Flavour"] == "Total Units"
+                        is_cost_tot = r["Flavour"] == "Total Cost (Rs.)"
+                        tr_class = "sr-total-units" if is_units_tot else ("sr-total-cost" if is_cost_tot else "")
+                        tds = []
+                        for c_idx, col in enumerate(matrix_cols):
+                            val = str(r.get(col, ""))
+                            align = "left" if c_idx == 0 else "center"
+                            tds.append(f"<td style='text-align:{align};'>{escape(val)}</td>")
+                        body_trs.append(f"<tr class='{tr_class}'>{''.join(tds)}</tr>")
+
+                    st.html(
+                        f"""
+                        <style>
+                        .sr-matrix-wrap {{
+                            width: 100%;
+                            overflow-x: auto;
+                            margin-top: 4px;
+                            margin-bottom: 16px;
+                            border: 1.5px solid #8A5E17;
+                            border-radius: 8px;
+                            background: #FFFFFF;
+                            box-shadow: 0 2px 5px rgba(0,0,0,0.04);
+                        }}
+                        table.sr-matrix-tbl {{
+                            width: 100%;
+                            border-collapse: collapse;
+                            font-family: 'Manrope', sans-serif;
+                            font-size: 13px;
+                        }}
+                        .sr-matrix-tbl th, .sr-matrix-tbl td {{
+                            border: 1px solid #E3D6C2;
+                            padding: 7px 10px;
+                            white-space: nowrap;
+                        }}
+                        .sr-matrix-tbl thead th {{
+                            background: #70440E;
+                            color: #FFFFFF;
+                            font-weight: 800;
+                            font-size: 13px;
+                        }}
+                        .sr-matrix-tbl tbody td:first-child {{
+                            font-weight: 700;
+                            color: #4A2418;
+                            background: #FFFBF2;
+                        }}
+                        .sr-matrix-tbl tbody tr:nth-child(even):not(.sr-total-units):not(.sr-total-cost) td:not(:first-child) {{
+                            background: #FFF9F0;
+                        }}
+                        .sr-matrix-tbl tr.sr-total-units td {{
+                            background: #FFF2DC !important;
+                            color: #4A2418 !important;
+                            font-weight: 900 !important;
+                            border-top: 2px solid #B47A2B !important;
+                        }}
+                        .sr-matrix-tbl tr.sr-total-cost td {{
+                            background: #EAF4EC !important;
+                            color: #124A1D !important;
+                            font-weight: 900 !important;
+                            border-top: 1.5px solid #A8D5AF !important;
+                        }}
+                        </style>
+                        <div class="sr-matrix-wrap">
+                            <table class="sr-matrix-tbl">
+                               <thead><tr>{th_cells}</tr></thead>
+                               <tbody>{''.join(body_trs)}</tbody>
+                            </table>
+                        </div>
+                        """
+                    )
+
+            if REPORTLAB_AVAILABLE and past_receipts:
+                st.markdown("---")
+                # Build combined structured receipts list for PDF download across all months
+                all_structured_receipts = []
+                for r in chronological_receipts:
+                    r_date_obj = pd.to_datetime(r["received_date"]).date() if r.get("received_date") else date.today()
+                    r_date_str = r_date_obj.strftime("%d-%b-%Y")
+                    r_loc = str(r.get("location") or CITY)
+                    r_po = f"PO #{int(r['purchase_order_id'])}" if pd.notna(r.get("purchase_order_id")) else "Ad-hoc Delivery"
+                    
                     raw_items = r.get("items") if isinstance(r.get("items"), list) else []
-                    qty_by_code = {}
-                    gross_cost = 0.0
-                    tot_units = 0
-                    for itm in raw_items:
-                        if not isinstance(itm, dict) or not itm.get("code"):
-                            continue
-                        c = str(itm["code"]).strip()
-                        rec_u = int(itm.get("rec") or 0)
-                        unit_cp = float(
-                            itm.get("cost")
-                            if itm.get("cost") is not None
-                            else FLAVOR_MAP.get(c, {}).get("cost_price", 0.0)
-                        )
-                        qty_by_code[c] = qty_by_code.get(c, 0) + rec_u
-                        tot_units += rec_u
-                        gross_cost += rec_u * unit_cp
+                    items_by_code = {str(itm.get("code")).strip(): itm for itm in raw_items if isinstance(itm, dict) and itm.get("code")}
+                    
+                    flavor_rows = []
+                    rec_tot_units, rec_gross_cost = 0, 0.0
+                    for code in FLAVOR_CODES:
+                        f_meta = FLAVOR_MAP[code]
+                        itm = items_by_code.get(code, {})
+                        rec_u = int(itm.get("rec") or 0) if itm else 0
+                        dam_u = int(itm.get("dam") or 0) if itm else 0
+                        unit_cp = float(itm.get("cost") if (itm and itm.get("cost") is not None) else f_meta["cost_price"])
+                        line_gross = float(rec_u) * unit_cp
+                        rec_tot_units += rec_u
+                        rec_gross_cost += line_gross
+                        flavor_rows.append({"Flavour": f_meta["name"], "Code": code, "Unit Cost (₹)": unit_cp, "Units Received": rec_u, "Damaged Units": dam_u, "Gross Cost (₹)": line_gross})
 
-                    receipt_columns.append({
-                        "col_label": col_label,
-                        "qty_by_code": qty_by_code,
-                        "total_units": tot_units,
-                        "gross_cost": gross_cost,
+                    all_structured_receipts.append({
+                        "id": int(r["id"]), "date_str": r_date_str, "location": r_loc, "po_label": r_po,
+                        "payment_status": str(r.get("payment_status") or "Pending"), "flavor_rows": flavor_rows,
+                        "total_units": rec_tot_units, "total_damaged": 0, "gross_cost": rec_gross_cost,
+                        "discount_pct": 0.0, "discount_amt": 0.0, "net_cost": rec_gross_cost
                     })
 
-                matrix_cols = ["Flavour"] + [rc["col_label"] for rc in receipt_columns]
-                matrix_rows = []
-
-                for code in FLAVOR_CODES:
-                    row_dict = {"Flavour": FLAVOR_MAP[code]["name"]}
-                    for rc in receipt_columns:
-                        qty = int(rc["qty_by_code"].get(code, 0))
-                        row_dict[rc["col_label"]] = f"{qty:,}" if qty > 0 else "0"
-                    matrix_rows.append(row_dict)
-
-                tot_units_row = {"Flavour": "Total Units"}
-                tot_cost_row = {"Flavour": "Total Cost (Rs.)"}
-                for rc in receipt_columns:
-                    tot_units_row[rc["col_label"]] = f"{int(rc['total_units']):,}"
-                    tot_cost_row[rc["col_label"]] = f"₹{rc['gross_cost']:,.0f}"
-
-                matrix_rows.append(tot_units_row)
-                matrix_rows.append(tot_cost_row)
-
-                top_c1, top_c2 = st.columns([3.5, 1.5])
-                with top_c2:
-                    loc_label = "All Locations" if get_active_location_filter() == "ALL" else get_active_location_filter()
-                    if REPORTLAB_AVAILABLE:
-                        # For PDF, use 'Rs.' prefix in Total Cost row so standard Helvetica font renders cleanly
-                        pdf_rows = [dict(r) for r in matrix_rows]
-                        for rc in receipt_columns:
-                            pdf_rows[-1][rc["col_label"]] = f"{rc['gross_cost']:,.0f}"
-                        pdf_bytes = generate_stock_received_report_pdf(matrix_cols, pdf_rows, location_label=loc_label)
-                        if pdf_bytes:
-                            st.download_button(
-                                label="📥 Download PDF Report",
-                                data=pdf_bytes,
-                                file_name=f"Stock_Received_Report_{loc_label.replace(' ', '_')}_{date.today().strftime('%Y%m%d')}.pdf",
-                                mime="application/pdf",
-                                type="primary",
-                                use_container_width=True,
-                            )
-
-                # Render clean aesthetic HTML table matching the rest of the app
-                th_cells = "".join(
-                    f"<th style='text-align:{'left' if i == 0 else 'center'};'>{escape(col)}</th>"
-                    for i, col in enumerate(matrix_cols)
-                )
-                body_trs = []
-                for r_idx, r in enumerate(matrix_rows):
-                    is_units_tot = r["Flavour"] == "Total Units"
-                    is_cost_tot = r["Flavour"] == "Total Cost (Rs.)"
-                    tr_class = "sr-total-units" if is_units_tot else ("sr-total-cost" if is_cost_tot else "")
-                    tds = []
-                    for c_idx, col in enumerate(matrix_cols):
-                        val = str(r.get(col, ""))
-                        align = "left" if c_idx == 0 else "center"
-                        tds.append(f"<td style='text-align:{align};'>{escape(val)}</td>")
-                    body_trs.append(f"<tr class='{tr_class}'>{''.join(tds)}</tr>")
-
-                st.html(
-                    f"""
-                    <style>
-                    .sr-matrix-wrap {{
-                        width: 100%;
-                        overflow-x: auto;
-                        margin-top: 6px;
-                        border: 1.5px solid #8A5E17;
-                        border-radius: 8px;
-                        background: #FFFFFF;
-                        box-shadow: 0 2px 5px rgba(0,0,0,0.04);
-                    }}
-                    table.sr-matrix-tbl {{
-                        width: 100%;
-                        border-collapse: collapse;
-                        font-family: 'Manrope', sans-serif;
-                        font-size: 13px;
-                    }}
-                    .sr-matrix-tbl th, .sr-matrix-tbl td {{
-                        border: 1px solid #E3D6C2;
-                        padding: 7px 10px;
-                        white-space: nowrap;
-                    }}
-                    .sr-matrix-tbl thead th {{
-                        background: #70440E;
-                        color: #FFFFFF;
-                        font-weight: 800;
-                        font-size: 13px;
-                    }}
-                    .sr-matrix-tbl tbody td:first-child {{
-                        font-weight: 700;
-                        color: #4A2418;
-                        background: #FFFBF2;
-                    }}
-                    .sr-matrix-tbl tbody tr:nth-child(even):not(.sr-total-units):not(.sr-total-cost) td:not(:first-child) {{
-                        background: #FFF9F0;
-                    }}
-                    .sr-matrix-tbl tr.sr-total-units td {{
-                        background: #FFF2DC !important;
-                        color: #4A2418 !important;
-                        font-weight: 900 !important;
-                        border-top: 2px solid #B47A2B !important;
-                    }}
-                    .sr-matrix-tbl tr.sr-total-cost td {{
-                        background: #EAF4EC !important;
-                        color: #124A1D !important;
-                        font-weight: 900 !important;
-                        border-top: 1.5px solid #A8D5AF !important;
-                    }}
-                    </style>
-                    <div class="sr-matrix-wrap">
-                        <table class="sr-matrix-tbl">
-                            <thead><tr>{th_cells}</tr></thead>
-                            <tbody>{''.join(body_trs)}</tbody>
-                        </table>
-                    </div>
-                    """
-                )
+                pdf_bytes = generate_stock_received_report_pdf(all_structured_receipts, location_label=loc_label)
+                if pdf_bytes:
+                    st.download_button(
+                        label="📥 Download Full Stock Received PDF Report",
+                        data=pdf_bytes,
+                        file_name=f"Stock_Received_Report_{loc_label.replace(' ', '_')}_{date.today().strftime('%Y%m%d')}.pdf",
+                        mime="application/pdf",
+                        type="primary",
+                        use_container_width=True,
+                    )
 
     elif freezer_tab_choice == "Stock Audit (Physical Count)":
         st.write("Log a new physical stock count, or view and edit a previously saved audit.")
