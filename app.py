@@ -2700,10 +2700,11 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
     story.append(Paragraph("<i>This is a computer-generated payslip for Kulfi Factory - Hosur Franchise.</i>", ParagraphStyle('Footer', fontName='Helvetica-Oblique', fontSize=8, textColor=colors.gray, alignment=1)))
     doc.build(story); buffer.seek(0); return buffer.getvalue()
 
-def generate_stock_received_report_pdf(matrix_cols, matrix_rows, location_label="All Locations"):
+def generate_stock_received_report_pdf(monthly_sections, overall_units, overall_cost, location_label="All Locations"):
     if not REPORTLAB_AVAILABLE:
         return None
     from reportlab.lib.pagesizes import landscape
+    from reportlab.platypus import KeepTogether
 
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
@@ -2711,8 +2712,8 @@ def generate_stock_received_report_pdf(matrix_cols, matrix_rows, location_label=
         pagesize=landscape(letter),
         rightMargin=28,
         leftMargin=28,
-        topMargin=28,
-        bottomMargin=28,
+        topMargin=26,
+        bottomMargin=26,
     )
     story, styles = [], getSampleStyleSheet()
 
@@ -2732,69 +2733,154 @@ def generate_stock_received_report_pdf(matrix_cols, matrix_rows, location_label=
         fontSize=9.5,
         textColor=colors.HexColor("#5A3E1B"),
         alignment=0,
-        spaceAfter=12,
+        spaceAfter=8,
+    )
+    month_hdr_style = ParagraphStyle(
+        "SRMonthHeading",
+        parent=styles["Heading2"],
+        fontName="Helvetica-Bold",
+        fontSize=12,
+        textColor=colors.HexColor("#4A2418"),
+        alignment=0,
+        spaceBefore=4,
+        spaceAfter=5,
     )
 
     story.append(Paragraph(f"<b>Kulfi Factory — Stock Received Report ({escape(str(location_label))})</b>", title_style))
     story.append(Paragraph(f"Generated on {date.today().strftime('%d-%b-%Y')}", sub_style))
 
-    # Split date columns into chunks of up to 9 dates per table so columns stay wide and readable
-    date_cols = matrix_cols[1:]
-    chunk_size = 9
-    chunks = [date_cols[i : i + chunk_size] for i in range(0, len(date_cols), chunk_size)] or [[]]
+    # Top Overall Summary Box (Overall Units & Overall Cost So Far)
+    overall_box = Table(
+        [
+            ["OVERALL UNITS RECEIVED (SO FAR)", "OVERALL COST (SO FAR)"],
+            [f"{int(overall_units):,} units", f"Rs. {float(overall_cost):,.0f}"],
+        ],
+        colWidths=[368.0, 368.0],
+    )
+    overall_box.hAlign = "LEFT"
+    overall_box.setStyle(
+        TableStyle([
+            ("BACKGROUND", (0, 0), (0, 0), colors.HexColor("#70440E")),
+            ("BACKGROUND", (1, 0), (1, 0), colors.HexColor("#124A1D")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, 0), 9.5),
+            ("BACKGROUND", (0, 1), (0, 1), colors.HexColor("#FFF2DC")),
+            ("BACKGROUND", (1, 1), (1, 1), colors.HexColor("#EAF4EC")),
+            ("TEXTCOLOR", (0, 1), (0, 1), colors.HexColor("#4A2418")),
+            ("TEXTCOLOR", (1, 1), (1, 1), colors.HexColor("#124A1D")),
+            ("FONTNAME", (0, 1), (-1, 1), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 1), (-1, 1), 12),
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("GRID", (0, 0), (-1, -1), 0.8, colors.HexColor("#D8C29D")),
+            ("TOPPADDING", (0, 0), (-1, -1), 6),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+        ])
+    )
+    story.append(overall_box)
+    story.append(Spacer(1, 14))
 
     usable_width = 736.0
-    flavour_col_w = 125.0
+    flavour_col_w = 120.0
+    chunk_size = 9
 
-    for c_idx, d_chunk in enumerate(chunks):
-        sub_cols = ["Flavour"] + d_chunk
-        n_dates = len(d_chunk)
-        date_col_w = max(58.0, min(88.0, (usable_width - flavour_col_w) / max(1, n_dates)))
-        col_widths = [flavour_col_w] + [date_col_w] * n_dates
+    for sec in monthly_sections:
+        m_name = sec["month_name"]
+        matrix_cols = sec["matrix_cols"]
+        pdf_rows = sec["pdf_rows"]
+        m_units = int(sec["month_total_units"])
+        m_cost = float(sec["month_total_cost"])
 
-        tbl_data = [sub_cols]
-        for r in matrix_rows:
-            tbl_data.append([str(r.get(col, "")) for col in sub_cols])
+        date_cols = matrix_cols[1:]
+        chunks = [date_cols[i : i + chunk_size] for i in range(0, len(date_cols), chunk_size)] or [[]]
 
-        t = Table(tbl_data, colWidths=col_widths, repeatRows=1)
-        t.hAlign = "LEFT"
-        t.setStyle(
+        month_flowables = [Paragraph(f"<b>{escape(m_name)}</b>", month_hdr_style)]
+
+        for c_idx, d_chunk in enumerate(chunks):
+            sub_cols = ["Flavour"] + d_chunk
+            n_dates = len(d_chunk)
+            date_col_w = max(55.0, min(88.0, (usable_width - flavour_col_w) / max(1, n_dates)))
+            col_widths = [flavour_col_w] + [date_col_w] * n_dates
+
+            tbl_data = [sub_cols]
+            for r in pdf_rows:
+                tbl_data.append([str(r.get(col, "")) for col in sub_cols])
+
+            t = Table(tbl_data, colWidths=col_widths, repeatRows=1)
+            t.hAlign = "LEFT"
+            t.setStyle(
+                TableStyle([
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#70440E")),
+                    ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                    ("FONTSIZE", (0, 0), (-1, 0), 9),
+                    ("ALIGN", (0, 0), (0, -1), "LEFT"),
+                    ("ALIGN", (1, 0), (-1, -1), "CENTER"),
+                    ("FONTNAME", (0, 1), (-1, -3), "Helvetica"),
+                    ("FONTSIZE", (0, 1), (-1, -3), 8.5),
+                    ("TEXTCOLOR", (0, 1), (-1, -3), colors.HexColor("#2A1B10")),
+                    ("ROWBACKGROUNDS", (0, 1), (-1, -3), [colors.white, colors.HexColor("#FFFBF2")]),
+                    # Total Units row (-2)
+                    ("BACKGROUND", (0, -2), (-1, -2), colors.HexColor("#FFF2DC")),
+                    ("FONTNAME", (0, -2), (-1, -2), "Helvetica-Bold"),
+                    ("FONTSIZE", (0, -2), (-1, -2), 9),
+                    ("TEXTCOLOR", (0, -2), (-1, -2), colors.HexColor("#4A2418")),
+                    ("LINEABOVE", (0, -2), (-1, -2), 1.1, colors.HexColor("#B47A2B")),
+                    # Total Cost (Rs.) row (-1)
+                    ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#EAF4EC")),
+                    ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
+                    ("FONTSIZE", (0, -1), (-1, -1), 9),
+                    ("TEXTCOLOR", (0, -1), (-1, -1), colors.HexColor("#124A1D")),
+                    ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#D8C29D")),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("TOPPADDING", (0, 0), (-1, -1), 4),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 6),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+                ])
+            )
+            month_flowables.append(t)
+            if c_idx < len(chunks) - 1:
+                month_flowables.append(Spacer(1, 6))
+
+        month_flowables.append(Spacer(1, 5))
+
+        # Two boxes below each month's table: Month Overall Units & Month Overall Cost
+        month_summary_box = Table(
+            [
+                [f"{m_name.upper()} — OVERALL UNITS", f"{m_name.upper()} — OVERALL COST (RS.)"],
+                [f"{m_units:,} units", f"Rs. {m_cost:,.0f}"],
+            ],
+            colWidths=[368.0, 368.0],
+        )
+        month_summary_box.hAlign = "LEFT"
+        month_summary_box.setStyle(
             TableStyle([
-                # Header row
-                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#70440E")),
-                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("BACKGROUND", (0, 0), (0, 0), colors.HexColor("#FFF2DC")),
+                ("BACKGROUND", (1, 0), (1, 0), colors.HexColor("#EAF4EC")),
+                ("TEXTCOLOR", (0, 0), (0, 0), colors.HexColor("#70440E")),
+                ("TEXTCOLOR", (1, 0), (1, 0), colors.HexColor("#124A1D")),
                 ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                ("FONTSIZE", (0, 0), (-1, 0), 9.5),
-                ("ALIGN", (0, 0), (0, -1), "LEFT"),
-                ("ALIGN", (1, 0), (-1, -1), "CENTER"),
-                # Body rows (Flavours)
-                ("FONTNAME", (0, 1), (-1, -3), "Helvetica"),
-                ("FONTSIZE", (0, 1), (-1, -3), 9),
-                ("TEXTCOLOR", (0, 1), (-1, -3), colors.HexColor("#2A1B10")),
-                ("ROWBACKGROUNDS", (0, 1), (-1, -3), [colors.white, colors.HexColor("#FFFBF2")]),
-                # Total Units row (-2)
-                ("BACKGROUND", (0, -2), (-1, -2), colors.HexColor("#FFF2DC")),
-                ("FONTNAME", (0, -2), (-1, -2), "Helvetica-Bold"),
-                ("FONTSIZE", (0, -2), (-1, -2), 9.5),
-                ("TEXTCOLOR", (0, -2), (-1, -2), colors.HexColor("#4A2418")),
-                ("LINEABOVE", (0, -2), (-1, -2), 1.2, colors.HexColor("#B47A2B")),
-                # Total Cost (Rs.) row (-1)
-                ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#EAF4EC")),
-                ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
-                ("FONTSIZE", (0, -1), (-1, -1), 9.5),
-                ("TEXTCOLOR", (0, -1), (-1, -1), colors.HexColor("#124A1D")),
-                # Borders & Padding
-                ("GRID", (0, 0), (-1, -1), 0.6, colors.HexColor("#D8C29D")),
+                ("FONTSIZE", (0, 0), (-1, 0), 8.5),
+                ("BACKGROUND", (0, 1), (0, 1), colors.HexColor("#FFFBF2")),
+                ("BACKGROUND", (1, 1), (1, 1), colors.HexColor("#F3FAF4")),
+                ("TEXTCOLOR", (0, 1), (0, 1), colors.HexColor("#4A2418")),
+                ("TEXTCOLOR", (1, 1), (1, 1), colors.HexColor("#124A1D")),
+                ("FONTNAME", (0, 1), (-1, 1), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 1), (-1, 1), 10.5),
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                ("TOPPADDING", (0, 0), (-1, -1), 5),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
-                ("LEFTPADDING", (0, 0), (-1, -1), 6),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+                ("GRID", (0, 0), (-1, -1), 0.6, colors.HexColor("#D8C29D")),
+                ("TOPPADDING", (0, 0), (-1, -1), 4.5),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 4.5),
             ])
         )
-        story.append(t)
-        if c_idx < len(chunks) - 1:
-            story.append(Spacer(1, 14))
+        month_flowables.append(month_summary_box)
+        month_flowables.append(Spacer(1, 14))
+
+        # KeepTogether guarantees a month table never splits across pages
+        story.append(KeepTogether(month_flowables))
 
     doc.build(story)
     buffer.seek(0)
@@ -5659,9 +5745,8 @@ elif page == "Freezer Stock" and user_role == "admin":
             if not past_receipts:
                 st.info("No stock received records found.")
             else:
-                # Group receipts by month (e.g., 'November 2026')
                 chronological_receipts = list(reversed(past_receipts))
-                
+
                 receipts_by_month = {}
                 for r in chronological_receipts:
                     dt = pd.to_datetime(r["received_date"]).date() if r.get("received_date") else date.today()
@@ -5670,17 +5755,20 @@ elif page == "Freezer Stock" and user_role == "admin":
                         receipts_by_month[month_key] = []
                     receipts_by_month[month_key].append((dt, r))
 
-                # Sort months chronologically
                 sorted_months = sorted(receipts_by_month.keys(), key=lambda m: datetime.strptime(m, "%B %Y"))
-
                 loc_label = "All Locations" if get_active_location_filter() == "ALL" else get_active_location_filter()
 
-                for m_idx, m_name in enumerate(sorted_months):
-                    st.markdown(f"#### 📅 {m_name}")
-                    m_receipts = receipts_by_month[m_name]
+                monthly_sections = []
+                overall_units_all_months = 0
+                overall_cost_all_months = 0.0
 
+                for m_name in sorted_months:
+                    m_receipts = receipts_by_month[m_name]
                     date_label_counts = {}
                     receipt_columns = []
+                    month_total_units = 0
+                    month_total_cost = 0.0
+
                     for dt, r in m_receipts:
                         base_dt = dt.strftime("%d-%b-%y")
                         date_label_counts[base_dt] = date_label_counts.get(base_dt, 0) + 1
@@ -5704,6 +5792,9 @@ elif page == "Freezer Stock" and user_role == "admin":
                             tot_units += rec_u
                             gross_cost += rec_u * unit_cp
 
+                        month_total_units += tot_units
+                        month_total_cost += gross_cost
+
                         receipt_columns.append({
                             "col_label": col_label,
                             "qty_by_code": qty_by_code,
@@ -5711,9 +5802,11 @@ elif page == "Freezer Stock" and user_role == "admin":
                             "gross_cost": gross_cost,
                         })
 
+                    overall_units_all_months += month_total_units
+                    overall_cost_all_months += month_total_cost
+
                     matrix_cols = ["Flavour"] + [rc["col_label"] for rc in receipt_columns]
                     matrix_rows = []
-
                     for code in FLAVOR_CODES:
                         row_dict = {"Flavour": FLAVOR_MAP[code]["name"]}
                         for rc in receipt_columns:
@@ -5722,20 +5815,70 @@ elif page == "Freezer Stock" and user_role == "admin":
                         matrix_rows.append(row_dict)
 
                     tot_units_row = {"Flavour": "Total Units"}
-                    tot_cost_row = {"Flavour": "Total Cost (Rs.)"}
+                    tot_cost_row_ui = {"Flavour": "Total Cost (Rs.)"}
+                    tot_cost_row_pdf = {"Flavour": "Total Cost (Rs.)"}
                     for rc in receipt_columns:
                         tot_units_row[rc["col_label"]] = f"{int(rc['total_units']):,}"
-                        tot_cost_row[rc["col_label"]] = f"₹{rc['gross_cost']:,.0f}"
+                        tot_cost_row_ui[rc["col_label"]] = f"₹{rc['gross_cost']:,.0f}"
+                        tot_cost_row_pdf[rc["col_label"]] = f"{rc['gross_cost']:,.0f}"
 
-                    matrix_rows.append(tot_units_row)
-                    matrix_rows.append(tot_cost_row)
+                    ui_rows = matrix_rows + [tot_units_row, tot_cost_row_ui]
+                    pdf_rows = matrix_rows + [tot_units_row, tot_cost_row_pdf]
+
+                    monthly_sections.append({
+                        "month_name": m_name,
+                        "matrix_cols": matrix_cols,
+                        "ui_rows": ui_rows,
+                        "pdf_rows": pdf_rows,
+                        "month_total_units": month_total_units,
+                        "month_total_cost": month_total_cost,
+                    })
+
+                # 1. Top Overall Units & Overall Cost (So Far) + PDF Download Button
+                top_k1, top_k2, top_k3 = st.columns([1.8, 1.8, 1.4])
+                with top_k1:
+                    st.metric("📦 Overall Units Received (So Far)", f"{overall_units_all_months:,} units")
+                with top_k2:
+                    st.metric("💰 Overall Gross Cost (So Far)", f"₹{overall_cost_all_months:,.0f}")
+                with top_k3:
+                    st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+                    if REPORTLAB_AVAILABLE:
+                        pdf_bytes = generate_stock_received_report_pdf(
+                            monthly_sections,
+                            overall_units_all_months,
+                            overall_cost_all_months,
+                            location_label=loc_label,
+                        )
+                        if pdf_bytes:
+                            st.download_button(
+                                label="📥 Download PDF Report",
+                                data=pdf_bytes,
+                                file_name=f"Stock_Received_Report_{loc_label.replace(' ', '_')}_{date.today().strftime('%Y%m%d')}.pdf",
+                                mime="application/pdf",
+                                type="primary",
+                                use_container_width=True,
+                            )
+                    else:
+                        st.warning("Install `reportlab` for PDF export.")
+
+                st.markdown("---")
+
+                # 2. Render each month's table + 2 summary boxes below each month's table
+                for sec in monthly_sections:
+                    m_name = sec["month_name"]
+                    matrix_cols = sec["matrix_cols"]
+                    ui_rows = sec["ui_rows"]
+                    m_units = sec["month_total_units"]
+                    m_cost = sec["month_total_cost"]
+
+                    st.markdown(f"#### 📅 {m_name}")
 
                     th_cells = "".join(
                         f"<th style='text-align:{'left' if i == 0 else 'center'};'>{escape(col)}</th>"
                         for i, col in enumerate(matrix_cols)
                     )
                     body_trs = []
-                    for r_idx, r in enumerate(matrix_rows):
+                    for r in ui_rows:
                         is_units_tot = r["Flavour"] == "Total Units"
                         is_cost_tot = r["Flavour"] == "Total Cost (Rs.)"
                         tr_class = "sr-total-units" if is_units_tot else ("sr-total-cost" if is_cost_tot else "")
@@ -5753,7 +5896,7 @@ elif page == "Freezer Stock" and user_role == "admin":
                             width: 100%;
                             overflow-x: auto;
                             margin-top: 4px;
-                            margin-bottom: 16px;
+                            margin-bottom: 10px;
                             border: 1.5px solid #8A5E17;
                             border-radius: 8px;
                             background: #FFFFFF;
@@ -5796,6 +5939,48 @@ elif page == "Freezer Stock" and user_role == "admin":
                             font-weight: 900 !important;
                             border-top: 1.5px solid #A8D5AF !important;
                         }}
+                        .sr-month-boxes {{
+                            display: grid;
+                            grid-template-columns: 1fr 1fr;
+                            gap: 12px;
+                            margin-bottom: 22px;
+                            font-family: 'Manrope', sans-serif;
+                        }}
+                        .sr-month-box-units {{
+                            background: #FFF2DC;
+                            border: 1.5px solid #DEB887;
+                            border-radius: 8px;
+                            padding: 10px 14px;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                        }}
+                        .sr-month-box-cost {{
+                            background: #EAF4EC;
+                            border: 1.5px solid #A8D5AF;
+                            border-radius: 8px;
+                            padding: 10px 14px;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                        }}
+                        .sr-box-lbl {{
+                            font-size: 12px;
+                            font-weight: 800;
+                            color: #5A3E1B;
+                            text-transform: uppercase;
+                            letter-spacing: 0.02em;
+                        }}
+                        .sr-box-val-u {{
+                            font-size: 16px;
+                            font-weight: 900;
+                            color: #4A2418;
+                        }}
+                        .sr-box-val-c {{
+                            font-size: 16px;
+                            font-weight: 900;
+                            color: #124A1D;
+                        }}
                         </style>
                         <div class="sr-matrix-wrap">
                             <table class="sr-matrix-tbl">
@@ -5803,51 +5988,17 @@ elif page == "Freezer Stock" and user_role == "admin":
                                <tbody>{''.join(body_trs)}</tbody>
                             </table>
                         </div>
+                        <div class="sr-month-boxes">
+                            <div class="sr-month-box-units">
+                                <span class="sr-box-lbl">📦 {escape(m_name)} — Overall Units</span>
+                                <span class="sr-box-val-u">{m_units:,} units</span>
+                            </div>
+                            <div class="sr-month-box-cost">
+                                <span class="sr-box-lbl" style="color:#124A1D;">💰 {escape(m_name)} — Overall Cost</span>
+                                <span class="sr-box-val-c">₹{m_cost:,.0f}</span>
+                            </div>
+                        </div>
                         """
-                    )
-
-            if REPORTLAB_AVAILABLE and past_receipts:
-                st.markdown("---")
-                # Build combined structured receipts list for PDF download across all months
-                all_structured_receipts = []
-                for r in chronological_receipts:
-                    r_date_obj = pd.to_datetime(r["received_date"]).date() if r.get("received_date") else date.today()
-                    r_date_str = r_date_obj.strftime("%d-%b-%Y")
-                    r_loc = str(r.get("location") or CITY)
-                    r_po = f"PO #{int(r['purchase_order_id'])}" if pd.notna(r.get("purchase_order_id")) else "Ad-hoc Delivery"
-                    
-                    raw_items = r.get("items") if isinstance(r.get("items"), list) else []
-                    items_by_code = {str(itm.get("code")).strip(): itm for itm in raw_items if isinstance(itm, dict) and itm.get("code")}
-                    
-                    flavor_rows = []
-                    rec_tot_units, rec_gross_cost = 0, 0.0
-                    for code in FLAVOR_CODES:
-                        f_meta = FLAVOR_MAP[code]
-                        itm = items_by_code.get(code, {})
-                        rec_u = int(itm.get("rec") or 0) if itm else 0
-                        dam_u = int(itm.get("dam") or 0) if itm else 0
-                        unit_cp = float(itm.get("cost") if (itm and itm.get("cost") is not None) else f_meta["cost_price"])
-                        line_gross = float(rec_u) * unit_cp
-                        rec_tot_units += rec_u
-                        rec_gross_cost += line_gross
-                        flavor_rows.append({"Flavour": f_meta["name"], "Code": code, "Unit Cost (₹)": unit_cp, "Units Received": rec_u, "Damaged Units": dam_u, "Gross Cost (₹)": line_gross})
-
-                    all_structured_receipts.append({
-                        "id": int(r["id"]), "date_str": r_date_str, "location": r_loc, "po_label": r_po,
-                        "payment_status": str(r.get("payment_status") or "Pending"), "flavor_rows": flavor_rows,
-                        "total_units": rec_tot_units, "total_damaged": 0, "gross_cost": rec_gross_cost,
-                        "discount_pct": 0.0, "discount_amt": 0.0, "net_cost": rec_gross_cost
-                    })
-
-                pdf_bytes = generate_stock_received_report_pdf(all_structured_receipts, location_label=loc_label)
-                if pdf_bytes:
-                    st.download_button(
-                        label="📥 Download Full Stock Received PDF Report",
-                        data=pdf_bytes,
-                        file_name=f"Stock_Received_Report_{loc_label.replace(' ', '_')}_{date.today().strftime('%Y%m%d')}.pdf",
-                        mime="application/pdf",
-                        type="primary",
-                        use_container_width=True,
                     )
 
     elif freezer_tab_choice == "Stock Audit (Physical Count)":
