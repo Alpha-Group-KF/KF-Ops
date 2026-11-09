@@ -1119,72 +1119,6 @@ def get_today_cart_stock_state(cart_name, today_date):
     if db_conn is None:
         return stock_state, staff_name
 
-
-def get_cart_stock_view_data(cart_name, target_date):
-    """
-    Return read-only flavour-wise stock breakdown for (cart_name, target_date):
-    Opening, Restock (total added_units including any extra stock), and Sold Units.
-    For today's date, Sold Units is always 0.
-    """
-    today_dt = date.today()
-    is_today = (target_date == today_dt)
-
-    prev_closings, prev_staff = get_latest_cart_closing_state(cart_name, target_date)
-    staff_name = prev_staff or "—"
-
-    opening_map = {code: int(prev_closings.get(code, 0)) for code in FLAVOR_CODES}
-    restock_map = {code: 0 for code in FLAVOR_CODES}
-    sold_map = {code: 0 for code in FLAVOR_CODES}
-
-    if db_conn is not None:
-        try:
-            entry_df = db_conn.query(
-                """
-                SELECT id, staff_name
-                FROM daily_cart_entries
-                WHERE entry_date = :dt AND cart_name = :cart
-                LIMIT 1;
-                """,
-                params={"dt": target_date, "cart": cart_name},
-                ttl="0s",
-            )
-            if not entry_df.empty:
-                eid = int(entry_df.iloc[0]["id"])
-                raw_st = str(entry_df.iloc[0].get("staff_name") or "").strip()
-                if raw_st and raw_st != "Select Staff":
-                    staff_name = raw_st
-
-                items_df = db_conn.query(
-                    """
-                    SELECT flavor_code, opening_units, added_units, sold_units
-                    FROM daily_cart_items
-                    WHERE daily_entry_id = :eid;
-                    """,
-                    params={"eid": eid},
-                    ttl="0s",
-                )
-                for _, r in items_df.iterrows():
-                    code = str(r.get("flavor_code") or "").strip()
-                    if code in FLAVOR_CODES:
-                        opening_map[code] = int(_num(r.get("opening_units")))
-                        restock_map[code] = int(_num(r.get("added_units")))
-                        sold_map[code] = 0 if is_today else max(0, int(_num(r.get("sold_units"))))
-        except Exception:
-            pass
-
-    rows = []
-    for code in FLAVOR_CODES:
-        f_info = FLAVOR_MAP[code]
-        rows.append({
-            "code": code,
-            "flavour": f_info["name"],
-            "opening": int(opening_map.get(code, 0)),
-            "restock": int(restock_map.get(code, 0)),
-            "sold": 0 if is_today else int(sold_map.get(code, 0)),
-        })
-
-    return rows, (staff_name if staff_name else "—")
-
     try:
         entry_df = db_conn.query(
             """
@@ -1235,6 +1169,98 @@ def get_cart_stock_view_data(cart_name, target_date):
         pass
 
     return stock_state, staff_name
+
+
+def get_cart_stock_view_data(cart_name, target_date):
+    """
+    Return read-only flavour-wise stock breakdown for (cart_name, target_date):
+    Opening, Restock (total added_units including any extra stock), Extra Stock, and Sold Units.
+    For today's date, Sold Units is always 0.
+    """
+    today_dt = date.today()
+    is_today = (target_date == today_dt)
+
+    prev_closings, prev_staff = get_latest_cart_closing_state(cart_name, target_date)
+    staff_name = prev_staff or "—"
+
+    opening_map = {code: int(prev_closings.get(code, 0)) for code in FLAVOR_CODES}
+    restock_map = {code: 0 for code in FLAVOR_CODES}
+    extra_map = {code: 0 for code in FLAVOR_CODES}
+    sold_map = {code: 0 for code in FLAVOR_CODES}
+
+    if db_conn is not None:
+        try:
+            entry_df = db_conn.query(
+                """
+                SELECT id, staff_name
+                FROM daily_cart_entries
+                WHERE entry_date = :dt AND cart_name = :cart
+                LIMIT 1;
+                """,
+                params={"dt": target_date, "cart": cart_name},
+                ttl="0s",
+            )
+            if not entry_df.empty:
+                eid = int(entry_df.iloc[0]["id"])
+                raw_st = str(entry_df.iloc[0].get("staff_name") or "").strip()
+                if raw_st and raw_st != "Select Staff":
+                    staff_name = raw_st
+
+                items_df = db_conn.query(
+                    """
+                    SELECT flavor_code, opening_units, added_units, sold_units
+                    FROM daily_cart_items
+                    WHERE daily_entry_id = :eid;
+                    """,
+                    params={"eid": eid},
+                    ttl="0s",
+                )
+                for _, r in items_df.iterrows():
+                    code = str(r.get("flavor_code") or "").strip()
+                    if code in FLAVOR_CODES:
+                        opening_map[code] = int(_num(r.get("opening_units")))
+                        restock_map[code] = int(_num(r.get("added_units")))
+                        sold_map[code] = 0 if is_today else max(0, int(_num(r.get("sold_units"))))
+
+            extra_df = db_conn.query(
+                """
+                SELECT
+                    COALESCE(SUM(ml_units), 0) AS ml_units,
+                    COALESCE(SUM(mm_units), 0) AS mm_units,
+                    COALESCE(SUM(ps_units), 0) AS ps_units,
+                    COALESCE(SUM(mn_units), 0) AS mn_units,
+                    COALESCE(SUM(kb_units), 0) AS kb_units,
+                    COALESCE(SUM(bm_units), 0) AS bm_units,
+                    COALESCE(SUM(sg_units), 0) AS sg_units,
+                    COALESCE(SUM(ch_units), 0) AS ch_units,
+                    COALESCE(SUM(ra_units), 0) AS ra_units
+                FROM public.cart_extra_stock_logs
+                WHERE entry_date = :dt AND cart_name = :cart;
+                """,
+                params={"dt": target_date, "cart": cart_name},
+                ttl="0s",
+            )
+            if not extra_df.empty:
+                erow = extra_df.iloc[0]
+                for code in FLAVOR_CODES:
+                    acol = FLAVOR_MAP[code]["audit_col"]
+                    extra_map[code] = max(0, int(_num(erow.get(acol, 0))))
+        except Exception:
+            pass
+
+    rows = []
+    for code in FLAVOR_CODES:
+        f_info = FLAVOR_MAP[code]
+        rows.append({
+            "code": code,
+            "flavour": f_info["name"],
+            "opening": int(opening_map.get(code, 0)),
+            "restock": int(restock_map.get(code, 0)),
+            "extra": int(extra_map.get(code, 0)),
+            "sold": 0 if is_today else int(sold_map.get(code, 0)),
+        })
+
+    return rows, (staff_name if staff_name else "—")
 
 
 def sync_today_opening_after_sales_update(today_date, cart_name, new_opening_map):
@@ -1383,12 +1409,12 @@ def add_today_extra_stock_entry(today_date, cart_name, extra_map, staff_name="")
                         entry_date, cart_name, location, staff_name, daily_entry_id,
                         ml_units, mm_units, ps_units, mn_units, kb_units,
                         bm_units, sg_units, ch_units, ra_units,
-                        total_extra_units, recorded_by, source_app
+                        recorded_by, source_app
                     ) VALUES (
                         :dt, :cart, :loc, :staff, :eid,
                         :ml, :mm, :ps, :mn, :kb,
                         :bm, :sg, :ch, :ra,
-                        :tot, :recby, 'web app'
+                        :recby, 'web app'
                     );
                 """),
                 {
@@ -3389,7 +3415,7 @@ elif page == "Daily Entry":
         with em4:
             with st.container(border=True):
                 st.markdown("### 📋 View Cart Stock")
-                st.caption("Read-only flavour-wise Opening, Restock & Sold units (Today, Today-1, Today-2)")
+                st.caption("Read-only view of Cart Stock")
                 if st.button("View Cart Stock →", key="open_view_cart_stock", type="primary", use_container_width=True):
                     st.session_state["daily_entry_mode"] = "view_stock"
                     st.rerun()
@@ -4281,7 +4307,7 @@ elif page == "Daily Entry":
         # --------------------------------------------------------------
         elif entry_mode == "view_stock":
             st.subheader("📋 View Cart Stock")
-            st.caption("Read-only view of stock taken out for sale and units sold for Today, Today - 1, and Today - 2.")
+            st.caption("Read-only view of Cart Stock")
 
             allowed_stock_dates = [
                 today_val,
@@ -4326,23 +4352,33 @@ elif page == "Daily Entry":
                 vh3.markdown("<div class='entry-grid-header'>Restock</div>", unsafe_allow_html=True)
                 vh4.markdown("<div class='entry-grid-header'>Sold Units</div>", unsafe_allow_html=True)
 
-                tot_open_v, tot_restock_v, tot_sold_v = 0, 0, 0
+                tot_open_v, tot_restock_v, tot_extra_v, tot_sold_v = 0, 0, 0, 0
 
                 for r in stock_rows:
-                    tot_open_v += int(r["opening"])
-                    tot_restock_v += int(r["restock"])
-                    tot_sold_v += int(r["sold"])
+                    op_val = int(r["opening"])
+                    rs_val = int(r["restock"])
+                    ex_val = int(r.get("extra", 0))
+                    sd_val = int(r["sold"])
+
+                    tot_open_v += op_val
+                    tot_restock_v += rs_val
+                    tot_extra_v += ex_val
+                    tot_sold_v += sd_val
+
+                    rs_disp = f"{rs_val} ({ex_val})" if ex_val > 0 else f"{rs_val}"
 
                     r1, r2, r3, r4 = st.columns([2.2, 1.1, 1.1, 1.1], gap="small")
                     r1.markdown(f"<div class='entry-grid-cell-flavour'><span>{escape(r['flavour'])}</span></div>", unsafe_allow_html=True)
-                    r2.markdown(f"<div class='entry-grid-cell'>{int(r['opening'])}</div>", unsafe_allow_html=True)
-                    r3.markdown(f"<div class='entry-grid-cell'>{int(r['restock'])}</div>", unsafe_allow_html=True)
-                    r4.markdown(f"<div class='entry-grid-cell-sold'>{int(r['sold'])}</div>", unsafe_allow_html=True)
+                    r2.markdown(f"<div class='entry-grid-cell'>{op_val}</div>", unsafe_allow_html=True)
+                    r3.markdown(f"<div class='entry-grid-cell'>{rs_disp}</div>", unsafe_allow_html=True)
+                    r4.markdown(f"<div class='entry-grid-cell-sold'>{sd_val}</div>", unsafe_allow_html=True)
+
+                tot_rs_disp = f"{tot_restock_v} ({tot_extra_v})" if tot_extra_v > 0 else f"{tot_restock_v}"
 
                 vt1, vt2, vt3, vt4 = st.columns([2.2, 1.1, 1.1, 1.1], gap="small")
                 vt1.markdown("<div class='entry-grid-total-row' style='text-align:left;font-weight:900;'><b>TOTAL</b></div>", unsafe_allow_html=True)
                 vt2.markdown(f"<div class='entry-grid-total-row' style='text-align:center;font-weight:900;'><b>{tot_open_v}</b></div>", unsafe_allow_html=True)
-                vt3.markdown(f"<div class='entry-grid-total-row' style='text-align:center;font-weight:900;'><b>{tot_restock_v}</b></div>", unsafe_allow_html=True)
+                vt3.markdown(f"<div class='entry-grid-total-row' style='text-align:center;font-weight:900;'><b>{tot_rs_disp}</b></div>", unsafe_allow_html=True)
                 vt4.markdown(f"<div class='entry-grid-total-row' style='text-align:center;color:#C43D17;font-weight:900;'><b>{tot_sold_v}</b></div>", unsafe_allow_html=True)
 
 elif page == "Payslip Generator" and user_role == "admin":
