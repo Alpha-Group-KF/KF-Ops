@@ -1119,6 +1119,72 @@ def get_today_cart_stock_state(cart_name, today_date):
     if db_conn is None:
         return stock_state, staff_name
 
+
+def get_cart_stock_view_data(cart_name, target_date):
+    """
+    Return read-only flavour-wise stock breakdown for (cart_name, target_date):
+    Opening, Restock (total added_units including any extra stock), and Sold Units.
+    For today's date, Sold Units is always 0.
+    """
+    today_dt = date.today()
+    is_today = (target_date == today_dt)
+
+    prev_closings, prev_staff = get_latest_cart_closing_state(cart_name, target_date)
+    staff_name = prev_staff or "—"
+
+    opening_map = {code: int(prev_closings.get(code, 0)) for code in FLAVOR_CODES}
+    restock_map = {code: 0 for code in FLAVOR_CODES}
+    sold_map = {code: 0 for code in FLAVOR_CODES}
+
+    if db_conn is not None:
+        try:
+            entry_df = db_conn.query(
+                """
+                SELECT id, staff_name
+                FROM daily_cart_entries
+                WHERE entry_date = :dt AND cart_name = :cart
+                LIMIT 1;
+                """,
+                params={"dt": target_date, "cart": cart_name},
+                ttl="0s",
+            )
+            if not entry_df.empty:
+                eid = int(entry_df.iloc[0]["id"])
+                raw_st = str(entry_df.iloc[0].get("staff_name") or "").strip()
+                if raw_st and raw_st != "Select Staff":
+                    staff_name = raw_st
+
+                items_df = db_conn.query(
+                    """
+                    SELECT flavor_code, opening_units, added_units, sold_units
+                    FROM daily_cart_items
+                    WHERE daily_entry_id = :eid;
+                    """,
+                    params={"eid": eid},
+                    ttl="0s",
+                )
+                for _, r in items_df.iterrows():
+                    code = str(r.get("flavor_code") or "").strip()
+                    if code in FLAVOR_CODES:
+                        opening_map[code] = int(_num(r.get("opening_units")))
+                        restock_map[code] = int(_num(r.get("added_units")))
+                        sold_map[code] = 0 if is_today else max(0, int(_num(r.get("sold_units"))))
+        except Exception:
+            pass
+
+    rows = []
+    for code in FLAVOR_CODES:
+        f_info = FLAVOR_MAP[code]
+        rows.append({
+            "code": code,
+            "flavour": f_info["name"],
+            "opening": int(opening_map.get(code, 0)),
+            "restock": int(restock_map.get(code, 0)),
+            "sold": 0 if is_today else int(sold_map.get(code, 0)),
+        })
+
+    return rows, (staff_name if staff_name else "—")
+
     try:
         entry_df = db_conn.query(
             """
@@ -3293,7 +3359,7 @@ elif page == "Daily Entry":
         st.caption("Choose what you want to record.")
         st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
 
-        em1, em2, em3, em4 = st.columns(4, gap="medium")
+        em1, em2, em3, em4, em5 = st.columns(5, gap="medium")
         with em1:
             with st.container(border=True):
                 st.markdown("### 🧾 Sales Entry (Carts)")
@@ -3321,6 +3387,13 @@ elif page == "Daily Entry":
                     st.session_state["daily_entry_mode"] = "extra"
                     st.rerun()
         with em4:
+            with st.container(border=True):
+                st.markdown("### 📋 View Cart Stock")
+                st.caption("Read-only flavour-wise Opening, Restock & Sold units (Today, Today-1, Today-2)")
+                if st.button("View Cart Stock →", key="open_view_cart_stock", type="primary", use_container_width=True):
+                    st.session_state["daily_entry_mode"] = "view_stock"
+                    st.rerun()
+        with em5:
             with st.container(border=True):
                 st.markdown("### ❄️ Sales Entry (Freezer)")
                 st.caption("Direct sales from Freezer stock with live MRP & leakage calculation")
@@ -4202,6 +4275,75 @@ elif page == "Daily Entry":
                     st.dataframe(pd.DataFrame(disp_extra_logs), hide_index=True, use_container_width=True)
             except Exception as e:
                 st.caption(f"Extra stock audit log unavailable: {e}")
+
+        # --------------------------------------------------------------
+        # VIEW CART STOCK (Read-Only: Today, Today-1, Today-2)
+        # --------------------------------------------------------------
+        elif entry_mode == "view_stock":
+            st.subheader("📋 View Cart Stock")
+            st.caption("Read-only view of stock taken out for sale and units sold for Today, Today - 1, and Today - 2.")
+
+            allowed_stock_dates = [
+                today_val,
+                today_val - timedelta(days=1),
+                today_val - timedelta(days=2),
+            ]
+            date_label_map = {_entry_date_display(d): d for d in allowed_stock_dates}
+            date_labels_list = list(date_label_map.keys())
+
+            vc1, vc2, vc3 = st.columns([1.2, 1.1, 1.1])
+            with vc1:
+                cart_name = st.selectbox("Cart Name", CARTS, key="entry_cart_shared")
+            with vc2:
+                sel_view_date_label = st.selectbox(
+                    "Date",
+                    date_labels_list,
+                    index=0,
+                    key="view_cart_stock_date_sel",
+                )
+                selected_stock_date = date_label_map[sel_view_date_label]
+
+            stock_rows, readonly_staff_name = get_cart_stock_view_data(cart_name, selected_stock_date)
+
+            with vc3:
+                st.text_input(
+                    "Staff Name",
+                    value=readonly_staff_name,
+                    disabled=True,
+                    key=f"view_stock_staff_ro_{cart_name}_{selected_stock_date.strftime('%Y%m%d')}",
+                )
+
+            st.markdown(
+                f"<div class='header-box-restock'><span>📋 Cart Stock Summary — {sel_view_date_label}</span>"
+                f"<span><b>{escape(cart_name)}</b> &nbsp;|&nbsp; Staff: <b>{escape(readonly_staff_name)}</b></span></div>",
+                unsafe_allow_html=True,
+            )
+
+            with st.container(border=True):
+                vh1, vh2, vh3, vh4 = st.columns([2.2, 1.1, 1.1, 1.1], gap="small")
+                vh1.markdown("<div class='entry-grid-header' style='text-align:left;'>Flavour</div>", unsafe_allow_html=True)
+                vh2.markdown("<div class='entry-grid-header'>Opening</div>", unsafe_allow_html=True)
+                vh3.markdown("<div class='entry-grid-header'>Restock</div>", unsafe_allow_html=True)
+                vh4.markdown("<div class='entry-grid-header'>Sold Units</div>", unsafe_allow_html=True)
+
+                tot_open_v, tot_restock_v, tot_sold_v = 0, 0, 0
+
+                for r in stock_rows:
+                    tot_open_v += int(r["opening"])
+                    tot_restock_v += int(r["restock"])
+                    tot_sold_v += int(r["sold"])
+
+                    r1, r2, r3, r4 = st.columns([2.2, 1.1, 1.1, 1.1], gap="small")
+                    r1.markdown(f"<div class='entry-grid-cell-flavour'><span>{escape(r['flavour'])}</span></div>", unsafe_allow_html=True)
+                    r2.markdown(f"<div class='entry-grid-cell'>{int(r['opening'])}</div>", unsafe_allow_html=True)
+                    r3.markdown(f"<div class='entry-grid-cell'>{int(r['restock'])}</div>", unsafe_allow_html=True)
+                    r4.markdown(f"<div class='entry-grid-cell-sold'>{int(r['sold'])}</div>", unsafe_allow_html=True)
+
+                vt1, vt2, vt3, vt4 = st.columns([2.2, 1.1, 1.1, 1.1], gap="small")
+                vt1.markdown("<div class='entry-grid-total-row' style='text-align:left;font-weight:900;'><b>TOTAL</b></div>", unsafe_allow_html=True)
+                vt2.markdown(f"<div class='entry-grid-total-row' style='text-align:center;font-weight:900;'><b>{tot_open_v}</b></div>", unsafe_allow_html=True)
+                vt3.markdown(f"<div class='entry-grid-total-row' style='text-align:center;font-weight:900;'><b>{tot_restock_v}</b></div>", unsafe_allow_html=True)
+                vt4.markdown(f"<div class='entry-grid-total-row' style='text-align:center;color:#C43D17;font-weight:900;'><b>{tot_sold_v}</b></div>", unsafe_allow_html=True)
 
 elif page == "Payslip Generator" and user_role == "admin":
     p_h_col1, p_h_col2 = st.columns([1, 6])
@@ -7273,7 +7415,7 @@ elif page == "Stock Removed" and user_role == "admin":
                                     expense_date, month, expense_type, category, sub_category,
                                     description, total_amount, attributed_to, status, recorded_by, remarks
                                 ) VALUES (
-                                    :ed, :month, 'OPEX', 'Leakage Expense', 'Gift Goodwill',
+                                    :ed, :month, 'OPEX', 'Miscellaneous Expense', 'Gift Goodwill',
                                     :desc, :amt, 'Central / Freezer', 'Not Applicable', :recby, :rem
                                 );
                                 """),
@@ -7359,7 +7501,7 @@ elif page == "Stock Removed" and user_role == "admin":
                                     SET expense_date = :ed,
                                         month = :month,
                                         expense_type = 'OPEX',
-                                        category = 'Leakage Expense',
+                                        category = 'Miscellaneous Expense',
                                         sub_category = 'Gift Goodwill',
                                         description = :desc,
                                         total_amount = :amt,
@@ -7387,7 +7529,7 @@ elif page == "Stock Removed" and user_role == "admin":
                                         expense_date, month, expense_type, category, sub_category,
                                         description, total_amount, attributed_to, status, recorded_by, remarks
                                     ) VALUES (
-                                        :ed, :month, 'OPEX', 'Leakage Expense', 'Gift Goodwill',
+                                        :ed, :month, 'OPEX', 'Miscellaneous Expense', 'Gift Goodwill',
                                         :desc, :amt, 'Central / Freezer', 'Not Applicable', :recby, :rem
                                     );
                                     """),
