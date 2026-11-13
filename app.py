@@ -4334,7 +4334,7 @@ elif page == "Daily Entry":
                             <span class='entry-hub-badge' style='background:#CCFBF1;color:#0F766E;'>CART → FREEZER</span>
                         </div>
                         <div class='entry-hub-title'>Remove Cart Stock</div>
-                        <div class='entry-hub-desc'>Empty a cart or move unsold flavour units back into the Freezer ('Frm Cart').</div>
+                        <div class='entry-hub-desc'>Empty / Return cart stock</div>
                     </div>
                 </div>
                 """,
@@ -5366,7 +5366,7 @@ elif page == "Daily Entry":
         # --------------------------------------------------------------
         elif entry_mode == "remove_cart_stock":
             st.subheader("🔄 Remove Cart Stock")
-            st.caption("Empty a cart or move unsold cart stock back into the Freezer as of today.")
+            st.caption("Empty / Return cart stock")
 
             if st.session_state.get("_rm_cart_success_msg"):
                 st.success(st.session_state.pop("_rm_cart_success_msg"))
@@ -9247,8 +9247,8 @@ elif page == "Freezer Analysis" and user_role == "admin":
                         <th style='text-align:left;width:22%;'>Flavour</th>
                         <th class='fa-box-audit-th' style='width:11%;'>Audit</th>
                         <th class='fa-box-in-left-th' style='width:11%;'>Recv</th>
-                        <th class='fa-box-in-right-th' style='width:11%;'>Frm Cart</th>
-                        <th class='fa-box-out-left-th' style='width:11%;'>To Cart</th>
+                        <th class='fa-box-in-right-th' style='width:11%;'>-Cart</th>
+                        <th class='fa-box-out-left-th' style='width:11%;'>+Cart</th>
                         <th class='fa-box-out-mid-th' style='width:11%;'>FZR Sale</th>
                         <th class='fa-box-out-right-th' style='width:11%;'>Rem</th>
                         <th class='fa-box-cur-only-th' style='width:12%;'>Current</th>
