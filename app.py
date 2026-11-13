@@ -5532,32 +5532,33 @@ elif page == "Bulk Orders & Quotes" and user_role == "admin":
     }
 
     def distribute_bulk_pieces(total_pcs, checked_codes, mode="even"):
-        """Distribute integer total_pcs across checked_codes so sum equals total_pcs."""
+        """Distribute total_pcs across checked_codes rounded to the nearest tens (multiples of 10)."""
         res = {c: 0 for c in FLAVOR_CODES}
         active = [c for c in FLAVOR_CODES if c in checked_codes]
         total_pcs = max(0, int(total_pcs or 0))
         if not active or total_pcs <= 0:
             return res
+        total_tens = max(1, int(round(total_pcs / 10.0)))
         if mode == "weighted":
             weights = [BULK_POPULARITY_WEIGHTS.get(c, 1.0) for c in active]
             w_sum = sum(weights)
-            raw = [(total_pcs * w / w_sum) for w in weights]
-            floors = [int(x) for x in raw]
-            rem = total_pcs - sum(floors)
-            fracs = sorted(range(len(active)), key=lambda i: (raw[i] - floors[i], weights[i]), reverse=True)
+            raw_tens = [(total_tens * w / w_sum) for w in weights]
+            floors = [int(x) for x in raw_tens]
+            rem = total_tens - sum(floors)
+            fracs = sorted(range(len(active)), key=lambda i: (raw_tens[i] - floors[i], weights[i]), reverse=True)
             for idx in fracs[:rem]:
                 floors[idx] += 1
             for c, val in zip(active, floors):
-                res[c] = val
+                res[c] = val * 10
         else:
-            base_q = total_pcs // len(active)
-            rem = total_pcs % len(active)
+            base_tens = total_tens // len(active)
+            rem_tens = total_tens % len(active)
             for i, c in enumerate(active):
-                res[c] = base_q + (1 if i < rem else 0)
+                res[c] = (base_tens + (1 if i < rem_tens else 0)) * 10
         return res
 
     def distribute_bulk_budget(budget_inr, discount_pct, checked_codes, mode="even"):
-        """Given a customer budget in INR and discount %, compute optimal flavour counts whose discounted net total fits the budget."""
+        """Given a customer budget in INR and discount %, compute flavour counts rounded to nearest tens fitting the budget."""
         res = {c: 0 for c in FLAVOR_CODES}
         active = [c for c in FLAVOR_CODES if c in checked_codes]
         budget_inr = max(0.0, float(budget_inr or 0.0))
@@ -5575,17 +5576,34 @@ elif page == "Bulk Orders & Quotes" and user_role == "admin":
             return res
         scale = gross_target / weighted_mrp_unit
         for i, c in enumerate(active):
-            res[c] = max(0, int(round(scale * weights[i])))
-        # Fine-tune by adding/removing pieces of the lowest-MRP active flavour so net amount is as close as possible to budget_inr
-        cheapest_c = min(active, key=lambda c: float(FLAVOR_MAP[c]["mrp"]))
-        cheapest_net = float(FLAVOR_MAP[cheapest_c]["mrp"]) * disc_factor
-        if cheapest_net > 0:
+            res[c] = max(0, int(round((scale * weights[i]) / 10.0)) * 10)
+        # Fine-tune in steps of 10 units so every flavour stays a multiple of 10 while net amount is as close as possible to budget_inr
+        for _ in range(25):
             curr_gross = sum(res[c] * float(FLAVOR_MAP[c]["mrp"]) for c in active)
             curr_net = curr_gross * disc_factor
             diff = budget_inr - curr_net
-            adj = int(round(diff / cheapest_net))
-            if adj != 0:
-                res[cheapest_c] = max(0, res[cheapest_c] + adj)
+            best_c = None
+            best_new_err = abs(diff)
+            best_delta = 0
+            for c in active:
+                step_net = 10.0 * float(FLAVOR_MAP[c]["mrp"]) * disc_factor
+                if step_net <= 0:
+                    continue
+                if diff > 0:
+                    err_add = abs(budget_inr - (curr_net + step_net))
+                    if err_add + 0.01 < best_new_err:
+                        best_new_err = err_add
+                        best_c = c
+                        best_delta = 10
+                elif diff < 0 and res[c] >= 10:
+                    err_sub = abs(budget_inr - (curr_net - step_net))
+                    if err_sub + 0.01 < best_new_err:
+                        best_new_err = err_sub
+                        best_c = c
+                        best_delta = -10
+            if best_c is None:
+                break
+            res[best_c] = max(0, res[best_c] + best_delta)
         return res
 
     def generate_bulk_quote_pdf_bytes(q_data):
