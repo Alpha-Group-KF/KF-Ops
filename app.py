@@ -616,13 +616,25 @@ div[data-testid="stHorizontalBlock"] .stButton button[kind="primary"] {
 .fa-box-out-mid-tot { border-bottom: 2.5px solid #C2410C !important; color: #C43D17 !important; }
 .fa-box-out-right-tot { border-right: 2.5px solid #C2410C !important; border-bottom: 2.5px solid #C2410C !important; }
 
-/* Group Box 4: Current & Value */
-.fa-box-cur-left-th { border-left: 2.5px solid #1D4ED8 !important; border-top: 2.5px solid #1D4ED8 !important; background: #1E3A8A !important; }
-.fa-box-cur-right-th { border-right: 2.5px solid #1D4ED8 !important; border-top: 2.5px solid #1D4ED8 !important; background: #1E3A8A !important; }
-.fa-box-cur-left-td { border-left: 2px solid #1D4ED8 !important; background: #EFF6FF !important; color: #124A1D !important; font-weight: 900 !important; }
-.fa-box-cur-right-td { border-right: 2px solid #1D4ED8 !important; background: #EFF6FF !important; color: #70440E !important; font-weight: 800 !important; }
-.fa-box-cur-left-tot { border-left: 2.5px solid #1D4ED8 !important; border-bottom: 2.5px solid #1D4ED8 !important; color: #124A1D !important; }
-.fa-box-cur-right-tot { border-right: 2.5px solid #1D4ED8 !important; border-bottom: 2.5px solid #1D4ED8 !important; color: #70440E !important; }
+/* Group Box 4: Current (Spacious single-column box after removing Value column) */
+.fa-boxed-table th, .fa-boxed-table td { padding: 9px 14px !important; }
+.fa-box-cur-only-th { border-left: 2.5px solid #1D4ED8 !important; border-right: 2.5px solid #1D4ED8 !important; border-top: 2.5px solid #1D4ED8 !important; background: #1E3A8A !important; }
+.fa-box-cur-only-td { border-left: 2px solid #1D4ED8 !important; border-right: 2px solid #1D4ED8 !important; background: #EFF6FF !important; color: #124A1D !important; font-weight: 900 !important; font-size: 13.5px !important; }
+.fa-box-cur-only-tot { border-left: 2.5px solid #1D4ED8 !important; border-right: 2.5px solid #1D4ED8 !important; border-bottom: 2.5px solid #1D4ED8 !important; color: #124A1D !important; font-size: 14px !important; }
+
+/* Read-only Live Sold cell in Sales Entry */
+.entry-grid-cell-livesold {
+    background: #EBF3FA;
+    border: 1px solid #90B8DF;
+    border-radius: 6px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 900;
+    color: #1B5E91;
+}
 
 /* Bulk Order Planner Cards */
 .bulk-kpi-strip {
@@ -2445,6 +2457,370 @@ def load_freezer_sale_transactions_df(start_date=None, end_date=None):
     except Exception:
         return pd.DataFrame()
 
+def get_live_cart_sold_map_for_single_cart(cart_name, target_date):
+    """Return {flavor_code: live_sold_units} from mobile live_cart_transactions for (cart_name, target_date)."""
+    res = {c: 0 for c in FLAVOR_CODES}
+    if db_conn is None or not cart_name or not target_date:
+        return res
+    try:
+        df = db_conn.query(
+            """
+            SELECT
+                i.flavor_code,
+                COALESCE(SUM(i.quantity), 0) AS qty_sold
+            FROM public.live_transaction_items i
+            JOIN public.live_cart_transactions t ON i.transaction_id = t.id
+            JOIN public.live_cart_shifts s ON t.shift_id = s.id
+            WHERE UPPER(TRIM(s.cart_name)) = UPPER(TRIM(:cart))
+              AND (t.created_at AT TIME ZONE 'Asia/Kolkata')::date = :dt
+            GROUP BY i.flavor_code;
+            """,
+            params={"cart": str(cart_name).strip(), "dt": target_date},
+            ttl="0s",
+        )
+        for _, r in df.iterrows():
+            code = str(r.get("flavor_code") or "").strip().upper()
+            if code in res:
+                res[code] = int(_num(r.get("qty_sold")))
+    except Exception:
+        pass
+    return res
+
+
+def get_live_cart_flavour_tables_for_date(target_date, carts_list=None):
+    """
+    Return per-cart flavour-wise live sales breakdown for target_date:
+    Each cart entry contains staff_name, txn_count, rows (Flavour, MRP, Units Sold, Collection),
+    total_units, and total_collection.
+    """
+    carts_to_show = list(carts_list) if carts_list else list(CARTS)
+    cart_data_map = {
+        c: {
+            "cart": c,
+            "staff": "—",
+            "txns": 0,
+            "qty_by_code": {code: 0 for code in FLAVOR_CODES},
+            "rev_by_code": {code: 0.0 for code in FLAVOR_CODES},
+            "total_units": 0,
+            "total_collection": 0.0,
+        }
+        for c in carts_to_show
+    }
+    if db_conn is None or not target_date:
+        return cart_data_map
+
+    active_loc = get_active_location_filter()
+    try:
+        shifts_df = db_conn.query(
+            """
+            SELECT
+                s.cart_name,
+                MAX(s.staff_name) AS staff_name,
+                COUNT(DISTINCT t.id) AS txn_count,
+                COALESCE(SUM(t.total_amount), 0) AS shift_total_amt
+            FROM public.live_cart_shifts s
+            LEFT JOIN public.live_cart_transactions t
+                ON t.shift_id = s.id
+                AND (t.created_at AT TIME ZONE 'Asia/Kolkata')::date = :dt
+            WHERE (
+                (s.created_at AT TIME ZONE 'Asia/Kolkata')::date = :dt
+                OR EXISTS (
+                    SELECT 1 FROM public.live_cart_transactions tx
+                    WHERE tx.shift_id = s.id
+                      AND (tx.created_at AT TIME ZONE 'Asia/Kolkata')::date = :dt
+                )
+            )
+              AND (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(s.location, 'HOSUR'))) = :active_loc)
+            GROUP BY s.cart_name
+            ORDER BY s.cart_name ASC;
+            """,
+            params={"dt": target_date, "active_loc": active_loc},
+            ttl="0s",
+        )
+        for _, srow in shifts_df.iterrows():
+            cname = str(srow.get("cart_name") or "").strip()
+            if not cname:
+                continue
+            if cname not in cart_data_map:
+                cart_data_map[cname] = {
+                    "cart": cname,
+                    "staff": "—",
+                    "txns": 0,
+                    "qty_by_code": {code: 0 for code in FLAVOR_CODES},
+                    "rev_by_code": {code: 0.0 for code in FLAVOR_CODES},
+                    "total_units": 0,
+                    "total_collection": 0.0,
+                }
+            if pd.notna(srow.get("staff_name")) and str(srow.get("staff_name")).strip():
+                cart_data_map[cname]["staff"] = str(srow.get("staff_name")).strip()
+            cart_data_map[cname]["txns"] = int(_num(srow.get("txn_count")))
+
+        items_df = db_conn.query(
+            """
+            SELECT
+                s.cart_name,
+                i.flavor_code,
+                COALESCE(SUM(i.quantity), 0) AS qty_sold,
+                COALESCE(SUM(i.subtotal), 0) AS rev_amt
+            FROM public.live_transaction_items i
+            JOIN public.live_cart_transactions t ON i.transaction_id = t.id
+            JOIN public.live_cart_shifts s ON t.shift_id = s.id
+            WHERE (t.created_at AT TIME ZONE 'Asia/Kolkata')::date = :dt
+              AND (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(s.location, 'HOSUR'))) = :active_loc)
+            GROUP BY s.cart_name, i.flavor_code;
+            """,
+            params={"dt": target_date, "active_loc": active_loc},
+            ttl="0s",
+        )
+        for _, irow in items_df.iterrows():
+            cname = str(irow.get("cart_name") or "").strip()
+            code = str(irow.get("flavor_code") or "").strip().upper()
+            if not cname or code not in FLAVOR_CODES:
+                continue
+            if cname not in cart_data_map:
+                cart_data_map[cname] = {
+                    "cart": cname,
+                    "staff": "—",
+                    "txns": 0,
+                    "qty_by_code": {c: 0 for c in FLAVOR_CODES},
+                    "rev_by_code": {c: 0.0 for c in FLAVOR_CODES},
+                    "total_units": 0,
+                    "total_collection": 0.0,
+                }
+            qty = int(_num(irow.get("qty_sold")))
+            rev = float(_num(irow.get("rev_amt")))
+            if rev <= 0 and qty > 0:
+                rev = qty * float(FLAVOR_MAP[code]["mrp"])
+            cart_data_map[cname]["qty_by_code"][code] += qty
+            cart_data_map[cname]["rev_by_code"][code] += rev
+
+        for cname, cdict in cart_data_map.items():
+            cdict["total_units"] = sum(cdict["qty_by_code"].values())
+            cdict["total_collection"] = sum(cdict["rev_by_code"].values())
+    except Exception:
+        pass
+
+    return cart_data_map
+
+
+def render_live_cart_flavour_tables_section(key_prefix="live_flv"):
+    """Render date-filtered Live Cart Transactions by Flavour with a separate table for each cart."""
+    st.markdown("#### 📱 Live Cart Transactions by Flavour (Cart-wise)")
+    st.caption("View live POS sales by flavour for each cart on any date. Each cart is shown in its own table with flavour totals and total collection at the bottom.")
+
+    dt_key = f"{key_prefix}_selected_date"
+    if dt_key not in st.session_state:
+        st.session_state[dt_key] = date.today()
+
+    fc1, fc2, fc3, fc4, fc5 = st.columns([1.3, 0.9, 0.9, 0.9, 1.0])
+    with fc1:
+        sel_live_dt = st.date_input(
+            "Select Date",
+            key=dt_key,
+            format="DD-MM-YYYY",
+        )
+    with fc2:
+        st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
+        if st.button("📅 Today", use_container_width=True, key=f"{key_prefix}_btn_today"):
+            st.session_state[dt_key] = date.today()
+            st.rerun()
+    with fc3:
+        st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
+        if st.button("⏪ Yesterday", use_container_width=True, key=f"{key_prefix}_btn_yest"):
+            st.session_state[dt_key] = date.today() - timedelta(days=1)
+            st.rerun()
+    with fc4:
+        st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
+        if st.button("⏪ Today - 2", use_container_width=True, key=f"{key_prefix}_btn_t2"):
+            st.session_state[dt_key] = date.today() - timedelta(days=2)
+            st.rerun()
+    with fc5:
+        st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
+        if st.button("🔄 Refresh", type="primary", use_container_width=True, key=f"{key_prefix}_btn_refresh"):
+            st.cache_data.clear()
+            st.rerun()
+
+    cart_tables_map = get_live_cart_flavour_tables_for_date(sel_live_dt, CARTS)
+    cart_names_list = list(cart_tables_map.keys())
+
+    overall_units = sum(int(cart_tables_map[c]["total_units"]) for c in cart_names_list)
+    overall_collection = sum(float(cart_tables_map[c]["total_collection"]) for c in cart_names_list)
+
+    st.markdown(
+        f"""
+        <div style='background:linear-gradient(90deg, #FFF2DC 0%, #FFFBF2 100%);
+                    border:1.5px solid #D5B47A;border-radius:10px;padding:10px 16px;
+                    margin:8px 0 14px 0;display:flex;justify-content:space-between;align-items:center;'>
+            <div style='font-weight:900;color:#4A2418;font-size:14px;'>
+                📅 Live Cart Sales Summary — {sel_live_dt.strftime('%d-%b-%Y')}
+            </div>
+            <div style='display:flex;gap:22px;align-items:center;'>
+                <span style='font-size:13.5px;font-weight:900;color:#C43D17;'>
+                    🍦 Overall Units Sold: {overall_units:,} pcs
+                </span>
+                <span style='font-size:14.5px;font-weight:900;color:#124A1D;background:#EAF4EC;border:1px solid #A8D5AF;padding:4px 12px;border-radius:8px;'>
+                    💰 Overall Total Collection: ₹{overall_collection:,.0f}
+                </span>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # Render each cart in a separate table (up to 3 per row for clean side-by-side comparison)
+    for row_start in range(0, len(cart_names_list), 3):
+        chunk = cart_names_list[row_start:row_start + 3]
+        cols = st.columns(len(chunk), gap="medium")
+        for idx_c, cname in enumerate(chunk):
+            cdata = cart_tables_map[cname]
+            staff_lbl = cdata.get("staff") or "—"
+            tot_u = int(cdata.get("total_units") or 0)
+            tot_col = float(cdata.get("total_collection") or 0.0)
+
+            body_rows_html = []
+            for code in FLAVOR_CODES:
+                f_info = FLAVOR_MAP[code]
+                q_u = int(cdata["qty_by_code"].get(code, 0))
+                r_amt = float(cdata["rev_by_code"].get(code, 0.0))
+                qty_color = "#C43D17" if q_u > 0 else "#8A765F"
+                amt_color = "#124A1D" if r_amt > 0 else "#8A765F"
+                body_rows_html.append(
+                    f"""<tr>
+                        <td style='text-align:left;font-weight:800;color:#4A2418;padding:6px 8px;border-bottom:1px solid #EFE3D0;'>{escape(f_info['name'])}</td>
+                        <td style='text-align:center;color:#8A5E17;font-weight:700;padding:6px 6px;border-bottom:1px solid #EFE3D0;'>₹{float(f_info['mrp']):.0f}</td>
+                        <td style='text-align:center;font-weight:900;color:{qty_color};padding:6px 6px;border-bottom:1px solid #EFE3D0;'>{q_u}</td>
+                        <td style='text-align:right;font-weight:900;color:{amt_color};padding:6px 8px;border-bottom:1px solid #EFE3D0;'>₹{r_amt:,.0f}</td>
+                    </tr>"""
+                )
+
+            with cols[idx_c]:
+                st.markdown(
+                    f"""
+                    <div style='background:#FFFFFF;border:1.5px solid #D8C19A;border-radius:11px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,0.04);margin-bottom:14px;'>
+                        <div style='background:linear-gradient(90deg, #70440E 0%, #8A5E17 100%);color:#FFFFFF;padding:9px 12px;display:flex;justify-content:space-between;align-items:center;'>
+                            <span style='font-weight:900;font-size:13.5px;'>🛒 {escape(cname)}</span>
+                            <span style='font-size:11px;font-weight:700;background:rgba(255,255,255,0.18);padding:2px 8px;border-radius:999px;'>
+                                Staff: {escape(staff_lbl)}
+                            </span>
+                        </div>
+                        <table style='width:100%;border-collapse:collapse;font-size:12px;'>
+                            <thead>
+                                <tr style='background:#F6E7CC;color:#4A2418;'>
+                                    <th style='text-align:left;padding:7px 8px;font-weight:900;'>Flavour</th>
+                                    <th style='text-align:center;padding:7px 6px;font-weight:900;'>MRP</th>
+                                    <th style='text-align:center;padding:7px 6px;font-weight:900;'>Units Sold</th>
+                                    <th style='text-align:right;padding:7px 8px;font-weight:900;'>Collection</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {''.join(body_rows_html)}
+                            </tbody>
+                            <tfoot>
+                                <tr style='background:#FFF2DC;border-top:2px solid #CDAE76;'>
+                                    <td colspan='2' style='text-align:left;padding:8px 8px;font-weight:900;color:#4A2418;font-size:12.5px;'>FLAVOUR TOTALS</td>
+                                    <td style='text-align:center;padding:8px 6px;font-weight:900;color:#C43D17;font-size:13px;'>{tot_u:,} pcs</td>
+                                    <td style='text-align:right;padding:8px 8px;font-weight:900;color:#124A1D;font-size:13.5px;'>₹{tot_col:,.0f}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                        <div style='background:#EAF4EC;border-top:1.5px solid #A8D5AF;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;'>
+                            <span style='font-size:11.5px;font-weight:900;color:#124A1D;text-transform:uppercase;'>Total Collection</span>
+                            <span style='font-size:15px;font-weight:900;color:#124A1D;'>₹{tot_col:,.0f}</span>
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+
+def delete_stock_received_entry(receipt_id):
+    """
+    Delete a previously entered Stock Received delivery entry and clean up related tables:
+    1. Deletes flavour rows from public.stock_received_items (WHERE received_id = :id)
+    2. Cleans up any auto-tagged expense/payment records referencing this receipt if present
+    3. Deletes the parent receipt record from public.stock_received (WHERE id = :id)
+    """
+    if db_conn is None or not receipt_id:
+        return
+    rid = int(receipt_id)
+    with db_conn.session as s:
+        s.execute(
+            text("DELETE FROM public.stock_received_items WHERE received_id = :rid;"),
+            {"rid": rid},
+        )
+        # Clean up any expense rows explicitly tagged to this Stock Received receipt
+        tag_like_1 = f"%[Stock Received #{rid}]%"
+        tag_like_2 = f"%[Auto: Stock Received #{rid}]%"
+        exp_rows = s.execute(
+            text("""
+                SELECT id FROM public.expenses
+                WHERE remarks ILIKE :t1 OR remarks ILIKE :t2;
+            """),
+            {"t1": tag_like_1, "t2": tag_like_2},
+        ).fetchall()
+        for erow in exp_rows:
+            eid = int(erow[0])
+            pay_rows = s.execute(
+                text("SELECT id FROM public.expense_payments WHERE expense_id = :eid;"),
+                {"eid": eid},
+            ).fetchall()
+            for prow in pay_rows:
+                pid = int(prow[0])
+                try:
+                    s.execute(text("DELETE FROM public.expense_payment_receipts WHERE payment_id = :pid;"), {"pid": pid})
+                except Exception:
+                    pass
+            s.execute(text("DELETE FROM public.expense_payments WHERE expense_id = :eid;"), {"eid": eid})
+            s.execute(text("DELETE FROM public.expenses WHERE id = :eid;"), {"eid": eid})
+
+        s.execute(
+            text("DELETE FROM public.stock_received WHERE id = :rid;"),
+            {"rid": rid},
+        )
+        s.commit()
+
+
+@st.dialog("🗑️ Confirm Delete Stock Received Entry", width="small")
+def confirm_delete_stock_received_modal(receipt_row):
+    rid = int(receipt_row["id"])
+    rdt = pd.to_datetime(receipt_row["received_date"]).strftime("%d-%b-%Y") if receipt_row.get("received_date") else "—"
+    rloc = str(receipt_row.get("location") or CITY)
+    raw_items = receipt_row.get("items") if isinstance(receipt_row.get("items"), list) else []
+    tot_rec_u = sum(int(itm.get("rec") or 0) for itm in raw_items if isinstance(itm, dict))
+    pay_amt = float(_num(receipt_row.get("payment_amount")))
+
+    st.markdown(
+        f"""
+        <div style='background:#FFF3F0;border:1.5px solid #F3C3B6;border-radius:10px;padding:12px 14px;margin-bottom:12px;'>
+            <div style='font-weight:900;color:#C43D17;font-size:14px;margin-bottom:4px;'>
+                Permanently delete Stock Receipt #{rid}?
+            </div>
+            <div style='font-size:12px;color:#4A2418;line-height:1.5;'>
+                <b>Received Date:</b> {rdt} &nbsp;|&nbsp; <b>Location:</b> {escape(rloc)}<br/>
+                <b>Total Received Units:</b> {tot_rec_u:,} pcs &nbsp;|&nbsp; <b>Payment Amount:</b> ₹{pay_amt:,.2f}
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.caption("This will remove the receipt from `stock_received`, delete all its flavour rows from `stock_received_items`, and recalculate Freezer Stock & Freezer Analysis.")
+    c1, c2 = st.columns(2)
+    with c1:
+        if st.button("🗑️ Yes, Delete Receipt", type="primary", use_container_width=True, key=f"confirm_del_sr_yes_{rid}"):
+            try:
+                delete_stock_received_entry(rid)
+                st.session_state.pop("db_stock_select", None)
+                st.cache_data.clear()
+                st.cache_resource.clear()
+                st.session_state["_sr_deleted_msg"] = f"Stock Receipt #{rid} ({tot_rec_u} units on {rdt}) was deleted and Freezer stock was updated."
+                st.rerun()
+            except Exception as e:
+                st.error(f"Could not delete Stock Received entry: {e}")
+    with c2:
+        if st.button("Cancel", use_container_width=True, key=f"confirm_del_sr_no_{rid}"):
+            st.rerun()
+
+
 def get_db_cart_to_freezer_map(active_loc=None, after_date=None):
     """Return flavour-wise units moved from Cart back to Freezer ('Frm Cart')."""
     res_map = {c: 0 for c in FLAVOR_CODES}
@@ -3995,6 +4371,18 @@ elif page == "Daily Entry":
                 st.session_state.pop("_editing_freezer_txn_id", None)
                 st.session_state["daily_entry_mode"] = "freezer_sales"
                 st.rerun()
+
+        st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+        with st.container(border=True):
+            lvc1, lvc2 = st.columns([3.5, 1.5])
+            with lvc1:
+                st.markdown("#### 📱 Live Cart Transactions by Flavour (Date-wise Cart Tables)")
+                st.caption("Inspect live mobile POS transactions by flavour for each cart in separate tables on one page (defaults to Today, with date filtering for previous dates).")
+            with lvc2:
+                st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+                if st.button("Open Live Cart Sales by Flavour →", key="open_live_flavour_entry_view", type="primary", use_container_width=True):
+                    st.session_state["daily_entry_mode"] = "live_flavour_view"
+                    st.rerun()
     else:
         back_col, _ = st.columns([2.2, 4.8])
         with back_col:
@@ -4099,13 +4487,16 @@ elif page == "Daily Entry":
                     st.caption(
                         f"Enter **+ Added** and **Closing** units in the highlighted boxes for **{_entry_date_display(entry_date)}**:"
                     )
-                    hc1, hc2, hc3, hc4, hc5, hc6 = st.columns([2.1, 0.85, 1.05, 1.05, 0.85, 1.15], gap="small")
+                    live_sold_map = get_live_cart_sold_map_for_single_cart(cart_name, entry_date)
+
+                    hc1, hc2, hc3, hc4, hc5, hc6, hc7 = st.columns([1.95, 0.78, 0.95, 0.95, 0.78, 0.82, 1.1], gap="small")
                     hc1.markdown("<div class='entry-grid-header' style='text-align:left;'>Flavour (MRP)</div>", unsafe_allow_html=True)
                     hc2.markdown("<div class='entry-grid-header'>Open</div>", unsafe_allow_html=True)
                     hc3.markdown("<div class='entry-grid-header'>+ Add ✏️</div>", unsafe_allow_html=True)
                     hc4.markdown("<div class='entry-grid-header'>Close ✏️</div>", unsafe_allow_html=True)
                     hc5.markdown("<div class='entry-grid-header'>Sold</div>", unsafe_allow_html=True)
-                    hc6.markdown("<div class='entry-grid-header' style='text-align:right;'>Sale (₹)</div>", unsafe_allow_html=True)
+                    hc6.markdown("<div class='entry-grid-header' style='background:#1B5E91;' title='Units recorded in Live Cart POS on this date'>Live Sold</div>", unsafe_allow_html=True)
+                    hc7.markdown("<div class='entry-grid-header' style='text-align:right;'>Sale (₹)</div>", unsafe_allow_html=True)
 
                     for code in FLAVOR_CODES:
                         f_info = FLAVOR_MAP[code]
@@ -4116,7 +4507,7 @@ elif page == "Daily Entry":
                             st.session_state[k_cls] = loaded["by_code"][code]["closing"]
 
                         cur_open = opening_map[code]
-                        rc1, rc2, rc3, rc4, rc5, rc6 = st.columns([2.1, 0.85, 1.05, 1.05, 0.85, 1.15], gap="small")
+                        rc1, rc2, rc3, rc4, rc5, rc6, rc7 = st.columns([1.95, 0.78, 0.95, 0.95, 0.78, 0.82, 1.1], gap="small")
                         with rc1:
                             st.markdown(
                                 f"<div class='entry-grid-cell-flavour'><span>{f_info['name']}</span><span style='color:#8A5E17;font-size:11px;'>₹{f_info['mrp']:.0f}</span></div>",
@@ -4149,26 +4540,31 @@ elif page == "Daily Entry":
                                 )
                             )
                         cur_sold = cur_open + cur_add - cur_cls
+                        live_sold_u = int(live_sold_map.get(code, 0))
                         cur_amt = max(0, cur_sold) * float(f_info["mrp"])
                         added_map[code], closing_map[code], sold_map[code], amount_map[code] = cur_add, cur_cls, cur_sold, cur_amt
                         with rc5:
                             st.markdown(f"<div class='entry-grid-cell-sold'>{cur_sold}</div>", unsafe_allow_html=True)
                         with rc6:
+                            st.markdown(f"<div class='entry-grid-cell-livesold' title='Live POS sold count for {f_info['name']}'>{live_sold_u}</div>", unsafe_allow_html=True)
+                        with rc7:
                             st.markdown(f"<div class='entry-grid-cell-amount'>₹{cur_amt:,.0f}</div>", unsafe_allow_html=True)
 
                     tot_open = sum(opening_map.values())
                     tot_add = sum(added_map.values())
                     tot_close = sum(closing_map.values())
                     tot_sold = sum(sold_map.values())
+                    tot_live_sold = sum(live_sold_map.values())
                     calculated_mrp_total = float(sum(amount_map.values()))
 
-                    tc1, tc2, tc3, tc4, tc5, tc6 = st.columns([2.1, 0.85, 1.05, 1.05, 0.85, 1.15], gap="small")
+                    tc1, tc2, tc3, tc4, tc5, tc6, tc7 = st.columns([1.95, 0.78, 0.95, 0.95, 0.78, 0.82, 1.1], gap="small")
                     tc1.markdown("<div class='entry-grid-total-row' style='text-align:left;'>TOTAL</div>", unsafe_allow_html=True)
                     tc2.markdown(f"<div class='entry-grid-total-row' style='text-align:center;'>{tot_open}</div>", unsafe_allow_html=True)
                     tc3.markdown(f"<div class='entry-grid-total-row' style='text-align:center;'>{tot_add}</div>", unsafe_allow_html=True)
                     tc4.markdown(f"<div class='entry-grid-total-row' style='text-align:center;'>{tot_close}</div>", unsafe_allow_html=True)
                     tc5.markdown(f"<div class='entry-grid-total-row' style='text-align:center;color:#C43D17;'>{tot_sold}</div>", unsafe_allow_html=True)
-                    tc6.markdown(f"<div class='entry-grid-total-row' style='text-align:right;color:#124A1D;'>₹{calculated_mrp_total:,.0f}</div>", unsafe_allow_html=True)
+                    tc6.markdown(f"<div class='entry-grid-total-row' style='text-align:center;color:#1B5E91;'>{tot_live_sold}</div>", unsafe_allow_html=True)
+                    tc7.markdown(f"<div class='entry-grid-total-row' style='text-align:right;color:#124A1D;'>₹{calculated_mrp_total:,.0f}</div>", unsafe_allow_html=True)
 
                     k_tot = f"daily_total{data_key_suffix}"
                     k_prev_calc = f"daily_prev_calc{data_key_suffix}"
@@ -5103,6 +5499,9 @@ elif page == "Daily Entry":
             except Exception as e:
                 st.caption(f"Remove Cart Stock history log unavailable (run SQL migration if needed): {e}")
 
+
+        elif entry_mode == "live_flavour_view":
+            render_live_cart_flavour_tables_section(key_prefix="entry_live_flv")
 
 elif page == "Bulk Orders & Quotes" and user_role == "admin":
     st.subheader("📦 Bulk Orders — Estimates, Discount Planner & Invoices")
@@ -6436,12 +6835,10 @@ elif page == "Payslip Generator" and user_role == "admin":
 # PAGE: LIVE CART TRACKING (Admin View)
 # ======================================================================
 elif page == "Live Cart Tracking" and user_role == "admin":
-    st.subheader("Live Cart Operations & Sales Map")
-    st.caption("Monitor live sales, cart activity and geographical hotspots from the mobile cart apps.")
+    st.subheader("Live Cart Operations, Flavour Sales & Sales Map")
+    st.caption("View date-wise live cart sales by flavour (each cart in a separate table) and monitor today's live GPS activity.")
 
-    # Manual refresh only — no automatic refresh
-    if st.button("🔄 Manual Refresh Live Data"):
-        st.rerun()
+    render_live_cart_flavour_tables_section(key_prefix="admin_live_trk")
 
     st.markdown("---")
 
@@ -7710,7 +8107,20 @@ elif page == "Freezer Stock" and user_role == "admin":
             damaged_returned_on = st.date_input("Damaged returned date", value=pd.to_datetime(stock_loaded["damaged_returned_on"]).date() if (stock_loaded and stock_loaded.get("damaged_returned_on")) else date.today(), key=f"db_rec_damdate{sk}", format="DD-MM-YYYY") if has_dam_ret else None
             notes = st.text_input("Notes (optional)", value=clean_rec_notes, key=f"db_rec_notes{sk}")
 
-            if st.button("Update delivery entry" if loaded_id else "Save stock received", type="primary", use_container_width=True):
+            if st.session_state.get("_sr_deleted_msg"):
+                st.success(st.session_state.pop("_sr_deleted_msg"))
+
+            if loaded_id:
+                sr_btn_c1, sr_btn_c2 = st.columns([2.2, 1.2], gap="medium")
+                with sr_btn_c1:
+                    save_sr_clicked = st.button("💾 Update delivery entry", type="primary", use_container_width=True, key=f"btn_upd_sr_{loaded_id}")
+                with sr_btn_c2:
+                    if st.button("🗑️ Delete delivery entry", use_container_width=True, key=f"btn_del_sr_{loaded_id}"):
+                        confirm_delete_stock_received_modal(stock_loaded)
+            else:
+                save_sr_clicked = st.button("💾 Save stock received", type="primary", use_container_width=True, key="btn_save_new_sr")
+
+            if save_sr_clicked:
                 if tot_received == 0: st.error("Enter at least one quantity received before saving.")
                 else:
                     po_id = int(selected_po.split("#")[1].split(" ")[0]) if "PO #" in selected_po else None
@@ -8859,8 +9269,8 @@ elif page == "Freezer Analysis" and user_role == "admin":
     tot_stock_value_display = int(sum(int(r["Value"]) for r in phys_base_rows))
     tot_stock_value_mrp_display = int(tot_stock_value_mrp + 0.5) if tot_stock_value_mrp >= 0 else int(tot_stock_value_mrp - 0.5)
 
-    # Render Boxed HTML Table with the 4 distinct grouped borders:
-    # [Audit], [Recv | Frm Cart], [To Cart | FZR Sale | Rem], [Current | Value]
+    # Render Boxed HTML Table with the 4 distinct grouped borders (without Value column):
+    # [Audit], [Recv | Frm Cart], [To Cart | FZR Sale | Rem], [Current]
     fa_body_trs = []
     for r in phys_base_rows:
         fa_body_trs.append(
@@ -8872,8 +9282,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
                 <td class='fa-box-out-left-td'>{r['To Cart']:,}</td>
                 <td class='fa-box-out-mid-td'>{r['FZR Sale']:,}</td>
                 <td class='fa-box-out-right-td'>{r['Rem']:,}</td>
-                <td class='fa-box-cur-left-td'>{r['Current']:,}</td>
-                <td class='fa-box-cur-right-td'>₹{r['Value']:,}</td>
+                <td class='fa-box-cur-only-td'>{r['Current']:,}</td>
             </tr>"""
         )
     fa_body_trs.append(
@@ -8885,25 +9294,23 @@ elif page == "Freezer Analysis" and user_role == "admin":
             <td class='fa-box-out-left-tot'>{tot_added_b:,}</td>
             <td class='fa-box-out-mid-tot'>{tot_fzr_b:,}</td>
             <td class='fa-box-out-right-tot'>{tot_rem_b:,}</td>
-            <td class='fa-box-cur-left-tot'>{tot_curr_b:,}</td>
-            <td class='fa-box-cur-right-tot'>₹{tot_stock_value_display:,}</td>
+            <td class='fa-box-cur-only-tot'>{tot_curr_b:,}</td>
         </tr>"""
     )
     st.markdown(
         f"""
         <div class='fa-boxed-table-wrap'>
-            <table class='fa-boxed-table'>
+            <table class='fa-boxed-table' style='table-layout:fixed;'>
                 <thead>
                     <tr>
-                        <th style='text-align:left;'>Flavour</th>
-                        <th class='fa-box-audit-th'>Audit</th>
-                        <th class='fa-box-in-left-th'>Recv</th>
-                        <th class='fa-box-in-right-th'>Frm Cart</th>
-                        <th class='fa-box-out-left-th'>To Cart</th>
-                        <th class='fa-box-out-mid-th'>FZR Sale</th>
-                        <th class='fa-box-out-right-th'>Rem</th>
-                        <th class='fa-box-cur-left-th'>Current</th>
-                        <th class='fa-box-cur-right-th'>Value (CP)</th>
+                        <th style='text-align:left;width:22%;'>Flavour</th>
+                        <th class='fa-box-audit-th' style='width:11%;'>Audit</th>
+                        <th class='fa-box-in-left-th' style='width:11%;'>Recv</th>
+                        <th class='fa-box-in-right-th' style='width:11%;'>Frm Cart</th>
+                        <th class='fa-box-out-left-th' style='width:11%;'>To Cart</th>
+                        <th class='fa-box-out-mid-th' style='width:11%;'>FZR Sale</th>
+                        <th class='fa-box-out-right-th' style='width:11%;'>Rem</th>
+                        <th class='fa-box-cur-only-th' style='width:12%;'>Current</th>
                     </tr>
                 </thead>
                 <tbody>
