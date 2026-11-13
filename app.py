@@ -2603,6 +2603,11 @@ def get_live_cart_flavour_tables_for_date(target_date, carts_list=None):
     return cart_data_map
 
 
+def _set_live_flavour_date_state(state_key, target_dt):
+    """Callback to update date_input session_state key before widget instantiation."""
+    st.session_state[state_key] = target_dt
+
+
 def render_live_cart_flavour_tables_section(key_prefix="live_flv"):
     """Render date-filtered Live Cart Transactions by Flavour with a separate table for each cart."""
     st.markdown("#### 📱 Live Cart Transactions by Flavour (Cart-wise)")
@@ -2613,32 +2618,45 @@ def render_live_cart_flavour_tables_section(key_prefix="live_flv"):
         st.session_state[dt_key] = date.today()
 
     fc1, fc2, fc3, fc4, fc5 = st.columns([1.3, 0.9, 0.9, 0.9, 1.0])
-    with fc1:
-        sel_live_dt = st.date_input(
-            "Select Date",
-            key=dt_key,
-            format="DD-MM-YYYY",
-        )
     with fc2:
         st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
-        if st.button("📅 Today", use_container_width=True, key=f"{key_prefix}_btn_today"):
-            st.session_state[dt_key] = date.today()
-            st.rerun()
+        st.button(
+            "📅 Today",
+            use_container_width=True,
+            key=f"{key_prefix}_btn_today",
+            on_click=_set_live_flavour_date_state,
+            args=(dt_key, date.today()),
+        )
     with fc3:
         st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
-        if st.button("⏪ Yesterday", use_container_width=True, key=f"{key_prefix}_btn_yest"):
-            st.session_state[dt_key] = date.today() - timedelta(days=1)
-            st.rerun()
+        st.button(
+            "⏪ Yesterday",
+            use_container_width=True,
+            key=f"{key_prefix}_btn_yest",
+            on_click=_set_live_flavour_date_state,
+            args=(dt_key, date.today() - timedelta(days=1)),
+        )
     with fc4:
         st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
-        if st.button("⏪ Today - 2", use_container_width=True, key=f"{key_prefix}_btn_t2"):
-            st.session_state[dt_key] = date.today() - timedelta(days=2)
-            st.rerun()
+        st.button(
+            "⏪ Today - 2",
+            use_container_width=True,
+            key=f"{key_prefix}_btn_t2",
+            on_click=_set_live_flavour_date_state,
+            args=(dt_key, date.today() - timedelta(days=2)),
+        )
     with fc5:
         st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
         if st.button("🔄 Refresh", type="primary", use_container_width=True, key=f"{key_prefix}_btn_refresh"):
             st.cache_data.clear()
             st.rerun()
+    with fc1:
+        sel_live_dt = st.date_input(
+            "Select Date",
+            key=dt_key,
+            max_value=date.today(),
+            format="DD-MM-YYYY",
+        )
 
     cart_tables_map = get_live_cart_flavour_tables_for_date(sel_live_dt, CARTS)
     cart_names_list = list(cart_tables_map.keys())
@@ -6835,89 +6853,12 @@ elif page == "Payslip Generator" and user_role == "admin":
 # PAGE: LIVE CART TRACKING (Admin View)
 # ======================================================================
 elif page == "Live Cart Tracking" and user_role == "admin":
-    st.subheader("Live Cart Operations, Flavour Sales & Sales Map")
-    st.caption("View date-wise live cart sales by flavour (each cart in a separate table) and monitor today's live GPS activity.")
+    st.subheader("Live Cart Operations & Flavour Sales")
+    st.caption("View date-wise live cart sales by flavour (each cart in a separate table) and monitor today's live cart shifts.")
 
     render_live_cart_flavour_tables_section(key_prefix="admin_live_trk")
 
-    st.markdown("---")
-
-    # ------------------------------------------------------------------
-    # TODAY'S LIVE DATA
-    #
-    # This follows the mobile App.js logic:
-    #   - Today's shifts: created_at >= start of today
-    #   - Today's transactions: created_at >= start of today
-    #   - Active shift: status = 'Open'
-    #
-    # PostgreSQL CURRENT_DATE is used here so the filtering is performed
-    # by the database consistently.
-    # ------------------------------------------------------------------
-
-    # ------------------------------------------------------------------
-    # LIVE SALES MAP
-    #
-    # 1. Show every GPS-tagged transaction made today.
-    # 2. Also show cart login location when a cart has logged in but
-    #    has not yet generated a GPS-tagged sale.
-    # ------------------------------------------------------------------
-    st.markdown("#### 📍 Live Sales Map (Today)")
-
     active_loc_live = get_active_location_filter()
-    map_query = """
-        WITH today_transactions AS (
-            SELECT
-                t.txn_lat AS lat,
-                t.txn_lng AS lon,
-                s.cart_name
-            FROM live_cart_transactions t
-            JOIN live_cart_shifts s
-                ON t.shift_id = s.id
-            WHERE t.created_at >= CURRENT_DATE
-              AND (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(s.location, 'HOSUR'))) = :active_loc)
-              AND t.txn_lat IS NOT NULL
-              AND t.txn_lng IS NOT NULL
-        ),
-        today_shifts AS (
-            SELECT
-                s.login_lat AS lat,
-                s.login_lng AS lon,
-                s.cart_name
-            FROM live_cart_shifts s
-            WHERE s.shift_date = CURRENT_DATE
-              AND (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(s.location, 'HOSUR'))) = :active_loc)
-              AND s.login_lat IS NOT NULL
-              AND s.login_lng IS NOT NULL
-        ),
-        login_locations AS (
-            SELECT
-                s.lat,
-                s.lon,
-                s.cart_name
-            FROM today_shifts s
-            WHERE NOT EXISTS (
-                SELECT 1
-                FROM today_transactions t
-                WHERE t.cart_name = s.cart_name
-            )
-        )
-        SELECT lat, lon, cart_name
-        FROM today_transactions
-        UNION ALL
-        SELECT lat, lon, cart_name
-        FROM login_locations;
-    """
-
-    map_df = db_conn.query(map_query, params={"active_loc": active_loc_live}, ttl="0s")
-
-    if not map_df.empty:
-        st.map(
-            map_df,
-            size=40,
-            color="#E8542A"
-        )
-    else:
-        st.info("No GPS-tagged live cart activity recorded yet today.")
 
     st.markdown("---")
     st.markdown("#### 🛒 Today's Cart Shifts")
