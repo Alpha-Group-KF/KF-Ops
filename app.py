@@ -491,6 +491,173 @@ div[data-testid="stHorizontalBlock"] .stButton button[kind="primary"] {
     border: none !important;
 }
 
+/* Graceful Entry Hub Cards (2x3 Grid) */
+.entry-hub-card {
+    background: linear-gradient(180deg, #FFFFFF 0%, #FFFDF9 100%);
+    border: 1.5px solid #E3CBA0;
+    border-radius: 14px;
+    padding: 16px 18px 12px 18px;
+    min-height: 138px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 0 3px 10px rgba(74, 36, 24, 0.05);
+    transition: all 0.18s ease;
+    margin-bottom: 6px;
+}
+.entry-hub-card:hover {
+    border-color: #C89B54;
+    box-shadow: 0 6px 16px rgba(74, 36, 24, 0.09);
+    transform: translateY(-1px);
+}
+.entry-hub-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+.entry-hub-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+}
+.entry-hub-badge {
+    font-size: 9.5px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 3px 8px;
+    border-radius: 999px;
+}
+.entry-hub-title {
+    font-family: 'Fraunces', serif !important;
+    font-size: 16.5px;
+    font-weight: 700;
+    color: #4A2418;
+    margin: 10px 0 4px 0;
+    line-height: 1.2;
+}
+.entry-hub-desc {
+    font-size: 12px;
+    color: #6B5138;
+    line-height: 1.38;
+    margin-bottom: 4px;
+}
+
+/* Freezer Analysis Boxed Table Styling */
+.fa-boxed-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    margin: 8px 0 14px 0;
+}
+.fa-boxed-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: #FFFFFF;
+    border: 1.5px solid #D8C19A;
+    border-radius: 10px;
+    overflow: hidden;
+    font-size: 12.5px;
+}
+.fa-boxed-table th {
+    background: #70440E;
+    color: #FFFFFF;
+    font-weight: 800;
+    padding: 9px 10px;
+    text-align: center;
+    font-size: 11.5px;
+    letter-spacing: 0.01em;
+}
+.fa-boxed-table td {
+    padding: 7px 10px;
+    border-bottom: 1px solid #EFE3D0;
+    text-align: center;
+    font-weight: 700;
+    color: #2A1B10;
+}
+.fa-boxed-table tr:nth-child(even) td {
+    background: #FFFDF8;
+}
+.fa-boxed-table tr.fa-total-row td {
+    background: #FFF2DC !important;
+    border-top: 2px solid #CDAE76 !important;
+    border-bottom: none !important;
+    font-weight: 900 !important;
+    color: #4A2418 !important;
+    font-size: 13px;
+}
+/* Group Box 1: Audit */
+.fa-box-audit-th { border-left: 2.5px solid #D97706 !important; border-right: 2.5px solid #D97706 !important; border-top: 2.5px solid #D97706 !important; background: #854D0E !important; }
+.fa-box-audit-td { border-left: 2px solid #D97706 !important; border-right: 2px solid #D97706 !important; background: #FFFBEB !important; }
+.fa-box-audit-tot { border-left: 2.5px solid #D97706 !important; border-right: 2.5px solid #D97706 !important; border-bottom: 2.5px solid #D97706 !important; }
+
+/* Group Box 2: Recv & Frm Cart */
+.fa-box-in-left-th { border-left: 2.5px solid #15803D !important; border-top: 2.5px solid #15803D !important; background: #14532D !important; }
+.fa-box-in-right-th { border-right: 2.5px solid #15803D !important; border-top: 2.5px solid #15803D !important; background: #166534 !important; }
+.fa-box-in-left-td { border-left: 2px solid #15803D !important; background: #F0FDF4 !important; }
+.fa-box-in-right-td { border-right: 2px solid #15803D !important; background: #DCFCE7 !important; color: #166534 !important; font-weight: 800 !important; }
+.fa-box-in-left-tot { border-left: 2.5px solid #15803D !important; border-bottom: 2.5px solid #15803D !important; }
+.fa-box-in-right-tot { border-right: 2.5px solid #15803D !important; border-bottom: 2.5px solid #15803D !important; color: #166534 !important; }
+
+/* Group Box 3: To Cart, FZR Sale, Rem */
+.fa-box-out-left-th { border-left: 2.5px solid #C2410C !important; border-top: 2.5px solid #C2410C !important; background: #7C2D12 !important; }
+.fa-box-out-mid-th { border-top: 2.5px solid #C2410C !important; background: #7C2D12 !important; }
+.fa-box-out-right-th { border-right: 2.5px solid #C2410C !important; border-top: 2.5px solid #C2410C !important; background: #7C2D12 !important; }
+.fa-box-out-left-td { border-left: 2px solid #C2410C !important; background: #FFF7ED !important; }
+.fa-box-out-mid-td { background: #FFF7ED !important; color: #C43D17 !important; font-weight: 800 !important; }
+.fa-box-out-right-td { border-right: 2px solid #C2410C !important; background: #FFF7ED !important; }
+.fa-box-out-left-tot { border-left: 2.5px solid #C2410C !important; border-bottom: 2.5px solid #C2410C !important; }
+.fa-box-out-mid-tot { border-bottom: 2.5px solid #C2410C !important; color: #C43D17 !important; }
+.fa-box-out-right-tot { border-right: 2.5px solid #C2410C !important; border-bottom: 2.5px solid #C2410C !important; }
+
+/* Group Box 4: Current & Value */
+.fa-box-cur-left-th { border-left: 2.5px solid #1D4ED8 !important; border-top: 2.5px solid #1D4ED8 !important; background: #1E3A8A !important; }
+.fa-box-cur-right-th { border-right: 2.5px solid #1D4ED8 !important; border-top: 2.5px solid #1D4ED8 !important; background: #1E3A8A !important; }
+.fa-box-cur-left-td { border-left: 2px solid #1D4ED8 !important; background: #EFF6FF !important; color: #124A1D !important; font-weight: 900 !important; }
+.fa-box-cur-right-td { border-right: 2px solid #1D4ED8 !important; background: #EFF6FF !important; color: #70440E !important; font-weight: 800 !important; }
+.fa-box-cur-left-tot { border-left: 2.5px solid #1D4ED8 !important; border-bottom: 2.5px solid #1D4ED8 !important; color: #124A1D !important; }
+.fa-box-cur-right-tot { border-right: 2.5px solid #1D4ED8 !important; border-bottom: 2.5px solid #1D4ED8 !important; color: #70440E !important; }
+
+/* Bulk Order Planner Cards */
+.bulk-kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+    margin: 10px 0 14px 0;
+}
+.bulk-kpi-card {
+    background: #FFFBF2;
+    border: 1.5px solid #E3CBA0;
+    border-radius: 10px;
+    padding: 10px 12px;
+    text-align: center;
+}
+.bulk-kpi-label {
+    font-size: 10.5px;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #7A5A34;
+    letter-spacing: 0.03em;
+}
+.bulk-kpi-val {
+    font-size: 17px;
+    font-weight: 900;
+    color: #4A2418;
+    margin-top: 3px;
+}
+.bulk-kpi-sub {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #8A5E17;
+    margin-top: 2px;
+}
+
 /* Dashboard 7-Column KPI No-Wrap Styling */
 .dashboard-kpi-row div[data-testid="stMetric"] {
     padding: 6px 6px !important;
@@ -1461,6 +1628,183 @@ def add_today_extra_stock_entry(today_date, cart_name, extra_map, staff_name="")
             )
         s.commit()
 
+
+def remove_today_cart_stock_to_freezer(today_date, cart_name, return_map, staff_name=""):
+    """
+    Move unsold cart stock back to Freezer as of today_date:
+    - Deducts returned units from today's cart stock (opening_units first, then added_units, and closing_units).
+    - Logs the transfer in public.cart_to_freezer_logs so Freezer Analysis ('Frm Cart') adds it to Freezer stock.
+    """
+    if db_conn is None:
+        return 0
+
+    prev_closings, prev_staff = get_latest_cart_closing_state(cart_name, today_date)
+    staff_to_use = str(staff_name or prev_staff or "").strip()
+    actual_moved_map = {code: 0 for code in FLAVOR_CODES}
+
+    with db_conn.session as s:
+        row = s.execute(
+            text("SELECT id, staff_name FROM daily_cart_entries WHERE entry_date = :dt AND cart_name = :cart;"),
+            {"dt": today_date, "cart": cart_name},
+        ).fetchone()
+
+        if row:
+            today_id = row[0]
+            if not staff_to_use and row[1]:
+                staff_to_use = str(row[1]).strip()
+        else:
+            ins = s.execute(
+                text("""
+                    INSERT INTO daily_cart_entries
+                    (entry_date, cart_name, city, staff_name, total_collection, phonepe, cash,
+                     staff_advance, food_tea_cash, cash_leakage_explained,
+                     cash_leakage_unexplained, cash_leakage, remarks)
+                    VALUES
+                    (:dt, :cart, :city, :st, 0, 0, 0, 0, 0, 0, 0, 0, '')
+                    RETURNING id;
+                """),
+                {"dt": today_date, "cart": cart_name, "city": get_location_for_cart(cart_name), "st": staff_to_use or None},
+            )
+            today_id = ins.scalar()
+
+        for code in FLAVOR_CODES:
+            req_move = max(0, int(return_map.get(code, 0) or 0))
+            existing = s.execute(
+                text("""
+                    SELECT id, opening_units, added_units, sold_units, closing_units
+                    FROM daily_cart_items
+                    WHERE daily_entry_id = :eid AND flavor_code = :code;
+                """),
+                {"eid": today_id, "code": code},
+            ).fetchone()
+
+            if existing:
+                item_id, opening_units, added_units, sold_units, closing_units = existing
+                cur_open = max(0, int(opening_units or 0))
+                cur_add = max(0, int(added_units or 0))
+                cur_sold = max(0, int(sold_units or 0))
+                cur_close = (
+                    max(0, int(closing_units))
+                    if closing_units is not None
+                    else max(0, cur_open + cur_add - cur_sold)
+                )
+                actual_move = min(req_move, cur_close)
+                actual_moved_map[code] = actual_move
+                if actual_move <= 0:
+                    continue
+
+                deduct_open = min(cur_open, actual_move)
+                deduct_add = max(0, actual_move - deduct_open)
+                new_open = max(0, cur_open - deduct_open)
+                new_add = max(0, cur_add - deduct_add)
+                new_close = max(0, cur_close - actual_move)
+
+                s.execute(
+                    text("""
+                        UPDATE daily_cart_items
+                        SET opening_units = :opening,
+                            added_units = :added,
+                            closing_units = :closing
+                        WHERE id = :id;
+                    """),
+                    {"opening": new_open, "added": new_add, "closing": new_close, "id": item_id},
+                )
+            else:
+                cur_open = max(0, int(prev_closings.get(code, 0)))
+                actual_move = min(req_move, cur_open)
+                actual_moved_map[code] = actual_move
+                new_open = max(0, cur_open - actual_move)
+                s.execute(
+                    text("""
+                        INSERT INTO daily_cart_items
+                        (daily_entry_id, flavor_code, opening_units, added_units, sold_units, closing_units)
+                        VALUES (:eid, :code, :opening, 0, 0, :closing);
+                    """),
+                    {"eid": today_id, "code": code, "opening": new_open, "closing": new_open},
+                )
+
+        tot_moved = sum(actual_moved_map.values())
+        if tot_moved > 0:
+            rec_role = "Ops Coordinator" if st.session_state.get("user_role") == "entry" else "Admin"
+            s.execute(
+                text("""
+                    INSERT INTO public.cart_to_freezer_logs (
+                        entry_date, cart_name, location, staff_name, daily_entry_id,
+                        ml_units, mm_units, ps_units, mn_units, kb_units,
+                        bm_units, sg_units, ch_units, ra_units,
+                        recorded_by, source_app
+                    ) VALUES (
+                        :dt, :cart, :loc, :staff, :eid,
+                        :ml, :mm, :ps, :mn, :kb,
+                        :bm, :sg, :ch, :ra,
+                        :recby, 'web app'
+                    );
+                """),
+                {
+                    "dt": today_date,
+                    "cart": cart_name,
+                    "loc": get_location_for_cart(cart_name),
+                    "staff": staff_to_use or None,
+                    "eid": today_id,
+                    "ml": int(actual_moved_map.get("ML", 0)),
+                    "mm": int(actual_moved_map.get("MM", 0)),
+                    "ps": int(actual_moved_map.get("PS", 0)),
+                    "mn": int(actual_moved_map.get("MN", 0)),
+                    "kb": int(actual_moved_map.get("KB", 0)),
+                    "bm": int(actual_moved_map.get("BM", 0)),
+                    "sg": int(actual_moved_map.get("SG", 0)),
+                    "ch": int(actual_moved_map.get("CH", 0)),
+                    "ra": int(actual_moved_map.get("RA", 0)),
+                    "recby": rec_role,
+                },
+            )
+        s.commit()
+    return sum(actual_moved_map.values())
+
+
+@st.dialog("❄️ Confirm Move Back to Freezer", width="small")
+def confirm_move_cart_to_freezer_modal(today_date, cart_name, return_map, staff_name=""):
+    tot_units = sum(max(0, int(v or 0)) for v in return_map.values())
+    flv_lines = [
+        f"<b>{escape(FLAVOR_MAP[c]['name'])} ({c})</b>: {int(return_map.get(c, 0))} pcs"
+        for c in FLAVOR_CODES
+        if int(return_map.get(c, 0) or 0) > 0
+    ]
+    st.markdown(
+        f"""
+        <div style='background:#FFF8EE;border:1.5px solid #E3CBA0;border-radius:10px;padding:12px 14px;margin-bottom:12px;'>
+            <div style='font-weight:900;color:#4A2418;font-size:14px;margin-bottom:4px;'>
+                Move {tot_units} pcs from {escape(cart_name)} back to Freezer?
+            </div>
+            <div style='font-size:12px;color:#6B5138;margin-bottom:8px;'>
+                Date: <b>{today_date.strftime('%d-%b-%Y')}</b> &nbsp;|&nbsp; Staff: <b>{escape(staff_name or '—')}</b>
+            </div>
+            <div style='font-size:12px;color:#124A1D;line-height:1.5;'>
+                {" &nbsp;•&nbsp; ".join(flv_lines)}
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.caption("This will reduce today's stock in the selected cart and add these units to Freezer stock ('Frm Cart').")
+    c1, c2 = st.columns(2)
+    with c1:
+        if st.button("✅ Yes, Move to Freezer", type="primary", use_container_width=True, key="confirm_move_cart_fzr_yes"):
+            try:
+                moved_cnt = remove_today_cart_stock_to_freezer(today_date, cart_name, return_map, staff_name)
+                for code in FLAVOR_CODES:
+                    st.session_state[f"rm_cart_stock_{cart_name}_{code}"] = 0
+                st.session_state[f"rm_cart_empty_fill_{cart_name}"] = {}
+                st.cache_data.clear()
+                st.cache_resource.clear()
+                st.session_state["_rm_cart_success_msg"] = f"Moved {moved_cnt} units from {cart_name} back to Freezer!"
+                st.rerun()
+            except Exception as e:
+                st.error(f"Could not move stock to Freezer: {e}")
+    with c2:
+        if st.button("Cancel", use_container_width=True, key="confirm_move_cart_fzr_no"):
+            st.rerun()
+
 def load_db_daily_df():
     if db_conn is None: return pd.DataFrame()
     query = """
@@ -2101,12 +2445,49 @@ def load_freezer_sale_transactions_df(start_date=None, end_date=None):
     except Exception:
         return pd.DataFrame()
 
+def get_db_cart_to_freezer_map(active_loc=None, after_date=None):
+    """Return flavour-wise units moved from Cart back to Freezer ('Frm Cart')."""
+    res_map = {c: 0 for c in FLAVOR_CODES}
+    if db_conn is None:
+        return res_map
+    loc_val = active_loc if active_loc is not None else get_active_location_filter()
+    where_parts = ["(:loc = 'ALL' OR UPPER(TRIM(COALESCE(location, 'HOSUR'))) = :loc)"]
+    params = {"loc": loc_val}
+    if after_date is not None:
+        where_parts.append("entry_date > :adate")
+        params["adate"] = after_date
+    where_sql = " AND ".join(where_parts)
+    try:
+        df = db_conn.query(
+            f"""
+            SELECT
+                COALESCE(SUM(ml_units), 0) AS ml_units, COALESCE(SUM(mm_units), 0) AS mm_units,
+                COALESCE(SUM(ps_units), 0) AS ps_units, COALESCE(SUM(mn_units), 0) AS mn_units,
+                COALESCE(SUM(kb_units), 0) AS kb_units, COALESCE(SUM(bm_units), 0) AS bm_units,
+                COALESCE(SUM(sg_units), 0) AS sg_units, COALESCE(SUM(ch_units), 0) AS ch_units,
+                COALESCE(SUM(ra_units), 0) AS ra_units
+            FROM public.cart_to_freezer_logs
+            WHERE {where_sql};
+            """,
+            params=params,
+            ttl="0s",
+        )
+        if not df.empty:
+            for code in FLAVOR_CODES:
+                res_map[code] = int(_num(df.iloc[0].get(FLAVOR_MAP[code]["audit_col"], 0)))
+    except Exception:
+        pass
+    return res_map
+
+
 def get_db_freezer_stock():
     if db_conn is None: return pd.DataFrame(columns=["code", "Units in freezer"])
     try:
         active_loc = get_active_location_filter()
         rec_df = db_conn.query("SELECT ri.flavor_code, SUM(ri.received_units) AS total_recv FROM stock_received_items ri JOIN stock_received r ON r.id = ri.received_id WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(r.location, 'HOSUR'))) = :active_loc) GROUP BY ri.flavor_code;", params={"active_loc": active_loc}, ttl="0s")
         rec_map = dict(zip(rec_df["flavor_code"], rec_df["total_recv"])) if not rec_df.empty else {}
+
+        frm_cart_map = get_db_cart_to_freezer_map(active_loc=active_loc, after_date=None)
 
         added_df = db_conn.query("SELECT i.flavor_code, SUM(i.added_units) AS total_added FROM daily_cart_items i JOIN daily_cart_entries e ON e.id = i.daily_entry_id WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(e.city, 'HOSUR'))) = :active_loc) GROUP BY i.flavor_code;", params={"active_loc": active_loc}, ttl="0s")
         added_map = dict(zip(added_df["flavor_code"], added_df["total_added"])) if not added_df.empty else {}
@@ -2118,7 +2499,13 @@ def get_db_freezer_stock():
         
         rows = []
         for code in FLAVOR_CODES:
-            calc_stock = int(rec_map.get(code, 0)) - int(added_map.get(code, 0)) - int(fzr_map.get(code, 0)) - int(rem_map.get(code, 0))
+            calc_stock = (
+                int(rec_map.get(code, 0))
+                + int(frm_cart_map.get(code, 0))
+                - int(added_map.get(code, 0))
+                - int(fzr_map.get(code, 0))
+                - int(rem_map.get(code, 0))
+            )
             rows.append({"code": code, "Units in freezer": calc_stock})
         return pd.DataFrame(rows)
     except Exception:
@@ -2144,6 +2531,7 @@ def get_physical_current_stock_map(as_of_date=None):
                     params={"loc": loc_code}, ttl="0s"
                 )
                 rec_map = dict(zip(rec_df["flavor_code"], rec_df["recv"])) if not rec_df.empty else {}
+                frm_cart_map = get_db_cart_to_freezer_map(active_loc=loc_code, after_date=None)
                 added_df = db_conn.query(
                     "SELECT i.flavor_code, COALESCE(SUM(i.added_units), 0) AS added FROM daily_cart_items i JOIN daily_cart_entries e ON e.id = i.daily_entry_id WHERE UPPER(TRIM(COALESCE(e.city, 'HOSUR'))) = :loc GROUP BY i.flavor_code;",
                     params={"loc": loc_code}, ttl="0s"
@@ -2160,7 +2548,13 @@ def get_physical_current_stock_map(as_of_date=None):
                 )
                 rem_map = {c: int(rem_df.iloc[0].get(FLAVOR_MAP[c]["audit_col"], 0)) for c in FLAVOR_CODES} if not rem_df.empty else {}
                 for code in FLAVOR_CODES:
-                    combined_stock[code] += int(rec_map.get(code, 0)) - int(added_map.get(code, 0)) - int(fzr_map.get(code, 0)) - int(rem_map.get(code, 0))
+                    combined_stock[code] += (
+                        int(rec_map.get(code, 0))
+                        + int(frm_cart_map.get(code, 0))
+                        - int(added_map.get(code, 0))
+                        - int(fzr_map.get(code, 0))
+                        - int(rem_map.get(code, 0))
+                    )
                 continue
 
             audit_row = audit_df.iloc[0]
@@ -2177,6 +2571,8 @@ def get_physical_current_stock_map(as_of_date=None):
                 GROUP BY ri.flavor_code;
             """, params={"adate": audit_date, "loc": loc_code}, ttl="0s")
             rec_map = dict(zip(rec_df["flavor_code"], rec_df["recv"])) if not rec_df.empty else {}
+
+            frm_cart_map = get_db_cart_to_freezer_map(active_loc=loc_code, after_date=audit_date)
 
             added_df = db_conn.query("""
                 SELECT i.flavor_code, COALESCE(SUM(i.added_units), 0) AS added 
@@ -2216,6 +2612,7 @@ def get_physical_current_stock_map(as_of_date=None):
                 combined_stock[code] += (
                     audit_map.get(code, 0)
                     + int(rec_map.get(code, 0))
+                    + int(frm_cart_map.get(code, 0))
                     - int(added_map.get(code, 0))
                     - int(fzr_map.get(code, 0))
                     - int(rem_map.get(code, 0))
@@ -3155,7 +3552,7 @@ else:
             st.session_state.pop("entry_cart_shared", None)
         st.markdown("---")
 
-        nav_options = ["Dashboard", "Daily Entry", "Live Cart Tracking", "Cash Custody", "Purchase Orders", "Freezer Stock", "Cart Stock Plan", "Freezer Analysis", "Stock Removed", "Expenses", "Staff & Payroll", "Payslip Generator", "Locations & Logins"]
+        nav_options = ["Dashboard", "Daily Entry", "Bulk Orders & Quotes", "Live Cart Tracking", "Cash Custody", "Purchase Orders", "Freezer Stock", "Cart Stock Plan", "Freezer Analysis", "Stock Removed", "Expenses", "Staff & Payroll", "Payslip Generator", "Locations & Logins"]
         page = st.radio("Go to", nav_options, label_visibility="collapsed", key="page_nav")
         st.markdown("---")
         if st.button("Log out", use_container_width=True):
@@ -3442,54 +3839,162 @@ elif page == "Daily Entry":
         return value.strftime("%d-%b-%Y")
 
     if entry_mode is None:
-        st.subheader("🛒 Entry")
-        st.caption("Choose what you want to record.")
-        st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+        st.markdown(
+            f"""
+            <div style='background:linear-gradient(90deg, #FFF5E4 0%, #FFFBF2 100%);
+                        border:1.5px solid #E3CBA0;border-radius:14px;padding:14px 20px;
+                        margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;'>
+                <div>
+                    <div style='font-family:Fraunces,serif;font-size:21px;font-weight:700;color:#4A2418;'>
+                        🛒 Daily Operations & Stock Entry Hub
+                    </div>
+                    <div style='font-size:12.5px;color:#6B5138;margin-top:2px;'>
+                        Select an operation below to record cart sales, morning restocks, mid-day top-ups, cart stock removals, or direct freezer sales.
+                    </div>
+                </div>
+                <div style='background:#70440E;color:#FFFFFF;padding:6px 14px;border-radius:999px;font-size:12px;font-weight:800;'>
+                    📅 {_entry_date_display(today_val)}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
-        em1, em2, em3, em4, em5 = st.columns(5, gap="medium")
-        with em1:
-            with st.container(border=True):
-                st.markdown("### 🧾 Sales Entry (Carts)")
-                st.caption("Closing stock, sales, collections, leakage and remarks for carts")
-                if st.button("Open Sales (Carts) →", key="open_sales_entry", type="primary", use_container_width=True):
-                    st.session_state.pop("_last_mismatch_modal_target", None)
-                    st.session_state["daily_entry_mode"] = "sales"
-                    st.rerun()
-        with em2:
-            with st.container(border=True):
-                st.markdown("### 📦 Restock (Carts)")
-                st.caption("Record today's normal opening stock added to each cart")
-                if st.button("Open Restock (Carts) →", key="open_restock_entry", type="primary", use_container_width=True):
-                    st.session_state["daily_entry_mode"] = "restock"
-                    st.rerun()
-        with em3:
-            with st.container(border=True):
-                st.markdown("### ➕ Extra Stock (Carts)")
-                st.caption("Add stock supplied later during the selling day")
-                if st.button("Open Extra Stock (Carts) →", key="open_extra_stock", type="primary", use_container_width=True):
-                    # Always enter Extra Stock with every input cleared to zero.
-                    for _cart in CARTS:
-                        for _code in FLAVOR_CODES:
-                            st.session_state[f"extra_stock_{_cart}_{_code}"] = 0
-                    st.session_state["daily_entry_mode"] = "extra"
-                    st.rerun()
-        with em4:
-            with st.container(border=True):
-                st.markdown("### 📋 View Cart Stock")
-                st.caption("Read-only view of Cart Stock")
-                if st.button("View Cart Stock →", key="open_view_cart_stock", type="primary", use_container_width=True):
-                    st.session_state["daily_entry_mode"] = "view_stock"
-                    st.rerun()
-        with em5:
-            with st.container(border=True):
-                st.markdown("### ❄️ Sales Entry (Freezer)")
-                st.caption("Direct sales from Freezer stock with live MRP & leakage calculation")
-                if st.button("Open Sales (Freezer) →", key="open_freezer_sales_entry", type="primary", use_container_width=True):
-                    st.session_state["fzr_sale_form_nonce"] = int(st.session_state.get("fzr_sale_form_nonce", 0)) + 1
-                    st.session_state["fzr_entry_sub_mode"] = "new"
-                    st.session_state.pop("_editing_freezer_txn_id", None)
-                    st.session_state["daily_entry_mode"] = "freezer_sales"
-                    st.rerun()
+        # Row 1: Core Cart Daily Operations (Sales, Restock, Extra Stock)
+        r1_c1, r1_c2, r1_c3 = st.columns(3, gap="medium")
+        with r1_c1:
+            st.markdown(
+                """
+                <div class='entry-hub-card' style='border-top:4px solid #E8542A;'>
+                    <div>
+                        <div class='entry-hub-top'>
+                            <div class='entry-hub-icon' style='background:#FCE8E2;color:#C43D17;'>🧾</div>
+                            <span class='entry-hub-badge' style='background:#FCE8E2;color:#C43D17;'>DAILY CLOSING</span>
+                        </div>
+                        <div class='entry-hub-title'>Sales Entry (Carts)</div>
+                        <div class='entry-hub-desc'>Record closing counts, units sold, UPI/Cash collections, advances, and leakage for carts.</div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            if st.button("Open Sales (Carts) →", key="open_sales_entry", type="primary", use_container_width=True):
+                st.session_state.pop("_last_mismatch_modal_target", None)
+                st.session_state["daily_entry_mode"] = "sales"
+                st.rerun()
+
+        with r1_c2:
+            st.markdown(
+                """
+                <div class='entry-hub-card' style='border-top:4px solid #124A1D;'>
+                    <div>
+                        <div class='entry-hub-top'>
+                            <div class='entry-hub-icon' style='background:#EAF4EC;color:#124A1D;'>📦</div>
+                            <span class='entry-hub-badge' style='background:#EAF4EC;color:#124A1D;'>MORNING LOAD</span>
+                        </div>
+                        <div class='entry-hub-title'>Restock (Carts)</div>
+                        <div class='entry-hub-desc'>Record today's regular stock allocation moved from the Freezer into each selling cart.</div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            if st.button("Open Restock (Carts) →", key="open_restock_entry", type="primary", use_container_width=True):
+                st.session_state["daily_entry_mode"] = "restock"
+                st.rerun()
+
+        with r1_c3:
+            st.markdown(
+                """
+                <div class='entry-hub-card' style='border-top:4px solid #D97706;'>
+                    <div>
+                        <div class='entry-hub-top'>
+                            <div class='entry-hub-icon' style='background:#FFF2DC;color:#B45309;'>➕</div>
+                            <span class='entry-hub-badge' style='background:#FFF2DC;color:#B45309;'>MID-DAY TOP-UP</span>
+                        </div>
+                        <div class='entry-hub-title'>Extra Stock (Carts)</div>
+                        <div class='entry-hub-desc'>Add supplementary flavour units supplied to a cart after selling has started.</div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            if st.button("Open Extra Stock (Carts) →", key="open_extra_stock", type="primary", use_container_width=True):
+                for _cart in CARTS:
+                    for _code in FLAVOR_CODES:
+                        st.session_state[f"extra_stock_{_cart}_{_code}"] = 0
+                st.session_state["daily_entry_mode"] = "extra"
+                st.rerun()
+
+        st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+
+        # Row 2: Cart-to-Freezer Return, Read-Only Cart Snapshot, and Direct Freezer Sales
+        r2_c1, r2_c2, r2_c3 = st.columns(3, gap="medium")
+        with r2_c1:
+            st.markdown(
+                """
+                <div class='entry-hub-card' style='border-top:4px solid #0D9488;'>
+                    <div>
+                        <div class='entry-hub-top'>
+                            <div class='entry-hub-icon' style='background:#E6FFFA;color:#0F766E;'>🔄</div>
+                            <span class='entry-hub-badge' style='background:#CCFBF1;color:#0F766E;'>CART → FREEZER</span>
+                        </div>
+                        <div class='entry-hub-title'>Remove Cart Stock</div>
+                        <div class='entry-hub-desc'>Empty a cart or move unsold flavour units back into the Freezer ('Frm Cart').</div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            if st.button("Open Remove Cart Stock →", key="open_remove_cart_stock", type="primary", use_container_width=True):
+                for _cart in CARTS:
+                    for _code in FLAVOR_CODES:
+                        st.session_state[f"rm_cart_stock_{_cart}_{_code}"] = 0
+                st.session_state["daily_entry_mode"] = "remove_cart_stock"
+                st.rerun()
+
+        with r2_c2:
+            st.markdown(
+                """
+                <div class='entry-hub-card' style='border-top:4px solid #6D28D9;'>
+                    <div>
+                        <div class='entry-hub-top'>
+                            <div class='entry-hub-icon' style='background:#F3E8FF;color:#6D28D9;'>📋</div>
+                            <span class='entry-hub-badge' style='background:#F3E8FF;color:#6D28D9;'>READ-ONLY VIEW</span>
+                        </div>
+                        <div class='entry-hub-title'>View Cart Stock</div>
+                        <div class='entry-hub-desc'>Inspect flavour-wise Opening, Restock (with Extra), and Sold units for Today, T-1 & T-2.</div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            if st.button("View Cart Stock →", key="open_view_cart_stock", type="primary", use_container_width=True):
+                st.session_state["daily_entry_mode"] = "view_stock"
+                st.rerun()
+
+        with r2_c3:
+            st.markdown(
+                """
+                <div class='entry-hub-card' style='border-top:4px solid #1B5E91;'>
+                    <div>
+                        <div class='entry-hub-top'>
+                            <div class='entry-hub-icon' style='background:#EBF3FA;color:#1B5E91;'>❄️</div>
+                            <span class='entry-hub-badge' style='background:#EBF3FA;color:#1B5E91;'>DIRECT FREEZER SALE</span>
+                        </div>
+                        <div class='entry-hub-title'>Sales Entry (Freezer)</div>
+                        <div class='entry-hub-desc'>Record direct customer sales from Freezer stock with live MRP & leakage calculation.</div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            if st.button("Open Sales (Freezer) →", key="open_freezer_sales_entry", type="primary", use_container_width=True):
+                st.session_state["fzr_sale_form_nonce"] = int(st.session_state.get("fzr_sale_form_nonce", 0)) + 1
+                st.session_state["fzr_entry_sub_mode"] = "new"
+                st.session_state.pop("_editing_freezer_txn_id", None)
+                st.session_state["daily_entry_mode"] = "freezer_sales"
+                st.rerun()
     else:
         back_col, _ = st.columns([2.2, 4.8])
         with back_col:
@@ -4441,6 +4946,1224 @@ elif page == "Daily Entry":
                 vt2.markdown(f"<div class='entry-grid-total-row' style='text-align:center;font-weight:900;'><b>{tot_open_v}</b></div>", unsafe_allow_html=True)
                 vt3.markdown(f"<div class='entry-grid-total-row' style='text-align:center;font-weight:900;'><b>{tot_rs_disp}</b></div>", unsafe_allow_html=True)
                 vt4.markdown(f"<div class='entry-grid-total-row' style='text-align:center;color:#C43D17;font-weight:900;'><b>{tot_sold_v}</b></div>", unsafe_allow_html=True)
+
+        # --------------------------------------------------------------
+        # REMOVE CART STOCK (Move Cart Stock Back to Freezer)
+        # --------------------------------------------------------------
+        elif entry_mode == "remove_cart_stock":
+            st.subheader("🔄 Remove Cart Stock")
+            st.caption("Empty a cart or move unsold cart stock back into the Freezer as of today.")
+
+            if st.session_state.get("_rm_cart_success_msg"):
+                st.success(st.session_state.pop("_rm_cart_success_msg"))
+
+            rc1, rc2, rc3, rc4 = st.columns([1.3, 1.0, 1.0, 0.8])
+            with rc1:
+                cart_name = st.selectbox("Select Cart", CARTS, key="entry_cart_shared")
+            with rc2:
+                st.text_input(
+                    "Transfer Date",
+                    value=_entry_date_display(today_val),
+                    disabled=True,
+                    key=f"rm_cart_date_disp_{cart_name}",
+                )
+
+            today_stock_state, today_staff = get_today_cart_stock_state(cart_name, today_val)
+            with rc3:
+                st.text_input(
+                    "Staff Name",
+                    value=today_staff or "—",
+                    disabled=True,
+                    key=f"rm_cart_staff_disp_{cart_name}",
+                )
+            with rc4:
+                st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
+                if st.button("↻ Refresh Stock", use_container_width=True, key=f"refresh_rm_cart_{cart_name}"):
+                    st.cache_data.clear()
+                    st.rerun()
+
+            tot_in_cart_now = sum(max(0, int(today_stock_state[c]["closing"])) for c in FLAVOR_CODES)
+
+            top_bar1, top_bar2, top_bar3 = st.columns([2.2, 1.1, 1.1])
+            with top_bar1:
+                st.markdown(
+                    f"<div class='header-box-restock' style='margin-bottom:0;'>"
+                    f"<span>🛒 Current Stock in <b>{escape(cart_name)}</b>: <b>{tot_in_cart_now} pcs</b></span>"
+                    f"</div>",
+                    unsafe_allow_html=True,
+                )
+            with top_bar2:
+                if st.button("🧹 Empty Cart (Fill All)", type="primary", use_container_width=True, key=f"btn_empty_cart_{cart_name}"):
+                    for code in FLAVOR_CODES:
+                        st.session_state[f"rm_cart_stock_{cart_name}_{code}"] = max(0, int(today_stock_state[code]["closing"]))
+                    st.rerun()
+            with top_bar3:
+                if st.button("↺ Clear Inputs", use_container_width=True, key=f"btn_clear_rm_cart_{cart_name}"):
+                    for code in FLAVOR_CODES:
+                        st.session_state[f"rm_cart_stock_{cart_name}_{code}"] = 0
+                    st.rerun()
+
+            st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
+
+            return_map = {}
+            with st.container(border=True):
+                rh1, rh2, rh3, rh4, rh5 = st.columns([2.0, 0.9, 1.0, 1.2, 1.1], gap="small")
+                rh1.markdown("<div class='entry-grid-header' style='text-align:left;'>Flavour</div>", unsafe_allow_html=True)
+                rh2.markdown("<div class='entry-grid-header'>Opening</div>", unsafe_allow_html=True)
+                rh3.markdown("<div class='entry-grid-header'>In Cart Now</div>", unsafe_allow_html=True)
+                rh4.markdown("<div class='entry-grid-header' style='background:#0F766E;'>Move to Fzr ✏️</div>", unsafe_allow_html=True)
+                rh5.markdown("<div class='entry-grid-header' style='text-align:right;'>Rem. in Cart</div>", unsafe_allow_html=True)
+
+                for code in FLAVOR_CODES:
+                    f_info = FLAVOR_MAP[code]
+                    open_u = max(0, int(today_stock_state[code]["opening"]))
+                    in_cart_u = max(0, int(today_stock_state[code]["closing"]))
+                    r_key = f"rm_cart_stock_{cart_name}_{code}"
+                    if r_key not in st.session_state:
+                        st.session_state[r_key] = 0
+                    if int(st.session_state[r_key] or 0) > in_cart_u:
+                        st.session_state[r_key] = in_cart_u
+
+                    c1, c2, c3, c4, c5 = st.columns([2.0, 0.9, 1.0, 1.2, 1.1], gap="small")
+                    with c1:
+                        st.markdown(f"<div class='entry-grid-cell-flavour'><span>{escape(f_info['name'])}</span><span style='color:#8A5E17;font-size:10.5px;'>₹{int(f_info['mrp'])}</span></div>", unsafe_allow_html=True)
+                    with c2:
+                        st.markdown(f"<div class='entry-grid-cell'>{open_u}</div>", unsafe_allow_html=True)
+                    with c3:
+                        st.markdown(f"<div class='entry-grid-cell' style='font-weight:900;color:#124A1D;'>{in_cart_u}</div>", unsafe_allow_html=True)
+                    with c4:
+                        move_qty = int(
+                            st.number_input(
+                                f"Move {f_info['name']} to Freezer",
+                                min_value=0,
+                                max_value=max(0, in_cart_u),
+                                step=1,
+                                format="%d",
+                                key=r_key,
+                                label_visibility="collapsed",
+                            )
+                        )
+                    return_map[code] = move_qty
+                    rem_in_cart = max(0, in_cart_u - move_qty)
+                    with c5:
+                        st.markdown(f"<div class='entry-grid-cell-amount'>{rem_in_cart} pcs</div>", unsafe_allow_html=True)
+
+                tot_open_c = sum(max(0, int(today_stock_state[c]["opening"])) for c in FLAVOR_CODES)
+                tot_move_c = sum(return_map.values())
+                tot_rem_c = max(0, tot_in_cart_now - tot_move_c)
+
+                rf1, rf2, rf3, rf4, rf5 = st.columns([2.0, 0.9, 1.0, 1.2, 1.1], gap="small")
+                rf1.markdown("<div class='entry-grid-total-row' style='text-align:left;'>TOTAL</div>", unsafe_allow_html=True)
+                rf2.markdown(f"<div class='entry-grid-total-row' style='text-align:center;'>{tot_open_c}</div>", unsafe_allow_html=True)
+                rf3.markdown(f"<div class='entry-grid-total-row' style='text-align:center;color:#124A1D;'>{tot_in_cart_now}</div>", unsafe_allow_html=True)
+                rf4.markdown(f"<div class='entry-grid-total-row' style='text-align:center;color:#0F766E;'>{tot_move_c} pcs</div>", unsafe_allow_html=True)
+                rf5.markdown(f"<div class='entry-grid-total-row' style='text-align:right;color:#4A2418;'>{tot_rem_c} pcs</div>", unsafe_allow_html=True)
+
+            if st.button("❄️ Move back to Freezer", type="primary", use_container_width=True, key=f"submit_rm_cart_{cart_name}"):
+                if tot_move_c <= 0:
+                    st.warning("Please enter at least 1 unit to move back to the Freezer (or click 'Empty Cart').")
+                else:
+                    confirm_move_cart_to_freezer_modal(today_val, cart_name, return_map, today_staff)
+
+            st.markdown("---")
+            st.markdown(f"#### 📋 Recent Cart-to-Freezer Transfers — {cart_name}")
+            try:
+                ctf_df = db_conn.query(
+                    """
+                    SELECT id, entry_date, cart_name, location, staff_name,
+                           ml_units, mm_units, ps_units, mn_units, kb_units,
+                           bm_units, sg_units, ch_units, ra_units,
+                           total_returned_units, recorded_by, source_app, created_at
+                    FROM public.cart_to_freezer_logs
+                    WHERE cart_name = :cart
+                    ORDER BY entry_date DESC, id DESC
+                    LIMIT 25;
+                    """,
+                    params={"cart": cart_name},
+                    ttl="0s",
+                )
+                if ctf_df.empty:
+                    st.caption(f"No stock transfers from {cart_name} to Freezer recorded yet.")
+                else:
+                    disp_ctf = []
+                    for _, lr in ctf_df.iterrows():
+                        row_d = {
+                            "Log #": f"#{int(lr['id'])}",
+                            "Date": pd.to_datetime(lr["entry_date"]).strftime("%d-%b-%y"),
+                            "Time": pd.to_datetime(lr["created_at"]).strftime("%I:%M %p") if pd.notna(lr.get("created_at")) else "—",
+                            "Cart": lr["cart_name"],
+                            "Staff": lr.get("staff_name") or "—",
+                            "Moved to Fzr": int(lr.get("total_returned_units") or sum(int(lr.get(FLAVOR_MAP[c]["audit_col"], 0)) for c in FLAVOR_CODES)),
+                        }
+                        for c_code in FLAVOR_CODES:
+                            row_d[c_code] = int(lr.get(FLAVOR_MAP[c_code]["audit_col"], 0))
+                        row_d["By"] = f"{lr.get('recorded_by') or '—'} ({lr.get('source_app') or 'app'})"
+                        disp_ctf.append(row_d)
+                    st.dataframe(pd.DataFrame(disp_ctf), hide_index=True, use_container_width=True)
+            except Exception as e:
+                st.caption(f"Remove Cart Stock history log unavailable (run SQL migration if needed): {e}")
+
+
+elif page == "Bulk Orders & Quotes" and user_role == "admin":
+    st.subheader("📦 Bulk Orders — Estimates, Discount Planner & Invoices")
+    st.caption("Create bulk order estimates by total pieces (e.g., 200 or 400 pcs) or customer budget (e.g., ₹10,000), dynamically select flavours, compare discount tiers, generate PDFs, and convert delivered orders into final Invoices.")
+
+    # Popularity weights for smart party mix distribution
+    BULK_POPULARITY_WEIGHTS = {
+        "ML": 1.6, "MM": 1.4, "PS": 1.4, "MN": 1.4,
+        "KB": 1.2, "SG": 1.0, "CH": 1.0, "RA": 0.8, "BM": 0.5
+    }
+
+    def distribute_bulk_pieces(total_pcs, checked_codes, mode="even"):
+        """Distribute integer total_pcs across checked_codes so sum equals total_pcs."""
+        res = {c: 0 for c in FLAVOR_CODES}
+        active = [c for c in FLAVOR_CODES if c in checked_codes]
+        total_pcs = max(0, int(total_pcs or 0))
+        if not active or total_pcs <= 0:
+            return res
+        if mode == "weighted":
+            weights = [BULK_POPULARITY_WEIGHTS.get(c, 1.0) for c in active]
+            w_sum = sum(weights)
+            raw = [(total_pcs * w / w_sum) for w in weights]
+            floors = [int(x) for x in raw]
+            rem = total_pcs - sum(floors)
+            fracs = sorted(range(len(active)), key=lambda i: (raw[i] - floors[i], weights[i]), reverse=True)
+            for idx in fracs[:rem]:
+                floors[idx] += 1
+            for c, val in zip(active, floors):
+                res[c] = val
+        else:
+            base_q = total_pcs // len(active)
+            rem = total_pcs % len(active)
+            for i, c in enumerate(active):
+                res[c] = base_q + (1 if i < rem else 0)
+        return res
+
+    def distribute_bulk_budget(budget_inr, discount_pct, checked_codes, mode="even"):
+        """Given a customer budget in INR and discount %, compute optimal flavour counts whose discounted net total fits the budget."""
+        res = {c: 0 for c in FLAVOR_CODES}
+        active = [c for c in FLAVOR_CODES if c in checked_codes]
+        budget_inr = max(0.0, float(budget_inr or 0.0))
+        disc = min(95.0, max(0.0, float(discount_pct or 0.0)))
+        if not active or budget_inr <= 0:
+            return res
+        disc_factor = 1.0 - (disc / 100.0)
+        gross_target = budget_inr / disc_factor if disc_factor > 0 else budget_inr
+        if mode == "weighted":
+            weights = [BULK_POPULARITY_WEIGHTS.get(c, 1.0) for c in active]
+        else:
+            weights = [1.0 for _ in active]
+        weighted_mrp_unit = sum(weights[i] * float(FLAVOR_MAP[active[i]]["mrp"]) for i in range(len(active)))
+        if weighted_mrp_unit <= 0:
+            return res
+        scale = gross_target / weighted_mrp_unit
+        for i, c in enumerate(active):
+            res[c] = max(0, int(round(scale * weights[i])))
+        # Fine-tune by adding/removing pieces of the lowest-MRP active flavour so net amount is as close as possible to budget_inr
+        cheapest_c = min(active, key=lambda c: float(FLAVOR_MAP[c]["mrp"]))
+        cheapest_net = float(FLAVOR_MAP[cheapest_c]["mrp"]) * disc_factor
+        if cheapest_net > 0:
+            curr_gross = sum(res[c] * float(FLAVOR_MAP[c]["mrp"]) for c in active)
+            curr_net = curr_gross * disc_factor
+            diff = budget_inr - curr_net
+            adj = int(round(diff / cheapest_net))
+            if adj != 0:
+                res[cheapest_c] = max(0, res[cheapest_c] + adj)
+        return res
+
+    def generate_bulk_quote_pdf_bytes(q_data):
+        """Generate a clean, customer-ready PDF for a Bulk Order Estimate or Invoice using ReportLab."""
+        if not REPORTLAB_AVAILABLE:
+            return None
+        buf = io.BytesIO()
+        doc = SimpleDocTemplate(
+            buf,
+            pagesize=letter,
+            leftMargin=36,
+            rightMargin=36,
+            topMargin=32,
+            bottomMargin=32,
+        )
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            "BulkTitle",
+            parent=styles["Heading1"],
+            fontName="Helvetica-Bold",
+            fontSize=18,
+            leading=22,
+            textColor=colors.HexColor("#4A2418"),
+            spaceAfter=2,
+        )
+        sub_style = ParagraphStyle(
+            "BulkSub",
+            parent=styles["Normal"],
+            fontName="Helvetica",
+            fontSize=9.5,
+            leading=13,
+            textColor=colors.HexColor("#6B5138"),
+        )
+        sec_hdr = ParagraphStyle(
+            "BulkSecHdr",
+            parent=styles["Heading3"],
+            fontName="Helvetica-Bold",
+            fontSize=11,
+            leading=14,
+            textColor=colors.HexColor("#70440E"),
+            spaceBefore=10,
+            spaceAfter=6,
+        )
+        normal_sm = ParagraphStyle(
+            "BulkNormSm",
+            parent=styles["Normal"],
+            fontName="Helvetica",
+            fontSize=9.5,
+            leading=13,
+            textColor=colors.HexColor("#2A1B10"),
+        )
+
+        story = []
+        doc_type_str = str(q_data.get("doc_type", "ESTIMATE")).upper()
+        badge_title = "BULK ORDER TAX INVOICE / BILL" if doc_type_str == "INVOICE" else "BULK ORDER ESTIMATE / QUOTATION"
+        loc_str = str(q_data.get("location") or CITY).upper()
+
+        header_left = [
+            Paragraph(f"<b>KULFI FACTORY — {escape(loc_str)} FRANCHISE</b>", title_style),
+            Paragraph("Artisanal Stick &amp; Matka Kulfis • Party, Catering &amp; Bulk Orders", sub_style),
+            Paragraph(f"<b>{badge_title}</b>", ParagraphStyle("BadgeP", parent=sub_style, fontName="Helvetica-Bold", fontSize=11, textColor=colors.HexColor("#C43D17"), spaceBefore=4)),
+        ]
+        if os.path.exists("assets/logo.png"):
+            try:
+                rl_logo = RLImage("assets/logo.png", width=62, height=62)
+                hdr_tbl = Table([[rl_logo, header_left]], colWidths=[74, 466])
+                hdr_tbl.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "MIDDLE")]))
+                story.append(hdr_tbl)
+            except Exception:
+                for p in header_left:
+                    story.append(p)
+        else:
+            for p in header_left:
+                story.append(p)
+
+        story.append(Spacer(1, 10))
+
+        q_num = escape(str(q_data.get("quote_number") or "—"))
+        q_dt = escape(str(q_data.get("quote_date") or "—"))
+        ev_dt = escape(str(q_data.get("event_date") or "—"))
+        cust_name = escape(str(q_data.get("customer_name") or "Valued Customer"))
+        cust_phone = escape(str(q_data.get("customer_phone") or "—"))
+        cust_addr = escape(str(q_data.get("customer_address") or "—"))
+        status_txt = escape(str(q_data.get("status") or doc_type_str.title()))
+
+        meta_data = [
+            [
+                Paragraph(f"<b>Customer:</b> {cust_name}", normal_sm),
+                Paragraph(f"<b>{doc_type_str.title()} No:</b> {q_num}", normal_sm),
+            ],
+            [
+                Paragraph(f"<b>Phone:</b> {cust_phone}", normal_sm),
+                Paragraph(f"<b>Date:</b> {q_dt}", normal_sm),
+            ],
+            [
+                Paragraph(f"<b>Venue / Address:</b> {cust_addr}", normal_sm),
+                Paragraph(f"<b>Event / Delivery Date:</b> {ev_dt} &nbsp; (<b>{status_txt}</b>)", normal_sm),
+            ],
+        ]
+        meta_tbl = Table(meta_data, colWidths=[280, 260])
+        meta_tbl.setStyle(
+            TableStyle([
+                ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#FFFBF2")),
+                ("BOX", (0, 0), (-1, -1), 1, colors.HexColor("#E3CBA0")),
+                ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#EFE3D0")),
+                ("TOPPADDING", (0, 0), (-1, -1), 6),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+                ("LEFTPADDING", (0, 0), (-1, -1), 8),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+            ])
+        )
+        story.append(meta_tbl)
+        story.append(Paragraph("Itemized Flavour Breakdown", sec_hdr))
+
+        disc_pct = float(q_data.get("discount_pct") or 0.0)
+        tbl_rows = [["#", "Flavour", "Code", "MRP / Pc (Rs.)", "Net Rate (Rs.)", "Qty (Pcs)", "Gross (Rs.)", "Net Amount (Rs.)"]]
+        idx_counter = 1
+        qty_map = q_data.get("qty_map", {})
+        for code in FLAVOR_CODES:
+            qty = int(qty_map.get(code, 0) or 0)
+            if qty <= 0:
+                continue
+            f_info = FLAVOR_MAP[code]
+            mrp = float(f_info["mrp"])
+            net_rate = mrp * (1.0 - disc_pct / 100.0)
+            gross_line = qty * mrp
+            net_line = qty * net_rate
+            tbl_rows.append([
+                str(idx_counter),
+                f_info["name"],
+                code,
+                f"{mrp:,.2f}",
+                f"{net_rate:,.2f}",
+                f"{qty:,}",
+                f"{gross_line:,.2f}",
+                f"{net_line:,.2f}",
+            ])
+            idx_counter += 1
+
+        if len(tbl_rows) == 1:
+            tbl_rows.append(["—", "No flavours selected", "—", "0.00", "0.00", "0", "0.00", "0.00"])
+
+        tot_units = int(q_data.get("total_units") or 0)
+        gross_amt = float(q_data.get("gross_mrp_amount") or 0.0)
+        disc_amt = float(q_data.get("discount_amount") or 0.0)
+        final_amt = float(q_data.get("final_amount") or 0.0)
+        adv_paid = float(q_data.get("advance_paid") or 0.0)
+        bal_due = max(0.0, final_amt - adv_paid)
+
+        tbl_rows.append(["", "TOTAL PIECES & AMOUNT", "", "", "", f"{tot_units:,} pcs", f"Rs. {gross_amt:,.2f}", f"Rs. {final_amt:,.2f}"])
+
+        item_tbl = Table(tbl_rows, colWidths=[26, 134, 42, 68, 68, 58, 70, 74])
+        item_tbl.setStyle(
+            TableStyle([
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#70440E")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, -1), 9),
+                ("ALIGN", (0, 0), (0, -1), "CENTER"),
+                ("ALIGN", (2, 0), (2, -1), "CENTER"),
+                ("ALIGN", (3, 0), (-1, -1), "RIGHT"),
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#DFC9A6")),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -2), [colors.white, colors.HexColor("#FFFDF8")]),
+                ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#FFF2DC")),
+                ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
+                ("TOPPADDING", (0, 0), (-1, -1), 5),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+            ])
+        )
+        story.append(item_tbl)
+        story.append(Spacer(1, 10))
+
+        sum_rows = [
+            ["Gross Amount (At MRP):", f"Rs. {gross_amt:,.2f}"],
+            [f"Special Bulk Discount ({disc_pct:.1f}%):", f"- Rs. {disc_amt:,.2f}"],
+            [f"Net Payable ({doc_type_str.title()} Total):", f"Rs. {final_amt:,.2f}"],
+        ]
+        if doc_type_str == "INVOICE" or adv_paid > 0:
+            sum_rows.append(["Advance / Amount Paid:", f"Rs. {adv_paid:,.2f}"])
+            sum_rows.append(["Balance Due:", f"Rs. {bal_due:,.2f}"])
+
+        sum_tbl = Table(sum_rows, colWidths=[390, 150])
+        sum_tbl.setStyle(
+            TableStyle([
+                ("ALIGN", (0, 0), (0, -1), "RIGHT"),
+                ("ALIGN", (1, 0), (1, -1), "RIGHT"),
+                ("FONTNAME", (0, 0), (-1, -1), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, -1), 10),
+                ("TEXTCOLOR", (0, 0), (-1, -1), colors.HexColor("#4A2418")),
+                ("BACKGROUND", (0, 2), (-1, 2), colors.HexColor("#EAF4EC")),
+                ("TEXTCOLOR", (0, 2), (-1, 2), colors.HexColor("#124A1D")),
+                ("BOX", (0, 0), (-1, -1), 1, colors.HexColor("#D8C19A")),
+                ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#EFE3D0")),
+                ("TOPPADDING", (0, 0), (-1, -1), 5),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+            ])
+        )
+        story.append(sum_tbl)
+
+        notes_str = str(q_data.get("notes") or "").strip()
+        if notes_str:
+            story.append(Spacer(1, 8))
+            story.append(Paragraph(f"<b>Notes / Terms:</b> {escape(notes_str)}", normal_sm))
+
+        story.append(Spacer(1, 14))
+        story.append(
+            Paragraph(
+                "Thank you for choosing Kulfi Factory! For bulk party &amp; catering inquiries, please contact Kulfi Factory Operations.",
+                ParagraphStyle("FooterNote", parent=sub_style, alignment=1, fontSize=8.5),
+            )
+        )
+        doc.build(story)
+        return buf.getvalue()
+
+    def build_bulk_whatsapp_text(q_data):
+        doc_type_str = str(q_data.get("doc_type", "ESTIMATE")).upper()
+        hdr = "🧾 *KULFI FACTORY — BULK ORDER INVOICE*" if doc_type_str == "INVOICE" else "🍦 *KULFI FACTORY — BULK ORDER ESTIMATE*"
+        lines = [
+            hdr,
+            f"*{doc_type_str.title()} No:* {q_data.get('quote_number') or '—'}",
+            f"*Customer:* {q_data.get('customer_name') or 'Valued Customer'}",
+            f"*Event / Delivery Date:* {q_data.get('event_date') or q_data.get('quote_date') or '—'}",
+            "--------------------------------",
+            "*Flavour Breakdown:*",
+        ]
+        qty_map = q_data.get("qty_map", {})
+        disc_pct = float(q_data.get("discount_pct") or 0.0)
+        for code in FLAVOR_CODES:
+            q = int(qty_map.get(code, 0) or 0)
+            if q > 0:
+                f_info = FLAVOR_MAP[code]
+                mrp = float(f_info["mrp"])
+                lines.append(f"• {f_info['name']}: *{q} pcs* (MRP ₹{mrp:.0f} → ₹{q * mrp:,.0f})")
+        lines.extend([
+            "--------------------------------",
+            f"*Total Quantity:* {int(q_data.get('total_units') or 0)} pieces",
+            f"*Gross Value (MRP):* ₹{float(q_data.get('gross_mrp_amount') or 0):,.2f}",
+            f"*Special Bulk Discount ({disc_pct:.1f}%):* -₹{float(q_data.get('discount_amount') or 0):,.2f}",
+            f"*Net Payable Amount:* *₹{float(q_data.get('final_amount') or 0):,.2f}*",
+        ])
+        adv = float(q_data.get("advance_paid") or 0.0)
+        if doc_type_str == "INVOICE" or adv > 0:
+            bal = max(0.0, float(q_data.get("final_amount") or 0.0) - adv)
+            lines.append(f"*Advance Paid:* ₹{adv:,.2f}")
+            lines.append(f"*Balance Due:* *₹{bal:,.2f}*")
+        if str(q_data.get("notes") or "").strip():
+            lines.append(f"*Notes:* {str(q_data.get('notes')).strip()}")
+        return "\n".join(lines)
+
+    # Initialize session state defaults for the Bulk Order Estimator
+    if "bulk_checked_flavors" not in st.session_state:
+        st.session_state["bulk_checked_flavors"] = list(FLAVOR_CODES)
+    if "bulk_planning_mode" not in st.session_state:
+        st.session_state["bulk_planning_mode"] = "By Total Pieces (e.g. 200 / 400 pcs)"
+    if "bulk_dist_style" not in st.session_state:
+        st.session_state["bulk_dist_style"] = "Popular Party Mix (Weighted)"
+    if "bulk_target_pieces" not in st.session_state:
+        st.session_state["bulk_target_pieces"] = 200
+    if "bulk_target_budget" not in st.session_state:
+        st.session_state["bulk_target_budget"] = 10000.0
+    if "bulk_discount_pct" not in st.session_state:
+        st.session_state["bulk_discount_pct"] = 10.0
+    if "bulk_doc_type" not in st.session_state:
+        st.session_state["bulk_doc_type"] = "ESTIMATE"
+    if "bulk_editing_id" not in st.session_state:
+        st.session_state["bulk_editing_id"] = None
+
+    # Seed initial quantities if not present
+    if not any(f"bulk_qty_{c}" in st.session_state for c in FLAVOR_CODES):
+        init_dist = distribute_bulk_pieces(200, FLAVOR_CODES, mode="weighted")
+        for c in FLAVOR_CODES:
+            st.session_state[f"bulk_qty_{c}"] = int(init_dist.get(c, 0))
+
+    def _trigger_bulk_redistribution():
+        checked = [c for c in FLAVOR_CODES if st.session_state.get(f"bulk_chk_{c}", True)]
+        st.session_state["bulk_checked_flavors"] = checked
+        dist_mode = "weighted" if "Popular" in str(st.session_state.get("bulk_dist_style", "")) else "even"
+        if "Budget" in str(st.session_state.get("bulk_planning_mode", "")):
+            new_map = distribute_bulk_budget(
+                st.session_state.get("bulk_target_budget", 10000.0),
+                st.session_state.get("bulk_discount_pct", 10.0),
+                checked,
+                mode=dist_mode,
+            )
+        else:
+            new_map = distribute_bulk_pieces(
+                st.session_state.get("bulk_target_pieces", 200),
+                checked,
+                mode=dist_mode,
+            )
+        for c in FLAVOR_CODES:
+            st.session_state[f"bulk_qty_{c}"] = int(new_map.get(c, 0))
+
+    bulk_tab1, bulk_tab2 = st.tabs([
+        "🧮 Estimate & Invoice Builder",
+        "🗂️ Saved Estimates & Invoices History",
+    ])
+
+    with bulk_tab1:
+        if st.session_state.get("_bulk_save_banner"):
+            st.success(st.session_state.pop("_bulk_save_banner"))
+
+        editing_id = st.session_state.get("bulk_editing_id")
+        if editing_id:
+            eb1, eb2 = st.columns([4, 1])
+            with eb1:
+                st.info(f"✏️ Currently editing saved record **#{editing_id}** ({st.session_state.get('bulk_quote_no', '')}). You can modify quantities, discount, or switch Document Type to **INVOICE** to finalize delivery.")
+            with eb2:
+                if st.button("➕ Start Fresh Quote", use_container_width=True, key="btn_reset_bulk_quote"):
+                    st.session_state["bulk_editing_id"] = None
+                    st.session_state["bulk_doc_type"] = "ESTIMATE"
+                    st.session_state["bulk_quote_no"] = f"EST-{date.today().strftime('%Y%m%d')}-{datetime.now().strftime('%H%M')}"
+                    st.session_state["bulk_cust_name"] = ""
+                    st.session_state["bulk_cust_phone"] = ""
+                    st.session_state["bulk_cust_addr"] = ""
+                    st.session_state["bulk_advance_paid"] = 0.0
+                    st.session_state["bulk_notes"] = ""
+                    st.rerun()
+
+        # STEP 1: Planning Mode & Smart Parameters
+        with st.container(border=True):
+            st.markdown("#### 1. Order Planning Mode & Smart Distribution")
+            pm1, pm2, pm3, pm4 = st.columns([1.45, 1.35, 1.1, 1.1])
+            with pm1:
+                planning_mode = st.radio(
+                    "How is the customer asking for the quote?",
+                    ["By Total Pieces (e.g. 200 / 400 pcs)", "By Customer Budget (e.g. ₹10,000 INR)"],
+                    key="bulk_planning_mode",
+                    on_change=_trigger_bulk_redistribution,
+                )
+            with pm2:
+                dist_style = st.selectbox(
+                    "Auto-Distribution Style",
+                    ["Popular Party Mix (Weighted)", "Even Split Across Selected Flavours"],
+                    key="bulk_dist_style",
+                    on_change=_trigger_bulk_redistribution,
+                )
+            with pm3:
+                if "Pieces" in planning_mode:
+                    target_pieces = st.number_input(
+                        "Target Total Pieces",
+                        min_value=10,
+                        max_value=50000,
+                        step=10,
+                        key="bulk_target_pieces",
+                        on_change=_trigger_bulk_redistribution,
+                    )
+                else:
+                    target_budget = st.number_input(
+                        "Customer Budget (₹ INR)",
+                        min_value=500.0,
+                        max_value=5000000.0,
+                        step=500.0,
+                        format="%.0f",
+                        key="bulk_target_budget",
+                        on_change=_trigger_bulk_redistribution,
+                    )
+            with pm4:
+                discount_pct = st.number_input(
+                    "Discount (%)",
+                    min_value=0.0,
+                    max_value=80.0,
+                    step=1.0,
+                    format="%.1f",
+                    key="bulk_discount_pct",
+                    on_change=_trigger_bulk_redistribution if "Budget" in planning_mode else None,
+                )
+
+            # Quick Preset Buttons for Pieces or Budget
+            qp_cols = st.columns([1, 1, 1, 1, 1.3, 1.3])
+            if "Pieces" in planning_mode:
+                for idx_p, preset_pcs in enumerate([100, 200, 300, 400]):
+                    with qp_cols[idx_p]:
+                        if st.button(f"⚡ {preset_pcs} Pieces", use_container_width=True, key=f"preset_pcs_{preset_pcs}"):
+                            st.session_state["bulk_target_pieces"] = preset_pcs
+                            _trigger_bulk_redistribution()
+                            st.rerun()
+            else:
+                for idx_b, preset_b in enumerate([5000, 10000, 15000, 25000]):
+                    with qp_cols[idx_b]:
+                        if st.button(f"⚡ ₹{preset_b:,} Budget", use_container_width=True, key=f"preset_bdg_{preset_b}"):
+                            st.session_state["bulk_target_budget"] = float(preset_b)
+                            _trigger_bulk_redistribution()
+                            st.rerun()
+            with qp_cols[4]:
+                if st.button("🔄 Re-Distribute Counts", type="primary", use_container_width=True, key="btn_manual_redist"):
+                    _trigger_bulk_redistribution()
+                    st.rerun()
+            with qp_cols[5]:
+                if st.button("🧹 Zero All Counts", use_container_width=True, key="btn_zero_bulk_counts"):
+                    for c in FLAVOR_CODES:
+                        st.session_state[f"bulk_qty_{c}"] = 0
+                    st.rerun()
+
+            # If in Budget mode, show an interactive Discount Tier Comparison Matrix (0%, 5%, 10%, 15%, 20% off)
+            if "Budget" in planning_mode:
+                st.markdown("##### 💡 Instant Budget Offer Options — What Can We Offer for ₹{:,.0f}?".format(float(st.session_state.get("bulk_target_budget", 10000.0))))
+                checked_now = [c for c in FLAVOR_CODES if st.session_state.get(f"bulk_chk_{c}", True)]
+                dist_mode_now = "weighted" if "Popular" in str(st.session_state.get("bulk_dist_style", "")) else "even"
+                tier_pcts = [0.0, 5.0, 10.0, 15.0, 20.0]
+                tier_cols = st.columns(len(tier_pcts), gap="small")
+                for t_idx, t_disc in enumerate(tier_pcts):
+                    sim_map = distribute_bulk_budget(st.session_state.get("bulk_target_budget", 10000.0), t_disc, checked_now, mode=dist_mode_now)
+                    sim_pcs = sum(sim_map.values())
+                    sim_gross = sum(sim_map[c] * float(FLAVOR_MAP[c]["mrp"]) for c in FLAVOR_CODES)
+                    sim_cost = sum(sim_map[c] * float(FLAVOR_MAP[c]["cost_price"]) for c in FLAVOR_CODES)
+                    sim_net = sim_gross * (1.0 - t_disc / 100.0)
+                    sim_profit = sim_net - sim_cost
+                    is_active_tier = abs(float(st.session_state.get("bulk_discount_pct", 0.0)) - t_disc) < 0.05
+                    border_col = "#E8542A" if is_active_tier else "#E3CBA0"
+                    bg_col = "#FFF2DC" if is_active_tier else "#FFFBF2"
+                    with tier_cols[t_idx]:
+                        st.markdown(
+                            f"""
+                            <div style='background:{bg_col};border:1.8px solid {border_col};border-radius:10px;padding:8px 10px;text-align:center;margin-bottom:4px;'>
+                                <div style='font-size:11px;font-weight:900;color:#70440E;'>{t_disc:.0f}% DISCOUNT</div>
+                                <div style='font-size:18px;font-weight:900;color:#124A1D;margin:2px 0;'>{sim_pcs:,} pcs</div>
+                                <div style='font-size:11px;font-weight:800;color:#4A2418;'>Net: ₹{sim_net:,.0f}</div>
+                                <div style='font-size:10px;color:#6B5138;'>MRP Worth: ₹{sim_gross:,.0f}</div>
+                                <div style='font-size:10px;font-weight:800;color:{"#137333" if sim_profit >= 0 else "#C43D17"};'>Profit: ₹{sim_profit:,.0f}</div>
+                            </div>
+                            """,
+                            unsafe_allow_html=True,
+                        )
+                        if st.button(f"Apply {t_disc:.0f}% Offer", key=f"apply_tier_{int(t_disc)}", use_container_width=True):
+                            st.session_state["bulk_discount_pct"] = float(t_disc)
+                            for c in FLAVOR_CODES:
+                                st.session_state[f"bulk_qty_{c}"] = int(sim_map.get(c, 0))
+                            st.rerun()
+
+        # STEP 2: Interactive Flavour Checkboxes & Editable Quantities Table
+        with st.container(border=True):
+            st_hdr1, st_hdr2, st_hdr3, st_hdr4 = st.columns([2.2, 1.0, 1.2, 1.1])
+            with st_hdr1:
+                st.markdown("#### 2. Flavour Selection & Quantity Distribution")
+                st.caption("Check/uncheck flavours to auto-redistribute counts. You can also edit any flavour's quantity directly.")
+            with st_hdr2:
+                if st.button("✅ Select All Flavours", use_container_width=True, key="bulk_sel_all_flv"):
+                    for c in FLAVOR_CODES:
+                        st.session_state[f"bulk_chk_{c}"] = True
+                    _trigger_bulk_redistribution()
+                    st.rerun()
+            with st_hdr3:
+                if st.button("🍦 Stick Kulfis Only (No Matka)", use_container_width=True, key="bulk_sel_no_bm"):
+                    for c in FLAVOR_CODES:
+                        st.session_state[f"bulk_chk_{c}"] = (c != "BM")
+                    _trigger_bulk_redistribution()
+                    st.rerun()
+            with st_hdr4:
+                if st.button("⭐ Top 5 Bestsellers", use_container_width=True, key="bulk_sel_top5"):
+                    for c in FLAVOR_CODES:
+                        st.session_state[f"bulk_chk_{c}"] = (c in {"ML", "MM", "PS", "MN", "KB"})
+                    _trigger_bulk_redistribution()
+                    st.rerun()
+
+            bh1, bh2, bh3, bh4, bh5, bh6, bh7, bh8 = st.columns([0.55, 1.75, 0.85, 0.85, 1.15, 1.05, 1.05, 1.1], gap="small")
+            bh1.markdown("<div class='entry-grid-header'>Incl.</div>", unsafe_allow_html=True)
+            bh2.markdown("<div class='entry-grid-header' style='text-align:left;'>Flavour</div>", unsafe_allow_html=True)
+            bh3.markdown("<div class='entry-grid-header'>Cost (CP)</div>", unsafe_allow_html=True)
+            bh4.markdown("<div class='entry-grid-header'>MRP</div>", unsafe_allow_html=True)
+            bh5.markdown("<div class='entry-grid-header' style='background:#124A1D;'>Qty (Pcs) ✏️</div>", unsafe_allow_html=True)
+            bh6.markdown("<div class='entry-grid-header'>Total CP</div>", unsafe_allow_html=True)
+            bh7.markdown("<div class='entry-grid-header'>Gross MRP</div>", unsafe_allow_html=True)
+            bh8.markdown("<div class='entry-grid-header' style='text-align:right;background:#E8542A;'>After Disc.</div>", unsafe_allow_html=True)
+
+            curr_disc_pct = float(st.session_state.get("bulk_discount_pct", 0.0) or 0.0)
+            disc_mult = 1.0 - (curr_disc_pct / 100.0)
+
+            qty_map_current = {}
+            tot_units_b = 0
+            tot_cost_b = 0.0
+            tot_gross_mrp_b = 0.0
+            tot_net_b = 0.0
+
+            for code in FLAVOR_CODES:
+                f_info = FLAVOR_MAP[code]
+                chk_key = f"bulk_chk_{code}"
+                qty_key = f"bulk_qty_{code}"
+                if chk_key not in st.session_state:
+                    st.session_state[chk_key] = True
+                if qty_key not in st.session_state:
+                    st.session_state[qty_key] = 0
+
+                r_c1, r_c2, r_c3, r_c4, r_c5, r_c6, r_c7, r_c8 = st.columns([0.55, 1.75, 0.85, 0.85, 1.15, 1.05, 1.05, 1.1], gap="small")
+                with r_c1:
+                    is_checked = st.checkbox(
+                        f"Include {f_info['name']}",
+                        key=chk_key,
+                        label_visibility="collapsed",
+                        on_change=_trigger_bulk_redistribution,
+                    )
+                with r_c2:
+                    opacity_style = "opacity:1;" if is_checked else "opacity:0.45;"
+                    st.markdown(
+                        f"<div class='entry-grid-cell-flavour' style='{opacity_style}'><span>{escape(f_info['name'])}</span><span style='color:#8A5E17;font-size:10.5px;'>{code}</span></div>",
+                        unsafe_allow_html=True,
+                    )
+                with r_c3:
+                    st.markdown(f"<div class='entry-grid-cell'>₹{float(f_info['cost_price']):.1f}</div>", unsafe_allow_html=True)
+                with r_c4:
+                    st.markdown(f"<div class='entry-grid-cell' style='color:#70440E;'>₹{float(f_info['mrp']):.0f}</div>", unsafe_allow_html=True)
+                with r_c5:
+                    q_val = int(
+                        st.number_input(
+                            f"Bulk Qty {f_info['name']}",
+                            min_value=0,
+                            max_value=50000,
+                            step=5,
+                            format="%d",
+                            key=qty_key,
+                            label_visibility="collapsed",
+                        )
+                    )
+                qty_map_current[code] = q_val
+                line_cp = q_val * float(f_info["cost_price"])
+                line_mrp = q_val * float(f_info["mrp"])
+                line_net = line_mrp * disc_mult
+
+                tot_units_b += q_val
+                tot_cost_b += line_cp
+                tot_gross_mrp_b += line_mrp
+                tot_net_b += line_net
+
+                with r_c6:
+                    st.markdown(f"<div class='entry-grid-cell'>₹{line_cp:,.0f}</div>", unsafe_allow_html=True)
+                with r_c7:
+                    st.markdown(f"<div class='entry-grid-cell'>₹{line_mrp:,.0f}</div>", unsafe_allow_html=True)
+                with r_c8:
+                    st.markdown(f"<div class='entry-grid-cell-amount'>₹{line_net:,.0f}</div>", unsafe_allow_html=True)
+
+            tot_disc_amt_b = max(0.0, tot_gross_mrp_b - tot_net_b)
+            tot_profit_b = tot_net_b - tot_cost_b
+            margin_pct_b = (tot_profit_b / tot_net_b * 100.0) if tot_net_b > 0 else 0.0
+            eff_rate_pc = (tot_net_b / tot_units_b) if tot_units_b > 0 else 0.0
+            cp_rate_pc = (tot_cost_b / tot_units_b) if tot_units_b > 0 else 0.0
+
+            tf1, tf2, tf3, tf4, tf5, tf6, tf7, tf8 = st.columns([0.55, 1.75, 0.85, 0.85, 1.15, 1.05, 1.05, 1.1], gap="small")
+            tf1.markdown("<div class='entry-grid-total-row'>✓</div>", unsafe_allow_html=True)
+            tf2.markdown("<div class='entry-grid-total-row' style='text-align:left;'>TOTAL</div>", unsafe_allow_html=True)
+            tf3.markdown(f"<div class='entry-grid-total-row'>₹{cp_rate_pc:.1f}/pc</div>", unsafe_allow_html=True)
+            tf4.markdown("<div class='entry-grid-total-row'>—</div>", unsafe_allow_html=True)
+            tf5.markdown(f"<div class='entry-grid-total-row' style='color:#124A1D;'>{tot_units_b:,} pcs</div>", unsafe_allow_html=True)
+            tf6.markdown(f"<div class='entry-grid-total-row'>₹{tot_cost_b:,.0f}</div>", unsafe_allow_html=True)
+            tf7.markdown(f"<div class='entry-grid-total-row'>₹{tot_gross_mrp_b:,.0f}</div>", unsafe_allow_html=True)
+            tf8.markdown(f"<div class='entry-grid-total-row' style='text-align:right;color:#C43D17;'>₹{tot_net_b:,.0f}</div>", unsafe_allow_html=True)
+
+        # Live Cost, Discount & Margin Summary Cards
+        profit_color = "#124A1D" if tot_profit_b >= 0 else "#C43D17"
+        st.markdown(
+            f"""
+            <div class='bulk-kpi-strip'>
+                <div class='bulk-kpi-card'>
+                    <div class='bulk-kpi-label'>Total Pieces</div>
+                    <div class='bulk-kpi-val' style='color:#124A1D;'>{tot_units_b:,} pcs</div>
+                    <div class='bulk-kpi-sub'>{sum(1 for q in qty_map_current.values() if q > 0)} active flavours</div>
+                </div>
+                <div class='bulk-kpi-card'>
+                    <div class='bulk-kpi-label'>Gross MRP Value</div>
+                    <div class='bulk-kpi-val'>₹{tot_gross_mrp_b:,.2f}</div>
+                    <div class='bulk-kpi-sub'>Avg MRP: ₹{(tot_gross_mrp_b / tot_units_b if tot_units_b else 0):.1f}/pc</div>
+                </div>
+                <div class='bulk-kpi-card' style='background:#FFF2DC;border-color:#D97706;'>
+                    <div class='bulk-kpi-label'>Discount ({curr_disc_pct:.1f}%)</div>
+                    <div class='bulk-kpi-val' style='color:#B45309;'>- ₹{tot_disc_amt_b:,.2f}</div>
+                    <div class='bulk-kpi-sub'>Customer savings</div>
+                </div>
+                <div class='bulk-kpi-card' style='background:#EAF4EC;border-color:#124A1D;'>
+                    <div class='bulk-kpi-label'>Revised Quote / Net</div>
+                    <div class='bulk-kpi-val' style='color:#124A1D;'>₹{tot_net_b:,.2f}</div>
+                    <div class='bulk-kpi-sub'>Eff. Rate: ₹{eff_rate_pc:.1f}/pc</div>
+                </div>
+                <div class='bulk-kpi-card'>
+                    <div class='bulk-kpi-label'>Our Cost (CP)</div>
+                    <div class='bulk-kpi-val' style='color:#70440E;'>₹{tot_cost_b:,.2f}</div>
+                    <div class='bulk-kpi-sub'>Avg CP: ₹{cp_rate_pc:.1f}/pc</div>
+                </div>
+                <div class='bulk-kpi-card'>
+                    <div class='bulk-kpi-label'>Est. Gross Profit</div>
+                    <div class='bulk-kpi-val' style='color:{profit_color};'>₹{tot_profit_b:,.2f}</div>
+                    <div class='bulk-kpi-sub' style='color:{profit_color};'>Margin: {margin_pct_b:.1f}%</div>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        # STEP 3: Customer Details, Document Type (Estimate vs Invoice), Save, PDF & WhatsApp
+        with st.container(border=True):
+            st.markdown("#### 3. Customer Details, Save to Database & Share (Estimate / Invoice PDF & WhatsApp)")
+            if "bulk_quote_no" not in st.session_state or not st.session_state["bulk_quote_no"]:
+                prefix_q = "INV" if st.session_state.get("bulk_doc_type") == "INVOICE" else "EST"
+                st.session_state["bulk_quote_no"] = f"{prefix_q}-{date.today().strftime('%Y%m%d')}-{datetime.now().strftime('%H%M')}"
+
+            cd1, cd2, cd3, cd4 = st.columns([1.1, 1.2, 1.1, 1.1])
+            with cd1:
+                doc_type_sel = st.selectbox(
+                    "Document Type",
+                    ["ESTIMATE", "INVOICE"],
+                    key="bulk_doc_type",
+                )
+            with cd2:
+                quote_no_inp = st.text_input("Estimate / Invoice No.", key="bulk_quote_no")
+            with cd3:
+                quote_dt_inp = st.date_input("Document Date", value=st.session_state.get("bulk_quote_dt", date.today()), format="DD-MM-YYYY", key="bulk_quote_dt")
+            with cd4:
+                event_dt_inp = st.date_input("Event / Delivery Date", value=st.session_state.get("bulk_event_dt", date.today() + timedelta(days=1)), format="DD-MM-YYYY", key="bulk_event_dt")
+
+            cd5, cd6, cd7, cd8 = st.columns([1.4, 1.1, 1.1, 1.1])
+            with cd5:
+                cust_name_inp = st.text_input("Customer / Organization Name *", placeholder="e.g. Rajesh Sharma / Wedding Catering", key="bulk_cust_name")
+            with cd6:
+                cust_phone_inp = st.text_input("Customer WhatsApp / Phone", placeholder="10-digit mobile number", key="bulk_cust_phone")
+            with cd7:
+                status_opts = ["Estimate Sent", "Draft", "Confirmed", "Invoiced / Delivered", "Cancelled"]
+                default_st_idx = 3 if doc_type_sel == "INVOICE" else 0
+                order_status_inp = st.selectbox("Order Status", status_opts, index=default_st_idx, key="bulk_status_sel")
+            with cd8:
+                advance_paid_inp = st.number_input("Advance / Paid Amount (₹)", min_value=0.0, max_value=5000000.0, step=100.0, format="%.0f", key="bulk_advance_paid")
+
+            cd9, cd10 = st.columns([1.5, 1.5])
+            with cd9:
+                cust_addr_inp = st.text_input("Event Venue / Delivery Address", placeholder="Optional venue or address", key="bulk_cust_addr")
+            with cd10:
+                notes_inp = st.text_input("Notes / Special Instructions", placeholder="e.g. Dry ice box required, delivery by 6:30 PM", key="bulk_notes")
+
+            balance_due_calc = max(0.0, tot_net_b - float(advance_paid_inp or 0.0))
+
+            current_q_payload = {
+                "doc_type": doc_type_sel,
+                "quote_number": quote_no_inp.strip() or f"{doc_type_sel[:3]}-{date.today().strftime('%Y%m%d')}",
+                "quote_date": quote_dt_inp.strftime("%d-%b-%Y"),
+                "event_date": event_dt_inp.strftime("%d-%b-%Y"),
+                "location": CITY,
+                "customer_name": cust_name_inp.strip() or "Valued Customer",
+                "customer_phone": cust_phone_inp.strip(),
+                "customer_address": cust_addr_inp.strip(),
+                "qty_map": qty_map_current,
+                "total_units": tot_units_b,
+                "gross_mrp_amount": tot_gross_mrp_b,
+                "total_cost_amount": tot_cost_b,
+                "discount_pct": curr_disc_pct,
+                "discount_amount": tot_disc_amt_b,
+                "final_amount": tot_net_b,
+                "advance_paid": float(advance_paid_inp or 0.0),
+                "balance_due": balance_due_calc,
+                "status": order_status_inp,
+                "notes": notes_inp.strip(),
+            }
+
+            act1, act2, act3, act4 = st.columns([1.3, 1.3, 1.2, 1.2])
+            with act1:
+                save_btn_lbl = f"💾 Update {doc_type_sel.title()} #{editing_id}" if editing_id else f"💾 Save {doc_type_sel.title()} to Database"
+                if st.button(save_btn_lbl, type="primary", use_container_width=True, key="btn_save_bulk_quote"):
+                    if tot_units_b <= 0:
+                        st.error("Please allocate at least 1 kulfi unit before saving.")
+                    elif not cust_name_inp.strip():
+                        st.error("Please enter the Customer / Organization Name.")
+                    else:
+                        try:
+                            checked_str = ",".join([c for c in FLAVOR_CODES if st.session_state.get(f"bulk_chk_{c}", True)])
+                            p_mode_db = "BUDGET" if "Budget" in planning_mode else "PIECES"
+                            with db_conn.session as s:
+                                if editing_id:
+                                    s.execute(
+                                        text("""
+                                            UPDATE public.bulk_order_quotes
+                                            SET doc_type = :dtype,
+                                                quote_number = :qno,
+                                                quote_date = :qdt,
+                                                event_date = :edt,
+                                                location = :loc,
+                                                customer_name = :cname,
+                                                customer_phone = :cphone,
+                                                customer_address = :caddr,
+                                                planning_mode = :pmode,
+                                                target_pieces = :tpcs,
+                                                target_budget = :tbdg,
+                                                selected_flavors = :sflav,
+                                                ml_units = :ml, mm_units = :mm, ps_units = :ps, mn_units = :mn,
+                                                kb_units = :kb, bm_units = :bm, sg_units = :sg, ch_units = :ch, ra_units = :ra,
+                                                total_units = :totu,
+                                                gross_mrp_amount = :gmrp,
+                                                total_cost_amount = :tcost,
+                                                discount_pct = :dpct,
+                                                discount_amount = :damt,
+                                                final_amount = :famt,
+                                                advance_paid = :adv,
+                                                balance_due = :bal,
+                                                status = :st,
+                                                notes = :notes,
+                                                updated_at = NOW()
+                                            WHERE id = :id;
+                                        """),
+                                        {
+                                            "id": int(editing_id),
+                                            "dtype": doc_type_sel,
+                                            "qno": current_q_payload["quote_number"],
+                                            "qdt": quote_dt_inp,
+                                            "edt": event_dt_inp,
+                                            "loc": CITY,
+                                            "cname": cust_name_inp.strip(),
+                                            "cphone": cust_phone_inp.strip() or None,
+                                            "caddr": cust_addr_inp.strip() or None,
+                                            "pmode": p_mode_db,
+                                            "tpcs": int(st.session_state.get("bulk_target_pieces", tot_units_b)),
+                                            "tbdg": float(st.session_state.get("bulk_target_budget", tot_net_b)),
+                                            "sflav": checked_str,
+                                            "ml": int(qty_map_current.get("ML", 0)),
+                                            "mm": int(qty_map_current.get("MM", 0)),
+                                            "ps": int(qty_map_current.get("PS", 0)),
+                                            "mn": int(qty_map_current.get("MN", 0)),
+                                            "kb": int(qty_map_current.get("KB", 0)),
+                                            "bm": int(qty_map_current.get("BM", 0)),
+                                            "sg": int(qty_map_current.get("SG", 0)),
+                                            "ch": int(qty_map_current.get("CH", 0)),
+                                            "ra": int(qty_map_current.get("RA", 0)),
+                                            "totu": int(tot_units_b),
+                                            "gmrp": float(tot_gross_mrp_b),
+                                            "tcost": float(tot_cost_b),
+                                            "dpct": float(curr_disc_pct),
+                                            "damt": float(tot_disc_amt_b),
+                                            "famt": float(tot_net_b),
+                                            "adv": float(advance_paid_inp or 0.0),
+                                            "bal": float(balance_due_calc),
+                                            "st": order_status_inp,
+                                            "notes": notes_inp.strip() or None,
+                                        },
+                                    )
+                                    saved_id = int(editing_id)
+                                else:
+                                    ins_q = s.execute(
+                                        text("""
+                                            INSERT INTO public.bulk_order_quotes (
+                                                doc_type, quote_number, quote_date, event_date, location,
+                                                customer_name, customer_phone, customer_address,
+                                                planning_mode, target_pieces, target_budget, selected_flavors,
+                                                ml_units, mm_units, ps_units, mn_units, kb_units, bm_units, sg_units, ch_units, ra_units,
+                                                total_units, gross_mrp_amount, total_cost_amount,
+                                                discount_pct, discount_amount, final_amount, advance_paid, balance_due,
+                                                status, notes, created_by, source_app
+                                            ) VALUES (
+                                                :dtype, :qno, :qdt, :edt, :loc,
+                                                :cname, :cphone, :caddr,
+                                                :pmode, :tpcs, :tbdg, :sflav,
+                                                :ml, :mm, :ps, :mn, :kb, :bm, :sg, :ch, :ra,
+                                                :totu, :gmrp, :tcost,
+                                                :dpct, :damt, :famt, :adv, :bal,
+                                                :st, :notes, 'Admin', 'web app'
+                                            ) RETURNING id;
+                                        """),
+                                        {
+                                            "dtype": doc_type_sel,
+                                            "qno": current_q_payload["quote_number"],
+                                            "qdt": quote_dt_inp,
+                                            "edt": event_dt_inp,
+                                            "loc": CITY,
+                                            "cname": cust_name_inp.strip(),
+                                            "cphone": cust_phone_inp.strip() or None,
+                                            "caddr": cust_addr_inp.strip() or None,
+                                            "pmode": p_mode_db,
+                                            "tpcs": int(st.session_state.get("bulk_target_pieces", tot_units_b)),
+                                            "tbdg": float(st.session_state.get("bulk_target_budget", tot_net_b)),
+                                            "sflav": checked_str,
+                                            "ml": int(qty_map_current.get("ML", 0)),
+                                            "mm": int(qty_map_current.get("MM", 0)),
+                                            "ps": int(qty_map_current.get("PS", 0)),
+                                            "mn": int(qty_map_current.get("MN", 0)),
+                                            "kb": int(qty_map_current.get("KB", 0)),
+                                            "bm": int(qty_map_current.get("BM", 0)),
+                                            "sg": int(qty_map_current.get("SG", 0)),
+                                            "ch": int(qty_map_current.get("CH", 0)),
+                                            "ra": int(qty_map_current.get("RA", 0)),
+                                            "totu": int(tot_units_b),
+                                            "gmrp": float(tot_gross_mrp_b),
+                                            "tcost": float(tot_cost_b),
+                                            "dpct": float(curr_disc_pct),
+                                            "damt": float(tot_disc_amt_b),
+                                            "famt": float(tot_net_b),
+                                            "adv": float(advance_paid_inp or 0.0),
+                                            "bal": float(balance_due_calc),
+                                            "st": order_status_inp,
+                                            "notes": notes_inp.strip() or None,
+                                        },
+                                    )
+                                    saved_id = int(ins_q.scalar())
+                                s.commit()
+                            st.session_state["bulk_editing_id"] = saved_id
+                            st.cache_data.clear()
+                            st.session_state["_bulk_save_banner"] = f"{doc_type_sel.title()} #{saved_id} ({current_q_payload['quote_number']}) saved to database!"
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Could not save {doc_type_sel.lower()} to database (ensure SQL migration has been run): {e}")
+
+            with act2:
+                pdf_bytes = generate_bulk_quote_pdf_bytes(current_q_payload)
+                if pdf_bytes:
+                    clean_fn = re.sub(r"[^A-Za-z0-9_-]", "_", f"{doc_type_sel}_{current_q_payload['quote_number']}_{cust_name_inp.strip() or 'Customer'}") + ".pdf"
+                    st.download_button(
+                        label=f"📄 Download {doc_type_sel.title()} PDF",
+                        data=pdf_bytes,
+                        file_name=clean_fn,
+                        mime="application/pdf",
+                        use_container_width=True,
+                        key="dl_bulk_pdf_builder",
+                    )
+                else:
+                    st.button("📄 PDF Unavailable (ReportLab missing)", disabled=True, use_container_width=True)
+
+            with act3:
+                wa_text = build_bulk_whatsapp_text(current_q_payload)
+                clean_phone = re.sub(r"[^0-9]", "", str(cust_phone_inp or ""))
+                if len(clean_phone) == 10:
+                    clean_phone = "91" + clean_phone
+                wa_url = f"https://wa.me/{clean_phone}?text={quote(wa_text)}" if clean_phone else f"https://wa.me/?text={quote(wa_text)}"
+                st.link_button(f"📲 Send {doc_type_sel.title()} on WhatsApp", wa_url, use_container_width=True)
+
+            with act4:
+                if doc_type_sel == "ESTIMATE":
+                    if st.button("🧾 Convert to Invoice Mode", use_container_width=True, key="btn_switch_to_inv"):
+                        st.session_state["bulk_doc_type"] = "INVOICE"
+                        old_qno = str(st.session_state.get("bulk_quote_no", ""))
+                        st.session_state["bulk_quote_no"] = old_qno.replace("EST-", "INV-") if old_qno.startswith("EST-") else f"INV-{date.today().strftime('%Y%m%d')}-{datetime.now().strftime('%H%M')}"
+                        st.session_state["bulk_status_sel"] = "Invoiced / Delivered"
+                        st.rerun()
+                else:
+                    if st.button("📝 Switch to Estimate Mode", use_container_width=True, key="btn_switch_to_est"):
+                        st.session_state["bulk_doc_type"] = "ESTIMATE"
+                        st.rerun()
+
+    with bulk_tab2:
+        st.markdown("#### 🗂️ Saved Bulk Order Estimates & Invoices")
+        st.caption("View history, download Estimate/Invoice PDFs, edit quantities, convert an Estimate into a final Invoice upon delivery, or delete records.")
+
+        hf1, hf2, hf3 = st.columns([1.2, 1.2, 1.2])
+        with hf1:
+            hist_type_filter = st.selectbox("Filter by Document Type", ["All", "ESTIMATE", "INVOICE"], key="bulk_hist_type_f")
+        with hf2:
+            hist_status_filter = st.selectbox("Filter by Status", ["All", "Estimate Sent", "Draft", "Confirmed", "Invoiced / Delivered", "Cancelled"], key="bulk_hist_status_f")
+        with hf3:
+            if st.button("↻ Refresh History", use_container_width=True, key="btn_refresh_bulk_hist"):
+                st.cache_data.clear()
+                st.rerun()
+
+        try:
+            b_where = ["(:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(location, 'HOSUR'))) = :active_loc)"]
+            b_params = {"active_loc": get_active_location_filter()}
+            if hist_type_filter != "All":
+                b_where.append("UPPER(TRIM(doc_type)) = :dtype")
+                b_params["dtype"] = hist_type_filter
+            if hist_status_filter != "All":
+                b_where.append("status = :st")
+                b_params["st"] = hist_status_filter
+            b_where_sql = " AND ".join(b_where)
+
+            quotes_df = db_conn.query(
+                f"""
+                SELECT *
+                FROM public.bulk_order_quotes
+                WHERE {b_where_sql}
+                ORDER BY quote_date DESC, id DESC
+                LIMIT 100;
+                """,
+                params=b_params,
+                ttl="0s",
+            )
+        except Exception as e:
+            quotes_df = pd.DataFrame()
+            st.info(f"Bulk orders table not initialized yet or empty. Run `bulk_orders_and_cart_return_migration.sql` in Supabase. ({e})")
+
+        if quotes_df.empty:
+            st.caption("No saved bulk order estimates or invoices found matching the selected filters.")
+        else:
+            for _, qrow in quotes_df.iterrows():
+                qid = int(qrow["id"])
+                q_dtype = str(qrow.get("doc_type") or "ESTIMATE").upper()
+                q_no = str(qrow.get("quote_number") or f"#{qid}")
+                q_cname = str(qrow.get("customer_name") or "Customer")
+                q_cphone = str(qrow.get("customer_phone") or "")
+                q_dt_str = pd.to_datetime(qrow["quote_date"]).strftime("%d-%b-%Y") if pd.notna(qrow.get("quote_date")) else "—"
+                ev_dt_str = pd.to_datetime(qrow["event_date"]).strftime("%d-%b-%Y") if pd.notna(qrow.get("event_date")) else "—"
+                q_tot_u = int(qrow.get("total_units") or 0)
+                q_gmrp = float(qrow.get("gross_mrp_amount") or 0.0)
+                q_tcost = float(qrow.get("total_cost_amount") or 0.0)
+                q_dpct = float(qrow.get("discount_pct") or 0.0)
+                q_damt = float(qrow.get("discount_amount") or 0.0)
+                q_famt = float(qrow.get("final_amount") or 0.0)
+                q_adv = float(qrow.get("advance_paid") or 0.0)
+                q_bal = float(qrow.get("balance_due") or max(0.0, q_famt - q_adv))
+                q_stat = str(qrow.get("status") or "—")
+                q_profit = q_famt - q_tcost
+
+                row_qty_map = {c: int(qrow.get(FLAVOR_MAP[c]["audit_col"], 0) or 0) for c in FLAVOR_CODES}
+                flv_chips = " • ".join([f"{c}: {row_qty_map[c]}" for c in FLAVOR_CODES if row_qty_map[c] > 0])
+
+                badge_bg = "#EAF4EC" if q_dtype == "INVOICE" else "#FFF2DC"
+                badge_fg = "#124A1D" if q_dtype == "INVOICE" else "#B45309"
+
+                with st.container(border=True):
+                    hc1, hc2, hc3 = st.columns([2.4, 1.8, 2.2])
+                    with hc1:
+                        st.markdown(
+                            f"<span style='background:{badge_bg};color:{badge_fg};padding:2px 8px;border-radius:999px;font-size:10.5px;font-weight:900;'>{q_dtype}</span> "
+                            f"&nbsp;<b style='font-size:15px;color:#4A2418;'>{escape(q_cname)}</b> &nbsp;<span style='color:#8A5E17;font-size:12px;'>({escape(q_no)})</span>",
+                            unsafe_allow_html=True,
+                        )
+                        st.caption(f"📅 Quote Date: **{q_dt_str}** | 🎉 Event/Delivery: **{ev_dt_str}** | 📞 {q_cphone or '—'} | Status: **{q_stat}**")
+                        st.markdown(f"<div style='font-size:12px;color:#124A1D;font-weight:700;'>🍦 {flv_chips or '—'}</div>", unsafe_allow_html=True)
+                    with hc2:
+                        st.markdown(
+                            f"""
+                            <div style='background:#FFFBF2;border:1px solid #E3CBA0;border-radius:8px;padding:6px 10px;font-size:12px;'>
+                                <div><b>Total Qty:</b> {q_tot_u:,} pcs &nbsp;|&nbsp; <b>Gross MRP:</b> ₹{q_gmrp:,.0f}</div>
+                                <div><b>Discount ({q_dpct:.1f}%):</b> -₹{q_damt:,.0f} &nbsp;|&nbsp; <b style='color:#124A1D;'>Net: ₹{q_famt:,.0f}</b></div>
+                                <div style='color:#6B5138;font-size:11px;'>CP: ₹{q_tcost:,.0f} • Profit: <b style='color:{"#124A1D" if q_profit>=0 else "#C43D17"};'>₹{q_profit:,.0f}</b> • Bal Due: <b>₹{q_bal:,.0f}</b></div>
+                            </div>
+                            """,
+                            unsafe_allow_html=True,
+                        )
+                    with hc3:
+                        b_col1, b_col2, b_col3, b_col4 = st.columns(4, gap="small")
+                        with b_col1:
+                            if st.button("✏️ Edit", key=f"edit_bq_{qid}", use_container_width=True):
+                                st.session_state["bulk_editing_id"] = qid
+                                st.session_state["bulk_doc_type"] = q_dtype
+                                st.session_state["bulk_quote_no"] = q_no
+                                st.session_state["bulk_cust_name"] = q_cname
+                                st.session_state["bulk_cust_phone"] = q_cphone
+                                st.session_state["bulk_cust_addr"] = str(qrow.get("customer_address") or "")
+                                st.session_state["bulk_discount_pct"] = float(q_dpct)
+                                st.session_state["bulk_advance_paid"] = float(q_adv)
+                                st.session_state["bulk_notes"] = str(qrow.get("notes") or "")
+                                for c in FLAVOR_CODES:
+                                    q_v = int(row_qty_map.get(c, 0))
+                                    st.session_state[f"bulk_qty_{c}"] = q_v
+                                    st.session_state[f"bulk_chk_{c}"] = (q_v > 0)
+                                st.rerun()
+                        with b_col2:
+                            if st.button("🧾 To Inv", key=f"conv_bq_{qid}", use_container_width=True, help="Load into builder as an Invoice to edit delivered quantities"):
+                                st.session_state["bulk_editing_id"] = qid
+                                st.session_state["bulk_doc_type"] = "INVOICE"
+                                st.session_state["bulk_quote_no"] = q_no.replace("EST-", "INV-") if q_no.startswith("EST-") else f"INV-{q_no}"
+                                st.session_state["bulk_cust_name"] = q_cname
+                                st.session_state["bulk_cust_phone"] = q_cphone
+                                st.session_state["bulk_cust_addr"] = str(qrow.get("customer_address") or "")
+                                st.session_state["bulk_discount_pct"] = float(q_dpct)
+                                st.session_state["bulk_advance_paid"] = float(q_adv)
+                                st.session_state["bulk_status_sel"] = "Invoiced / Delivered"
+                                st.session_state["bulk_notes"] = str(qrow.get("notes") or "")
+                                for c in FLAVOR_CODES:
+                                    q_v = int(row_qty_map.get(c, 0))
+                                    st.session_state[f"bulk_qty_{c}"] = q_v
+                                    st.session_state[f"bulk_chk_{c}"] = (q_v > 0)
+                                st.rerun()
+                        with b_col3:
+                            row_pdf_payload = {
+                                "doc_type": q_dtype,
+                                "quote_number": q_no,
+                                "quote_date": q_dt_str,
+                                "event_date": ev_dt_str,
+                                "location": str(qrow.get("location") or CITY),
+                                "customer_name": q_cname,
+                                "customer_phone": q_cphone,
+                                "customer_address": str(qrow.get("customer_address") or ""),
+                                "qty_map": row_qty_map,
+                                "total_units": q_tot_u,
+                                "gross_mrp_amount": q_gmrp,
+                                "total_cost_amount": q_tcost,
+                                "discount_pct": q_dpct,
+                                "discount_amount": q_damt,
+                                "final_amount": q_famt,
+                                "advance_paid": q_adv,
+                                "balance_due": q_bal,
+                                "status": q_stat,
+                                "notes": str(qrow.get("notes") or ""),
+                            }
+                            row_pdf_bytes = generate_bulk_quote_pdf_bytes(row_pdf_payload)
+                            if row_pdf_bytes:
+                                st.download_button(
+                                    "📄 PDF",
+                                    data=row_pdf_bytes,
+                                    file_name=f"{q_dtype}_{q_no}.pdf",
+                                    mime="application/pdf",
+                                    key=f"dl_bq_pdf_{qid}",
+                                    use_container_width=True,
+                                )
+                        with b_col4:
+                            if st.button("🗑️ Del", key=f"del_bq_{qid}", use_container_width=True):
+                                with db_conn.session as s:
+                                    s.execute(text("DELETE FROM public.bulk_order_quotes WHERE id = :id;"), {"id": qid})
+                                    s.commit()
+                                if st.session_state.get("bulk_editing_id") == qid:
+                                    st.session_state["bulk_editing_id"] = None
+                                st.cache_data.clear()
+                                st.rerun()
 
 elif page == "Payslip Generator" and user_role == "admin":
     p_h_col1, p_h_col2 = st.columns([1, 6])
@@ -6449,12 +8172,15 @@ elif page == "Freezer Stock" and user_role == "admin":
                     else {code: 0 for code in FLAVOR_CODES}
                 )
 
+                frm_cart_after = get_db_cart_to_freezer_map(active_loc=get_active_location_filter(), after_date=target_date)
+
                 for code in FLAVOR_CODES:
                     stock_map[code] = (
                         int(_num(current_map.get(code, 0)))
                         + int(_num(added_after.get(code, 0)))
                         + int(_num(removed_after.get(code, 0)))
                         - int(_num(received_after.get(code, 0)))
+                        - int(_num(frm_cart_after.get(code, 0)))
                     )
 
             except Exception:
@@ -6982,6 +8708,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
 
         audit_map = {code: 0 for code in FLAVOR_CODES}
         rec_since_map = {code: 0 for code in FLAVOR_CODES}
+        frm_cart_since_map = {code: 0 for code in FLAVOR_CODES}
         added_since_map = {code: 0 for code in FLAVOR_CODES}
         fzr_sale_since_map = {code: 0 for code in FLAVOR_CODES}
         rem_since_map = {code: 0 for code in FLAVOR_CODES}
@@ -7008,6 +8735,10 @@ elif page == "Freezer Analysis" and user_role == "admin":
                     c = str(rr["flavor_code"]).strip()
                     if c in rec_since_map:
                         rec_since_map[c] += int(rr["recv"] or 0)
+
+                fc_map_loc = get_db_cart_to_freezer_map(active_loc=loc_c, after_date=adt)
+                for code in FLAVOR_CODES:
+                    frm_cart_since_map[code] += int(fc_map_loc.get(code, 0))
 
                 a_df = db_conn.query(
                     "SELECT i.flavor_code, COALESCE(SUM(i.added_units), 0) AS added FROM daily_cart_items i JOIN daily_cart_entries e ON i.daily_entry_id = e.id WHERE e.entry_date >= :anext AND UPPER(TRIM(COALESCE(e.city, 'HOSUR'))) = :loc GROUP BY i.flavor_code;",
@@ -7044,6 +8775,10 @@ elif page == "Freezer Analysis" and user_role == "admin":
                     if c in rec_since_map:
                         rec_since_map[c] += int(rr["recv"] or 0)
 
+                fc_map_loc = get_db_cart_to_freezer_map(active_loc=loc_c, after_date=None)
+                for code in FLAVOR_CODES:
+                    frm_cart_since_map[code] += int(fc_map_loc.get(code, 0))
+
                 a_df = db_conn.query(
                     "SELECT i.flavor_code, COALESCE(SUM(i.added_units), 0) AS added FROM daily_cart_items i JOIN daily_cart_entries e ON i.daily_entry_id = e.id WHERE UPPER(TRIM(COALESCE(e.city, 'HOSUR'))) = :loc GROUP BY i.flavor_code;",
                     params={"loc": loc_c}, ttl="0s"
@@ -7073,14 +8808,14 @@ elif page == "Freezer Analysis" and user_role == "admin":
         audit_date_str = " | ".join(audit_date_labels) if audit_date_labels else "No audits logged"
     except Exception as e:
         st.error(f"Could not load analysis transactions from database: {e}")
-        sales_pace_map, audit_map, rec_since_map, added_since_map, fzr_sale_since_map, rem_since_map, audit_date_str = {}, {}, {}, {}, {}, {}, "N/A"
+        sales_pace_map, audit_map, rec_since_map, frm_cart_since_map, added_since_map, fzr_sale_since_map, rem_since_map, audit_date_str = {}, {}, {}, {}, {}, {}, {}, "N/A"
 
     # --- TABLE 1: Physical-Base Current Stock Position ---
     st.markdown("---")
     st.markdown(f"### 1. Current Stock Position &nbsp; *(Per Last Audit Date: {audit_date_str})*")
 
     phys_base_rows = []
-    tot_base_b, tot_rec_b, tot_added_b, tot_fzr_b, tot_rem_b, tot_curr_b = 0, 0, 0, 0, 0, 0
+    tot_base_b, tot_rec_b, tot_frm_cart_b, tot_added_b, tot_fzr_b, tot_rem_b, tot_curr_b = 0, 0, 0, 0, 0, 0, 0
     tot_stock_value_cp = 0.0
     tot_stock_value_mrp = 0.0
     phys_curr_map = get_physical_current_stock_map()
@@ -7089,14 +8824,16 @@ elif page == "Freezer Analysis" and user_role == "admin":
         f_info = FLAVOR_MAP[code]
         base_audit = audit_map.get(code, 0)
         rec_onward = int(rec_since_map.get(code, 0))
+        frm_cart_onward = int(frm_cart_since_map.get(code, 0))
         added_onward = int(added_since_map.get(code, 0))
         fzr_sale_onward = int(fzr_sale_since_map.get(code, 0))
         removed_onward = int(rem_since_map.get(code, 0))
         
-        current_physical_base_stock = base_audit + rec_onward - added_onward - fzr_sale_onward - removed_onward
+        current_physical_base_stock = base_audit + rec_onward + frm_cart_onward - added_onward - fzr_sale_onward - removed_onward
         
         tot_base_b += base_audit
         tot_rec_b += rec_onward
+        tot_frm_cart_b += frm_cart_onward
         tot_added_b += added_onward
         tot_fzr_b += fzr_sale_onward
         tot_rem_b += removed_onward
@@ -7109,39 +8846,73 @@ elif page == "Freezer Analysis" and user_role == "admin":
 
         phys_base_rows.append({
             "Flavour": f_info["name"],
-            "Last Physical Audit": base_audit,
-            "Stock Received": rec_onward,
+            "Audit": base_audit,
+            "Recv": rec_onward,
+            "Frm Cart": frm_cart_onward,
             "To Cart": added_onward,
             "FZR Sale": fzr_sale_onward,
-            "Stock Removed": removed_onward,
-            "Current Stock": current_physical_base_stock,
-            "Stock Value": stock_value_display
+            "Rem": removed_onward,
+            "Current": current_physical_base_stock,
+            "Value": stock_value_display
         })
 
-    tot_stock_value_display = int(sum(int(r["Stock Value"]) for r in phys_base_rows))
+    tot_stock_value_display = int(sum(int(r["Value"]) for r in phys_base_rows))
     tot_stock_value_mrp_display = int(tot_stock_value_mrp + 0.5) if tot_stock_value_mrp >= 0 else int(tot_stock_value_mrp - 0.5)
-    phys_base_df = pd.DataFrame(phys_base_rows)
-    phys_base_df = pd.concat([phys_base_df, pd.DataFrame([{
-        "Flavour": "🔥 OVERALL TOTAL",
-        "Last Physical Audit": tot_base_b,
-        "Stock Received": tot_rec_b,
-        "To Cart": tot_added_b,
-        "FZR Sale": tot_fzr_b,
-        "Stock Removed": tot_rem_b,
-        "Current Stock": tot_curr_b,
-        "Stock Value": tot_stock_value_display
-    }])], ignore_index=True)
-    st.dataframe(
-        phys_base_df,
-        hide_index=True,
-        use_container_width=True,
-        column_config={
-            "Stock Value": st.column_config.NumberColumn(
-                "Stock Value",
-                help="Current stock valued at Cost Price (CP), not MRP",
-                format="₹%,.0f"
-            )
-        }
+
+    # Render Boxed HTML Table with the 4 distinct grouped borders:
+    # [Audit], [Recv | Frm Cart], [To Cart | FZR Sale | Rem], [Current | Value]
+    fa_body_trs = []
+    for r in phys_base_rows:
+        fa_body_trs.append(
+            f"""<tr>
+                <td style='text-align:left;font-weight:800;color:#4A2418;'>{escape(r['Flavour'])}</td>
+                <td class='fa-box-audit-td'>{r['Audit']:,}</td>
+                <td class='fa-box-in-left-td'>{r['Recv']:,}</td>
+                <td class='fa-box-in-right-td'>{r['Frm Cart']:,}</td>
+                <td class='fa-box-out-left-td'>{r['To Cart']:,}</td>
+                <td class='fa-box-out-mid-td'>{r['FZR Sale']:,}</td>
+                <td class='fa-box-out-right-td'>{r['Rem']:,}</td>
+                <td class='fa-box-cur-left-td'>{r['Current']:,}</td>
+                <td class='fa-box-cur-right-td'>₹{r['Value']:,}</td>
+            </tr>"""
+        )
+    fa_body_trs.append(
+        f"""<tr class='fa-total-row'>
+            <td style='text-align:left;font-weight:900;color:#4A2418;'>🔥 OVERALL TOTAL</td>
+            <td class='fa-box-audit-tot'>{tot_base_b:,}</td>
+            <td class='fa-box-in-left-tot'>{tot_rec_b:,}</td>
+            <td class='fa-box-in-right-tot'>{tot_frm_cart_b:,}</td>
+            <td class='fa-box-out-left-tot'>{tot_added_b:,}</td>
+            <td class='fa-box-out-mid-tot'>{tot_fzr_b:,}</td>
+            <td class='fa-box-out-right-tot'>{tot_rem_b:,}</td>
+            <td class='fa-box-cur-left-tot'>{tot_curr_b:,}</td>
+            <td class='fa-box-cur-right-tot'>₹{tot_stock_value_display:,}</td>
+        </tr>"""
+    )
+    st.markdown(
+        f"""
+        <div class='fa-boxed-table-wrap'>
+            <table class='fa-boxed-table'>
+                <thead>
+                    <tr>
+                        <th style='text-align:left;'>Flavour</th>
+                        <th class='fa-box-audit-th'>Audit</th>
+                        <th class='fa-box-in-left-th'>Recv</th>
+                        <th class='fa-box-in-right-th'>Frm Cart</th>
+                        <th class='fa-box-out-left-th'>To Cart</th>
+                        <th class='fa-box-out-mid-th'>FZR Sale</th>
+                        <th class='fa-box-out-right-th'>Rem</th>
+                        <th class='fa-box-cur-left-th'>Current</th>
+                        <th class='fa-box-cur-right-th'>Value (CP)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {''.join(fa_body_trs)}
+                </tbody>
+            </table>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
     # Supplier amount still outstanding for stock receipts explicitly marked Pending,
@@ -7338,7 +9109,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
         st.rerun()
 
     st.markdown("---"); st.markdown("### 3. Detailed Stock Movement Logs")
-    m_tab1, m_tab2, m_tab3, m_tab4, m_tab5, m_tab6 = st.tabs(["📋 Purchase Orders", "📦 Received Deliveries", "🔍 Physical Stock Audits", "🗑️ Stock Removed", "➕ Cart Extra Stock", "❄️ Freezer Sales"])
+    m_tab1, m_tab2, m_tab3, m_tab4, m_tab5, m_tab6, m_tab7 = st.tabs(["📋 Purchase Orders", "📦 Received Deliveries", "🔍 Physical Stock Audits", "🗑️ Stock Removed", "➕ Cart Extra Stock", "🔄 Remove Cart Stock", "❄️ Freezer Sales"])
 
     with m_tab1:
         po_query_df = db_conn.query("SELECT p.id AS \"PO #\", p.order_date AS \"Order Date\", p.expected_date AS \"Expected Date\", p.location AS \"Location\", p.order_status AS \"Status\", json_agg(json_build_object('code', pi.flavor_code, 'qty', pi.ordered_units)) AS items FROM purchase_orders p LEFT JOIN purchase_order_items pi ON p.id = pi.order_id WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(p.location, 'HOSUR'))) = :active_loc) GROUP BY p.id ORDER BY p.order_date DESC;", params={"active_loc": get_active_location_filter()}, ttl="0s")
@@ -7424,6 +9195,43 @@ elif page == "Freezer Analysis" and user_role == "admin":
             st.caption(f"Could not load cart_extra_stock_logs: {e}")
 
     with m_tab6:
+        try:
+            ctf_all_df = db_conn.query(
+                """
+                SELECT id, entry_date, cart_name, location, staff_name,
+                       ml_units, mm_units, ps_units, mn_units, kb_units,
+                       bm_units, sg_units, ch_units, ra_units,
+                       total_returned_units, recorded_by, source_app, created_at
+                FROM public.cart_to_freezer_logs
+                WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(location, 'HOSUR'))) = :active_loc)
+                ORDER BY entry_date DESC, id DESC;
+                """,
+                params={"active_loc": get_active_location_filter()},
+                ttl="0s",
+            )
+            if not ctf_all_df.empty:
+                ctf_display = []
+                for _, r in ctf_all_df.iterrows():
+                    row_data = {
+                        "Log #": f"#{int(r['id'])}",
+                        "Date": pd.to_datetime(r["entry_date"]).strftime("%d-%b-%y"),
+                        "Time": pd.to_datetime(r["created_at"]).strftime("%I:%M %p") if pd.notna(r.get("created_at")) else "—",
+                        "Cart": r["cart_name"],
+                        "Location": r.get("location") or CITY,
+                        "Staff": r.get("staff_name") or "—",
+                        "Frm Cart Units": int(r.get("total_returned_units") or sum(int(r.get(FLAVOR_MAP[c]["audit_col"], 0)) for c in FLAVOR_CODES)),
+                    }
+                    for code in FLAVOR_CODES:
+                        row_data[code] = int(r.get(FLAVOR_MAP[code]["audit_col"], 0))
+                    row_data["Recorded By"] = f"{r.get('recorded_by') or '—'} ({r.get('source_app') or 'app'})"
+                    ctf_display.append(row_data)
+                st.dataframe(pd.DataFrame(ctf_display), hide_index=True, use_container_width=True)
+            else:
+                st.caption("No Remove Cart Stock (Cart-to-Freezer) logs recorded yet.")
+        except Exception as e:
+            st.caption(f"Could not load cart_to_freezer_logs: {e}")
+
+    with m_tab7:
         ft_c1, ft_c2, ft_c3 = st.columns([1.2, 1.4, 1.4])
         with ft_c1:
             fa_fzr_mode = st.radio("Filter Mode", ["Month", "Custom Date Range"], horizontal=True, key="fa_fzr_txn_filter_mode")
