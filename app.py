@@ -12637,8 +12637,8 @@ elif page == "Dashboard" and user_role == "admin":
                             "Cash": "Cash (₹)",
                             "Staff_Advance": "Staff Advance (₹)",
                             "Food_Tea_Cash": "Food / Tea (₹)",
-                            "Cash_Leakage_Explained": "Leakage Explained (₹)",
-                            "Cash_Leakage_Unexplained": "Leakage Unexplained (₹)"
+                            "Cash_Leakage_Explained": "Leakage Expl (₹)",
+                            "Cash_Leakage_Unexplained": "Leakage Unexpl (₹)"
                         })
             date_wise_table["Units Sold"] = date_wise_table["Units Sold"].apply(lambda x: int(round(x)))
             date_wise_table["Date"] = pd.to_datetime(date_wise_table["Date"]).dt.date
@@ -12660,8 +12660,8 @@ elif page == "Dashboard" and user_role == "admin":
                 "Cash (₹)": float(date_wise_table["Cash (₹)"].sum()),
                 "Staff Advance (₹)": float(date_wise_table["Staff Advance (₹)"].sum()),
                 "Food / Tea (₹)": float(date_wise_table["Food / Tea (₹)"].sum()),
-                "Leakage Explained (₹)": float(date_wise_table["Leakage Explained (₹)"].sum()),
-                "Leakage Unexplained (₹)": float(date_wise_table["Leakage Unexplained (₹)"].sum()),
+                "Leakage Expl (₹)": float(date_wise_table["Leakage Expl (₹)"].sum()),
+                "Leakage Unexpl (₹)": float(date_wise_table["Leakage Unexpl (₹)"].sum()),
             }
 
             def _render_report_total_row(total_values):
@@ -12673,8 +12673,8 @@ elif page == "Dashboard" and user_role == "admin":
                     f"₹{float(total_values['Cash (₹)']):,.0f}",
                     f"₹{float(total_values['Staff Advance (₹)']):,.0f}",
                     f"₹{float(total_values['Food / Tea (₹)']):,.0f}",
-                    f"₹{float(total_values['Leakage Explained (₹)']):,.0f}",
-                    f"₹{float(total_values['Leakage Unexplained (₹)']):,.0f}",
+                    f"₹{float(total_values['Leakage Expl (₹)']):,.0f}",
+                    f"₹{float(total_values['Leakage Unexpl (₹)']):,.0f}",
                 ]
                 alignments = ["left"] + ["right"] * 8
                 cell_html = "".join(
@@ -12726,8 +12726,8 @@ elif page == "Dashboard" and user_role == "admin":
                     "Cash (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=82),
                     "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=108),
                     "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=92),
-                    "Leakage Explained (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=118),
-                    "Leakage Unexplained (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=126),
+                    "Leakage Expl (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=118),
+                    "Leakage Unexpl (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=126),
                 },
                 row_height=25
             )
@@ -12746,8 +12746,8 @@ elif page == "Dashboard" and user_role == "admin":
                             "Cash": "Cash (₹)",
                             "Staff_Advance": "Staff Advance (₹)",
                             "Food_Tea_Cash": "Food / Tea (₹)",
-                            "Cash_Leakage_Explained": "Leakage Explained (₹)",
-                            "Cash_Leakage_Unexplained": "Leakage Unexplained (₹)"
+                            "Cash_Leakage_Explained": "Leakage Expl (₹)",
+                            "Cash_Leakage_Unexplained": "Leakage Unexpl (₹)"
                         })
             sales_table["Units Sold"] = sales_table["Units Sold"].apply(lambda x: int(round(x)))
             sales_table["Date"] = pd.to_datetime(sales_table["Date"]).dt.date
@@ -12796,8 +12796,8 @@ elif page == "Dashboard" and user_role == "admin":
                     "Cash (₹)": float(cart_table["Cash (₹)"].sum()),
                     "Staff Advance (₹)": float(cart_table["Staff Advance (₹)"].sum()),
                     "Food / Tea (₹)": float(cart_table["Food / Tea (₹)"].sum()),
-                    "Leakage Explained (₹)": float(cart_table["Leakage Explained (₹)"].sum()),
-                    "Leakage Unexplained (₹)": float(cart_table["Leakage Unexplained (₹)"].sum()),
+                    "Leakage Expl (₹)": float(cart_table["Leakage Expl (₹)"].sum()),
+                    "Leakage Unexpl (₹)": float(cart_table["Leakage Unexpl (₹)"].sum()),
                 }
 
                 cart_table_styled = (
@@ -12825,8 +12825,8 @@ elif page == "Dashboard" and user_role == "admin":
                         "Cash (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=88),
                         "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=108),
                         "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=94),
-                        "Leakage Explained (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=116),
-                        "Leakage Unexplained (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=124),
+                        "Leakage Expl (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=116),
+                        "Leakage Unexpl (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=124),
                     },
                     row_height=25
                 )
