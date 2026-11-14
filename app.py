@@ -5532,32 +5532,33 @@ elif page == "Bulk Orders & Quotes" and user_role == "admin":
     }
 
     def distribute_bulk_pieces(total_pcs, checked_codes, mode="even"):
-        """Distribute integer total_pcs across checked_codes so sum equals total_pcs."""
+        """Distribute total_pcs across checked_codes rounded to the nearest 10 units per flavour."""
         res = {c: 0 for c in FLAVOR_CODES}
         active = [c for c in FLAVOR_CODES if c in checked_codes]
         total_pcs = max(0, int(total_pcs or 0))
         if not active or total_pcs <= 0:
             return res
+        total_tens = max(1, int(round(total_pcs / 10.0)))
         if mode == "weighted":
             weights = [BULK_POPULARITY_WEIGHTS.get(c, 1.0) for c in active]
             w_sum = sum(weights)
-            raw = [(total_pcs * w / w_sum) for w in weights]
-            floors = [int(x) for x in raw]
-            rem = total_pcs - sum(floors)
-            fracs = sorted(range(len(active)), key=lambda i: (raw[i] - floors[i], weights[i]), reverse=True)
+            raw_tens = [(total_tens * w / w_sum) for w in weights]
+            floors = [int(x) for x in raw_tens]
+            rem = total_tens - sum(floors)
+            fracs = sorted(range(len(active)), key=lambda i: (raw_tens[i] - floors[i], weights[i]), reverse=True)
             for idx in fracs[:rem]:
                 floors[idx] += 1
             for c, val in zip(active, floors):
-                res[c] = val
+                res[c] = val * 10
         else:
-            base_q = total_pcs // len(active)
-            rem = total_pcs % len(active)
+            base_tens = total_tens // len(active)
+            rem_tens = total_tens % len(active)
             for i, c in enumerate(active):
-                res[c] = base_q + (1 if i < rem else 0)
+                res[c] = (base_tens + (1 if i < rem_tens else 0)) * 10
         return res
 
     def distribute_bulk_budget(budget_inr, discount_pct, checked_codes, mode="even"):
-        """Given a customer budget in INR and discount %, compute optimal flavour counts whose discounted net total fits the budget."""
+        """Given a customer budget in INR and discount %, compute optimal flavour counts in multiples of 10 whose discounted net total fits the budget."""
         res = {c: 0 for c in FLAVOR_CODES}
         active = [c for c in FLAVOR_CODES if c in checked_codes]
         budget_inr = max(0.0, float(budget_inr or 0.0))
@@ -5575,17 +5576,17 @@ elif page == "Bulk Orders & Quotes" and user_role == "admin":
             return res
         scale = gross_target / weighted_mrp_unit
         for i, c in enumerate(active):
-            res[c] = max(0, int(round(scale * weights[i])))
-        # Fine-tune by adding/removing pieces of the lowest-MRP active flavour so net amount is as close as possible to budget_inr
+            res[c] = max(0, int(round((scale * weights[i]) / 10.0)) * 10)
+        # Fine-tune in steps of 10 pieces of the lowest-MRP active flavour so net amount is as close as possible to budget_inr
         cheapest_c = min(active, key=lambda c: float(FLAVOR_MAP[c]["mrp"]))
-        cheapest_net = float(FLAVOR_MAP[cheapest_c]["mrp"]) * disc_factor
-        if cheapest_net > 0:
+        cheapest_ten_net = float(FLAVOR_MAP[cheapest_c]["mrp"]) * 10.0 * disc_factor
+        if cheapest_ten_net > 0:
             curr_gross = sum(res[c] * float(FLAVOR_MAP[c]["mrp"]) for c in active)
             curr_net = curr_gross * disc_factor
             diff = budget_inr - curr_net
-            adj = int(round(diff / cheapest_net))
-            if adj != 0:
-                res[cheapest_c] = max(0, res[cheapest_c] + adj)
+            adj_tens = int(round(diff / cheapest_ten_net))
+            if adj_tens != 0:
+                res[cheapest_c] = max(0, res[cheapest_c] + (adj_tens * 10))
         return res
 
     def generate_bulk_quote_pdf_bytes(q_data):
@@ -5880,45 +5881,6 @@ elif page == "Bulk Orders & Quotes" and user_role == "admin":
         for c in FLAVOR_CODES:
             st.session_state[f"bulk_qty_{c}"] = int(new_map.get(c, 0))
 
-    def _cb_set_bulk_preset_pieces(pcs_val):
-        st.session_state["bulk_target_pieces"] = int(pcs_val)
-        _trigger_bulk_redistribution()
-
-    def _cb_set_bulk_preset_budget(bdg_val):
-        st.session_state["bulk_target_budget"] = float(bdg_val)
-        _trigger_bulk_redistribution()
-
-    def _cb_apply_bulk_tier(disc_val, qty_dict):
-        st.session_state["bulk_discount_pct"] = float(disc_val)
-        for c in FLAVOR_CODES:
-            st.session_state[f"bulk_qty_{c}"] = int(qty_dict.get(c, 0))
-
-    def _cb_switch_bulk_doc_type(new_dtype):
-        st.session_state["bulk_doc_type"] = new_dtype
-        if new_dtype == "INVOICE":
-            old_qno = str(st.session_state.get("bulk_quote_no", ""))
-            st.session_state["bulk_quote_no"] = old_qno.replace("EST-", "INV-") if old_qno.startswith("EST-") else f"INV-{date.today().strftime('%Y%m%d')}-{datetime.now().strftime('%H%M')}"
-            st.session_state["bulk_status_sel"] = "Invoiced / Delivered"
-
-    def _cb_load_bulk_quote_for_edit(qid_val, dtype_val, qno_val, cname_val, cphone_val, caddr_val, dpct_val, adv_val, notes_val, qty_dict, as_invoice=False):
-        st.session_state["bulk_editing_id"] = qid_val
-        st.session_state["bulk_doc_type"] = "INVOICE" if as_invoice else dtype_val
-        if as_invoice:
-            st.session_state["bulk_quote_no"] = qno_val.replace("EST-", "INV-") if qno_val.startswith("EST-") else f"INV-{qno_val}"
-            st.session_state["bulk_status_sel"] = "Invoiced / Delivered"
-        else:
-            st.session_state["bulk_quote_no"] = qno_val
-        st.session_state["bulk_cust_name"] = cname_val
-        st.session_state["bulk_cust_phone"] = cphone_val
-        st.session_state["bulk_cust_addr"] = caddr_val
-        st.session_state["bulk_discount_pct"] = float(dpct_val)
-        st.session_state["bulk_advance_paid"] = float(adv_val)
-        st.session_state["bulk_notes"] = notes_val
-        for c in FLAVOR_CODES:
-            q_v = int(qty_dict.get(c, 0))
-            st.session_state[f"bulk_qty_{c}"] = q_v
-            st.session_state[f"bulk_chk_{c}"] = (q_v > 0)
-
     bulk_tab1, bulk_tab2 = st.tabs([
         "🧮 Estimate & Invoice Builder",
         "🗂️ Saved Estimates & Invoices History",
@@ -5994,6 +5956,34 @@ elif page == "Bulk Orders & Quotes" and user_role == "admin":
                     on_change=_trigger_bulk_redistribution if "Budget" in planning_mode else None,
                 )
 
+            # Quick Preset Callbacks (mutate session_state safely before widget instantiation)
+            def _apply_bulk_preset_pieces(pcs_val):
+                st.session_state["bulk_target_pieces"] = int(pcs_val)
+                _trigger_bulk_redistribution()
+
+            def _apply_bulk_preset_budget(bdg_val):
+                st.session_state["bulk_target_budget"] = float(bdg_val)
+                _trigger_bulk_redistribution()
+
+            def _zero_all_bulk_counts():
+                for c in FLAVOR_CODES:
+                    st.session_state[f"bulk_qty_{c}"] = 0
+
+            def _apply_bulk_discount_tier(disc_val, sim_quantities):
+                st.session_state["bulk_discount_pct"] = float(disc_val)
+                for c in FLAVOR_CODES:
+                    st.session_state[f"bulk_qty_{c}"] = int(sim_quantities.get(c, 0))
+
+            def _select_bulk_flavour_preset(mode_key):
+                for c in FLAVOR_CODES:
+                    if mode_key == "ALL":
+                        st.session_state[f"bulk_chk_{c}"] = True
+                    elif mode_key == "NO_BM":
+                        st.session_state[f"bulk_chk_{c}"] = (c != "BM")
+                    elif mode_key == "TOP5":
+                        st.session_state[f"bulk_chk_{c}"] = (c in {"ML", "MM", "PS", "MN", "KB"})
+                _trigger_bulk_redistribution()
+
             # Quick Preset Buttons for Pieces or Budget
             qp_cols = st.columns([1, 1, 1, 1, 1.3, 1.3])
             if "Pieces" in planning_mode:
@@ -6003,7 +5993,7 @@ elif page == "Bulk Orders & Quotes" and user_role == "admin":
                             f"⚡ {preset_pcs} Pieces",
                             use_container_width=True,
                             key=f"preset_pcs_{preset_pcs}",
-                            on_click=_cb_set_bulk_preset_pieces,
+                            on_click=_apply_bulk_preset_pieces,
                             args=(preset_pcs,),
                         )
             else:
@@ -6013,18 +6003,24 @@ elif page == "Bulk Orders & Quotes" and user_role == "admin":
                             f"⚡ ₹{preset_b:,} Budget",
                             use_container_width=True,
                             key=f"preset_bdg_{preset_b}",
-                            on_click=_cb_set_bulk_preset_budget,
+                            on_click=_apply_bulk_preset_budget,
                             args=(preset_b,),
                         )
             with qp_cols[4]:
-                if st.button("🔄 Re-Distribute Counts", type="primary", use_container_width=True, key="btn_manual_redist"):
-                    _trigger_bulk_redistribution()
-                    st.rerun()
+                st.button(
+                    "🔄 Re-Distribute Counts",
+                    type="primary",
+                    use_container_width=True,
+                    key="btn_manual_redist",
+                    on_click=_trigger_bulk_redistribution,
+                )
             with qp_cols[5]:
-                if st.button("🧹 Zero All Counts", use_container_width=True, key="btn_zero_bulk_counts"):
-                    for c in FLAVOR_CODES:
-                        st.session_state[f"bulk_qty_{c}"] = 0
-                    st.rerun()
+                st.button(
+                    "🧹 Zero All Counts",
+                    use_container_width=True,
+                    key="btn_zero_bulk_counts",
+                    on_click=_zero_all_bulk_counts,
+                )
 
             # If in Budget mode, show an interactive Discount Tier Comparison Matrix (0%, 5%, 10%, 15%, 20% off)
             if "Budget" in planning_mode:
@@ -6060,8 +6056,8 @@ elif page == "Bulk Orders & Quotes" and user_role == "admin":
                             f"Apply {t_disc:.0f}% Offer",
                             key=f"apply_tier_{int(t_disc)}",
                             use_container_width=True,
-                            on_click=_cb_apply_bulk_tier,
-                            args=(float(t_disc), sim_map),
+                            on_click=_apply_bulk_discount_tier,
+                            args=(float(t_disc), dict(sim_map)),
                         )
 
         # STEP 2: Interactive Flavour Checkboxes & Editable Quantities Table
@@ -6069,25 +6065,31 @@ elif page == "Bulk Orders & Quotes" and user_role == "admin":
             st_hdr1, st_hdr2, st_hdr3, st_hdr4 = st.columns([2.2, 1.0, 1.2, 1.1])
             with st_hdr1:
                 st.markdown("#### 2. Flavour Selection & Quantity Distribution")
-                st.caption("Check/uncheck flavours to auto-redistribute counts. You can also edit any flavour's quantity directly.")
+                st.caption("Check/uncheck flavours to auto-redistribute counts (rounded to nearest 10s). You can also edit any flavour's quantity directly.")
             with st_hdr2:
-                if st.button("✅ Select All Flavours", use_container_width=True, key="bulk_sel_all_flv"):
-                    for c in FLAVOR_CODES:
-                        st.session_state[f"bulk_chk_{c}"] = True
-                    _trigger_bulk_redistribution()
-                    st.rerun()
+                st.button(
+                    "✅ Select All Flavours",
+                    use_container_width=True,
+                    key="bulk_sel_all_flv",
+                    on_click=_select_bulk_flavour_preset,
+                    args=("ALL",),
+                )
             with st_hdr3:
-                if st.button("🍦 Stick Kulfis Only (No Matka)", use_container_width=True, key="bulk_sel_no_bm"):
-                    for c in FLAVOR_CODES:
-                        st.session_state[f"bulk_chk_{c}"] = (c != "BM")
-                    _trigger_bulk_redistribution()
-                    st.rerun()
+                st.button(
+                    "🍦 Stick Kulfis Only (No Matka)",
+                    use_container_width=True,
+                    key="bulk_sel_no_bm",
+                    on_click=_select_bulk_flavour_preset,
+                    args=("NO_BM",),
+                )
             with st_hdr4:
-                if st.button("⭐ Top 5 Bestsellers", use_container_width=True, key="bulk_sel_top5"):
-                    for c in FLAVOR_CODES:
-                        st.session_state[f"bulk_chk_{c}"] = (c in {"ML", "MM", "PS", "MN", "KB"})
-                    _trigger_bulk_redistribution()
-                    st.rerun()
+                st.button(
+                    "⭐ Top 5 Bestsellers",
+                    use_container_width=True,
+                    key="bulk_sel_top5",
+                    on_click=_select_bulk_flavour_preset,
+                    args=("TOP5",),
+                )
 
             bh1, bh2, bh3, bh4, bh5, bh6, bh7, bh8 = st.columns([0.55, 1.75, 0.85, 0.85, 1.15, 1.05, 1.05, 1.1], gap="small")
             bh1.markdown("<div class='entry-grid-header'>Incl.</div>", unsafe_allow_html=True)
@@ -6452,21 +6454,16 @@ elif page == "Bulk Orders & Quotes" and user_role == "admin":
 
             with act4:
                 if doc_type_sel == "ESTIMATE":
-                    st.button(
-                        "🧾 Convert to Invoice Mode",
-                        use_container_width=True,
-                        key="btn_switch_to_inv",
-                        on_click=_cb_switch_bulk_doc_type,
-                        args=("INVOICE",),
-                    )
+                    if st.button("🧾 Convert to Invoice Mode", use_container_width=True, key="btn_switch_to_inv"):
+                        st.session_state["bulk_doc_type"] = "INVOICE"
+                        old_qno = str(st.session_state.get("bulk_quote_no", ""))
+                        st.session_state["bulk_quote_no"] = old_qno.replace("EST-", "INV-") if old_qno.startswith("EST-") else f"INV-{date.today().strftime('%Y%m%d')}-{datetime.now().strftime('%H%M')}"
+                        st.session_state["bulk_status_sel"] = "Invoiced / Delivered"
+                        st.rerun()
                 else:
-                    st.button(
-                        "📝 Switch to Estimate Mode",
-                        use_container_width=True,
-                        key="btn_switch_to_est",
-                        on_click=_cb_switch_bulk_doc_type,
-                        args=("ESTIMATE",),
-                    )
+                    if st.button("📝 Switch to Estimate Mode", use_container_width=True, key="btn_switch_to_est"):
+                        st.session_state["bulk_doc_type"] = "ESTIMATE"
+                        st.rerun()
 
     with bulk_tab2:
         st.markdown("#### 🗂️ Saved Bulk Order Estimates & Invoices")
@@ -6560,34 +6557,38 @@ elif page == "Bulk Orders & Quotes" and user_role == "admin":
                     with hc3:
                         b_col1, b_col2, b_col3, b_col4 = st.columns(4, gap="small")
                         with b_col1:
-                            st.button(
-                                "✏️ Edit",
-                                key=f"edit_bq_{qid}",
-                                use_container_width=True,
-                                on_click=_cb_load_bulk_quote_for_edit,
-                                args=(
-                                    qid, q_dtype, q_no, q_cname, q_cphone,
-                                    str(qrow.get("customer_address") or ""),
-                                    float(q_dpct), float(q_adv),
-                                    str(qrow.get("notes") or ""),
-                                    row_qty_map, False,
-                                ),
-                            )
+                            if st.button("✏️ Edit", key=f"edit_bq_{qid}", use_container_width=True):
+                                st.session_state["bulk_editing_id"] = qid
+                                st.session_state["bulk_doc_type"] = q_dtype
+                                st.session_state["bulk_quote_no"] = q_no
+                                st.session_state["bulk_cust_name"] = q_cname
+                                st.session_state["bulk_cust_phone"] = q_cphone
+                                st.session_state["bulk_cust_addr"] = str(qrow.get("customer_address") or "")
+                                st.session_state["bulk_discount_pct"] = float(q_dpct)
+                                st.session_state["bulk_advance_paid"] = float(q_adv)
+                                st.session_state["bulk_notes"] = str(qrow.get("notes") or "")
+                                for c in FLAVOR_CODES:
+                                    q_v = int(row_qty_map.get(c, 0))
+                                    st.session_state[f"bulk_qty_{c}"] = q_v
+                                    st.session_state[f"bulk_chk_{c}"] = (q_v > 0)
+                                st.rerun()
                         with b_col2:
-                            st.button(
-                                "🧾 To Inv",
-                                key=f"conv_bq_{qid}",
-                                use_container_width=True,
-                                help="Load into builder as an Invoice to edit delivered quantities",
-                                on_click=_cb_load_bulk_quote_for_edit,
-                                args=(
-                                    qid, q_dtype, q_no, q_cname, q_cphone,
-                                    str(qrow.get("customer_address") or ""),
-                                    float(q_dpct), float(q_adv),
-                                    str(qrow.get("notes") or ""),
-                                    row_qty_map, True,
-                                ),
-                            )
+                            if st.button("🧾 To Inv", key=f"conv_bq_{qid}", use_container_width=True, help="Load into builder as an Invoice to edit delivered quantities"):
+                                st.session_state["bulk_editing_id"] = qid
+                                st.session_state["bulk_doc_type"] = "INVOICE"
+                                st.session_state["bulk_quote_no"] = q_no.replace("EST-", "INV-") if q_no.startswith("EST-") else f"INV-{q_no}"
+                                st.session_state["bulk_cust_name"] = q_cname
+                                st.session_state["bulk_cust_phone"] = q_cphone
+                                st.session_state["bulk_cust_addr"] = str(qrow.get("customer_address") or "")
+                                st.session_state["bulk_discount_pct"] = float(q_dpct)
+                                st.session_state["bulk_advance_paid"] = float(q_adv)
+                                st.session_state["bulk_status_sel"] = "Invoiced / Delivered"
+                                st.session_state["bulk_notes"] = str(qrow.get("notes") or "")
+                                for c in FLAVOR_CODES:
+                                    q_v = int(row_qty_map.get(c, 0))
+                                    st.session_state[f"bulk_qty_{c}"] = q_v
+                                    st.session_state[f"bulk_chk_{c}"] = (q_v > 0)
+                                st.rerun()
                         with b_col3:
                             row_pdf_payload = {
                                 "doc_type": q_dtype,
@@ -12315,6 +12316,263 @@ elif page == "Dashboard" and user_role == "admin":
         mc6.metric(f"OPEX ({opex_margin:.1f}%)", f"₹{total_incurred_opex:,.0f}")
         mc7.metric(f"Net Profit ({net_margin:.1f}%)", f"₹{net_profit:,.0f}")
         st.markdown('</div>', unsafe_allow_html=True)
+
+        # ------------------------------------------------------------------
+        # INTERACTIVE OPEX BREAKDOWN & INSIGHTS BUTTON + PANEL
+        # ------------------------------------------------------------------
+        if "show_dash_opex_breakdown" not in st.session_state:
+            st.session_state["show_dash_opex_breakdown"] = False
+
+        def _toggle_dash_opex_breakdown():
+            st.session_state["show_dash_opex_breakdown"] = not bool(st.session_state.get("show_dash_opex_breakdown", False))
+
+        opex_btn_c1, opex_btn_c2 = st.columns([1.4, 2.6])
+        with opex_btn_c1:
+            opex_btn_lbl = (
+                "🔼 Hide OPEX Breakdown & Insights"
+                if st.session_state["show_dash_opex_breakdown"]
+                else f"🧾 View OPEX Breakdown & Insights (₹{total_incurred_opex:,.0f} • {opex_margin:.1f}%)"
+            )
+            st.button(
+                opex_btn_lbl,
+                key="btn_toggle_dash_opex_breakdown",
+                type="primary" if not st.session_state["show_dash_opex_breakdown"] else "secondary",
+                use_container_width=True,
+                on_click=_toggle_dash_opex_breakdown,
+            )
+        with opex_btn_c2:
+            st.caption("Click to inspect category & sub-category OPEX drivers, staff labour components, per-unit burn, and key operational insights for the selected period.")
+
+        if st.session_state.get("show_dash_opex_breakdown", False):
+            with st.container(border=True):
+                st.markdown(
+                    f"""
+                    <div style="background:linear-gradient(135deg, #4A2418 0%, #70440E 100%);padding:14px 18px;border-radius:10px;color:#FFFFFF;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                        <div>
+                            <div style="font-size:11px;font-weight:800;color:#F6E7CC;letter-spacing:0.6px;text-transform:uppercase;">OPERATING EXPENSE (OPEX) DEEP-DIVE & INSIGHTS</div>
+                            <div style="font-size:18px;font-weight:900;color:#FFFFFF;margin-top:2px;">Period: {range_start.strftime('%d %b %Y')} — {range_end.strftime('%d %b %Y')} ({avg_divisor_days} active days)</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:11px;color:#F6E7CC;font-weight:700;">Total Incurred OPEX</div>
+                            <div style="font-size:22px;font-weight:900;color:#FFD166;">₹{total_incurred_opex:,.0f} <span style="font-size:13px;color:#FFF2DC;">({opex_margin:.1f}% of Rev)</span></div>
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+                # Build granular Category & Sub-Category rows
+                opex_detail_rows = []
+                opex_cat_totals = {}
+
+                # 1. Incurred Staff Labour broken down by Fixed Salary, Commission, Allowances + Staff names
+                tot_fixed_sal_inc = sum(float(v.get("salary", 0.0)) for v in staff_pay_breakdown.values())
+                tot_comm_inc = sum(float(v.get("commission", 0.0)) for v in staff_pay_breakdown.values())
+                tot_allow_inc = sum(float(v.get("allowance", 0.0)) for v in staff_pay_breakdown.values())
+
+                if tot_fixed_sal_inc > 0:
+                    staff_sal_notes = ", ".join(
+                        f"{sn}: ₹{float(sv['salary']):,.0f} ({int(sv.get('days', 0))}d)"
+                        for sn, sv in sorted(staff_pay_breakdown.items(), key=lambda x: -float(x[1].get("salary", 0)))
+                        if float(sv.get("salary", 0)) > 0
+                    )
+                    opex_detail_rows.append({
+                        "Category": "Labour Charges",
+                        "Sub-Category": "Pro-Rata Fixed Salaries (Incurred)",
+                        "Entries": sum(1 for sv in staff_pay_breakdown.values() if float(sv.get("salary", 0)) > 0),
+                        "Amount": tot_fixed_sal_inc,
+                        "Details": staff_sal_notes or "Active staff pro-rata salary",
+                    })
+                if tot_comm_inc > 0:
+                    staff_comm_notes = ", ".join(
+                        f"{sn}: ₹{float(sv['commission']):,.0f}"
+                        for sn, sv in sorted(staff_pay_breakdown.items(), key=lambda x: -float(x[1].get("commission", 0)))
+                        if float(sv.get("commission", 0)) > 0
+                    )
+                    opex_detail_rows.append({
+                        "Category": "Labour Charges",
+                        "Sub-Category": "Sales Incentives & Commissions",
+                        "Entries": sum(1 for sv in staff_pay_breakdown.values() if float(sv.get("commission", 0)) > 0),
+                        "Amount": tot_comm_inc,
+                        "Details": staff_comm_notes or "Cart shift target commissions",
+                    })
+                if tot_allow_inc > 0:
+                    staff_allow_notes = ", ".join(
+                        f"{sn}: ₹{float(sv['allowance']):,.0f}"
+                        for sn, sv in sorted(staff_pay_breakdown.items(), key=lambda x: -float(x[1].get("allowance", 0)))
+                        if float(sv.get("allowance", 0)) > 0
+                    )
+                    opex_detail_rows.append({
+                        "Category": "Labour Charges",
+                        "Sub-Category": "Daily Food, Tea & Fuel Allowances",
+                        "Entries": sum(1 for sv in staff_pay_breakdown.values() if float(sv.get("allowance", 0)) > 0),
+                        "Amount": tot_allow_inc,
+                        "Details": staff_allow_notes or "Daily shift food/tea & fuel allowances",
+                    })
+                if not unassigned_labour_df.empty:
+                    for sub_c, grp_u in unassigned_labour_df.groupby(unassigned_labour_df["Sub_Category"].fillna("Monthly Food / General Labour")):
+                        amt_u = float(grp_u["Amount"].sum())
+                        if amt_u > 0:
+                            descs = [str(d).strip() for d in grp_u["Description"].dropna().unique().tolist() if str(d).strip()]
+                            opex_detail_rows.append({
+                                "Category": "Labour Charges",
+                                "Sub-Category": str(sub_c or "Monthly Food / General Labour"),
+                                "Entries": int(len(grp_u)),
+                                "Amount": amt_u,
+                                "Details": "; ".join(descs[:3]) if descs else "Unassigned labour expense",
+                            })
+
+                # 2. Non-Labour OPEX broken down by Category -> Sub-Category
+                if not non_labour_opex_df.empty:
+                    nl_clean = non_labour_opex_df.copy()
+                    nl_clean["Cat_Clean"] = nl_clean["Category"].fillna("Miscellaneous Expense").astype(str).str.strip()
+                    nl_clean["Sub_Clean"] = nl_clean["Sub_Category"].fillna("General").astype(str).str.strip()
+                    nl_clean.loc[nl_clean["Sub_Clean"] == "", "Sub_Clean"] = "General"
+                    for (cat_n, sub_n), grp_nl in nl_clean.groupby(["Cat_Clean", "Sub_Clean"]):
+                        amt_nl = float(grp_nl["Amount"].sum())
+                        if amt_nl <= 0:
+                            continue
+                        descs = [str(d).strip() for d in grp_nl["Description"].dropna().unique().tolist() if str(d).strip()]
+                        attrs = [str(a).strip() for a in grp_nl["Attributed_To"].dropna().unique().tolist() if str(a).strip()]
+                        detail_str = "; ".join(descs[:2]) if descs else (", ".join(attrs[:2]) if attrs else "Recorded OPEX")
+                        opex_detail_rows.append({
+                            "Category": cat_n,
+                            "Sub-Category": sub_n,
+                            "Entries": int(len(grp_nl)),
+                            "Amount": amt_nl,
+                            "Details": detail_str,
+                        })
+
+                for r_item in opex_detail_rows:
+                    c_key = r_item["Category"]
+                    opex_cat_totals[c_key] = opex_cat_totals.get(c_key, 0.0) + float(r_item["Amount"])
+
+                sorted_cats = sorted(opex_cat_totals.items(), key=lambda x: -x[1])
+                top_cat_name = sorted_cats[0][0] if sorted_cats else "None"
+                top_cat_amt = sorted_cats[0][1] if sorted_cats else 0.0
+                top_cat_share = (top_cat_amt / total_incurred_opex * 100.0) if total_incurred_opex > 0 else 0.0
+
+                labour_share_opex = (tot_labour_incurred / total_incurred_opex * 100.0) if total_incurred_opex > 0 else 0.0
+                other_share_opex = (other_opex_total / total_incurred_opex * 100.0) if total_incurred_opex > 0 else 0.0
+                opex_per_unit = (total_incurred_opex / float(total_units)) if total_units > 0 else 0.0
+                gp_per_unit = (gross_profit / float(total_units)) if total_units > 0 else 0.0
+                daily_opex_burn = (total_incurred_opex / float(avg_divisor_days)) if avg_divisor_days > 0 else 0.0
+                daily_gp_gen = (gross_profit / float(avg_divisor_days)) if avg_divisor_days > 0 else 0.0
+
+                # Key Executive Insights Strip
+                ins1, ins2, ins3, ins4 = st.columns(4, gap="small")
+                with ins1:
+                    st.markdown(
+                        f"""
+                        <div style="background:#FFF8EE;border:1.5px solid #E3C391;border-radius:10px;padding:10px 12px;height:100%;">
+                            <div style="font-size:10.5px;font-weight:800;color:#8A5E17;text-transform:uppercase;">🔥 #1 Cost Driver</div>
+                            <div style="font-size:15px;font-weight:900;color:#4A2418;margin-top:2px;">{escape(str(top_cat_name))}</div>
+                            <div style="font-size:14px;font-weight:900;color:#C43D17;margin-top:2px;">₹{top_cat_amt:,.0f} <span style="font-size:11px;color:#6B5138;">({top_cat_share:.1f}% of OPEX)</span></div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+                with ins2:
+                    st.markdown(
+                        f"""
+                        <div style="background:#F4F9FD;border:1.5px solid #B5D3EB;border-radius:10px;padding:10px 12px;height:100%;">
+                            <div style="font-size:10.5px;font-weight:800;color:#1B5E91;text-transform:uppercase;">👥 Labour vs Overhead</div>
+                            <div style="font-size:13px;font-weight:900;color:#1B5E91;margin-top:3px;">Labour: ₹{tot_labour_incurred:,.0f} ({labour_share_opex:.1f}%)</div>
+                            <div style="font-size:12.5px;font-weight:800;color:#4A2418;margin-top:2px;">Other OPEX: ₹{other_opex_total:,.0f} ({other_share_opex:.1f}%)</div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+                with ins3:
+                    st.markdown(
+                        f"""
+                        <div style="background:#F3FAF5;border:1.5px solid #B5DFC0;border-radius:10px;padding:10px 12px;height:100%;">
+                            <div style="font-size:10.5px;font-weight:800;color:#124A1D;text-transform:uppercase;">🍦 OPEX Per Kulfi Sold</div>
+                            <div style="font-size:16px;font-weight:900;color:#124A1D;margin-top:2px;">₹{opex_per_unit:,.2f} / pc</div>
+                            <div style="font-size:11.5px;font-weight:700;color:#4A2418;margin-top:2px;">vs Gr. Margin ₹{gp_per_unit:,.2f} / pc</div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+                with ins4:
+                    st.markdown(
+                        f"""
+                        <div style="background:#FDF6F6;border:1.5px solid #EAB6B6;border-radius:10px;padding:10px 12px;height:100%;">
+                            <div style="font-size:10.5px;font-weight:800;color:#9E2A2B;text-transform:uppercase;">📆 Daily OPEX Burn Rate</div>
+                            <div style="font-size:16px;font-weight:900;color:#9E2A2B;margin-top:2px;">₹{daily_opex_burn:,.0f} / day</div>
+                            <div style="font-size:11.5px;font-weight:700;color:#4A2418;margin-top:2px;">vs Daily Gr. Profit ₹{daily_gp_gen:,.0f}/d</div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+
+                st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
+
+                if opex_detail_rows:
+                    # Category Progress Bars + Granular Category -> Sub-Category Table
+                    cat_col_left, sub_col_right = st.columns([1.05, 1.55], gap="medium")
+                    with cat_col_left:
+                        st.markdown("##### 📊 Category Share of OPEX & Revenue")
+                        palette_bars = ["#E8542A", "#2A9D8F", "#8A5E17", "#1B5E91", "#6A4C93", "#C43D17", "#124A1D", "#D97706"]
+                        for idx_c, (c_name, c_amt) in enumerate(sorted_cats):
+                            pct_opex = (c_amt / total_incurred_opex * 100.0) if total_incurred_opex > 0 else 0.0
+                            pct_rev = (c_amt / total_rev * 100.0) if total_rev > 0 else 0.0
+                            bar_w = min(100.0, max(3.0, pct_opex))
+                            b_col = palette_bars[idx_c % len(palette_bars)]
+                            st.markdown(
+                                f"""
+                                <div style="background:#FFFDF9;border:1px solid #E6D5B8;border-radius:8px;padding:8px 10px;margin-bottom:7px;">
+                                    <div style="display:flex;justify-content:space-between;align-items:center;font-size:12.5px;font-weight:800;color:#2A1B10;">
+                                        <span>{escape(str(c_name))}</span>
+                                        <span style="color:{b_col};font-weight:900;">₹{c_amt:,.0f}</span>
+                                    </div>
+                                    <div style="display:flex;justify-content:space-between;font-size:11px;color:#6B5138;margin-top:2px;margin-bottom:4px;">
+                                        <span><b>{pct_opex:.1f}%</b> of OPEX</span>
+                                        <span><b>{pct_rev:.1f}%</b> of Revenue</span>
+                                    </div>
+                                    <div style="width:100%;background:#EFE4D2;height:7px;border-radius:4px;overflow:hidden;">
+                                        <div style="width:{bar_w:.1f}%;background:{b_col};height:7px;border-radius:4px;"></div>
+                                    </div>
+                                </div>
+                                """,
+                                unsafe_allow_html=True,
+                            )
+
+                    with sub_col_right:
+                        st.markdown("##### 🧾 Granular Category & Sub-Category OPEX Table")
+                        opex_sub_df = pd.DataFrame(opex_detail_rows).sort_values(["Amount"], ascending=False).reset_index(drop=True)
+                        opex_sub_df["% of OPEX"] = opex_sub_df["Amount"].apply(
+                            lambda v: f"{(float(v) / total_incurred_opex * 100.0):.1f}%" if total_incurred_opex > 0 else "0.0%"
+                        )
+                        opex_sub_df["% of Rev"] = opex_sub_df["Amount"].apply(
+                            lambda v: f"{(float(v) / total_rev * 100.0):.1f}%" if total_rev > 0 else "0.0%"
+                        )
+                        opex_sub_df["Amount (₹)"] = opex_sub_df["Amount"].apply(lambda v: f"₹{float(v):,.0f}")
+
+                        total_row_opex = pd.DataFrame([{
+                            "Category": "TOTAL INCURRED OPEX",
+                            "Sub-Category": f"{len(opex_detail_rows)} Sub-Components",
+                            "Entries": int(opex_sub_df["Entries"].sum()),
+                            "Amount (₹)": f"₹{total_incurred_opex:,.0f}",
+                            "% of OPEX": "100.0%",
+                            "% of Rev": f"{opex_margin:.1f}%",
+                            "Details": f"Net Margin after OPEX: ₹{net_profit:,.0f} ({net_margin:.1f}%)",
+                        }])
+                        disp_opex_df = pd.concat(
+                            [opex_sub_df[["Category", "Sub-Category", "Entries", "Amount (₹)", "% of OPEX", "% of Rev", "Details"]], total_row_opex],
+                            ignore_index=True,
+                        )
+                        st.dataframe(
+                            disp_opex_df.style.apply(
+                                lambda r: ["background-color:#FFF2DC;font-weight:900;color:#4A2418;" if r.get("Category") == "TOTAL INCURRED OPEX" else "" for _ in r],
+                                axis=1,
+                            ),
+                            hide_index=True,
+                            use_container_width=True,
+                            height=min(420, 42 + len(disp_opex_df) * 35),
+                        )
+                else:
+                    st.info("No operating expenses incurred in the selected period.")
 
         st.markdown("#### Daily Revenue Trend")
         if not range_df.empty:
