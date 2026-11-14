@@ -171,23 +171,59 @@ div[data-testid="stNumberInput"] button { display: none !important; }
     text-align: left !important;
 }
 
-section[data-testid="stSidebar"] { 
-    font-size: 14px !important; 
-    border-right: 1px solid #E3CBA0; 
+section[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #FFFDF9 0%, #FFF6E6 100%) !important;
+    border-right: 1.5px solid #E2C99E !important;
+    box-shadow: 2px 0 12px rgba(74, 36, 24, 0.04) !important;
 }
-section[data-testid="stSidebar"] h2 { 
-    font-size: 18px !important; 
-    color: #8A5E17 !important; 
+section[data-testid="stSidebar"] [data-testid="stSidebarContent"] {
+    padding-top: 0.75rem !important;
 }
-section[data-testid="stSidebar"] .stRadio > div { 
-    gap: 3px; 
+section[data-testid="stSidebar"] h2 {
+    font-size: 17px !important;
+    color: #4A2418 !important;
 }
-section[data-testid="stSidebar"] .stRadio label {
-    background: #FFFBF2;
-    border: 1px solid #E3CBA0;
-    border-radius: 6px;
-    padding: 5px 8px !important;
-    margin-bottom: 2px;
+section[data-testid="stSidebar"] .stRadio > div[role="radiogroup"] {
+    gap: 5px !important;
+    padding-top: 2px !important;
+}
+/* Hide default radio button circle for a sleek pill-menu look */
+section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label > div:first-child {
+    display: none !important;
+}
+section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label {
+    background: rgba(255, 255, 255, 0.85) !important;
+    border: 1px solid #E8D5B5 !important;
+    border-left: 3.5px solid transparent !important;
+    border-radius: 10px !important;
+    padding: 8px 12px !important;
+    margin-bottom: 0px !important;
+    width: 100% !important;
+    transition: all 0.16s ease !important;
+    box-shadow: 0 1px 2px rgba(74, 36, 24, 0.02) !important;
+}
+section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label:hover {
+    background: #FFF3DC !important;
+    border-color: #D4AF72 !important;
+    border-left: 3.5px solid #C88A2B !important;
+    transform: translateX(2px);
+}
+section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label p {
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    color: #4A2418 !important;
+    margin: 0 !important;
+    letter-spacing: 0.01em !important;
+}
+section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label:has(input:checked) {
+    background: linear-gradient(90deg, #4A2418 0%, #70440E 100%) !important;
+    border-color: #4A2418 !important;
+    border-left: 4px solid #F59E0B !important;
+    box-shadow: 0 4px 10px rgba(74, 36, 24, 0.16) !important;
+}
+section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label:has(input:checked) p {
+    color: #FFFFFF !important;
+    font-weight: 800 !important;
 }
 
 /* Buttons */
@@ -2610,8 +2646,8 @@ def _set_live_flavour_date_state(state_key, target_dt):
 
 def render_live_cart_flavour_tables_section(key_prefix="live_flv"):
     """Render date-filtered Live Cart Transactions by Flavour with a separate table for each cart."""
-    st.markdown("#### 📱 Live Cart Transactions by Flavour (Cart-wise)")
-    pass
+    st.markdown("#### 📱 Live Cart Transactions")
+    st.caption("Date-wise live POS sales by cart & flavour")
 
     dt_key = f"{key_prefix}_selected_date"
     if dt_key not in st.session_state:
@@ -3952,8 +3988,12 @@ else:
         st.session_state["page_nav"] = st.session_state.pop("_pending_page_nav")
 
     with st.sidebar:
-        try: st.image("assets/logo.png", use_container_width=True)
-        except Exception: st.markdown("## 🍦 Kulfi Ops")
+        if os.path.exists("assets/logo.png"):
+            _, logo_col, _ = st.columns([0.18, 0.64, 0.18])
+            with logo_col:
+                st.image("assets/logo.png", use_container_width=True)
+        else:
+            st.markdown("## 🍦 Kulfi Ops")
 
         # --- Multi-Location Selector for Admin ---
         configured_locs = load_configured_locations_list(include_inactive=False)
@@ -3970,12 +4010,54 @@ else:
         if st.session_state.get("current_location") != selected_location:
             st.session_state["current_location"] = selected_location
             st.session_state.pop("entry_cart_shared", None)
-        st.markdown("---")
 
-        nav_options = ["Dashboard", "Daily Entry", "Bulk Orders & Quotes", "Live Cart Tracking", "Cash Custody", "Purchase Orders", "Freezer Stock", "Cart Stock Plan", "Freezer Analysis", "Stock Removed", "Expenses", "Staff & Payroll", "Payslip Generator", "Locations & Logins"]
-        page = st.radio("Go to", nav_options, label_visibility="collapsed", key="page_nav")
-        st.markdown("---")
-        if st.button("Log out", use_container_width=True):
+        st.markdown(
+            "<div style='font-size:10px;font-weight:800;color:#8A5E17;letter-spacing:0.08em;"
+            "text-transform:uppercase;margin:8px 0 4px 4px;'>Menu</div>",
+            unsafe_allow_html=True,
+        )
+
+        nav_options = [
+            "Dashboard",
+            "Daily Entry",
+            "Bulk Orders & Quotes",
+            "Live Cart Tracking",
+            "Cash Custody",
+            "Purchase Orders",
+            "Freezer Stock",
+            "Freezer Analysis",
+            "Stock Removed",
+            "Expenses",
+            "Staff & Payroll",
+            "Payslip Generator",
+            "Locations & Logins",
+        ]
+        nav_labels = {
+            "Dashboard": "📊  Dashboard",
+            "Daily Entry": "🛒  Daily Entry",
+            "Bulk Orders & Quotes": "📦  Bulk Orders & Quotes",
+            "Live Cart Tracking": "📡  Live Cart Tracking",
+            "Cash Custody": "💰  Cash Custody",
+            "Purchase Orders": "🧾  Purchase Orders",
+            "Freezer Stock": "❄️  Freezer Stock",
+            "Freezer Analysis": "📈  Freezer Analysis",
+            "Stock Removed": "🗑️  Stock Removed",
+            "Expenses": "💳  Expenses",
+            "Staff & Payroll": "👥  Staff & Payroll",
+            "Payslip Generator": "📄  Payslip Generator",
+            "Locations & Logins": "🌐  Locations & Logins",
+        }
+        if st.session_state.get("page_nav") not in nav_options:
+            st.session_state["page_nav"] = "Dashboard"
+        page = st.radio(
+            "Go to",
+            nav_options,
+            format_func=lambda x: nav_labels.get(x, x),
+            label_visibility="collapsed",
+            key="page_nav",
+        )
+        st.markdown("<div style='height:6px;'></div>", unsafe_allow_html=True)
+        if st.button("🚪 Log out", use_container_width=True):
             st.session_state["authenticated"] = False; st.session_state["user_role"] = None; st.rerun()
 
     CITY = get_default_write_city()
@@ -4268,8 +4350,8 @@ elif page == "Daily Entry":
                     <div style='font-family:Fraunces,serif;font-size:21px;font-weight:700;color:#4A2418;'>
                         🛒 Daily Operations & Stock Entry Hub
                     </div>
-                    <div style='font-size:12.5px;color:#6B5138;margin-top:2px;'>
-                        Select an operation below to record cart sales, morning restocks, mid-day top-ups, cart stock removals, or direct freezer sales.
+                    <div style='font-size:12px;color:#6B5138;margin-top:2px;'>
+                        Cart sales, restocks, returns &amp; freezer sales
                     </div>
                 </div>
                 <div style='background:#70440E;color:#FFFFFF;padding:6px 14px;border-radius:999px;font-size:12px;font-weight:800;'>
@@ -4292,7 +4374,7 @@ elif page == "Daily Entry":
                             <span class='entry-hub-badge' style='background:#FCE8E2;color:#C43D17;'>DAILY CLOSING</span>
                         </div>
                         <div class='entry-hub-title'>Sales Entry (Carts)</div>
-                        <div class='entry-hub-desc'>Record closing counts, units sold, UPI/Cash collections, advances, and leakage for carts.</div>
+                        <div class='entry-hub-desc'>Closing stock, sales &amp; collections</div>
                     </div>
                 </div>
                 """,
@@ -4313,7 +4395,7 @@ elif page == "Daily Entry":
                             <span class='entry-hub-badge' style='background:#EAF4EC;color:#124A1D;'>MORNING LOAD</span>
                         </div>
                         <div class='entry-hub-title'>Restock (Carts)</div>
-                        <div class='entry-hub-desc'>Record today's regular stock allocation moved from the Freezer into each selling cart.</div>
+                        <div class='entry-hub-desc'>Morning cart stock load</div>
                     </div>
                 </div>
                 """,
@@ -4333,7 +4415,7 @@ elif page == "Daily Entry":
                             <span class='entry-hub-badge' style='background:#FFF2DC;color:#B45309;'>MID-DAY TOP-UP</span>
                         </div>
                         <div class='entry-hub-title'>Extra Stock (Carts)</div>
-                        <div class='entry-hub-desc'>Add supplementary flavour units supplied to a cart after selling has started.</div>
+                        <div class='entry-hub-desc'>Mid-day stock top-up</div>
                     </div>
                 </div>
                 """,
@@ -4383,7 +4465,7 @@ elif page == "Daily Entry":
                             <span class='entry-hub-badge' style='background:#F3E8FF;color:#6D28D9;'>READ-ONLY VIEW</span>
                         </div>
                         <div class='entry-hub-title'>View Cart Stock</div>
-                        <div class='entry-hub-desc'>Inspect flavour-wise Opening, Restock (with Extra), and Sold units for Today, T-1 & T-2.</div>
+                        <div class='entry-hub-desc'>Read-only cart stock snapshot</div>
                     </div>
                 </div>
                 """,
@@ -4403,7 +4485,7 @@ elif page == "Daily Entry":
                             <span class='entry-hub-badge' style='background:#EBF3FA;color:#1B5E91;'>DIRECT FREEZER SALE</span>
                         </div>
                         <div class='entry-hub-title'>Sales Entry (Freezer)</div>
-                        <div class='entry-hub-desc'>Record direct customer sales from Freezer stock with live MRP & leakage calculation.</div>
+                        <div class='entry-hub-desc'>Direct sales from Freezer</div>
                     </div>
                 </div>
                 """,
@@ -4420,11 +4502,11 @@ elif page == "Daily Entry":
         with st.container(border=True):
             lvc1, lvc2 = st.columns([3.5, 1.5])
             with lvc1:
-                st.markdown("#### 📱 Live Cart Transactions by Flavour (Date-wise Cart Tables)")
-                st.caption("Inspect live mobile POS transactions by flavour for each cart in separate tables on one page (defaults to Today, with date filtering for previous dates).")
+                st.markdown("#### 📱 Live Cart Transactions")
+                st.caption("Date-wise live POS sales by cart & flavour")
             with lvc2:
                 st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
-                if st.button("Open Live Cart Sales by Flavour →", key="open_live_flavour_entry_view", type="primary", use_container_width=True):
+                if st.button("Open Live Cart Transactions →", key="open_live_flavour_entry_view", type="primary", use_container_width=True):
                     st.session_state["daily_entry_mode"] = "live_flavour_view"
                     st.rerun()
     else:
@@ -5549,7 +5631,6 @@ elif page == "Daily Entry":
 
 elif page == "Bulk Orders & Quotes" and user_role == "admin":
     st.subheader("📦 Bulk Orders — Estimates, Discount Planner & Invoices")
-    st.caption("Create bulk order estimates by total pieces (e.g., 200 or 400 pcs) or customer budget (e.g., ₹10,000), dynamically select flavours, compare discount tiers, generate PDFs, and convert delivered orders into final Invoices.")
 
     # Popularity weights for smart party mix distribution
     BULK_POPULARITY_WEIGHTS = {
@@ -6091,7 +6172,6 @@ elif page == "Bulk Orders & Quotes" and user_role == "admin":
             st_hdr1, st_hdr2, st_hdr3, st_hdr4 = st.columns([2.2, 1.0, 1.2, 1.1])
             with st_hdr1:
                 st.markdown("#### 2. Flavour Selection & Quantity Distribution")
-                st.caption("Check/uncheck flavours to auto-redistribute counts (rounded to nearest 10s). You can also edit any flavour's quantity directly.")
             with st_hdr2:
                 st.button(
                     "✅ Select All Flavours",
@@ -6929,7 +7009,7 @@ elif page == "Payslip Generator" and user_role == "admin":
 # ======================================================================
 elif page == "Live Cart Tracking" and user_role == "admin":
     st.subheader("Live Cart Operations & Flavour Sales")
-    st.caption("View date-wise live cart sales by flavour (each cart in a separate table) and monitor today's live cart shifts.")
+    st.caption("Live cart shifts & flavour-wise POS sales")
 
     render_live_cart_flavour_tables_section(key_prefix="admin_live_trk")
 
@@ -8990,130 +9070,6 @@ elif page == "Freezer Stock" and user_role == "admin":
                         show_success_modal(f"Stock Audit #{loaded_audit_id} updated successfully!")
                     except Exception as e:
                         st.error(f"Could not update stock audit: {e}")
-
-elif page == "Cart Stock Plan" and user_role == "admin":
-    st.subheader("Maximum Cart Stock Plan by Day")
-
-    try:
-        hist_stock_df = db_conn.query(
-            """
-            SELECT
-                e.entry_date,
-                e.cart_name,
-                i.flavor_code,
-                COALESCE(i.sold_units, 0) AS sold_units
-            FROM daily_cart_entries e
-            JOIN daily_cart_items i ON i.daily_entry_id = e.id
-            WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(e.city, 'HOSUR'))) = :active_loc)
-              AND e.entry_date < CURRENT_DATE
-              AND COALESCE(i.sold_units, 0) > 0
-            ORDER BY e.entry_date, e.cart_name, i.flavor_code;
-            """,
-            params={"active_loc": get_active_location_filter()},
-            ttl="0s"
-        )
-
-        day_defs = [
-            (0, "Mon"), (1, "Tue"), (2, "Wed"), (3, "Thu"),
-            (4, "Fri"), (5, "Sat"), (6, "Sun")
-        ]
-
-        if hist_stock_df.empty:
-            st.info("No completed historical cart sales are available yet.")
-        else:
-            hist_stock_df = hist_stock_df.copy()
-            hist_stock_df["entry_date"] = pd.to_datetime(hist_stock_df["entry_date"])
-            hist_stock_df["weekday_no"] = hist_stock_df["entry_date"].dt.weekday
-            hist_stock_df["sold_units"] = pd.to_numeric(hist_stock_df["sold_units"], errors="coerce").fillna(0).astype(int)
-
-            max_sales = (
-                hist_stock_df
-                .groupby(["cart_name", "flavor_code", "weekday_no"], as_index=False)["sold_units"]
-                .max()
-            )
-
-            max_lookup = {
-                (str(r["cart_name"]), str(r["flavor_code"]), int(r["weekday_no"])): int(r["sold_units"])
-                for _, r in max_sales.iterrows()
-            }
-
-            def round_up_10(value):
-                value = int(max(0, value))
-                return 0 if value == 0 else ((value + 9) // 10) * 10
-
-            # Compact HTML table so all three carts fit without internal scrollbars.
-            st.html("""
-            <style>
-            .max-stock-wrap {
-                width:92%; max-width:1180px; margin:0 auto 12px auto;
-            }
-            .max-stock-title {
-                font-family:'Fraunces',serif; font-size:17px; font-weight:800;
-                color:#6F430D; background:#FFF7E8; border:1px solid #E7C88F;
-                border-radius:7px; padding:5px 10px; margin:5px 0 5px 0;
-            }
-            table.max-stock-table {
-                width:100%; table-layout:fixed; border-collapse:collapse;
-                font-size:13.5px; line-height:1.15; background:#fff;
-                border:1px solid #D8C29D;
-            }
-            .max-stock-table th, .max-stock-table td {
-                border:1px solid #E3D6C2; padding:4px 5px; height:23px;
-                text-align:center; white-space:nowrap;
-            }
-            .max-stock-table thead th {
-                background:#75450C; color:#fff; font-weight:800; font-size:13.5px;
-            }
-            .max-stock-table th:first-child, .max-stock-table td:first-child {
-                width:25%; text-align:left; font-weight:700;
-            }
-            .max-stock-table tbody tr:nth-child(even):not(.max-stock-total) td {
-                background:#FFF9F0;
-            }
-            .max-stock-table .max-stock-total td {
-                background:#F1E3CA; font-weight:900; border-top:2px solid #B47A2B;
-            }
-            .max-stock-table .zero-cell { color:#9A8D7A; }
-            </style>
-            """)
-
-            flavor_rows = [(code, FLAVOR_MAP[code]["name"]) for code in FLAVOR_CODES]
-
-            for cart in CARTS:
-                totals_by_day = {day_no: 0 for day_no, _ in day_defs}
-                body_rows = []
-
-                for code, flavor_name in flavor_rows:
-                    day_cells = []
-                    for day_no, _day_label in day_defs:
-                        raw_max = max_lookup.get((cart, code, day_no), 0)
-                        target_max = round_up_10(raw_max)
-                        totals_by_day[day_no] += target_max
-                        if target_max > 0:
-                            day_cells.append(f"<td>{target_max}</td>")
-                        else:
-                            day_cells.append("<td class='zero-cell'>–</td>")
-                    body_rows.append(
-                        f"<tr><td>{escape(str(flavor_name))}</td>{''.join(day_cells)}</tr>"
-                    )
-
-                total_cells = "".join(
-                    f"<td>{int(totals_by_day[day_no])}</td>" for day_no, _ in day_defs
-                )
-                headers = "".join(f"<th>{label}</th>" for _, label in day_defs)
-
-                st.html(
-                    f"<div class='max-stock-wrap'>"
-                    f"<div class='max-stock-title'>{escape(cart.replace('HOSUR ', ''))}</div>"
-                    f"<table class='max-stock-table'>"
-                    f"<thead><tr><th>Flavour</th>{headers}</tr></thead>"
-                    f"<tbody>{''.join(body_rows)}"
-                    f"<tr class='max-stock-total'><td>TOTAL MAX STOCK</td>{total_cells}</tr>"
-                    f"</tbody></table></div>"
-                )
-
-    except Exception as e:
-        st.error(f"Could not build cart stock plan: {e}")
 
 elif page == "Freezer Analysis" and user_role == "admin":
     st.subheader("Freezer Stock Analysis & Reorder Planner")
@@ -12402,7 +12358,12 @@ elif page == "Dashboard" and user_role == "admin":
                 on_click=_toggle_dash_opex_breakdown,
             )
         with opex_btn_c2:
-            st.caption("Click to inspect category & sub-category OPEX drivers, staff labour components, per-unit burn, and key operational insights for the selected period.")
+            st.markdown(
+                "<div style='padding-top:7px;font-size:12px;font-weight:700;color:#6B5138;'>"
+                "Category & sub-category split, labour & burn rate"
+                "</div>",
+                unsafe_allow_html=True,
+            )
 
         if st.session_state.get("show_dash_opex_breakdown", False):
             with st.container(border=True):
