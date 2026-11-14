@@ -2611,7 +2611,7 @@ def _set_live_flavour_date_state(state_key, target_dt):
 def render_live_cart_flavour_tables_section(key_prefix="live_flv"):
     """Render date-filtered Live Cart Transactions by Flavour with a separate table for each cart."""
     st.markdown("#### 📱 Live Cart Transactions by Flavour (Cart-wise)")
-    st.caption("View live POS sales by flavour for each cart on any date. Each cart is shown in its own table with flavour totals and total collection at the bottom.")
+    pass
 
     dt_key = f"{key_prefix}_selected_date"
     if dt_key not in st.session_state:
@@ -3084,7 +3084,7 @@ def load_staff_attendance_df(start_date=None, end_date=None):
     try: return db_conn.query(f"SELECT a.id, a.staff_id, s.name AS staff_name, a.attendance_date, a.status, a.leave_type, a.reason, a.recorded_by, a.created_at FROM staff_attendance a JOIN staff s ON a.staff_id = s.id {where_sql} ORDER BY a.attendance_date DESC, a.id DESC;", params=params, ttl="0s")
     except Exception: return pd.DataFrame()
 
-def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leakage=False, limit_to_employment=False):
+def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leakage=False, limit_to_employment=True):
     if db_conn is None: return 0.0, 0.0, 0.0, {}
     staff_df = load_full_staff_df()
     if staff_df.empty: return 0.0, 0.0, 0.0, {}
@@ -3093,7 +3093,7 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
     entries_df = db_conn.query("SELECT entry_date, cart_name, staff_name, total_collection FROM daily_cart_entries WHERE entry_date >= :sdate AND entry_date <= :edate AND (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(city, 'HOSUR'))) = :active_loc) AND staff_name IS NOT NULL AND staff_name != '' AND staff_name != 'Select Staff';", params={"sdate": start_date, "edate": end_date, "active_loc": active_loc}, ttl="0s")
     att_df = db_conn.query("SELECT a.staff_id, s.name AS staff_name, a.attendance_date, a.status, a.leave_type FROM staff_attendance a JOIN staff s ON a.staff_id = s.id WHERE a.attendance_date >= :sdate AND a.attendance_date <= :edate AND (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(s.location, 'HOSUR'))) = :active_loc);", params={"sdate": start_date, "edate": end_date, "active_loc": active_loc}, ttl="0s")
     pay_df = db_conn.query("""
-        SELECT p.amount_paid, e.staff_name
+        SELECT p.amount_paid, p.payment_date, e.staff_name
         FROM expense_payments p
         JOIN expenses e ON p.expense_id = e.id
         WHERE e.category = 'Labour Charges'
@@ -3147,13 +3147,17 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
     def food_allowance_for_dates(mode, monthly_amount, weekday_amount, sunday_amount, eligible_dates):
         return sum(food_allowance_for_date(mode, monthly_amount, weekday_amount, sunday_amount, d) for d in eligible_dates)
 
-    def attach_staff_leakage(staff_name, ledger=None):
+    def attach_staff_leakage(staff_name, ledger=None, emp_start=None, emp_end=None):
         if leakage_df.empty:
             return 0.0
         staff_leakage = leakage_df[leakage_df["staff_name"].astype(str).str.strip() == staff_name]
         by_date = {}
         for _, entry in staff_leakage.iterrows():
             day = pd.to_datetime(entry["expense_date"]).date()
+            if emp_start is not None and day < emp_start:
+                continue
+            if emp_end is not None and day > emp_end:
+                continue
             by_date[day] = by_date.get(day, 0.0) + float(_num(entry["total_amount"]))
         if ledger is not None:
             for day, amount in by_date.items():
@@ -3177,18 +3181,25 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
         doj = s_row.get("date_of_joining")
         leaving = s_row.get("date_of_leaving")
 
+        # Always clamp the active employment window to [date_of_joining, date_of_leaving]
+        # so nothing beyond Last Working Day (or before joining) is ever counted in pay calculations.
         employment_start, employment_end = start_date, end_date
-        if limit_to_employment:
-            if pd.notna(doj) and str(doj).strip():
+        if pd.notna(doj) and str(doj).strip():
+            try:
                 employment_start = max(start_date, pd.to_datetime(doj).date())
-            if pd.notna(leaving) and str(leaving).strip():
+            except Exception:
+                pass
+        if pd.notna(leaving) and str(leaving).strip():
+            try:
                 employment_end = min(end_date, pd.to_datetime(leaving).date())
-            if employment_start > employment_end:
-                continue
+            except Exception:
+                pass
+        if employment_start > employment_end:
+            continue
 
         # Always use the compensation plan effective for the payroll period rather than
         # merely the newest plan row. This is important when a future revision exists.
-        plan_row = load_staff_comp_plan_as_of(int(s_row["id"]), end_date)
+        plan_row = load_staff_comp_plan_as_of(int(s_row["id"]), employment_end)
         plan_source = plan_row if plan_row is not None else s_row
 
         monthly_sal = float(_num(plan_source.get("monthly_fixed_salary")) or 18000.0)
@@ -3203,9 +3214,20 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
         monthly_food = float(_num(plan_source.get("monthly_food_tea_allowance")))
         monthly_fuel = float(_num(plan_source.get("monthly_fuel_allowance")))
 
-        st_shifts = entries_df[entries_df["staff_name"] == st_name] if not entries_df.empty else pd.DataFrame()
-        st_leaves = att_df[att_df["staff_name"] == st_name] if not att_df.empty else pd.DataFrame()
-        st_pay = pay_df[pay_df["staff_name"] == st_name] if not pay_df.empty else pd.DataFrame()
+        st_shifts = entries_df[entries_df["staff_name"] == st_name].copy() if not entries_df.empty else pd.DataFrame()
+        if not st_shifts.empty:
+            sh_dates = pd.to_datetime(st_shifts["entry_date"]).dt.date
+            st_shifts = st_shifts[(sh_dates >= employment_start) & (sh_dates <= employment_end)]
+
+        st_leaves = att_df[att_df["staff_name"] == st_name].copy() if not att_df.empty else pd.DataFrame()
+        if not st_leaves.empty:
+            lv_dates = pd.to_datetime(st_leaves["attendance_date"]).dt.date
+            st_leaves = st_leaves[(lv_dates >= employment_start) & (lv_dates <= employment_end)]
+
+        st_pay = pay_df[pay_df["staff_name"] == st_name].copy() if not pay_df.empty else pd.DataFrame()
+        if not st_pay.empty and "payment_date" in st_pay.columns:
+            py_dates = pd.to_datetime(st_pay["payment_date"]).dt.date
+            st_pay = st_pay[(py_dates >= employment_start) & (py_dates <= employment_end)]
 
         # Non-cart roles are salaried on calendar days. Ops Coordinator has a
         # true monthly pro-rata: the payable period always starts no earlier
@@ -3278,9 +3300,9 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
                         "commission": 0.0, "allowance": day_allow,
                         "advance_taken": 0.0, "food_taken": 0.0
                     })
-                leakage_amount = attach_staff_leakage(st_name, detailed_ledger)
+                leakage_amount = attach_staff_leakage(st_name, detailed_ledger, employment_start, employment_end)
             else:
-                leakage_amount = attach_staff_leakage(st_name, None)
+                leakage_amount = attach_staff_leakage(st_name, None, employment_start, employment_end)
 
             staff_paid += leakage_amount
             staff_incurred = staff_salary + food_entitled + fuel_entitled
@@ -3316,7 +3338,10 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
             }
             continue
 
-        st_exp = exp_ledger_df[exp_ledger_df["staff_name"] == st_name] if not exp_ledger_df.empty else pd.DataFrame()
+        st_exp = exp_ledger_df[exp_ledger_df["staff_name"] == st_name].copy() if not exp_ledger_df.empty else pd.DataFrame()
+        if not st_exp.empty:
+            ex_dates = pd.to_datetime(st_exp["expense_date"]).dt.date
+            st_exp = st_exp[(ex_dates >= employment_start) & (ex_dates <= employment_end)]
         shift_sal, shift_comm, days_worked, detailed_ledger = 0.0, 0.0, 0, []
 
         leave_map = {}
@@ -3349,9 +3374,10 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
                 elif 'advance' in subcat:
                     exp_map[e_dt]["advance"] += amt
 
-        all_dates = set(leave_map.keys()).union(set(shift_map.keys())).union(set(exp_map.keys()))
-        if limit_to_employment:
-            all_dates = {d for d in all_dates if employment_start <= d <= employment_end}
+        all_dates = {
+            d for d in set(leave_map.keys()).union(set(shift_map.keys())).union(set(exp_map.keys()))
+            if employment_start <= d <= employment_end
+        }
         paid_leaves_cnt = 0
         worked_dates = set()
 
@@ -3444,7 +3470,7 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
         fuel_entitled = 0.0
         allowance_total = food_entitled
         staff_incurred = shift_sal + shift_comm + food_entitled
-        staff_paid = (float(st_pay["amount_paid"].sum()) if not st_pay.empty else 0.0) + attach_staff_leakage(st_name, detailed_ledger)
+        staff_paid = (float(st_pay["amount_paid"].sum()) if not st_pay.empty else 0.0) + attach_staff_leakage(st_name, detailed_ledger, employment_start, employment_end)
         staff_due = staff_incurred - staff_paid
         total_labour_incurred += staff_incurred
         total_labour_paid += staff_paid
@@ -3964,7 +3990,7 @@ else:
 
 if page == "Locations & Logins" and user_role == "admin":
     st.subheader("🌐 Locations, Carts / Freezers & Logins Setup")
-    st.caption("Configure operating cities, carts, freezers, and role-based login passwords for both Web and Mobile apps.")
+    pass
 
     if db_conn is None:
         st.error("Database connection is unavailable.")
@@ -4731,7 +4757,7 @@ elif page == "Daily Entry":
             hdr_c1, hdr_c2, hdr_c3 = st.columns([2.4, 1.3, 1.3], gap="small")
             with hdr_c1:
                 st.subheader("❄️ Sales Entry (Freezer)")
-                st.caption("Record a new direct Freezer sale or edit/delete previous Freezer sale transactions.")
+                pass
             with hdr_c2:
                 st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
                 if st.button(
@@ -4767,7 +4793,7 @@ elif page == "Daily Entry":
                 if prev_txns_df.empty:
                     st.info("No previous Freezer sale transactions found.")
                 else:
-                    st.caption("💡 Actions per row: **✏️** Edit Transaction &nbsp;|&nbsp; **❌** Delete Transaction")
+                    pass
                     col_w = [0.65, 0.85, 0.80, 1.05, 1.05, 0.65, 0.85, 0.85, 0.85, 0.85, 1.55, 1.15, 0.42, 0.42]
                     hdrs = [
                         ("Txn #", "Transaction ID"),
@@ -5065,7 +5091,7 @@ elif page == "Daily Entry":
         # --------------------------------------------------------------
         elif entry_mode == "restock":
             st.subheader("📦 Restock Entry")
-            st.caption("Today's normal cart stock allocation")
+            pass
 
             rc_top1, rc_top2 = st.columns([1.2, 1])
             with rc_top1:
@@ -5162,7 +5188,7 @@ elif page == "Daily Entry":
         # --------------------------------------------------------------
         elif entry_mode == "extra":
             st.subheader("➕ Extra Stock")
-            st.caption("Additional stock supplied after the cart has started selling")
+            pass
 
             ec_top1, ec_top2 = st.columns([1.2, 1])
             with ec_top1:
@@ -6467,7 +6493,7 @@ elif page == "Bulk Orders & Quotes" and user_role == "admin":
 
     with bulk_tab2:
         st.markdown("#### 🗂️ Saved Bulk Order Estimates & Invoices")
-        st.caption("View history, download Estimate/Invoice PDFs, edit quantities, convert an Estimate into a final Invoice upon delivery, or delete records.")
+        pass
 
         hf1, hf2, hf3 = st.columns([1.2, 1.2, 1.2])
         with hf1:
@@ -6637,7 +6663,7 @@ elif page == "Payslip Generator" and user_role == "admin":
         if os.path.exists("assets/logo.png"): st.image("assets/logo.png", width=90)
     with p_h_col2:
         st.subheader("Staff Payslip Generator & Detailed Ledger")
-        st.caption("Kulfi Factory - Hosur Franchise")
+        pass
 
     staff_df = load_full_staff_df()
     if staff_df.empty: st.info("No staff records found in the database.")
@@ -6852,7 +6878,7 @@ elif page == "Payslip Generator" and user_role == "admin":
                 st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
                 ledger_heading = "Detailed Commission & Allowance Entitlement Ledger" if food_mode == "daily" else "Detailed Commission & Salary Ledger"
                 st.markdown(f"#### {ledger_heading}")
-                st.caption(f"Payslip for the month: {month_str} (Itemized daily breakdown)")
+                pass
 
                 ledger_list = staff_data.get("detailed_ledger", [])
                 if ledger_list:
@@ -7740,7 +7766,7 @@ elif page == "Cash Custody" and user_role == "admin":
     # ------------------------------------------------------------------
     with tab_cash_payments:
         st.markdown("#### All Cash Payments")
-        st.caption("Excludes cart-staff Food & Tea and Staff Advance payments already deducted before Daily Entry cash is recorded.")
+        pass
 
         if cash_payments_df.empty:
             st.info("No qualifying cash payments have been recorded yet.")
@@ -7849,7 +7875,7 @@ elif page == "Cash Custody" and user_role == "admin":
 
 elif page == "Purchase Orders" and user_role == "admin":
     st.subheader("Purchase Order Estimator & Order Management")
-    st.caption("Plan order quantities, apply overall discounts, calculate net payable cost, and manage orders.")
+    pass
 
     # Apply pending PO mode before the radio widget is instantiated.
     if "_pending_po_screen_mode" in st.session_state:
@@ -7861,7 +7887,7 @@ elif page == "Purchase Orders" and user_role == "admin":
         st.success(st.session_state.pop("po_success_message"))
 
     if po_mode == "Create New Order":
-        st.write("Enter details and specify quantities per flavor to calculate the estimated purchase cost.")
+        pass
 
         c1, c2, c3 = st.columns(3)
         with c1: order_date = st.date_input("Order Date", value=date.today(), key="new_po_order_date", format="DD-MM-YYYY")
@@ -7878,7 +7904,7 @@ elif page == "Purchase Orders" and user_role == "admin":
             f_info = FLAVOR_MAP[code]
             grid_rows.append({"Flavour": f_info["name"], "Code": code, "Unit Cost (₹)": float(f_info["cost_price"]), "Order Quantity": int(prefill_qty.get(code, 0))})
 
-        st.write("Enter order quantities per flavour:")
+        pass
         po_editor_df = st.data_editor(pd.DataFrame(grid_rows), column_config={"Flavour": st.column_config.TextColumn(disabled=True), "Code": st.column_config.TextColumn(disabled=True), "Unit Cost (₹)": st.column_config.NumberColumn(format="₹%,.2f", disabled=True), "Order Quantity": st.column_config.NumberColumn(min_value=0, step=10, format="%d")}, hide_index=True, use_container_width=True, key="new_po_editor")
 
         total_units = int(po_editor_df["Order Quantity"].sum())
@@ -7975,7 +8001,7 @@ elif page == "Purchase Orders" and user_role == "admin":
             items_by_code = {itm["code"]: itm.get("qty", 0) for itm in loaded_po.get("items", []) if isinstance(itm, dict) and "code" in itm} if loaded_po.get("items") and isinstance(loaded_po["items"], list) else {}
             edit_grid_rows = [{"Flavour": FLAVOR_MAP[code]["name"], "Code": code, "Unit Cost (₹)": float(FLAVOR_MAP[code]["cost_price"]), "Order Quantity": int(items_by_code.get(code) or 0)} for code in FLAVOR_CODES]
 
-            st.write("Modify order quantities per flavour:")
+            pass
             po_edit_editor_df = st.data_editor(pd.DataFrame(edit_grid_rows), column_config={"Flavour": st.column_config.TextColumn(disabled=True), "Code": st.column_config.TextColumn(disabled=True), "Unit Cost (₹)": st.column_config.NumberColumn(format="₹%,.2f", disabled=True), "Order Quantity": st.column_config.NumberColumn(min_value=0, step=10, format="%d")}, hide_index=True, use_container_width=True, key=f"edit_po_editor_{loaded_po_id}")
 
             e_total_units = int(po_edit_editor_df["Order Quantity"].sum())
@@ -8073,7 +8099,7 @@ elif page == "Freezer Stock" and user_role == "admin":
             items_map = {itm["code"]: itm for itm in stock_loaded["items"] if isinstance(itm, dict) and "code" in itm} if stock_loaded and stock_loaded.get("items") and isinstance(stock_loaded["items"], list) else {}
             grid_rows = [{"Flavour": FLAVOR_MAP[code]["name"], "Code": code, "Unit Cost Price (₹)": float(FLAVOR_MAP[code]["cost_price"]), "Received": int(items_map[code]["rec"]) if (code in items_map and items_map[code].get("rec") is not None) else 0, "Damaged": int(items_map[code]["dam"]) if (code in items_map and items_map[code].get("dam") is not None) else 0} for code in FLAVOR_CODES]
 
-            st.write("Enter units received per flavour:")
+            pass
             stock_edited = st.data_editor(pd.DataFrame(grid_rows), column_config={"Flavour": st.column_config.TextColumn(disabled=True), "Code": st.column_config.TextColumn(disabled=True), "Unit Cost Price (₹)": st.column_config.NumberColumn(format="₹%,.2f", disabled=True), "Received": st.column_config.NumberColumn(min_value=0, step=1, format="%d"), "Damaged": st.column_config.NumberColumn(min_value=0, step=1, format="%d")}, hide_index=True, use_container_width=True, key=f"db_stock_editor{sk}")
 
             tot_received, tot_damaged = int(stock_edited["Received"].sum()), int(stock_edited["Damaged"].sum())
@@ -8391,7 +8417,7 @@ elif page == "Freezer Stock" and user_role == "admin":
                     )
 
     elif freezer_tab_choice == "Stock Audit (Physical Count)":
-        st.write("Log a new physical stock count, or view and edit a previously saved audit.")
+        pass
 
         audit_mode = st.radio(
             "Audit Action",
@@ -9700,12 +9726,12 @@ elif page == "Freezer Analysis" and user_role == "admin":
 
 elif page == "Stock Removed" and user_role == "admin":
     st.subheader("Stock Removed / Wastage Log")
-    st.caption("Record units removed from the freezer (damages, expiry, sampling, staff consumption, or supplier returns).")
+    pass
 
     rem_mode = st.radio("Mode", ["New Entry", "View Entries", "Edit Past Entry"], horizontal=True, key="rem_screen_mode")
 
     if rem_mode == "New Entry":
-        st.write("Enter details and specify quantities removed per flavour:")
+        pass
         c1, c2, c3, c4 = st.columns(4)
         with c1: removal_date = st.date_input("Removal Date", value=date.today(), key="new_rem_date", format="DD-MM-YYYY")
         with c2: location = st.text_input("Location", value=CITY, key="new_rem_loc")
@@ -9715,7 +9741,7 @@ elif page == "Stock Removed" and user_role == "admin":
         reason_for_removal = st.text_input("Reason for Removal (Mandatory)", key="new_rem_reason", placeholder="e.g. Broken packaging, expired batch, festival sampling...")
         rem_grid_rows = [{"Flavour": FLAVOR_MAP[code]["name"], "Code": code, "Unit Cost (₹)": float(FLAVOR_MAP[code]["cost_price"]), "Units Removed": 0} for code in FLAVOR_CODES]
 
-        st.write("Enter units removed per flavour:")
+        pass
         rem_editor_df = st.data_editor(pd.DataFrame(rem_grid_rows), column_config={"Flavour": st.column_config.TextColumn(disabled=True), "Code": st.column_config.TextColumn(disabled=True), "Unit Cost (₹)": st.column_config.NumberColumn(format="₹%,.2f", disabled=True), "Units Removed": st.column_config.NumberColumn(min_value=0, step=1, format="%d")}, hide_index=True, use_container_width=True, key="new_rem_editor")
 
         tot_rem_units = int(rem_editor_df["Units Removed"].sum())
@@ -9803,7 +9829,7 @@ elif page == "Stock Removed" and user_role == "admin":
             e_rem_reason = st.text_input("Reason for Removal", value=str(loaded_rem.get("reason_for_removal") or ""), key=f"edit_rem_reason_{loaded_rem_id}")
             edit_rem_rows = [{"Flavour": FLAVOR_MAP[code]["name"], "Code": code, "Unit Cost (₹)": float(FLAVOR_MAP[code]["cost_price"]), "Units Removed": int(loaded_rem.get(FLAVOR_MAP[code]["audit_col"], 0))} for code in FLAVOR_CODES]
 
-            st.write("Modify units removed per flavour:")
+            pass
             rem_edit_editor_df = st.data_editor(pd.DataFrame(edit_rem_rows), column_config={"Flavour": st.column_config.TextColumn(disabled=True), "Code": st.column_config.TextColumn(disabled=True), "Unit Cost (₹)": st.column_config.NumberColumn(format="₹%,.2f", disabled=True), "Units Removed": st.column_config.NumberColumn(min_value=0, step=1, format="%d")}, hide_index=True, use_container_width=True, key=f"edit_rem_editor_{loaded_rem_id}")
 
             e_tot_rem_units = int(rem_edit_editor_df["Units Removed"].sum())
@@ -9881,7 +9907,7 @@ elif page == "Stock Removed" and user_role == "admin":
 
 elif page == "Expenses" and user_role == "admin":
     st.subheader("Expenses & Payments Management")
-    st.caption("Manage supplier bills, operating expenses, payments (Cash vs UPI), and settlement balances.")
+    pass
 
     if "_pending_exp_nav_sec" in st.session_state:
         st.session_state["exp_nav_sec"] = st.session_state.pop("_pending_exp_nav_sec")
@@ -9994,7 +10020,7 @@ elif page == "Expenses" and user_role == "admin":
             if "_pending_ops_spend_to_load" in st.session_state:
                 _populate_expense_from_ops_spend(st.session_state.pop("_pending_ops_spend_to_load"))
 
-            st.write("Record a new bill or obligation incurred:")
+            pass
             pos_df = db_conn.query("SELECT id, order_date, location FROM purchase_orders ORDER BY order_date DESC;", ttl="0s") if db_conn else pd.DataFrame()
             po_opts = ["None"] + [f"PO #{r['id']} ({pd.to_datetime(r['order_date']).strftime('%d-%b')})" for _, r in pos_df.iterrows()] if not pos_df.empty else ["None"]
             staff_opts = load_active_staff_list()
@@ -10293,7 +10319,7 @@ elif page == "Expenses" and user_role == "admin":
 
                 pg_c1, pg_c2 = st.columns([3.8, 1.2])
                 with pg_c1:
-                    st.caption("💡 Actions per row: **✏️** Edit &nbsp;|&nbsp; **📋** Copy (Clone into New Expense) &nbsp;|&nbsp; **❌** Delete")
+                    pass
                 with pg_c2:
                     page_size = st.selectbox("Rows per page", [25, 50, 100, 500], index=0, key="exp_view_page_size", label_visibility="collapsed")
 
@@ -10365,7 +10391,7 @@ elif page == "Expenses" and user_role == "admin":
 
         if p_sub_mode == "Record New Payment":
             st.session_state.pop("_editing_payment_id", None)
-            st.write("Record a disbursement / payment against an existing bill:")
+            pass
             if expenses_summary_df.empty: st.info("No expenses found to make payment against.")
             else:
                 po_net_map = {}
@@ -10615,7 +10641,7 @@ elif page == "Expenses" and user_role == "admin":
 
                 p_pg1, p_pg2 = st.columns([3.8, 1.2])
                 with p_pg1:
-                    st.caption("💡 Actions per row: **✏️** Edit &nbsp;|&nbsp; **📋** Copy (Clone into New Payment) &nbsp;|&nbsp; **❌** Delete")
+                    pass
                 with p_pg2:
                     pay_page_size = st.selectbox("Rows per page", [25, 50, 100, 500], index=0, key="pay_view_page_size", label_visibility="collapsed")
 
@@ -10684,7 +10710,7 @@ elif page == "Expenses" and user_role == "admin":
     # SECTION 3: SUMMARY & DATE REPORTS
     # ==================================================================
     elif exp_nav == "📊 Summary & Date Reports":
-        st.write("Analyze expense obligations, actual disbursements, and settlement ratios over any time window:")
+        pass
         expenses_summary_df, payments_df = load_db_expenses_summary_df(), load_db_payments_df()
 
         if expenses_summary_df.empty and payments_df.empty: st.info("No expense or payment records found in database.")
@@ -10791,7 +10817,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
         st_mode = st.radio("Mode", ["View All Staff", "Add New Staff", "Edit Staff Profile & KYC"], horizontal=True, key="staff_dir_mode")
 
         if st_mode == "Add New Staff":
-            st.write("Register a new staff member and configure their starting compensation package:")
+            pass
 
             with st.form("new_staff_form"):
                 sc1, sc2, sc3 = st.columns(3)
@@ -11055,7 +11081,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                             st.error(f"Could not update staff profile: {e}")
 
     elif staff_tab_sel == "📅 Attendance & Leave":
-        st.write("Record and manage staff leaves and absences for payroll deductions and day-wise attendance:")
+        pass
 
         att_mode = st.radio("Action", ["Record Staff Leave / Absence", "View Attendance & Leaves", "Edit Past Leave Entry"], horizontal=True, key="att_sub_nav")
 
@@ -11173,7 +11199,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                         st.error(f"Could not update attendance: {e}")
 
     elif staff_tab_sel == "⚙️ Compensation Plans":
-        st.write("View compensation history, edit the currently active plan, or add a new effective-dated plan:")
+        pass
 
         if staff_df.empty:
             st.info("No staff records found in database.")
@@ -11379,7 +11405,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
             # --------------------------------------------------------------
             st.markdown("---")
             st.markdown("#### Add New Compensation Plan")
-            st.caption("A new plan starts from its Effective From date and preserves the existing plan in history.")
+            pass
 
             source_plan = active_plan if active_plan is not None else target_s_row
             source_food_mode = str(source_plan.get("food_tea_allowance_mode") or "monthly").strip().lower()
@@ -11494,7 +11520,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                     st.error(f"Could not save compensation plan: {e}")
 
     elif staff_tab_sel == "🍱 Monthly Food Allowance":
-        st.write("Track Monthly Food Allowance entitlement (pro-rated by joining date & plan) vs. actual disbursements in the Expenses table.")
+        pass
 
         mfa_filter_mode = st.radio(
             "Filter By",
@@ -11675,7 +11701,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 st.error(f"Could not load Monthly Food Allowance records: {e}")
 
     elif staff_tab_sel == "💵 Monthly Dues & Settlement":
-        st.write("Calculate monthly dues with fixed salary, commissions where applicable, applicable daily allowances, and deductions backed by the Payments table:")
+        pass
 
         now = date.today()
         settlement_filter_mode = st.radio(
@@ -11719,7 +11745,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
             m_start_dt, m_end_dt = m_end_dt, m_start_dt
 
         period_day_count = (m_end_dt - m_start_dt).days + 1
-        st.caption(f"Calculating for period: **{m_start_dt.strftime('%d-%b-%y')}** to **{m_end_dt.strftime('%d-%b-%y')}** ({period_day_count} calendar days)")
+        pass
 
         daily_month_df = pd.DataFrame()
         att_month_df = pd.DataFrame()
@@ -11781,10 +11807,45 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 monthly_food = float(_num(s_row.get("monthly_food_tea_allowance")))
                 monthly_fuel = float(_num(s_row.get("monthly_fuel_allowance")))
 
+                emp_start_m = m_start_dt
+                emp_end_m = m_end_dt
+                doj_val_m = s_row.get("date_of_joining")
+                dol_val_m = s_row.get("date_of_leaving")
+                if pd.notna(doj_val_m) and str(doj_val_m).strip():
+                    try:
+                        emp_start_m = max(emp_start_m, pd.to_datetime(doj_val_m).date())
+                    except Exception:
+                        pass
+                if pd.notna(dol_val_m) and str(dol_val_m).strip():
+                    try:
+                        emp_end_m = min(emp_end_m, pd.to_datetime(dol_val_m).date())
+                    except Exception:
+                        pass
+
+                if emp_start_m > emp_end_m:
+                    detailed_staff_logs[st_name] = pd.DataFrame()
+                    detailed_staff_payments[st_name] = pd.DataFrame()
+                    continue
+
                 st_shifts = daily_month_df[daily_month_df["staff_name"] == st_name].copy() if not daily_month_df.empty else pd.DataFrame()
+                if not st_shifts.empty:
+                    sh_dts_m = pd.to_datetime(st_shifts["entry_date"]).dt.date
+                    st_shifts = st_shifts[(sh_dts_m >= emp_start_m) & (sh_dts_m <= emp_end_m)]
+
                 st_leaves = att_month_df[att_month_df["staff_name"] == st_name].copy() if not att_month_df.empty else pd.DataFrame()
+                if not st_leaves.empty:
+                    lv_dts_m = pd.to_datetime(st_leaves["attendance_date"]).dt.date
+                    st_leaves = st_leaves[(lv_dts_m >= emp_start_m) & (lv_dts_m <= emp_end_m)]
+
                 st_payments = staff_payments_df[staff_payments_df["staff_name"] == st_name].copy() if not staff_payments_df.empty else pd.DataFrame()
-                st_exp = exp_ledger_df[exp_ledger_df["staff_name"] == st_name] if not exp_ledger_df.empty else pd.DataFrame()
+                if not st_payments.empty:
+                    py_dts_m = pd.to_datetime(st_payments["payment_date"]).dt.date
+                    st_payments = st_payments[(py_dts_m >= emp_start_m) & (py_dts_m <= emp_end_m)]
+
+                st_exp = exp_ledger_df[exp_ledger_df["staff_name"] == st_name].copy() if not exp_ledger_df.empty else pd.DataFrame()
+                if not st_exp.empty:
+                    ex_dts_m = pd.to_datetime(st_exp["expense_date"]).dt.date
+                    st_exp = st_exp[(ex_dts_m >= emp_start_m) & (ex_dts_m <= emp_end_m)]
 
                 # Non-cart roles do not depend on cart entries. Ops Coordinator uses
                 # calendar-month pro-rata salary starting from Date of Joining when needed.
@@ -12067,7 +12128,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
             tab_drill1, tab_drill2 = st.tabs(["📋 Day-Wise Shifts & Attendance", "💳 Labour Payments & Deductions Disbursed"])
 
             with tab_drill1:
-                st.write(f"Itemized daily shifts and attendance records for **{sel_staff_drill}**:")
+                pass
                 if target_staff_log.empty:
                     st.info(f"No shifts or leave records logged for {sel_staff_drill} in {settlement_period_label}.")
                 else:
@@ -12087,7 +12148,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                     )
 
             with tab_drill2:
-                st.write(f"Actual disbursements and deductions recorded in `expense_payments` for **{sel_staff_drill}**:")
+                pass
                 if target_staff_pay.empty:
                     st.info(f"No disbursements / payments recorded for {sel_staff_drill} in {settlement_period_label}.")
                 else:
@@ -12250,7 +12311,7 @@ elif page == "Dashboard" and user_role == "admin":
             st.error("'From' date is after 'To' date - swap them and click Apply again.")
             range_start, range_end = range_end, range_start
             
-        st.caption(f"Showing performance for: **{range_start.strftime('%d-%b-%y')}** – **{range_end.strftime('%d-%b-%y')}**")
+        pass
 
         range_df = daily_df[(daily_df["Date"].dt.date >= range_start) & (daily_df["Date"].dt.date <= range_end)] if not daily_df.empty else daily_df
         range_exp = exp_df[(exp_df["Date"].dt.date >= range_start) & (exp_df["Date"].dt.date <= range_end)] if not exp_df.empty else exp_df
