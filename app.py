@@ -5880,6 +5880,45 @@ elif page == "Bulk Orders & Quotes" and user_role == "admin":
         for c in FLAVOR_CODES:
             st.session_state[f"bulk_qty_{c}"] = int(new_map.get(c, 0))
 
+    def _cb_set_bulk_preset_pieces(pcs_val):
+        st.session_state["bulk_target_pieces"] = int(pcs_val)
+        _trigger_bulk_redistribution()
+
+    def _cb_set_bulk_preset_budget(bdg_val):
+        st.session_state["bulk_target_budget"] = float(bdg_val)
+        _trigger_bulk_redistribution()
+
+    def _cb_apply_bulk_tier(disc_val, qty_dict):
+        st.session_state["bulk_discount_pct"] = float(disc_val)
+        for c in FLAVOR_CODES:
+            st.session_state[f"bulk_qty_{c}"] = int(qty_dict.get(c, 0))
+
+    def _cb_switch_bulk_doc_type(new_dtype):
+        st.session_state["bulk_doc_type"] = new_dtype
+        if new_dtype == "INVOICE":
+            old_qno = str(st.session_state.get("bulk_quote_no", ""))
+            st.session_state["bulk_quote_no"] = old_qno.replace("EST-", "INV-") if old_qno.startswith("EST-") else f"INV-{date.today().strftime('%Y%m%d')}-{datetime.now().strftime('%H%M')}"
+            st.session_state["bulk_status_sel"] = "Invoiced / Delivered"
+
+    def _cb_load_bulk_quote_for_edit(qid_val, dtype_val, qno_val, cname_val, cphone_val, caddr_val, dpct_val, adv_val, notes_val, qty_dict, as_invoice=False):
+        st.session_state["bulk_editing_id"] = qid_val
+        st.session_state["bulk_doc_type"] = "INVOICE" if as_invoice else dtype_val
+        if as_invoice:
+            st.session_state["bulk_quote_no"] = qno_val.replace("EST-", "INV-") if qno_val.startswith("EST-") else f"INV-{qno_val}"
+            st.session_state["bulk_status_sel"] = "Invoiced / Delivered"
+        else:
+            st.session_state["bulk_quote_no"] = qno_val
+        st.session_state["bulk_cust_name"] = cname_val
+        st.session_state["bulk_cust_phone"] = cphone_val
+        st.session_state["bulk_cust_addr"] = caddr_val
+        st.session_state["bulk_discount_pct"] = float(dpct_val)
+        st.session_state["bulk_advance_paid"] = float(adv_val)
+        st.session_state["bulk_notes"] = notes_val
+        for c in FLAVOR_CODES:
+            q_v = int(qty_dict.get(c, 0))
+            st.session_state[f"bulk_qty_{c}"] = q_v
+            st.session_state[f"bulk_chk_{c}"] = (q_v > 0)
+
     bulk_tab1, bulk_tab2 = st.tabs([
         "🧮 Estimate & Invoice Builder",
         "🗂️ Saved Estimates & Invoices History",
@@ -5960,17 +5999,23 @@ elif page == "Bulk Orders & Quotes" and user_role == "admin":
             if "Pieces" in planning_mode:
                 for idx_p, preset_pcs in enumerate([100, 200, 300, 400]):
                     with qp_cols[idx_p]:
-                        if st.button(f"⚡ {preset_pcs} Pieces", use_container_width=True, key=f"preset_pcs_{preset_pcs}"):
-                            st.session_state["bulk_target_pieces"] = preset_pcs
-                            _trigger_bulk_redistribution()
-                            st.rerun()
+                        st.button(
+                            f"⚡ {preset_pcs} Pieces",
+                            use_container_width=True,
+                            key=f"preset_pcs_{preset_pcs}",
+                            on_click=_cb_set_bulk_preset_pieces,
+                            args=(preset_pcs,),
+                        )
             else:
                 for idx_b, preset_b in enumerate([5000, 10000, 15000, 25000]):
                     with qp_cols[idx_b]:
-                        if st.button(f"⚡ ₹{preset_b:,} Budget", use_container_width=True, key=f"preset_bdg_{preset_b}"):
-                            st.session_state["bulk_target_budget"] = float(preset_b)
-                            _trigger_bulk_redistribution()
-                            st.rerun()
+                        st.button(
+                            f"⚡ ₹{preset_b:,} Budget",
+                            use_container_width=True,
+                            key=f"preset_bdg_{preset_b}",
+                            on_click=_cb_set_bulk_preset_budget,
+                            args=(preset_b,),
+                        )
             with qp_cols[4]:
                 if st.button("🔄 Re-Distribute Counts", type="primary", use_container_width=True, key="btn_manual_redist"):
                     _trigger_bulk_redistribution()
@@ -6011,11 +6056,13 @@ elif page == "Bulk Orders & Quotes" and user_role == "admin":
                             """,
                             unsafe_allow_html=True,
                         )
-                        if st.button(f"Apply {t_disc:.0f}% Offer", key=f"apply_tier_{int(t_disc)}", use_container_width=True):
-                            st.session_state["bulk_discount_pct"] = float(t_disc)
-                            for c in FLAVOR_CODES:
-                                st.session_state[f"bulk_qty_{c}"] = int(sim_map.get(c, 0))
-                            st.rerun()
+                        st.button(
+                            f"Apply {t_disc:.0f}% Offer",
+                            key=f"apply_tier_{int(t_disc)}",
+                            use_container_width=True,
+                            on_click=_cb_apply_bulk_tier,
+                            args=(float(t_disc), sim_map),
+                        )
 
         # STEP 2: Interactive Flavour Checkboxes & Editable Quantities Table
         with st.container(border=True):
@@ -6405,16 +6452,21 @@ elif page == "Bulk Orders & Quotes" and user_role == "admin":
 
             with act4:
                 if doc_type_sel == "ESTIMATE":
-                    if st.button("🧾 Convert to Invoice Mode", use_container_width=True, key="btn_switch_to_inv"):
-                        st.session_state["bulk_doc_type"] = "INVOICE"
-                        old_qno = str(st.session_state.get("bulk_quote_no", ""))
-                        st.session_state["bulk_quote_no"] = old_qno.replace("EST-", "INV-") if old_qno.startswith("EST-") else f"INV-{date.today().strftime('%Y%m%d')}-{datetime.now().strftime('%H%M')}"
-                        st.session_state["bulk_status_sel"] = "Invoiced / Delivered"
-                        st.rerun()
+                    st.button(
+                        "🧾 Convert to Invoice Mode",
+                        use_container_width=True,
+                        key="btn_switch_to_inv",
+                        on_click=_cb_switch_bulk_doc_type,
+                        args=("INVOICE",),
+                    )
                 else:
-                    if st.button("📝 Switch to Estimate Mode", use_container_width=True, key="btn_switch_to_est"):
-                        st.session_state["bulk_doc_type"] = "ESTIMATE"
-                        st.rerun()
+                    st.button(
+                        "📝 Switch to Estimate Mode",
+                        use_container_width=True,
+                        key="btn_switch_to_est",
+                        on_click=_cb_switch_bulk_doc_type,
+                        args=("ESTIMATE",),
+                    )
 
     with bulk_tab2:
         st.markdown("#### 🗂️ Saved Bulk Order Estimates & Invoices")
@@ -6508,38 +6560,34 @@ elif page == "Bulk Orders & Quotes" and user_role == "admin":
                     with hc3:
                         b_col1, b_col2, b_col3, b_col4 = st.columns(4, gap="small")
                         with b_col1:
-                            if st.button("✏️ Edit", key=f"edit_bq_{qid}", use_container_width=True):
-                                st.session_state["bulk_editing_id"] = qid
-                                st.session_state["bulk_doc_type"] = q_dtype
-                                st.session_state["bulk_quote_no"] = q_no
-                                st.session_state["bulk_cust_name"] = q_cname
-                                st.session_state["bulk_cust_phone"] = q_cphone
-                                st.session_state["bulk_cust_addr"] = str(qrow.get("customer_address") or "")
-                                st.session_state["bulk_discount_pct"] = float(q_dpct)
-                                st.session_state["bulk_advance_paid"] = float(q_adv)
-                                st.session_state["bulk_notes"] = str(qrow.get("notes") or "")
-                                for c in FLAVOR_CODES:
-                                    q_v = int(row_qty_map.get(c, 0))
-                                    st.session_state[f"bulk_qty_{c}"] = q_v
-                                    st.session_state[f"bulk_chk_{c}"] = (q_v > 0)
-                                st.rerun()
+                            st.button(
+                                "✏️ Edit",
+                                key=f"edit_bq_{qid}",
+                                use_container_width=True,
+                                on_click=_cb_load_bulk_quote_for_edit,
+                                args=(
+                                    qid, q_dtype, q_no, q_cname, q_cphone,
+                                    str(qrow.get("customer_address") or ""),
+                                    float(q_dpct), float(q_adv),
+                                    str(qrow.get("notes") or ""),
+                                    row_qty_map, False,
+                                ),
+                            )
                         with b_col2:
-                            if st.button("🧾 To Inv", key=f"conv_bq_{qid}", use_container_width=True, help="Load into builder as an Invoice to edit delivered quantities"):
-                                st.session_state["bulk_editing_id"] = qid
-                                st.session_state["bulk_doc_type"] = "INVOICE"
-                                st.session_state["bulk_quote_no"] = q_no.replace("EST-", "INV-") if q_no.startswith("EST-") else f"INV-{q_no}"
-                                st.session_state["bulk_cust_name"] = q_cname
-                                st.session_state["bulk_cust_phone"] = q_cphone
-                                st.session_state["bulk_cust_addr"] = str(qrow.get("customer_address") or "")
-                                st.session_state["bulk_discount_pct"] = float(q_dpct)
-                                st.session_state["bulk_advance_paid"] = float(q_adv)
-                                st.session_state["bulk_status_sel"] = "Invoiced / Delivered"
-                                st.session_state["bulk_notes"] = str(qrow.get("notes") or "")
-                                for c in FLAVOR_CODES:
-                                    q_v = int(row_qty_map.get(c, 0))
-                                    st.session_state[f"bulk_qty_{c}"] = q_v
-                                    st.session_state[f"bulk_chk_{c}"] = (q_v > 0)
-                                st.rerun()
+                            st.button(
+                                "🧾 To Inv",
+                                key=f"conv_bq_{qid}",
+                                use_container_width=True,
+                                help="Load into builder as an Invoice to edit delivered quantities",
+                                on_click=_cb_load_bulk_quote_for_edit,
+                                args=(
+                                    qid, q_dtype, q_no, q_cname, q_cphone,
+                                    str(qrow.get("customer_address") or ""),
+                                    float(q_dpct), float(q_adv),
+                                    str(qrow.get("notes") or ""),
+                                    row_qty_map, True,
+                                ),
+                            )
                         with b_col3:
                             row_pdf_payload = {
                                 "doc_type": q_dtype,
