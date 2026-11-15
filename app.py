@@ -184,19 +184,28 @@ div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] p {
 }
 
 /* ======================================================================
-   UNIFIED TOP COMMAND BAR — ATTACHED #E4763D SWATCH & BLACK/DARK TEXT
+   UNIFIED TOP COMMAND BAR — WARM GOLDEN SAFFRON-AMBER VARIANT (#F8BC6B -> #F1A245 -> #DC8828)
+   (Distinct from the #E4763D Terracotta Set 1 buttons while in the same warm theme)
    ====================================================================== */
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) {
-    background: linear-gradient(135deg, #EE854F 0%, #E4763D 52%, #CE622B 100%) !important;
+    background: linear-gradient(135deg, #F9C57A 0%, #F1A245 52%, #D98224 100%) !important;
     border: 2px solid #9E471B !important;
     border-radius: 12px !important;
     padding: 10px 16px !important;
-    margin-bottom: 8px !important;
+    margin-bottom: 10px !important;
     align-items: center !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.55),
         0 3px 0 #9E471B,
         0 6px 16px rgba(158, 71, 27, 0.18) !important;
+}
+/* Hide zero-height deltaPath spacer elements used to force-close popovers on selection */
+div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stElementContainer"]:has(.kulfi-pop-spacer) {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 /* Ensure every column and wrapper inside the top bar is strictly centered with zero extra gap */
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) > div[data-testid="stColumn"],
@@ -351,26 +360,30 @@ div[data-testid="stElementContainer"]:has(.kulfi-card-set-4) {
     padding: 0 !important;
 }
 
-/* Section Headers for the 4 Landing Page Sets */
+/* Section Headers for the 4 Landing Page Sets — Warm Saffron-Champagne Banner Rows */
 .launchpad-section-hdr.set-1 {
     color: #111111 !important;
-    background: linear-gradient(90deg, rgba(228, 118, 61, 0.26) 0%, rgba(244, 242, 232, 0) 100%) !important;
-    border-left: 4px solid #E4763D !important;
+    background: linear-gradient(90deg, #F9C57A 0%, #F5DCA8 60%, #FAF8F1 100%) !important;
+    border: 1px solid #D98224 !important;
+    border-left: 4.5px solid #9E471B !important;
 }
 .launchpad-section-hdr.set-2 {
     color: #111111 !important;
-    background: linear-gradient(90deg, rgba(245, 158, 11, 0.22) 0%, rgba(244, 242, 232, 0) 100%) !important;
-    border-left: 4px solid #D97706 !important;
+    background: linear-gradient(90deg, #FDE6B8 0%, #FAF0D7 65%, #FAF8F1 100%) !important;
+    border: 1px solid #D98224 !important;
+    border-left: 4.5px solid #D97706 !important;
 }
 .launchpad-section-hdr.set-3 {
     color: #111111 !important;
-    background: linear-gradient(90deg, rgba(228, 118, 61, 0.18) 0%, rgba(244, 242, 232, 0) 100%) !important;
-    border-left: 4px solid #C85A22 !important;
+    background: linear-gradient(90deg, #F8D4B4 0%, #F6E6D5 65%, #FAF8F1 100%) !important;
+    border: 1px solid #E4763D !important;
+    border-left: 4.5px solid #C85A22 !important;
 }
 .launchpad-section-hdr.set-4 {
     color: #111111 !important;
-    background: linear-gradient(90deg, #D1FAE5 0%, rgba(209, 250, 229, 0) 100%) !important;
-    border-left: 4px solid #22C55E !important;
+    background: linear-gradient(90deg, #C6F6D5 0%, #E6FAEE 65%, #FAFDFB 100%) !important;
+    border: 1px solid #4ADE80 !important;
+    border-left: 4.5px solid #16A34A !important;
 }
 
 /* Directly Clickable 3D Cards — Base Geometry & Terracotta #E4763D Default */
@@ -517,23 +530,23 @@ div[class*="st-key-launchpad_card_kulfi_card_set_1_"] button:hover {
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 4px 0 #9E471B, 0 8px 16px rgba(228, 118, 61, 0.25) !important;
 }
 
-/* Set 2 Buttons: Stock & Freezer — Soft Warm Saffron-Gold (#FDE68A -> #F59E0B) with Black Text */
+/* Set 2 Buttons: Stock & Freezer — Warm Soft Apricot-Sand (#FCE3C3 -> #F6C28B -> #EDA964) with Black Text */
 div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-2) .stButton button,
 div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-2):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button,
 div[class*="st-key-launchpad_card_kulfi_card_set_2_"] button {
-    background: linear-gradient(135deg, #FDE68A 0%, #FBBF24 55%, #F59E0B 100%) !important;
-    border: 1.5px solid #B45309 !important;
+    background: linear-gradient(135deg, #FCE3C3 0%, #F6C28B 55%, #EDA964 100%) !important;
+    border: 1.5px solid #C86D25 !important;
     border-left: 4.5px solid #E4763D !important;
     color: #111111 !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), 0 3px 0 #B45309, 0 5px 12px rgba(245, 158, 11, 0.18) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65), 0 3px 0 #B45309, 0 5px 12px rgba(228, 118, 61, 0.15) !important;
 }
 div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-2) .stButton button:hover,
 div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-2):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button:hover,
 div[class*="st-key-launchpad_card_kulfi_card_set_2_"] button:hover {
-    background: linear-gradient(135deg, #FEF08A 0%, #FDE68A 55%, #FBBF24 100%) !important;
+    background: linear-gradient(135deg, #FDF0DC 0%, #FCE3C3 55%, #F6C28B 100%) !important;
     border-color: #111111 !important;
     border-left: 4.5px solid #111111 !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.70), 0 4px 0 #B45309, 0 8px 16px rgba(245, 158, 11, 0.24) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.80), 0 4px 0 #B45309, 0 8px 16px rgba(228, 118, 61, 0.22) !important;
 }
 
 /* Set 3 Buttons: POs, Expenses & Cash — Rich Cream-Ivory (#FAF8F1 -> #E8E2CE) Framed in #E4763D with Black Text */
@@ -4626,8 +4639,12 @@ else:
             st.session_state["page_nav"] = "Home"
             st.session_state["dash_sub_page"] = None
             st.rerun()
+    _pop_nonce = int(st.session_state.get("_cmd_pop_nonce", 0))
+    _zwsp = "\u200b" * (_pop_nonce % 4)
     with cmd_c2:
-        with st.popover("⇄ Switch Screen", use_container_width=True):
+        for _sp_i in range(_pop_nonce % 3):
+            st.markdown(f"<span class='kulfi-pop-spacer' data-sp='{_sp_i}'></span>", unsafe_allow_html=True)
+        with st.popover(f"⇄ Switch Screen{_zwsp}", use_container_width=True):
             st.markdown(
                 "<div style='font-family:Fraunces,serif;font-size:13.5px;font-weight:800;color:#111111;"
                 "margin-bottom:6px;border-bottom:1.5px solid #E4763D;padding-bottom:4px;'>"
@@ -4639,15 +4656,18 @@ else:
                 with sw_cols[_idx % 2]:
                     if st.button(
                         nav_labels.get(_opt, _opt),
-                        key=f"top_pop_nav_{_idx}_{_opt}",
+                        key=f"top_pop_nav_{_pop_nonce}_{_idx}_{_opt}",
                         type="primary" if page == _opt else "secondary",
                         use_container_width=True,
                     ):
+                        st.session_state["_cmd_pop_nonce"] = _pop_nonce + 1
                         st.session_state["page_nav"] = _opt
                         st.session_state["dash_sub_page"] = None
                         st.rerun()
     with cmd_c3:
-        with st.popover(f"📍 {loc_badge}", use_container_width=True):
+        for _sp_j in range(_pop_nonce % 3):
+            st.markdown(f"<span class='kulfi-pop-spacer' data-sp-loc='{_sp_j}'></span>", unsafe_allow_html=True)
+        with st.popover(f"📍 {loc_badge}{_zwsp}", use_container_width=True):
             st.markdown(
                 "<div style='font-family:Fraunces,serif;font-size:13.5px;font-weight:800;color:#111111;"
                 "margin-bottom:6px;border-bottom:1.5px solid #E4763D;padding-bottom:4px;'>"
@@ -4658,10 +4678,11 @@ else:
                 _is_cur_loc = (st.session_state.get("current_location") == _loc_opt)
                 if st.button(
                     f"📍 {_loc_opt}",
-                    key=f"top_pop_loc_{_lidx}",
+                    key=f"top_pop_loc_{_pop_nonce}_{_lidx}",
                     type="primary" if _is_cur_loc else "secondary",
                     use_container_width=True,
                 ):
+                    st.session_state["_cmd_pop_nonce"] = _pop_nonce + 1
                     st.session_state["_pending_loc_change"] = _loc_opt
                     st.rerun()
     with cmd_c4:
