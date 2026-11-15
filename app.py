@@ -42,16 +42,16 @@ except ImportError:
 st.set_page_config(page_title="Kulfi Ops", page_icon="🍦", layout="wide", initial_sidebar_state="collapsed")
 
 # ----------------------------------------------------------------------
-# GLOBAL UI STYLES — WARM SAFFRON-AMBER (#F1A245) & SOFT CREAM-IVORY (#F4F2E8) SUITE
+# GLOBAL UI STYLES — SOFT DUSTY ROSEWOOD (#98535C / #8A474F / #7B3A41) & WARM IVORY (3D SUITE)
 # ----------------------------------------------------------------------
 st.html("""
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&family=Manrope:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-/* Outer Page Backdrop in Soft Cream-Ivory (#F4F2E8) */
+/* Soft Warm Blush-Sand Outer Backdrop so the 80% Framed Screen Stands Out */
 .stApp, [data-testid="stAppViewContainer"], .main {
-    background: linear-gradient(135deg, #F4F2E8 0%, #ECEAD9 55%, #F4F2E8 100%) !important;
-    color: #1F1209 !important;
+    background: linear-gradient(135deg, #F2E7E4 0%, #EADBD7 50%, #E3D0CB 100%) !important;
+    color: #3D1F21 !important;
 }
 
 /* Completely hide the left sidebar and sidebar toggle button */
@@ -63,16 +63,16 @@ section[data-testid="stSidebar"],
     min-width: 0 !important;
 }
 
-/* Compact & Nicely Centered ~80% Page Layout with #F1A245 Aesthetic Border */
+/* Compact & Nicely Centered ~80% Page Layout with Aesthetic Double-Framed Border */
 .block-container,
 div[data-testid="stMainBlockContainer"] {
-    background: linear-gradient(180deg, #FCFBF7 0%, #F4F2E8 100%) !important;
-    border: 2.5px solid #F1A245 !important;
-    outline: 4px solid rgba(254, 153, 35, 0.18) !important;
+    background: linear-gradient(180deg, #FFFDFA 0%, #FAF4F2 100%) !important;
+    border: 2px solid #8A474F !important;
+    outline: 4px solid rgba(138, 71, 79, 0.12) !important;
     border-radius: 18px !important;
     box-shadow:
-        inset 0 0 0 2px #FFFDF7,
-        0 10px 28px rgba(183, 110, 25, 0.14) !important;
+        inset 0 0 0 2px #F2D7C4,
+        0 12px 32px rgba(86, 44, 49, 0.14) !important;
     padding-top: 1.35rem !important;
     padding-bottom: 1.6rem !important;
     padding-left: 1.6rem !important;
@@ -103,13 +103,13 @@ html, body, [class*="css"] {
 }
 h1, h2, h3, h4 {
     font-family: 'Fraunces', serif !important;
-    color: #1F1209 !important;
+    color: #633339 !important;
     letter-spacing: -0.01em;
 }
 h1 { font-size: 1.4rem !important; margin-top: 0 !important; }
 h2 { font-size: 1.18rem !important; }
 h3 { font-size: 1.04rem !important; }
-p, span, label, .stMarkdown { color: #1F1209; }
+p, span, label, .stMarkdown { color: #3D1F21; }
 
 /* Hide stepper buttons on number inputs */
 input[type=number]::-webkit-inner-spin-button, 
@@ -120,83 +120,81 @@ input[type=number]::-webkit-outer-spin-button {
 input[type=number] { -moz-appearance: textfield !important; }
 div[data-testid="stNumberInput"] button { display: none !important; }
 
-/* Layered Containers, Expanders & Tabs with #F1A245 Borders */
+/* Crisp White & Rosewood Layered Containers, Expanders & Tabs */
 div[data-testid="stVerticalBlockBorderWrapper"] {
-    background: #FCFBF7 !important;
-    border: 1.5px solid #F1A245 !important;
-    border-top: 3.5px solid #F1A245 !important;
+    background: #FFFFFF !important;
+    border: 1.5px solid #E2CECC !important;
+    border-top: 3px solid #8A474F !important;
     border-radius: 12px !important;
-    box-shadow: 0 3px 12px rgba(183, 110, 25, 0.08) !important;
+    box-shadow: 0 3px 12px rgba(142, 65, 69, 0.07) !important;
     padding: 12px 14px !important;
 }
 div[data-testid="stExpander"] {
-    background: #FCFBF7 !important;
-    border: 1.5px solid #F1A245 !important;
+    background: #FFFFFF !important;
+    border: 1.5px solid #E2CECC !important;
     border-radius: 10px !important;
-    box-shadow: 0 2px 8px rgba(183, 110, 25, 0.07) !important;
+    box-shadow: 0 2px 8px rgba(142, 65, 69, 0.06) !important;
     overflow: hidden;
 }
 div[data-testid="stExpander"] summary {
-    background: linear-gradient(90deg, #FDAA48 0%, #F1A245 100%) !important;
-    border-bottom: 1.5px solid #AE7532 !important;
+    background: linear-gradient(90deg, #98535C 0%, #7B3A41 100%) !important;
     padding: 8px 14px !important;
     font-weight: 800 !important;
-    color: #1F1209 !important;
+    color: #FFFFFF !important;
 }
 div[data-testid="stExpander"] summary p,
 div[data-testid="stExpander"] summary span,
 div[data-testid="stExpander"] summary svg {
-    color: #1F1209 !important;
-    fill: #1F1209 !important;
-    font-weight: 800 !important;
+    color: #FFF7F5 !important;
+    fill: #FFF7F5 !important;
 }
 div[data-testid="stTabs"] [data-baseweb="tab-list"] {
     gap: 8px !important;
-    background: #F4F2E8 !important;
+    background: #F2E4E2 !important;
     padding: 5px 6px !important;
     border-radius: 10px !important;
-    border: 1.5px solid #F1A245 !important;
+    border: 1px solid #E2CECC !important;
 }
 div[data-testid="stTabs"] button[data-baseweb="tab"] {
     background: #FFFFFF !important;
-    border: 1.5px solid #F1A245 !important;
+    border: 1px solid #CFAFB0 !important;
     border-radius: 8px !important;
     padding: 6px 14px !important;
     font-weight: 800 !important;
-    color: #1F1209 !important;
-    box-shadow: 0 2px 0 #AE7532 !important;
+    color: #633339 !important;
+    box-shadow: 0 2px 0 #B89294 !important;
     transition: all 0.14s ease !important;
 }
 div[data-testid="stTabs"] button[data-baseweb="tab"] p {
-    color: #1F1209 !important;
+    color: #633339 !important;
     font-weight: 800 !important;
 }
 div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] {
-    background: linear-gradient(180deg, #FDAA48 0%, #F1A245 100%) !important;
-    color: #1F1209 !important;
-    border-color: #AE7532 !important;
-    box-shadow: 0 2px 0 #AE7532, 0 4px 10px rgba(183, 110, 25, 0.22) !important;
+    background: linear-gradient(180deg, #98535C 0%, #7B3A41 100%) !important;
+    color: #FFFFFF !important;
+    border-color: #E8C5B0 !important;
+    box-shadow: 0 2px 0 #562C31, 0 4px 10px rgba(142, 65, 69, 0.18) !important;
 }
 div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] p {
-    color: #1F1209 !important;
-    font-weight: 900 !important;
+    color: #FFFFFF !important;
 }
 
 /* ======================================================================
-   UNIFIED TOP COMMAND BAR — WARM SAFFRON-AMBER (#F1A245) & CREAM-IVORY
+   UNIFIED TOP COMMAND BAR — EXACT DUSTY ROSEWOOD SWATCH & CENTERED TEXT
    ====================================================================== */
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) {
-    background: linear-gradient(135deg, #FDAA48 0%, #F1A245 55%, #D9923E 100%) !important;
-    border: 2px solid #AE7532 !important;
+    background: linear-gradient(135deg, #98535C 0%, #8A474F 52%, #7B3A41 100%) !important;
+    border: 1.5px solid #E6C8B8 !important;
     border-radius: 12px !important;
     padding: 10px 16px !important;
-    margin-bottom: 10px !important;
+    margin-bottom: 8px !important;
     align-items: center !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.45),
-        0 3px 0 #AE7532,
-        0 6px 16px rgba(183, 110, 25, 0.18) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.20),
+        0 3px 0 #562C31,
+        0 6px 16px rgba(129, 57, 61, 0.16) !important;
 }
+/* Ensure every column and wrapper inside the top bar is strictly centered with zero extra gap */
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) > div[data-testid="stColumn"],
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) > div[data-testid="column"] {
     display: flex !important;
@@ -225,9 +223,9 @@ div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid=
     width: 36px;
     height: 36px;
     border-radius: 9px;
-    background: #F4F2E8;
-    border: 1.5px solid #AE7532;
-    box-shadow: 0 2px 5px rgba(31, 18, 9, 0.18);
+    background: linear-gradient(145deg, #A45A63 0%, #773D44 100%);
+    border: 1px solid #F2DEC8;
+    box-shadow: 0 2px 5px rgba(88, 40, 43, 0.30);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -244,41 +242,42 @@ div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid=
 }
 .kulfi-cmd-title {
     font-family: 'Fraunces', serif !important;
-    font-size: 1.14rem !important;
-    font-weight: 800 !important;
-    color: #1F1209 !important;
+    font-size: 1.12rem !important;
+    font-weight: 700 !important;
+    color: #FFFFFF !important;
     letter-spacing: 0.01em;
     line-height: 1.15 !important;
     margin: 0 !important;
     padding: 0 !important;
     white-space: nowrap;
+    text-shadow: 0 1px 2px rgba(61, 31, 33, 0.30);
 }
 .kulfi-cmd-sub {
     font-size: 10.5px !important;
-    font-weight: 800 !important;
-    color: #3B210B !important;
+    font-weight: 700 !important;
+    color: #F7E4D4 !important;
     letter-spacing: 0.03em;
     line-height: 1.15 !important;
     margin: 2px 0 0 0 !important;
     padding: 0 !important;
 }
 
-/* Top Command Bar 3D Buttons — Cream-Ivory (#F4F2E8) on Saffron Bar for Maximum Contrast */
+/* Top Command Bar 3D Buttons — Strictly 38px Tall, Dusty Rosewood & Crisp White */
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton button,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button {
     min-height: 38px !important;
     height: 38px !important;
     padding: 0 12px !important;
     font-size: 12.5px !important;
-    font-weight: 800 !important;
+    font-weight: 700 !important;
     border-radius: 8px !important;
-    border: 1.5px solid #AE7532 !important;
-    background: linear-gradient(180deg, #FFFFFF 0%, #F4F2E8 100%) !important;
-    color: #1F1209 !important;
+    border: 1px solid #EBCBB8 !important;
+    background: linear-gradient(180deg, #A45A63 0%, #773D44 100%) !important;
+    color: #FFFFFF !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.85),
-        0 2px 0 #AE7532,
-        0 3px 8px rgba(31, 18, 9, 0.14) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.22),
+        0 2px 0 #562C31,
+        0 3px 8px rgba(61, 31, 33, 0.22) !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -290,47 +289,47 @@ div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton but
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button p,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button span,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button svg {
-    color: #1F1209 !important;
-    fill: #1F1209 !important;
-    font-weight: 800 !important;
+    color: #FFFFFF !important;
+    fill: #F7E4D4 !important;
+    font-weight: 700 !important;
     font-size: 12.5px !important;
 }
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton button:hover,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button:hover {
-    background: linear-gradient(180deg, #FFF7E8 0%, #FFE4B5 100%) !important;
-    border-color: #1F1209 !important;
-    color: #1F1209 !important;
+    background: linear-gradient(180deg, #B0585C 0%, #8A474F 100%) !important;
+    border-color: #FFF2E6 !important;
+    color: #FFFFFF !important;
     transform: translateY(-1px) !important;
 }
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton button[kind="primary"] {
-    background: linear-gradient(180deg, #FFF3D6 0%, #FFD584 100%) !important;
-    border: 2px solid #1F1209 !important;
-    color: #1F1209 !important;
+    background: linear-gradient(180deg, #773D44 0%, #562C31 100%) !important;
+    border: 1.5px solid #F7E4D4 !important;
+    color: #FFFFFF !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.75),
-        0 2px 0 #1F1209,
-        0 4px 10px rgba(31, 18, 9, 0.18) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.25),
+        0 2px 0 #3D1B1E,
+        0 4px 10px rgba(88, 40, 43, 0.28) !important;
 }
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton button[kind="primary"] p {
-    color: #1F1209 !important;
-    font-weight: 900 !important;
+    color: #FFFFFF !important;
+    font-weight: 800 !important;
 }
 
 /* ======================================================================
-   LAUNCHPAD SECTION HEADERS & 3D CARDS IN SAFFRON (#F1A245) & CREAM (#F4F2E8)
+   LAUNCHPAD SECTION HEADERS & 4-COLUMN DUSTY ROSEWOOD 3D CARDS
    ====================================================================== */
 .launchpad-section-hdr {
     font-family: 'Fraunces', serif !important;
     font-size: 13px !important;
-    font-weight: 800 !important;
-    color: #1F1209 !important;
+    font-weight: 700 !important;
+    color: #633339 !important;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    margin: 0 0 8px 0 !important;
-    padding: 6px 12px;
-    background: linear-gradient(90deg, #FFE8C2 0%, rgba(243, 242, 234, 0) 100%) !important;
-    border-left: 4px solid #F1A245 !important;
-    border-radius: 5px;
+    margin: 6px 0 6px 2px;
+    padding: 5px 12px;
+    background: linear-gradient(90deg, #F2E2E0 0%, rgba(242, 226, 224, 0) 100%);
+    border-left: 3.5px solid #8A474F;
+    border-radius: 4px;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -348,12 +347,34 @@ div[data-testid="stElementContainer"]:has(.kulfi-card-set-4) {
     padding: 0 !important;
 }
 
-/* Directly Clickable 3D Cards — Base Geometry in Warm Saffron & Cream */
+/* Section Headers for the 4 Landing Page Sets */
+.launchpad-section-hdr.set-1 {
+    color: #633339 !important;
+    background: linear-gradient(90deg, #F2E2E0 0%, rgba(242, 226, 224, 0) 100%) !important;
+    border-left: 4px solid #8A474F !important;
+}
+.launchpad-section-hdr.set-2 {
+    color: #23474C !important;
+    background: linear-gradient(90deg, #DFECEE 0%, rgba(223, 236, 238, 0) 100%) !important;
+    border-left: 4px solid #2F5B61 !important;
+}
+.launchpad-section-hdr.set-3 {
+    color: #54341D !important;
+    background: linear-gradient(90deg, #F0E4D4 0%, rgba(240, 228, 212, 0) 100%) !important;
+    border-left: 4px solid #784E30 !important;
+}
+.launchpad-section-hdr.set-4 {
+    color: #264230 !important;
+    background: linear-gradient(90deg, #E0EDE3 0%, rgba(224, 237, 227, 0) 100%) !important;
+    border-left: 4px solid #385943 !important;
+}
+
+/* Directly Clickable 3D Cards — Base Geometry & Dusty Rosewood Default */
 div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-clickable-card-grid) .stButton button {
-    background: linear-gradient(135deg, #FDAA48 0%, #F1A245 55%, #D9923E 100%) !important;
-    border: 1.5px solid #AE7532 !important;
-    border-left: 5px solid #AE7532 !important;
+    background: linear-gradient(135deg, #98535C 0%, #8A474F 52%, #7B3A41 100%) !important;
+    border: 1px solid #E2C2B9 !important;
+    border-left: 4.5px solid #F2D7C4 !important;
     border-radius: 11px !important;
     padding: 14px 16px !important;
     min-height: 64px !important;
@@ -365,27 +386,27 @@ div[data-testid="stHorizontalBlock"]:has(.kulfi-clickable-card-grid) .stButton b
     text-align: left !important;
     white-space: nowrap !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.45),
-        0 3px 0 #AE7532,
-        0 5px 12px rgba(183, 110, 25, 0.16) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+        0 3px 0 #562C31,
+        0 5px 12px rgba(142, 65, 69, 0.14) !important;
     transition: all 0.15s ease !important;
     margin-bottom: 4px !important;
     cursor: pointer !important;
 }
 div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button:hover,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-clickable-card-grid) .stButton button:hover {
-    background: linear-gradient(135deg, #FFB04A 0%, #FDAA48 55%, #F1A245 100%) !important;
-    border-color: #1F1209 !important;
-    border-left: 5px solid #1F1209 !important;
+    background: linear-gradient(135deg, #A45A63 0%, #98535C 55%, #8A474F 100%) !important;
+    border-color: #F7E4D4 !important;
+    border-left: 4.5px solid #FFFFFF !important;
     transform: translateY(-1px) !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.55),
-        0 4px 0 #AE7532,
-        0 8px 16px rgba(183, 110, 25, 0.22) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.25),
+        0 4px 0 #562C31,
+        0 8px 16px rgba(142, 65, 69, 0.20) !important;
 }
 div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button:active {
     transform: translateY(1px) !important;
-    box-shadow: 0 1px 0 #AE7532 !important;
+    box-shadow: 0 1px 0 #562C31 !important;
 }
 div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button > div[data-testid="stMarkdownContainer"] {
     width: 100% !important;
@@ -395,31 +416,31 @@ div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kul
 div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button > div[data-testid="stMarkdownContainer"] p strong {
     font-family: 'Manrope', sans-serif !important;
     font-size: 14.5px !important;
-    font-weight: 800 !important;
-    color: #1F1209 !important;
+    font-weight: 700 !important;
+    color: #FFFFFF !important;
     line-height: 1.25 !important;
     margin: 0 !important;
     letter-spacing: 0.01em !important;
-    text-shadow: none !important;
+    text-shadow: 0 1px 2px rgba(61, 31, 33, 0.28) !important;
 }
 
 /* ======================================================================
-   ALL STANDARD 3D BUTTONS ACROSS INDIVIDUAL SCREENS — SAFFRON & CREAM
+   ALL STANDARD 3D BUTTONS ACROSS INDIVIDUAL SCREENS — DUSTY ROSEWOOD
    ====================================================================== */
 .stButton button,
 [data-testid="stFormSubmitButton"] > button,
 .stDownloadButton > button,
 [data-testid="stLinkButton"] > a,
 [data-testid="stPopover"] > div > button {
-    background: linear-gradient(180deg, #FDAA48 0%, #F1A245 100%) !important;
-    color: #1F1209 !important;
-    border: 1.5px solid #AE7532 !important;
+    background: linear-gradient(180deg, #98535C 0%, #7B3A41 100%) !important;
+    color: #FFFFFF !important;
+    border: 1px solid #E2C2B9 !important;
     border-radius: 8px !important;
-    font-weight: 800 !important;
+    font-weight: 700 !important;
     font-size: 12.5px !important;
     min-height: 38px !important;
     height: 38px !important;
-    padding: 0 10px !important;
+    padding: 0 13px !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -427,9 +448,9 @@ div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kul
     margin: 0 !important;
     text-decoration: none !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.45),
-        0 2px 0 #AE7532,
-        0 4px 8px rgba(183, 110, 25, 0.14) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+        0 2px 0 #562C31,
+        0 4px 8px rgba(142, 65, 69, 0.14) !important;
     transition: all 0.12s ease !important;
     letter-spacing: 0.01em !important;
 }
@@ -443,22 +464,22 @@ div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kul
 [data-testid="stLinkButton"] > a span,
 [data-testid="stPopover"] > div > button p,
 [data-testid="stPopover"] > div > button span {
-    color: #1F1209 !important;
-    font-weight: 800 !important;
+    color: #FFFFFF !important;
+    font-weight: 700 !important;
 }
 .stButton button:hover,
 [data-testid="stFormSubmitButton"] > button:hover,
 .stDownloadButton > button:hover,
 [data-testid="stLinkButton"] > a:hover,
 [data-testid="stPopover"] > div > button:hover {
-    background: linear-gradient(180deg, #FFB352 0%, #FDAA48 100%) !important;
-    border-color: #1F1209 !important;
-    color: #1F1209 !important;
+    background: linear-gradient(180deg, #A45A63 0%, #8A474F 100%) !important;
+    border-color: #F7E4D4 !important;
+    color: #FFFFFF !important;
     transform: translateY(-1px) !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.55),
-        0 3px 0 #AE7532,
-        0 5px 10px rgba(183, 110, 25, 0.20) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.24),
+        0 3px 0 #562C31,
+        0 5px 10px rgba(142, 65, 69, 0.18) !important;
 }
 .stButton button:active,
 [data-testid="stFormSubmitButton"] > button:active,
@@ -466,86 +487,145 @@ div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kul
 [data-testid="stLinkButton"] > a:active,
 [data-testid="stPopover"] > div > button:active {
     transform: translateY(1px) !important;
-    box-shadow: 0 1px 0 #AE7532 !important;
+    box-shadow: 0 1px 0 #562C31 !important;
 }
 
 /* ======================================================================
-   LANDING PAGE 4 CARD SETS — HARMONIOUS COMBINATIONS OF THE TWO ATTACHED SHADES
+   LANDING PAGE 4 CARD SET BUTTON THEMES (PLACED AFTER .stButton FOR PRIORITY)
    ====================================================================== */
-/* Set 1 Buttons: Warm Saffron-Amber (#F1A245) */
+/* Set 1 Buttons: Sales, Daily Operations & Financials — Dusty Rosewood (#98535C -> #7B3A41) */
 div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-1) .stButton button,
 div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-1):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button,
 div[class*="st-key-launchpad_card_kulfi_card_set_1_"] button {
-    background: linear-gradient(135deg, #FDAA48 0%, #F1A245 55%, #D9923E 100%) !important;
-    border: 1.5px solid #AE7532 !important;
-    border-left: 5px solid #AE7532 !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 3px 0 #AE7532, 0 5px 12px rgba(183, 110, 25, 0.16) !important;
+    background: linear-gradient(135deg, #98535C 0%, #8A474F 52%, #7B3A41 100%) !important;
+    border: 1px solid #E2C2B9 !important;
+    border-left: 4.5px solid #F2D7C4 !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.20), 0 3px 0 #562C31, 0 5px 12px rgba(142, 65, 69, 0.16) !important;
+}
+div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-1) .stButton button:hover,
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-1):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button:hover,
+div[class*="st-key-launchpad_card_kulfi_card_set_1_"] button:hover {
+    background: linear-gradient(135deg, #A85E68 0%, #98535C 55%, #8A474F 100%) !important;
+    border-color: #F7E4D4 !important;
+    border-left: 4.5px solid #FFFFFF !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 4px 0 #562C31, 0 8px 16px rgba(142, 65, 69, 0.22) !important;
 }
 
-/* Set 2 Buttons: Soft Cream-Ivory (#F4F2E8) with #F1A245 Borders & Left Bar */
+/* Set 2 Buttons: Stock & Freezer — Muted Glacier Slate-Teal (#3B6E75 -> #25484D) */
 div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-2) .stButton button,
 div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-2):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button,
 div[class*="st-key-launchpad_card_kulfi_card_set_2_"] button {
-    background: linear-gradient(135deg, #FFFDF8 0%, #F4F2E8 60%, #E8E4D3 100%) !important;
-    border: 2px solid #F1A245 !important;
-    border-left: 6px solid #F1A245 !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.80), 0 3px 0 #AE7532, 0 5px 12px rgba(183, 110, 25, 0.12) !important;
+    background: linear-gradient(135deg, #3B6E75 0%, #2F5B61 52%, #25484D 100%) !important;
+    border: 1px solid #9DC7CC !important;
+    border-left: 4.5px solid #CFEFF2 !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.20), 0 3px 0 #173034, 0 5px 12px rgba(37, 72, 77, 0.16) !important;
+}
+div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-2) .stButton button:hover,
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-2):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button:hover,
+div[class*="st-key-launchpad_card_kulfi_card_set_2_"] button:hover {
+    background: linear-gradient(135deg, #488189 0%, #3B6E75 55%, #2F5B61 100%) !important;
+    border-color: #E3F6F8 !important;
+    border-left: 4.5px solid #FFFFFF !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 4px 0 #173034, 0 8px 16px rgba(37, 72, 77, 0.22) !important;
 }
 
-/* Set 3 Buttons: Soft Golden-Saffron Tint (#FFB347 -> #F1A245) */
+/* Set 3 Buttons: POs, Expenses & Cash — Warm Roasted Bronze-Walnut (#8C5E3C -> #633F25) */
 div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-3) .stButton button,
 div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-3):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button,
 div[class*="st-key-launchpad_card_kulfi_card_set_3_"] button {
-    background: linear-gradient(135deg, #FFB854 0%, #F1A245 60%, #E88717 100%) !important;
-    border: 1.5px solid #AE7532 !important;
-    border-left: 5px solid #AE7532 !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 3px 0 #AE7532, 0 5px 12px rgba(183, 110, 25, 0.16) !important;
+    background: linear-gradient(135deg, #8C5E3C 0%, #784E30 52%, #633F25 100%) !important;
+    border: 1px solid #DEC2A4 !important;
+    border-left: 4.5px solid #F5DFC3 !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.20), 0 3px 0 #422917, 0 5px 12px rgba(99, 63, 37, 0.16) !important;
+}
+div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-3) .stButton button:hover,
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-3):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button:hover,
+div[class*="st-key-launchpad_card_kulfi_card_set_3_"] button:hover {
+    background: linear-gradient(135deg, #9E6D48 0%, #8C5E3C 55%, #784E30 100%) !important;
+    border-color: #FAEAD6 !important;
+    border-left: 4.5px solid #FFFFFF !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 4px 0 #422917, 0 8px 16px rgba(99, 63, 37, 0.22) !important;
 }
 
-/* Set 4 Buttons: Warm Honey-Cream (#FFF3DB -> #FFE0AD) with #F1A245 Borders */
+/* Set 4 Buttons: Staff Payroll & Admin Setup — Muted Sage-Forest (#466B53 -> #2B4634) */
 div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-4) .stButton button,
 div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-4):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button,
 div[class*="st-key-launchpad_card_kulfi_card_set_4_"] button {
-    background: linear-gradient(135deg, #FFF5E2 0%, #FFE2B3 60%, #FFD48F 100%) !important;
-    border: 2px solid #F1A245 !important;
-    border-left: 6px solid #F1A245 !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.70), 0 3px 0 #AE7532, 0 5px 12px rgba(183, 110, 25, 0.14) !important;
+    background: linear-gradient(135deg, #466B53 0%, #385943 52%, #2B4634 100%) !important;
+    border: 1px solid #B2D1BC !important;
+    border-left: 4.5px solid #D7EFE0 !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.20), 0 3px 0 #1B2E21, 0 5px 12px rgba(43, 70, 52, 0.16) !important;
+}
+div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-4) .stButton button:hover,
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-4):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button:hover,
+div[class*="st-key-launchpad_card_kulfi_card_set_4_"] button:hover {
+    background: linear-gradient(135deg, #558064 0%, #466B53 55%, #385943 100%) !important;
+    border-color: #E6F6EC !important;
+    border-left: 4.5px solid #FFFFFF !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 4px 0 #1B2E21, 0 8px 16px rgba(43, 70, 52, 0.22) !important;
 }
 
-/* Primary 3D Action Buttons (Rich Saffron-Amber with Bold Dark Espresso Border & Text) */
+/* Primary 3D Action Buttons (Deep Rosewood-Berry for Active/Primary State) */
 .stButton button[kind="primary"],
 [data-testid="stFormSubmitButton"] > button[kind="primary"],
 .stDownloadButton > button[kind="primary"],
 [data-testid="baseButton-primary"] {
-    background: linear-gradient(180deg, #FDAA48 0%, #F1A245 55%, #D9923E 100%) !important;
-    color: #1F1209 !important;
-    border: 2px solid #AE7532 !important;
+    background: linear-gradient(180deg, #773D44 0%, #562C31 100%) !important;
+    color: #FFFFFF !important;
+    border: 1.5px solid #F2D7C4 !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.50),
-        0 3px 0 #AE7532,
-        0 5px 12px rgba(183, 110, 25, 0.22) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.24),
+        0 2px 0 #3D1B1E,
+        0 4px 10px rgba(88, 40, 43, 0.22) !important;
 }
 .stButton button[kind="primary"]:hover,
 [data-testid="stFormSubmitButton"] > button[kind="primary"]:hover,
 .stDownloadButton > button[kind="primary"]:hover {
-    background: linear-gradient(180deg, #FFB854 0%, #FDAA48 100%) !important;
-    border-color: #1F1209 !important;
-    color: #1F1209 !important;
+    background: linear-gradient(180deg, #7B3A41 0%, #773D44 100%) !important;
+    border-color: #FFF2E6 !important;
+    color: #FFFFFF !important;
     transform: translateY(-1px) !important;
 }
 
-/* Aesthetic Bordered Frames Around Each Set of Landing Page Cards — All using #F1A245 Border */
-div[data-testid="stVerticalBlockBorderWrapper"]:has(.kulfi-card-set-1),
-div[data-testid="stVerticalBlockBorderWrapper"]:has(.kulfi-card-set-2),
-div[data-testid="stVerticalBlockBorderWrapper"]:has(.kulfi-card-set-3),
-div[data-testid="stVerticalBlockBorderWrapper"]:has(.kulfi-card-set-4) {
-    background: linear-gradient(180deg, #FFFFFF 0%, #F4F2E8 100%) !important;
-    border: 2px solid #F1A245 !important;
-    border-top: 4.5px solid #F1A245 !important;
+/* Aesthetic Bordered Frames Around Each Set of Landing Page Cards */
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.kulfi-card-set-1) {
+    background: linear-gradient(180deg, #FFFDFC 0%, #FAF0EE 100%) !important;
+    border: 1.5px solid #D8B0AC !important;
+    border-top: 4px solid #8A474F !important;
     border-radius: 14px !important;
     padding: 10px 14px 12px 14px !important;
     margin-bottom: 10px !important;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.85), 0 4px 14px rgba(183, 110, 25, 0.10) !important;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.75), 0 4px 14px rgba(138, 71, 79, 0.08) !important;
+}
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.kulfi-card-set-2) {
+    background: linear-gradient(180deg, #FCFEFE 0%, #EEF6F7 100%) !important;
+    border: 1.5px solid #9EC4C9 !important;
+    border-top: 4px solid #2F5B61 !important;
+    border-radius: 14px !important;
+    padding: 10px 14px 12px 14px !important;
+    margin-bottom: 10px !important;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.75), 0 4px 14px rgba(47, 91, 97, 0.08) !important;
+}
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.kulfi-card-set-3) {
+    background: linear-gradient(180deg, #FFFEFC 0%, #F8F0E6 100%) !important;
+    border: 1.5px solid #D4B596 !important;
+    border-top: 4px solid #784E30 !important;
+    border-radius: 14px !important;
+    padding: 10px 14px 12px 14px !important;
+    margin-bottom: 10px !important;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.75), 0 4px 14px rgba(120, 78, 48, 0.08) !important;
+}
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.kulfi-card-set-4) {
+    background: linear-gradient(180deg, #FCFDFC 0%, #EEF5F0 100%) !important;
+    border: 1.5px solid #A6C7B0 !important;
+    border-top: 4px solid #385943 !important;
+    border-radius: 14px !important;
+    padding: 10px 14px 12px 14px !important;
+    margin-bottom: 10px !important;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.75), 0 4px 14px rgba(56, 89, 67, 0.08) !important;
+}
+.launchpad-section-hdr {
+    margin: 0 0 8px 0 !important;
 }
 
 /* Compact 30px inline action buttons (Edit, Copy, Delete) inside .ledger-cell table rows */
@@ -559,18 +639,18 @@ div[data-testid="stHorizontalBlock"]:has(.ledger-cell) .stButton button,
 div[class*="st-key-row_edit_"] button,
 div[class*="st-key-row_clone_"] button,
 div[class*="st-key-row_del_"] button {
-    padding: 0 !important;
-    min-width: 30px !important;
+    padding: 0 2px !important;
+    min-width: 28px !important;
     width: 100% !important;
     min-height: 30px !important;
     height: 30px !important;
-    font-size: 13.5px !important;
+    font-size: 13px !important;
     line-height: 1 !important;
     border-radius: 6px !important;
-    border: 1.5px solid #AE7532 !important;
-    background: linear-gradient(180deg, #FDAA48 0%, #F1A245 100%) !important;
-    color: #1F1209 !important;
-    box-shadow: 0 2px 0 #AE7532 !important;
+    border: 1px solid #E2C2B9 !important;
+    background: linear-gradient(180deg, #98535C 0%, #7B3A41 100%) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 2px 0 #562C31 !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -582,30 +662,31 @@ div[data-testid="stHorizontalBlock"]:has(.ledger-cell) .stButton button span,
 div[class*="st-key-row_edit_"] button p,
 div[class*="st-key-row_clone_"] button p,
 div[class*="st-key-row_del_"] button p {
-    font-size: 13.5px !important;
+    font-size: 13px !important;
     line-height: 1 !important;
     margin: 0 !important;
     padding: 0 !important;
-    color: #1F1209 !important;
-    font-weight: 900 !important;
+    color: #FFFFFF !important;
     overflow: visible !important;
     white-space: nowrap !important;
 }
+/* Distinct subtle color coding for Edit (Rosewood), Copy (Slate-Teal), and Delete (Crimson) */
 div[class*="st-key-row_clone_"] button {
-    background: linear-gradient(180deg, #FFF6E5 0%, #FFE0AD 100%) !important;
-    border-color: #F1A245 !important;
+    background: linear-gradient(180deg, #3B6E75 0%, #25484D 100%) !important;
+    border-color: #9DC7CC !important;
+    box-shadow: 0 2px 0 #173034 !important;
 }
 div[class*="st-key-row_del_"] button {
-    background: linear-gradient(180deg, #FEE2E2 0%, #FECACA 100%) !important;
-    border-color: #DC2626 !important;
-    box-shadow: 0 2px 0 #991B1B !important;
+    background: linear-gradient(180deg, #B91C1C 0%, #7F1D1D 100%) !important;
+    border-color: #FCA5A5 !important;
+    box-shadow: 0 2px 0 #450A0A !important;
 }
 
 /* High-Contrast Section Headers */
 .header-box-sales {
-    background: linear-gradient(90deg, #FFF3DB 0%, #FFE4B5 100%);
-    color: #1F1209 !important;
-    border: 1.5px solid #F1A245;
+    background: linear-gradient(90deg, #F9ECEA 0%, #F2DDD9 100%);
+    color: #633339 !important;
+    border: 1px solid #D8B4B0;
     border-radius: 9px;
     padding: 8px 13px;
     font-weight: 800;
@@ -614,12 +695,12 @@ div[class*="st-key-row_del_"] button {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 2px 5px rgba(183, 110, 25, 0.08);
+    box-shadow: 0 2px 5px rgba(142, 65, 69, 0.05);
 }
 .header-box-restock {
     background: linear-gradient(90deg, #DCFCE7 0%, #BBF7D0 100%);
     color: #064E3B !important;
-    border: 1.5px solid #16A34A;
+    border: 1px solid #86EFAC;
     border-radius: 9px;
     padding: 8px 13px;
     font-weight: 800;
@@ -634,11 +715,11 @@ div[class*="st-key-row_del_"] button {
 /* Compact Flavor Card Grid */
 .flavor-entry-row {
     background: #FFFFFF;
-    border: 1.5px solid #F1A245;
+    border: 1px solid #E2CECC;
     border-radius: 8px;
     padding: 5px 8px;
     margin-bottom: 5px;
-    box-shadow: 0 2px 4px rgba(183, 110, 25, 0.05);
+    box-shadow: 0 2px 4px rgba(142, 65, 69, 0.04);
 }
 .flavor-title-bar {
     display: flex;
@@ -649,16 +730,15 @@ div[class*="st-key-row_del_"] button {
 .flavor-name {
     font-weight: 800;
     font-size: 12.5px;
-    color: #1F1209;
+    color: #3D1F21;
 }
 .badge-open {
-    background: #FFF3DB;
-    color: #1F1209;
+    background: #F9ECEA;
+    color: #633339;
     font-weight: 800;
     font-size: 11px;
     padding: 1px 6px;
     border-radius: 6px;
-    border: 1px solid #F1A245;
 }
 .badge-sold {
     background: #FEE2E2;
@@ -679,7 +759,7 @@ div[class*="st-key-row_del_"] button {
     display: inline-block;
 }
 
-/* Consistent Input Heights & #F1A245 Borders */
+/* Consistent Input Heights & Calm Borders */
 .stSelectbox div[data-baseweb="select"] > div,
 .stDateInput div[data-baseweb="input"],
 .stTextInput div[data-baseweb="input"],
@@ -688,7 +768,7 @@ div[class*="st-key-row_del_"] button {
     height: 36px !important;
     border-radius: 7px !important;
     background-color: #FFFFFF !important;
-    border: 1.5px solid #F1A245 !important;
+    border: 1.5px solid #CFAFB0 !important;
 }
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) .stNumberInput div[data-baseweb="input"] {
     min-height: 28px !important;
@@ -700,24 +780,24 @@ div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) .stNumberInpu
     font-size: 12.5px !important;
     text-align: left !important;
     font-weight: 700 !important;
-    color: #1F1209 !important;
+    color: #3D1F21 !important;
 }
 .stNumberInput label, .stTextInput label, .stSelectbox label, .stDateInput label {
     font-size: 11px !important;
     font-weight: 800 !important;
     margin-bottom: 2px !important;
     text-align: left !important;
-    color: #1F1209 !important;
+    color: #633339 !important;
 }
 
-/* Metric Cards — Soft Cream-Ivory with #F1A245 Borders */
+/* Metric Cards — Crisp White with Dusty Rosewood Top Bar */
 div[data-testid="stMetric"] {
     background: #FFFFFF !important;
-    border: 1.5px solid #F1A245 !important;
-    border-top: 3.5px solid #F1A245 !important;
+    border: 1px solid #E2CECC !important;
+    border-top: 3px solid #8A474F !important;
     border-radius: 10px !important;
     padding: 9px 12px !important;
-    box-shadow: 0 2px 8px rgba(183, 110, 25, 0.07) !important;
+    box-shadow: 0 2px 8px rgba(142, 65, 69, 0.05) !important;
     height: 100%;
 }
 div[data-testid="stMetricLabel"], 
@@ -725,9 +805,9 @@ div[data-testid="stMetricLabel"] > div,
 div[data-testid="stMetricLabel"] label,
 div[data-testid="stMetricLabel"] p, 
 div[data-testid="stMetricLabel"] span { 
-    font-weight: 800 !important; 
+    font-weight: 700 !important; 
     font-size: 11px !important; 
-    color: #4A2C11 !important; 
+    color: #7A4B4E !important; 
     white-space: normal !important; 
     word-wrap: break-word !important; 
     overflow: visible !important; 
@@ -742,23 +822,23 @@ div[data-testid="stMetricValue"] {
     font-family: 'Fraunces', serif; 
     font-size: 1.15rem !important; 
     font-weight: 800 !important;
-    color: #1F1209 !important; 
+    color: #633339 !important; 
     margin-top: 4px;
 }
 
-/* Data Grids & Tables Across the Entire App — Warm Saffron (#F1A245) & Cream-Ivory (#F4F2E8) */
+/* Data Grids & Tables Across the Entire App — Dusty Rosewood & Warm Ivory */
 div[data-testid="stDataFrame"], div[data-testid="stDataEditor"] {
     border-radius: 10px !important;
-    border: 2px solid #F1A245 !important;
+    border: 1.5px solid #8A474F !important;
     background: #FFFFFF !important;
-    box-shadow: 0 3px 10px rgba(183, 110, 25, 0.08) !important;
+    box-shadow: 0 3px 10px rgba(142, 65, 69, 0.06) !important;
     overflow: hidden;
 }
 div[data-testid="stDataFrame"] th, div[data-testid="stDataEditor"] th {
-    font-weight: 900 !important;
-    color: #1F1209 !important;
-    background: linear-gradient(180deg, #FDAA48 0%, #F1A245 100%) !important;
-    border-bottom: 2px solid #AE7532 !important;
+    font-weight: 800 !important;
+    color: #FFFFFF !important;
+    background: linear-gradient(180deg, #98535C 0%, #7B3A41 100%) !important;
+    border-bottom: 1.5px solid #E6C8B8 !important;
     text-align: center !important;
     font-size: 12px !important;
 }
@@ -766,49 +846,49 @@ div[data-testid="stDataFrame"] td, div[data-testid="stDataEditor"] td {
     text-align: center !important;
     font-size: 11.5px !important;
     font-weight: 700 !important;
-    color: #1F1209 !important;
+    color: #3D1F21 !important;
 }
 .stMarkdown table {
     width: 100%;
     border-collapse: separate !important;
     border-spacing: 0 !important;
     background: #FFFFFF;
-    border: 2px solid #F1A245;
+    border: 1.5px solid #8A474F;
     border-radius: 10px;
     overflow: hidden;
-    box-shadow: 0 3px 10px rgba(183, 110, 25, 0.08);
+    box-shadow: 0 3px 10px rgba(142, 65, 69, 0.06);
     margin: 6px 0 12px 0;
 }
 .stMarkdown table th {
-    background: linear-gradient(180deg, #FDAA48 0%, #F1A245 100%) !important;
-    color: #1F1209 !important;
-    font-weight: 900 !important;
+    background: linear-gradient(180deg, #98535C 0%, #7B3A41 100%) !important;
+    color: #FFFFFF !important;
+    font-weight: 800 !important;
     padding: 8px 10px !important;
-    border-bottom: 2px solid #AE7532 !important;
-    border-right: 1px solid rgba(31, 18, 9, 0.12) !important;
+    border-bottom: 1.5px solid #E6C8B8 !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.18) !important;
     font-size: 11.5px !important;
 }
 .stMarkdown table td {
     padding: 7px 10px !important;
-    border-bottom: 1px solid #EBD9BE !important;
-    border-right: 1px solid #F3EAE0 !important;
+    border-bottom: 1px solid #F0E2E0 !important;
+    border-right: 1px solid #F7EFEE !important;
     font-size: 12px !important;
     font-weight: 700 !important;
-    color: #1F1209 !important;
+    color: #3D1F21 !important;
 }
 .stMarkdown table tr:nth-child(even) td {
-    background: #F4F2E8 !important;
+    background: #FCF8F7 !important;
 }
 .stMarkdown table tr:hover td {
-    background: #FFE8C2 !important;
+    background: #F9ECEA !important;
 }
 
-hr { border-color: #F1A245 !important; margin: 0.4rem 0 !important; opacity: 0.65; }
+hr { border-color: #E2CECC !important; margin: 0.4rem 0 !important; }
 
 /* Distinct Editable Table Input Borders */
 div[data-testid="stNumberInput"] div[data-baseweb="input"] {
-    border: 1.5px solid #F1A245 !important;
-    background-color: #FFFDF9 !important;
+    border: 1.5px solid #98535C !important;
+    background-color: #FFFDFC !important;
     border-radius: 6px !important;
 }
 div[data-testid="stNumberInput"] div[data-baseweb="input"]:focus-within {
@@ -818,26 +898,26 @@ div[data-testid="stNumberInput"] div[data-baseweb="input"]:focus-within {
 div[data-testid="stNumberInput"] input {
     text-align: left !important;
     font-weight: 800 !important;
-    color: #1F1209 !important;
+    color: #3D1F21 !important;
     padding-left: 8px !important;
 }
 
 /* Daily Entry & Stock Grid Cells */
 .entry-grid-header {
-    background: linear-gradient(180deg, #FDAA48 0%, #F1A245 100%) !important;
-    color: #1F1209 !important;
-    border: 1.5px solid #AE7532 !important;
-    border-bottom: 2px solid #AE7532 !important;
+    background: linear-gradient(180deg, #98535C 0%, #7B3A41 100%);
+    color: #FFFFFF !important;
+    border: 1px solid #E6C8B8;
+    border-bottom: 1.5px solid #E6C8B8;
     padding: 6px 10px;
     border-radius: 7px;
     font-size: 11.5px;
-    font-weight: 900;
+    font-weight: 800;
     text-align: center;
     margin-bottom: 4px;
 }
 .entry-grid-cell {
     background: #FFFFFF;
-    border: 1px solid #F1A245;
+    border: 1px solid #E2CECC;
     border-radius: 6px;
     height: 28px;
     display: flex;
@@ -845,12 +925,12 @@ div[data-testid="stNumberInput"] input {
     justify-content: center;
     font-size: 12px;
     font-weight: 800;
-    color: #1F1209;
+    color: #3D1F21;
 }
 .entry-grid-cell-flavour {
     background: #FFFFFF;
-    border: 1px solid #F1A245;
-    border-left: 4px solid #F1A245;
+    border: 1px solid #E2CECC;
+    border-left: 3.5px solid #8A474F;
     border-radius: 6px;
     height: 28px;
     display: flex;
@@ -859,11 +939,11 @@ div[data-testid="stNumberInput"] input {
     padding: 0 8px;
     font-size: 12px;
     font-weight: 800;
-    color: #1F1209;
+    color: #3D1F21;
 }
 .entry-grid-cell-sold {
-    background: #FFF3DB;
-    border: 1px solid #F1A245;
+    background: #FEE2E2;
+    border: 1px solid #FCA5A5;
     border-radius: 6px;
     height: 28px;
     display: flex;
@@ -871,7 +951,7 @@ div[data-testid="stNumberInput"] input {
     justify-content: center;
     font-size: 12px;
     font-weight: 900;
-    color: #1F1209;
+    color: #991B1B;
 }
 .entry-grid-cell-amount {
     background: #DCFCE7;
@@ -887,26 +967,26 @@ div[data-testid="stNumberInput"] input {
     color: #064E3B;
 }
 .entry-grid-total-row {
-    background: linear-gradient(90deg, #FFE8C2 0%, #FFD591 100%);
-    border: 1.5px solid #F1A245;
+    background: linear-gradient(90deg, #F9ECEA 0%, #F2DDD9 100%);
+    border: 1.5px solid #8A474F;
     border-radius: 8px;
     padding: 7px 10px;
     margin-top: 6px;
     font-size: 12px;
     font-weight: 900;
-    color: #1F1209;
+    color: #633339;
 }
 
 /* Compact No-Scroll Ledger Rows for Expenses & Payments */
 .ledger-tbl-header {
-    background: linear-gradient(180deg, #FDAA48 0%, #F1A245 100%) !important;
-    color: #1F1209 !important;
-    border: 1.5px solid #AE7532;
-    border-bottom: 2px solid #AE7532;
+    background: linear-gradient(180deg, #98535C 0%, #7B3A41 100%);
+    color: #FFFFFF !important;
+    border: 1px solid #E6C8B8;
+    border-bottom: 1.5px solid #E6C8B8;
     padding: 5px 6px;
     border-radius: 6px;
     font-size: 10px;
-    font-weight: 900;
+    font-weight: 800;
     letter-spacing: 0.03em;
     text-transform: uppercase;
     margin-bottom: 3px;
@@ -919,7 +999,7 @@ div[data-testid="stNumberInput"] input {
 }
 .ledger-cell {
     background: #FFFFFF;
-    border: 1px solid #F1A245;
+    border: 1px solid #E2CECC;
     border-radius: 5px;
     min-height: 30px;
     height: 30px;
@@ -928,7 +1008,7 @@ div[data-testid="stNumberInput"] input {
     align-items: center;
     font-size: 10.5px;
     font-weight: 700;
-    color: #1F1209;
+    color: #3D1F21;
     line-height: 1.15;
     white-space: nowrap !important;
     overflow: hidden;
@@ -936,8 +1016,8 @@ div[data-testid="stNumberInput"] input {
 }
 .ledger-cell-desc {
     background: #FFFFFF;
-    border: 1px solid #F1A245;
-    border-left: 3.5px solid #F1A245;
+    border: 1px solid #E2CECC;
+    border-left: 3px solid #8A474F;
     border-radius: 5px;
     min-height: 30px;
     height: 30px;
@@ -947,7 +1027,7 @@ div[data-testid="stNumberInput"] input {
     justify-content: center;
     font-size: 10.5px;
     font-weight: 700;
-    color: #1F1209;
+    color: #3D1F21;
     line-height: 1.12;
     overflow: hidden;
 }
@@ -960,15 +1040,15 @@ div[data-testid="stNumberInput"] input {
 }
 .ledger-subtext {
     font-size: 9px;
-    font-weight: 800;
-    color: #9A5206;
+    font-weight: 700;
+    color: #8A474F;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
 }
 .ledger-amt-total {
-    background: #FFF3DB;
-    border: 1px solid #F1A245;
+    background: #F9ECEA;
+    border: 1px solid #DFBFBC;
     border-radius: 5px;
     min-height: 30px;
     height: 30px;
@@ -978,7 +1058,7 @@ div[data-testid="stNumberInput"] input {
     justify-content: flex-end;
     font-size: 10.5px;
     font-weight: 800;
-    color: #1F1209;
+    color: #633339;
     white-space: nowrap !important;
 }
 .ledger-amt-paid {
@@ -1021,11 +1101,11 @@ div[data-testid="stNumberInput"] input {
     white-space: nowrap !important;
 }
 .status-paid { background: #DCFCE7; color: #166534; border: 1px solid #86EFAC; }
-.status-partial { background: #FFF3DB; color: #92400E; border: 1px solid #F1A245; }
+.status-partial { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
 .status-pending { background: #FEE2E2; color: #991B1B; border: 1px solid #FCA5A5; }
-.status-other { background: #F4F2E8; color: #1F1209; border: 1px solid #F1A245; }
+.status-other { background: #F9ECEA; color: #633339; border: 1px solid #E2CECC; }
 
-/* Freezer Analysis Boxed Table Styling — Warm Saffron (#F1A245) & Cream Grid */
+/* Freezer Analysis Boxed Table Styling — Dusty Rosewood Grid */
 .fa-boxed-table-wrap {
     width: 100%;
     overflow-x: auto;
@@ -1036,79 +1116,79 @@ div[data-testid="stNumberInput"] input {
     border-collapse: separate;
     border-spacing: 0;
     background: #FFFFFF;
-    border: 2px solid #F1A245;
+    border: 1.5px solid #8A474F;
     border-radius: 11px;
     overflow: hidden;
     font-size: 12.5px;
-    box-shadow: 0 3px 10px rgba(183, 110, 25, 0.08);
+    box-shadow: 0 3px 10px rgba(142, 65, 69, 0.06);
 }
 .fa-boxed-table th {
-    background: linear-gradient(180deg, #FDAA48 0%, #F1A245 100%);
-    color: #1F1209 !important;
-    font-weight: 900;
+    background: linear-gradient(180deg, #98535C 0%, #7B3A41 100%);
+    color: #FFFFFF;
+    font-weight: 800;
     padding: 9px 10px;
     text-align: center;
     font-size: 11.5px;
     letter-spacing: 0.02em;
-    border-bottom: 2px solid #AE7532;
-    border-right: 1px solid rgba(31, 18, 9, 0.14);
+    border-bottom: 1.5px solid #E6C8B8;
+    border-right: 1px solid rgba(255, 255, 255, 0.18);
 }
 .fa-boxed-table td {
     padding: 7px 10px;
-    border-bottom: 1px solid #EBD9BE;
-    border-right: 1px solid #F3EAE0;
+    border-bottom: 1px solid #F0E2E0;
+    border-right: 1px solid #F7EFEE;
     text-align: center;
     font-weight: 700;
-    color: #1F1209;
+    color: #3D1F21;
 }
 .fa-boxed-table tr:nth-child(even) td {
-    background: #F4F2E8;
+    background: #FCF8F7;
 }
 .fa-boxed-table tr:hover td {
-    background: #FFE8C2;
+    background: #F9ECEA;
 }
 .fa-boxed-table tr.fa-total-row td {
-    background: linear-gradient(90deg, #FFE8C2 0%, #FFD591 100%) !important;
-    border-top: 2px solid #F1A245 !important;
+    background: linear-gradient(90deg, #F9ECEA 0%, #F2DDD9 100%) !important;
+    border-top: 2px solid #8A474F !important;
     border-bottom: none !important;
     font-weight: 900 !important;
-    color: #1F1209 !important;
+    color: #633339 !important;
     font-size: 13px;
 }
 /* Group Box 1: Audit */
-.fa-box-audit-th { border-left: 2px solid #AE7532 !important; border-right: 2px solid #AE7532 !important; border-top: 2px solid #AE7532 !important; background: #F1A245 !important; color: #1F1209 !important; }
-.fa-box-audit-td { border-left: 1.5px solid #F1A245 !important; border-right: 1.5px solid #F1A245 !important; background: #FFFDF7 !important; }
-.fa-box-audit-tot { border-left: 2px solid #AE7532 !important; border-right: 2px solid #AE7532 !important; border-bottom: 2px solid #AE7532 !important; }
+.fa-box-audit-th { border-left: 2px solid #D8B4B0 !important; border-right: 2px solid #D8B4B0 !important; border-top: 2px solid #D8B4B0 !important; background: #773D44 !important; }
+.fa-box-audit-td { border-left: 1.5px solid #D8B4B0 !important; border-right: 1.5px solid #D8B4B0 !important; background: #FFFDFC !important; }
+.fa-box-audit-tot { border-left: 2px solid #D8B4B0 !important; border-right: 2px solid #D8B4B0 !important; border-bottom: 2px solid #D8B4B0 !important; }
 
 /* Group Box 2: Recv & Frm Cart */
-.fa-box-in-left-th { border-left: 2px solid #15803D !important; border-top: 2px solid #15803D !important; background: #BBF7D0 !important; color: #064E3B !important; }
-.fa-box-in-right-th { border-right: 2px solid #15803D !important; border-top: 2px solid #15803D !important; background: #86EFAC !important; color: #064E3B !important; }
+.fa-box-in-left-th { border-left: 2px solid #15803D !important; border-top: 2px solid #15803D !important; background: #14532D !important; }
+.fa-box-in-right-th { border-right: 2px solid #15803D !important; border-top: 2px solid #15803D !important; background: #166534 !important; }
 .fa-box-in-left-td { border-left: 1.5px solid #15803D !important; background: #F0FDF4 !important; }
 .fa-box-in-right-td { border-right: 1.5px solid #15803D !important; background: #DCFCE7 !important; color: #166534 !important; font-weight: 800 !important; }
 .fa-box-in-left-tot { border-left: 2px solid #15803D !important; border-bottom: 2px solid #15803D !important; }
 .fa-box-in-right-tot { border-right: 2px solid #15803D !important; border-bottom: 2px solid #15803D !important; color: #166534 !important; }
 
 /* Group Box 3: To Cart, FZR Sale, Rem */
-.fa-box-out-left-th { border-left: 2px solid #AE7532 !important; border-top: 2px solid #AE7532 !important; background: #FFD591 !important; color: #1F1209 !important; }
-.fa-box-out-mid-th { border-top: 2px solid #AE7532 !important; background: #FFD591 !important; color: #1F1209 !important; }
-.fa-box-out-right-th { border-right: 2px solid #AE7532 !important; border-top: 2px solid #AE7532 !important; background: #FFD591 !important; color: #1F1209 !important; }
-.fa-box-out-left-td { border-left: 1.5px solid #F1A245 !important; background: #FFF9F0 !important; }
-.fa-box-out-mid-td { background: #FFF9F0 !important; color: #1F1209 !important; font-weight: 800 !important; }
-.fa-box-out-right-td { border-right: 1.5px solid #F1A245 !important; background: #FFF9F0 !important; }
-.fa-box-out-left-tot { border-left: 2px solid #AE7532 !important; border-bottom: 2px solid #AE7532 !important; }
-.fa-box-out-mid-tot { border-bottom: 2px solid #AE7532 !important; color: #1F1209 !important; }
-.fa-box-out-right-tot { border-right: 2px solid #AE7532 !important; border-bottom: 2px solid #AE7532 !important; }
+.fa-box-out-left-th { border-left: 2px solid #98535C !important; border-top: 2px solid #98535C !important; background: #7B3A41 !important; }
+.fa-box-out-mid-th { border-top: 2px solid #98535C !important; background: #7B3A41 !important; }
+.fa-box-out-right-th { border-right: 2px solid #98535C !important; border-top: 2px solid #98535C !important; background: #7B3A41 !important; }
+.fa-box-out-left-td { border-left: 1.5px solid #98535C !important; background: #FFF7F5 !important; }
+.fa-box-out-mid-td { background: #FFF7F5 !important; color: #633339 !important; font-weight: 800 !important; }
+.fa-box-out-right-td { border-right: 1.5px solid #98535C !important; background: #FFF7F5 !important; }
+.fa-box-out-left-tot { border-left: 2px solid #98535C !important; border-bottom: 2px solid #98535C !important; }
+.fa-box-out-mid-tot { border-bottom: 2px solid #98535C !important; color: #633339 !important; }
+.fa-box-out-right-tot { border-right: 2px solid #98535C !important; border-bottom: 2px solid #98535C !important; }
 
 /* Group Box 4: Current */
 .fa-boxed-table th, .fa-boxed-table td { padding: 9px 14px !important; }
-.fa-box-cur-only-th { border-left: 2px solid #AE7532 !important; border-right: 2px solid #AE7532 !important; border-top: 2px solid #AE7532 !important; background: #F1A245 !important; color: #1F1209 !important; }
-.fa-box-cur-only-td { border-left: 1.5px solid #F1A245 !important; border-right: 1.5px solid #F1A245 !important; background: #FFF3DB !important; color: #1F1209 !important; font-weight: 900 !important; font-size: 13.5px !important; }
-.fa-box-cur-only-tot { border-left: 2px solid #AE7532 !important; border-right: 2px solid #AE7532 !important; border-bottom: 2px solid #AE7532 !important; color: #1F1209 !important; font-size: 14px !important; }
+.fa-box-cur-only-th { border-left: 2px solid #8A474F !important; border-right: 2px solid #8A474F !important; border-top: 2px solid #8A474F !important; background: #562C31 !important; }
+.fa-box-cur-only-td { border-left: 1.5px solid #8A474F !important; border-right: 1.5px solid #8A474F !important; background: #FFFDFC !important; color: #633339 !important; font-weight: 900 !important; font-size: 13.5px !important; }
+.fa-box-cur-only-tot { border-left: 2px solid #8A474F !important; border-right: 2px solid #8A474F !important; border-bottom: 2px solid #8A474F !important; color: #633339 !important; font-size: 14px !important; }
 
 /* Read-only Live Sold cell in Sales Entry */
 .entry-grid-cell-livesold {
-    background: #FFF3DB;
-    border: 1px solid #F1A245;
+    background: #F9ECEA;
+    border: 1px solid #D8B4B0;
     border-radius: 6px;
     height: 28px;
     display: flex;
@@ -1116,7 +1196,7 @@ div[data-testid="stNumberInput"] input {
     justify-content: center;
     font-size: 12px;
     font-weight: 900;
-    color: #1F1209;
+    color: #633339;
 }
 
 /* Bulk Order Planner Cards */
@@ -1128,31 +1208,31 @@ div[data-testid="stNumberInput"] input {
 }
 .bulk-kpi-card {
     background: #FFFFFF;
-    border: 1.5px solid #F1A245;
-    border-top: 3.5px solid #F1A245;
+    border: 1px solid #E2CECC;
+    border-top: 3px solid #8A474F;
     border-radius: 10px;
     padding: 10px 12px;
     text-align: center;
-    box-shadow: 0 2px 8px rgba(183, 110, 25, 0.06);
+    box-shadow: 0 2px 8px rgba(142, 65, 69, 0.05);
 }
 .bulk-kpi-label {
     font-size: 10.5px;
     font-weight: 800;
     text-transform: uppercase;
-    color: #4A2C11;
+    color: #7A4B4E;
     letter-spacing: 0.03em;
 }
 .bulk-kpi-val {
     font-family: 'Fraunces', serif;
     font-size: 17px;
     font-weight: 800;
-    color: #1F1209;
+    color: #633339;
     margin-top: 3px;
 }
 .bulk-kpi-sub {
     font-size: 10.5px;
     font-weight: 700;
-    color: #9A5206;
+    color: #8A474F;
     margin-top: 2px;
 }
 
@@ -3197,7 +3277,7 @@ def render_live_cart_flavour_tables_section(key_prefix="live_flv"):
                 st.markdown(
                     f"""
                     <div style='background:#FFFFFF;border:1.5px solid #D8C19A;border-radius:11px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,0.04);margin-bottom:14px;'>
-                        <div style='background:linear-gradient(90deg, #FDAA48 0%, #F1A245 100%);color:#1F1209;padding:9px 12px;display:flex;justify-content:space-between;align-items:center;'>
+                        <div style='background:linear-gradient(90deg, #70440E 0%, #8A5E17 100%);color:#FFFFFF;padding:9px 12px;display:flex;justify-content:space-between;align-items:center;'>
                             <span style='font-weight:900;font-size:13.5px;'>🛒 {escape(cname)}</span>
                             <span style='font-size:11px;font-weight:700;background:rgba(255,255,255,0.18);padding:2px 8px;border-radius:999px;'>
                                 Staff: {escape(staff_lbl)}
@@ -4517,11 +4597,12 @@ else:
             key="top_cmd_home_btn",
         ):
             st.session_state["page_nav"] = "Home"
+            st.session_state["dash_sub_page"] = None
             st.rerun()
     with cmd_c2:
         with st.popover("⇄ Switch Screen", use_container_width=True):
             st.markdown(
-                "<div style='font-family:Fraunces,serif;font-size:13.5px;font-weight:800;color:#1F1209;"
+                "<div style='font-family:Fraunces,serif;font-size:13.5px;font-weight:800;color:#633339;"
                 "margin-bottom:6px;border-bottom:1.5px solid #D97706;padding-bottom:4px;'>"
                 "✨ Select Screen</div>",
                 unsafe_allow_html=True,
@@ -4536,11 +4617,12 @@ else:
                         use_container_width=True,
                     ):
                         st.session_state["page_nav"] = _opt
+                        st.session_state["dash_sub_page"] = None
                         st.rerun()
     with cmd_c3:
         with st.popover(f"📍 {loc_badge}", use_container_width=True):
             st.markdown(
-                "<div style='font-family:Fraunces,serif;font-size:13.5px;font-weight:800;color:#1F1209;"
+                "<div style='font-family:Fraunces,serif;font-size:13.5px;font-weight:800;color:#633339;"
                 "margin-bottom:6px;border-bottom:1.5px solid #D97706;padding-bottom:4px;'>"
                 "🌐 Operating Location</div>",
                 unsafe_allow_html=True,
@@ -4568,46 +4650,71 @@ else:
 if page == "Home" and user_role == "admin":
     _launchpad_sections = [
         (
-            "📊 Sales, Daily Operations & Finance",
+            "set-1",
+            "kulfi-card-set-1",
+            "📊 Sales, Daily Operations & Financials",
+            4,
             [
-                ("Dashboard", "📊", "Dashboard & Financials"),
-                ("Daily Entry", "🛒", "Daily Entry Hub"),
-                ("Live Cart Tracking", "📡", "Live Cart Tracking"),
-                ("Bulk Orders & Quotes", "📦", "Bulk Orders & Quotes"),
-                ("Cash Custody", "💰", "Cash Custody & Handover"),
-                ("Expenses", "💳", "Expenses & Vendor Dues"),
-                ("Staff & Payroll", "👥", "Staff, Attendance & Payroll"),
-                ("Payslip Generator", "📄", "Payslip Generator"),
+                ("Dashboard", "📊", "Dashboard & Financials", {"dash_sub_page": None}),
+                ("Daily Entry", "🛒", "Daily Entry Hub", {"daily_entry_mode": None}),
+                ("Live Cart Tracking", "📡", "Live Cart Tracking", {}),
+                ("Bulk Orders & Quotes", "📦", "Bulk Order & Quotes", {}),
             ],
         ),
         (
-            "❄️ Supply Chain, Freezer Inventory & Setup",
+            "set-2",
+            "kulfi-card-set-2",
+            "❄️ Stock & Freezer",
+            3,
             [
-                ("Purchase Orders", "🧾", "Purchase Orders & Receipts"),
-                ("Freezer Stock", "❄️", "Freezer Stock & Direct Sales"),
-                ("Freezer Analysis", "📈", "Freezer Analysis Matrix"),
-                ("Stock Removed", "🗑️", "Stock Removed & Spoilage"),
-                ("Locations & Logins", "🌐", "Locations, Carts & Logins"),
+                ("Freezer Analysis", "📈", "Current Freezer Position", {}),
+                ("Freezer Stock", "❄️", "Stock Received Entry", {"db_stock_mode": "New entry"}),
+                ("Stock Removed", "🗑️", "Stock Removed Entry", {"rem_screen_mode": "New Entry"}),
+            ],
+        ),
+        (
+            "set-3",
+            "kulfi-card-set-3",
+            "💳 POs, Expenses & Cash",
+            3,
+            [
+                ("Expenses", "💳", "Expenses", {}),
+                ("Purchase Orders", "🧾", "Purchase Order", {}),
+                ("Cash Custody", "💰", "Cash Management", {}),
+            ],
+        ),
+        (
+            "set-4",
+            "kulfi-card-set-4",
+            "👥 Staff Payroll & Admin Setup",
+            3,
+            [
+                ("Staff & Payroll", "👥", "Staff, Attendance & Payroll", {}),
+                ("Payslip Generator", "📄", "Payslip Generator", {}),
+                ("Locations & Logins", "🌐", "Locations, Logins & Carts", {}),
             ],
         ),
     ]
 
-    with st.container():
-        st.markdown('<span class="kulfi-clickable-card-grid"></span>', unsafe_allow_html=True)
-        for _sec_title, _sec_cards in _launchpad_sections:
-            st.markdown(f'<div class="launchpad-section-hdr">{_sec_title}</div>', unsafe_allow_html=True)
-            for _row_start in range(0, len(_sec_cards), 4):
-                _row_items = _sec_cards[_row_start:_row_start + 4]
-                _cols = st.columns(4, gap="small")
-                for _c_idx, (_target_page, _icon, _title) in enumerate(_row_items):
-                    with _cols[_c_idx]:
-                        if st.button(
-                            f"{_icon}  **{_title}**",
-                            key=f"launchpad_card_{_target_page}",
-                            use_container_width=True,
-                        ):
-                            st.session_state["page_nav"] = _target_page
-                            st.rerun()
+    for _hdr_cls, _set_cls, _sec_title, _num_cols, _sec_cards in _launchpad_sections:
+        with st.container(border=True):
+            st.markdown(f'<span class="kulfi-clickable-card-grid {_set_cls}"></span>', unsafe_allow_html=True)
+            st.markdown(f'<div class="launchpad-section-hdr {_hdr_cls}">{_sec_title}</div>', unsafe_allow_html=True)
+            _cols = st.columns(_num_cols, gap="small")
+            for _c_idx, (_target_page, _icon, _title, _extra_state) in enumerate(_sec_cards):
+                with _cols[_c_idx]:
+                    if _c_idx == 0:
+                        st.markdown(f'<span class="kulfi-clickable-card-grid {_set_cls}"></span>', unsafe_allow_html=True)
+                    _safe_set_key = _set_cls.replace("-", "_")
+                    if st.button(
+                        f"{_icon}  **{_title}**",
+                        key=f"launchpad_card_{_safe_set_key}_{_c_idx}",
+                        use_container_width=True,
+                    ):
+                        for _k, _v in _extra_state.items():
+                            st.session_state[_k] = _v
+                        st.session_state["page_nav"] = _target_page
+                        st.rerun()
 
 if page == "Locations & Logins" and user_role == "admin":
     st.subheader("🌐 Locations, Carts / Freezers & Logins Setup")
@@ -4893,7 +5000,7 @@ elif page == "Daily Entry":
                         Cart sales, restocks, returns &amp; freezer sales
                     </div>
                 </div>
-                <div style='background:#F1A245;color:#1F1209;padding:6px 14px;border-radius:999px;font-size:12px;font-weight:800;'>
+                <div style='background:#70440E;color:#FFFFFF;padding:6px 14px;border-radius:999px;font-size:12px;font-weight:800;'>
                     📅 {_entry_date_display(today_val)}
                 </div>
             </div>
@@ -5056,7 +5163,7 @@ elif page == "Daily Entry":
                     hc3.markdown("<div class='entry-grid-header'>+ Add ✏️</div>", unsafe_allow_html=True)
                     hc4.markdown("<div class='entry-grid-header'>Close ✏️</div>", unsafe_allow_html=True)
                     hc5.markdown("<div class='entry-grid-header'>Sold</div>", unsafe_allow_html=True)
-                    hc6.markdown("<div class='entry-grid-header'  title='Units recorded in Live Cart POS on this date'>Live Sold</div>", unsafe_allow_html=True)
+                    hc6.markdown("<div class='entry-grid-header' style='background:#1B5E91;' title='Units recorded in Live Cart POS on this date'>Live Sold</div>", unsafe_allow_html=True)
                     hc7.markdown("<div class='entry-grid-header' style='text-align:right;'>Sale (₹)</div>", unsafe_allow_html=True)
 
                     for code in FLAVOR_CODES:
@@ -5308,7 +5415,7 @@ elif page == "Daily Entry":
                     st.info("No previous Freezer sale transactions found.")
                 else:
                     pass
-                    col_w = [0.65, 0.85, 0.80, 1.05, 1.05, 0.65, 0.85, 0.85, 0.85, 0.85, 1.55, 1.15, 0.42, 0.42]
+                    col_w = [0.65, 0.85, 0.80, 1.00, 1.00, 0.65, 0.82, 0.82, 0.82, 0.82, 1.45, 1.10, 0.48, 0.48]
                     hdrs = [
                         ("Txn #", "Transaction ID"),
                         ("Date", "Sale Date"),
@@ -5640,10 +5747,10 @@ elif page == "Daily Entry":
             )
             with st.container(border=True):
                 rh1, rh2, rh3, rh4 = st.columns([2.2, 1.0, 1.2, 1.2], gap="small")
-                rh1.markdown("<div class='entry-grid-header' style='text-align:left;'>Flavour</div>", unsafe_allow_html=True)
-                rh2.markdown("<div class='entry-grid-header' >Opening</div>", unsafe_allow_html=True)
-                rh3.markdown("<div class='entry-grid-header' >+ Restock ✏️</div>", unsafe_allow_html=True)
-                rh4.markdown("<div class='entry-grid-header' style='text-align:right;'>Total Opening</div>", unsafe_allow_html=True)
+                rh1.markdown("<div class='entry-grid-header' style='background:#124A1D;text-align:left;'>Flavour</div>", unsafe_allow_html=True)
+                rh2.markdown("<div class='entry-grid-header' style='background:#124A1D;'>Opening</div>", unsafe_allow_html=True)
+                rh3.markdown("<div class='entry-grid-header' style='background:#124A1D;'>+ Restock ✏️</div>", unsafe_allow_html=True)
+                rh4.markdown("<div class='entry-grid-header' style='background:#124A1D;text-align:right;'>Total Opening</div>", unsafe_allow_html=True)
 
                 for code in FLAVOR_CODES:
                     f_info = FLAVOR_MAP[code]
@@ -5964,7 +6071,7 @@ elif page == "Daily Entry":
                 rh1.markdown("<div class='entry-grid-header' style='text-align:left;'>Flavour</div>", unsafe_allow_html=True)
                 rh2.markdown("<div class='entry-grid-header'>Opening</div>", unsafe_allow_html=True)
                 rh3.markdown("<div class='entry-grid-header'>In Cart Now</div>", unsafe_allow_html=True)
-                rh4.markdown("<div class='entry-grid-header' >Move to Fzr ✏️</div>", unsafe_allow_html=True)
+                rh4.markdown("<div class='entry-grid-header' style='background:#0F766E;'>Move to Fzr ✏️</div>", unsafe_allow_html=True)
                 rh5.markdown("<div class='entry-grid-header' style='text-align:right;'>Rem. in Cart</div>", unsafe_allow_html=True)
 
                 for code in FLAVOR_CODES:
@@ -6633,10 +6740,10 @@ elif page == "Bulk Orders & Quotes" and user_role == "admin":
             bh2.markdown("<div class='entry-grid-header' style='text-align:left;'>Flavour</div>", unsafe_allow_html=True)
             bh3.markdown("<div class='entry-grid-header'>Cost (CP)</div>", unsafe_allow_html=True)
             bh4.markdown("<div class='entry-grid-header'>MRP</div>", unsafe_allow_html=True)
-            bh5.markdown("<div class='entry-grid-header' >Qty (Pcs) ✏️</div>", unsafe_allow_html=True)
+            bh5.markdown("<div class='entry-grid-header' style='background:#124A1D;'>Qty (Pcs) ✏️</div>", unsafe_allow_html=True)
             bh6.markdown("<div class='entry-grid-header'>Total CP</div>", unsafe_allow_html=True)
             bh7.markdown("<div class='entry-grid-header'>Gross MRP</div>", unsafe_allow_html=True)
-            bh8.markdown("<div class='entry-grid-header' style='text-align:right;'>After Disc.</div>", unsafe_allow_html=True)
+            bh8.markdown("<div class='entry-grid-header' style='text-align:right;background:#E8542A;'>After Disc.</div>", unsafe_allow_html=True)
 
             curr_disc_pct = float(st.session_state.get("bulk_discount_pct", 0.0) or 0.0)
             disc_mult = 1.0 - (curr_disc_pct / 100.0)
@@ -8839,8 +8946,8 @@ elif page == "Freezer Stock" and user_role == "admin":
                             white-space: nowrap;
                         }}
                         .sr-matrix-tbl thead th {{
-                            background: #F1A245;
-                            color: #1F1209;
+                            background: #70440E;
+                            color: #FFFFFF;
                             font-weight: 800;
                             font-size: 13px;
                         }}
@@ -10103,7 +10210,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
             fa_disp_df = pd.DataFrame(fa_rows)
             st.dataframe(
                 fa_disp_df.style.apply(
-                    lambda r: ["background-color:#4A2C11;font-weight:900;color:#4A2418;" if r.get("Txn #") == "SUMMARY TOTAL" else "" for _ in r],
+                    lambda r: ["background-color:#FFF2DC;font-weight:900;color:#4A2418;" if r.get("Txn #") == "SUMMARY TOTAL" else "" for _ in r],
                     axis=1
                 ),
                 hide_index=True,
@@ -10708,7 +10815,7 @@ elif page == "Expenses" and user_role == "admin":
                     page_size = st.selectbox("Rows per page", [25, 50, 100, 500], index=0, key="exp_view_page_size", label_visibility="collapsed")
 
                 # ID and Month removed from table columns (Month filter retained above); COPY header with Clone tooltip
-                col_weights = [0.75, 1.50, 2.15, 0.82, 0.82, 0.82, 0.76, 0.76, 0.58, 0.36, 0.38, 0.36]
+                col_weights = [0.75, 1.45, 2.00, 0.80, 0.80, 0.80, 0.74, 0.74, 0.56, 0.46, 0.46, 0.46]
                 headers = [
                     ("Date", "Expense Date"),
                     ("Category", "Category & Sub-Category"),
@@ -11030,7 +11137,7 @@ elif page == "Expenses" and user_role == "admin":
                     pay_page_size = st.selectbox("Rows per page", [25, 50, 100, 500], index=0, key="pay_view_page_size", label_visibility="collapsed")
 
                 # ID and RCPT removed from table list; View Receipt section below removed completely
-                p_weights = [0.80, 2.10, 0.95, 1.25, 1.35, 1.95, 0.36, 0.38, 0.36]
+                p_weights = [0.80, 2.00, 0.92, 1.20, 1.30, 1.80, 0.46, 0.46, 0.46]
                 p_headers = [
                     ("Date", "Payment Date"),
                     ("Expense Link", "Linked Expense"),
@@ -11644,7 +11751,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                     <style>
                     .comp-history-wrap {width:100%; overflow-x:hidden; margin-bottom:0.7rem;}
                     .comp-history-table {width:100%; table-layout:fixed; border-collapse:collapse; font-size:12px;}
-                    .comp-history-table th {background:#F1A245; color:#1F1209; font-size:11.5px; font-weight:800; padding:6px 4px; border:1px solid #E3CBA0; white-space:normal; line-height:1.2;}
+                    .comp-history-table th {background:#70440E; color:white; font-size:11.5px; font-weight:800; padding:6px 4px; border:1px solid #E3CBA0; white-space:normal; line-height:1.2;}
                     .comp-history-table td {font-size:12px; padding:6px 4px; border:1px solid #E3CBA0; text-align:center; white-space:normal; overflow-wrap:anywhere; line-height:1.2;}
                     .comp-history-table tr:nth-child(even) td {background:#FFFBF2;}
                     </style>
@@ -12553,7 +12660,13 @@ elif page == "Staff & Payroll" and user_role == "admin":
 # PAGE 8: DASHBOARD (100% Supabase PostgreSQL Powered)
 # ======================================================================
 elif page == "Dashboard" and user_role == "admin":
-    st.subheader("Quick view")
+    if "dash_sub_page" not in st.session_state:
+        st.session_state["dash_sub_page"] = None
+
+    def _open_dash_sub_page(target_sub):
+        st.cache_data.clear()
+        st.session_state["dash_sub_page"] = target_sub
+
     try:
         daily_df = load_db_daily_df()
         exp_list = load_db_expenses_list()
@@ -12562,242 +12675,350 @@ elif page == "Dashboard" and user_role == "admin":
         daily_df, exp_df = pd.DataFrame(), pd.DataFrame()
         st.warning(f"Could not load data from database ({e}).")
 
-    today = pd.Timestamp(date.today())
-    day_labels = [today - pd.Timedelta(days=3), today - pd.Timedelta(days=2), today - pd.Timedelta(days=1)]
+    # Shared Date Filter & Financial Overview Calculations
+    today_cur = date.today()
+    month_start_cur = today_cur.replace(day=1)
+    default_end_cur = today_cur - timedelta(days=1)
+    if default_end_cur < month_start_cur:
+        default_end_cur = month_start_cur
+
+    all_dates = [today_cur, month_start_cur]
     if not daily_df.empty:
-        day_rows = [daily_df[daily_df["Date"].dt.date == d.date()] for d in day_labels]
-        day_rev = [r["Total_Collection"].sum() for r in day_rows]
-        day_units = [int(round(r["Sold_Total"].sum())) for r in day_rows]
-        col_names = [d.strftime("%d-%b") for d in day_labels]
-        col_names[-1] = col_names[-1] + " (Yesterday)"
-        compare_df = pd.DataFrame({
-            "Metric": ["Revenue", "Units sold"], col_names[0]: [f"₹{day_rev[0]:,.0f}", f"{day_units[0]}"],
-            col_names[1]: [f"₹{day_rev[1]:,.0f}", f"{day_units[1]}"], col_names[2]: [f"₹{day_rev[2]:,.0f}", f"{day_units[2]}"],
-        })
-        st.markdown('<div id="last-3-days"></div>', unsafe_allow_html=True)
-        st.markdown("**Last 3 days**")
-        st.dataframe(compare_df, hide_index=True, use_container_width=True)
+        all_dates += [daily_df["Date"].min().date(), daily_df["Date"].max().date()]
+    if not exp_df.empty and exp_df["Date"].notna().any():
+        all_dates += [exp_df["Date"].min().date(), exp_df["Date"].max().date()]
+    min_d, max_d = min(all_dates), max(today_cur, max(all_dates))
 
-        st.markdown('<div id="revenue-trend"></div>', unsafe_allow_html=True)
-        st.markdown("**Revenue, last 14 days**")
-        
-        trend_agg = daily_df.assign(Day=daily_df["Date"].dt.normalize()).groupby("Day", as_index=False).agg({
-            "PhonePe": "sum", 
-            "Total_Collection": "sum"
-        }).sort_values("Day").tail(14)
-        
-        trend_agg["Gross Cash"] = trend_agg["Total_Collection"] - trend_agg["PhonePe"]
-        trend_melt = trend_agg.melt(id_vars=["Day"], value_vars=["PhonePe", "Gross Cash"], var_name="Mode", value_name="Amount")
-        
-        trend_chart = alt.Chart(trend_melt).mark_bar(width=16).encode(
-            x=alt.X("Day:T", title="", axis=alt.Axis(format="%d-%b", labelAngle=-45)),
-            y=alt.Y("Amount:Q", title="Revenue (₹)"),
-            color=alt.Color(
-                "Mode:N", 
-                scale=alt.Scale(domain=["Gross Cash", "PhonePe"], range=["#2A9D8F", "#E76F51"]),
-                legend=alt.Legend(title="", orient="bottom", direction="horizontal") 
-            ),
-            tooltip=[
-                alt.Tooltip("Day:T", title="Date", format="%d-%b-%y"), 
-                alt.Tooltip("Mode:N", title="Mode"), 
-                alt.Tooltip("Amount:Q", title="Amount (₹)", format=",.0f") 
-            ]
-        ).properties(height=260)
-        
-        st.altair_chart(trend_chart, use_container_width=True)
-    else: 
-        st.info("No sales logged in database yet.")
+    if "applied_start" not in st.session_state:
+        st.session_state["applied_start"] = month_start_cur
+    if "applied_end" not in st.session_state:
+        st.session_state["applied_end"] = default_end_cur
+    st.session_state["applied_start"] = min(max(st.session_state["applied_start"], min_d), max_d)
+    st.session_state["applied_end"] = min(max(st.session_state["applied_end"], min_d), max_d)
 
-    if not daily_df.empty or not exp_df.empty:
-        st.markdown("---")
-        st.markdown('<div id="reports"></div>', unsafe_allow_html=True)
+    def _render_dash_date_filter_and_compute(key_suffix="main"):
+        dashboard_filter_mode = st.radio(
+            "Filter By",
+            ["Month", "Custom Date Range"],
+            horizontal=True,
+            key=f"dashboard_report_filter_mode_{key_suffix}",
+        )
+        with st.form(f"date_range_form_{key_suffix}"):
+            if dashboard_filter_mode == "Month":
+                rc1, rc2, rc3 = st.columns([2, 2, 1], gap="small", vertical_alignment="bottom")
+                dash_month_names = list(calendar.month_name)[1:]
+                default_dash_month = st.session_state["applied_start"].month
+                default_dash_year = st.session_state["applied_start"].year
+                with rc1:
+                    dash_month_name = st.selectbox(
+                        "Month",
+                        dash_month_names,
+                        index=default_dash_month - 1,
+                        key=f"dashboard_report_month_{key_suffix}",
+                    )
+                    dash_month_num = dash_month_names.index(dash_month_name) + 1
+                with rc2:
+                    dash_year = st.number_input(
+                        "Year",
+                        min_value=min_d.year,
+                        max_value=max_d.year,
+                        value=default_dash_year,
+                        step=1,
+                        key=f"dashboard_report_year_{key_suffix}",
+                    )
+                pending_start = date(int(dash_year), int(dash_month_num), 1)
+                pending_end = date(int(dash_year), int(dash_month_num), calendar.monthrange(int(dash_year), int(dash_month_num))[1])
+                pending_start = max(pending_start, min_d)
+                pending_end = min(pending_end, max_d)
+            else:
+                dash_month_num = st.session_state["applied_start"].month
+                dash_year = st.session_state["applied_start"].year
+                rc1, rc2, rc3 = st.columns([2, 2, 1], gap="small", vertical_alignment="bottom")
+                with rc1:
+                    pending_start = st.date_input(
+                        "Start Date",
+                        value=st.session_state["applied_start"],
+                        min_value=min_d,
+                        max_value=max_d,
+                        format="DD-MM-YYYY",
+                        key=f"dashboard_report_start_{key_suffix}",
+                    )
+                with rc2:
+                    pending_end = st.date_input(
+                        "End Date",
+                        value=st.session_state["applied_end"],
+                        min_value=min_d,
+                        max_value=max_d,
+                        format="DD-MM-YYYY",
+                        key=f"dashboard_report_end_{key_suffix}",
+                    )
+            with rc3:
+                apply_clicked = st.form_submit_button("Apply", type="primary", use_container_width=True)
 
-        # Initialize toggle states for the 3 Dashboard analytical views
-        if "show_dash_date_sales_log" not in st.session_state:
-            st.session_state["show_dash_date_sales_log"] = False
-        if "show_dash_rcm" not in st.session_state:
-            st.session_state["show_dash_rcm"] = False
-        if "show_dash_month_comp" not in st.session_state:
-            st.session_state["show_dash_month_comp"] = False
+        if apply_clicked:
+            st.session_state["applied_start"] = pending_start
+            st.session_state["applied_end"] = pending_end
+        range_start, range_end = st.session_state["applied_start"], st.session_state["applied_end"]
 
-        def _toggle_dash_section(sec_key):
-            st.cache_data.clear()
-            st.session_state[sec_key] = not bool(st.session_state.get(sec_key, False))
+        if range_start > range_end:
+            st.error("'From' date is after 'To' date - swap them and click Apply again.")
+            range_start, range_end = range_end, range_start
 
-        # 3 Toggle Buttons right below "Revenue, last 14 days" graph
-        btn_col1, btn_col2, btn_col3 = st.columns(3, gap="small")
-        with btn_col1:
-            _lbl_s1 = "🔼 Hide Date-wise Sales Log" if st.session_state["show_dash_date_sales_log"] else "📋 Date-wise Sales Log"
-            st.button(
-                _lbl_s1,
-                key="dash_toggle_btn_sales_log",
-                type="primary" if st.session_state["show_dash_date_sales_log"] else "secondary",
-                use_container_width=True,
-                on_click=_toggle_dash_section,
-                args=("show_dash_date_sales_log",),
-            )
-        with btn_col2:
-            _lbl_s2 = "🔼 Hide Revenue Cycle Management" if st.session_state["show_dash_rcm"] else "💰 Revenue Cycle Management"
-            st.button(
-                _lbl_s2,
-                key="dash_toggle_btn_rcm",
-                type="primary" if st.session_state["show_dash_rcm"] else "secondary",
-                use_container_width=True,
-                on_click=_toggle_dash_section,
-                args=("show_dash_rcm",),
-            )
-        with btn_col3:
-            _lbl_s3 = "🔼 Hide Month-Wise Performance Comparison" if st.session_state["show_dash_month_comp"] else "📅 Month-Wise Performance Comparison"
-            st.button(
-                _lbl_s3,
-                key="dash_toggle_btn_month_comp",
-                type="primary" if st.session_state["show_dash_month_comp"] else "secondary",
-                use_container_width=True,
-                on_click=_toggle_dash_section,
-                args=("show_dash_month_comp",),
-            )
+        range_df = daily_df[(daily_df["Date"].dt.date >= range_start) & (daily_df["Date"].dt.date <= range_end)] if not daily_df.empty else daily_df
+        range_exp = exp_df[(exp_df["Date"].dt.date >= range_start) & (exp_df["Date"].dt.date <= range_end)] if not exp_df.empty else exp_df
 
-        if st.session_state["show_dash_date_sales_log"] or st.session_state["show_dash_rcm"]:
-            st.markdown("## Reports & Performance Analytics")
+        total_rev = range_df["Total_Collection"].sum() if not range_df.empty else 0.0
+        total_units = int(round(range_df["Sold_Total"].sum())) if not range_df.empty else 0
 
-            today_cur = date.today()
-            month_start_cur = today_cur.replace(day=1)
-            default_end_cur = today_cur - timedelta(days=1)
-            if default_end_cur < month_start_cur:
-                default_end_cur = month_start_cur
+        flavor_range_df = load_db_flavor_sales(start_date=range_start, end_date=range_end)
+        exact_cogs_sold = float(flavor_range_df["COGS (₹)"].sum()) if not flavor_range_df.empty else 0.0
 
-            all_dates = [today_cur, month_start_cur]
-            if not daily_df.empty: all_dates += [daily_df["Date"].min().date(), daily_df["Date"].max().date()]
-            if not exp_df.empty and exp_df["Date"].notna().any(): all_dates += [exp_df["Date"].min().date(), exp_df["Date"].max().date()]
-            min_d, max_d = min(all_dates), max(today_cur, max(all_dates))
+        expense_types = range_exp["Expense_Type"].fillna("").astype(str).str.strip().str.upper() if not range_exp.empty else pd.Series(dtype=str)
+        expense_categories = range_exp["Category"].fillna("").astype(str).str.strip().str.casefold() if not range_exp.empty else pd.Series(dtype=str)
+        capex_total = float(range_exp.loc[expense_types == "CAPEX", "Amount"].sum()) if not range_exp.empty else 0.0
 
-            if "applied_start" not in st.session_state: st.session_state["applied_start"] = month_start_cur
-            if "applied_end" not in st.session_state: st.session_state["applied_end"] = default_end_cur
-            st.session_state["applied_start"] = min(max(st.session_state["applied_start"], min_d), max_d)
-            st.session_state["applied_end"] = min(max(st.session_state["applied_end"], min_d), max_d)
+        _, _, _, staff_pay_breakdown = calculate_incurred_labour_for_range(
+            range_start, range_end, limit_to_employment=True
+        )
+        staff_salary_total = sum(float(staff["incurred"]) for staff in staff_pay_breakdown.values())
+        unassigned_labour_df = range_exp[
+            (expense_types == "OPEX") & (expense_categories == "labour charges") & range_exp["Staff_Name"].isna()
+        ] if not range_exp.empty else pd.DataFrame()
+        unassigned_labour_total = float(unassigned_labour_df["Amount"].sum()) if not unassigned_labour_df.empty else 0.0
+        tot_labour_incurred = staff_salary_total + unassigned_labour_total
+        non_labour_opex_df = range_exp[(expense_types == "OPEX") & (~expense_categories.isin(["labour charges", "cost of goods"]))] if not range_exp.empty else pd.DataFrame()
+        other_opex_total = float(non_labour_opex_df["Amount"].sum()) if not non_labour_opex_df.empty else 0.0
 
-            dashboard_filter_mode = st.radio(
-                "Filter By",
-                ["Month", "Custom Date Range"],
-                horizontal=True,
-                key="dashboard_report_filter_mode"
-            )
+        total_incurred_opex = tot_labour_incurred + other_opex_total
 
-            with st.form("date_range_form"):
-                if dashboard_filter_mode == "Month":
-                    rc1, rc2, rc3 = st.columns([2, 2, 1], gap="small", vertical_alignment="bottom")
-                    dash_month_names = list(calendar.month_name)[1:]
-                    default_dash_month = st.session_state["applied_start"].month
-                    default_dash_year = st.session_state["applied_start"].year
-                    with rc1:
-                        dash_month_name = st.selectbox(
-                            "Month",
-                            dash_month_names,
-                            index=default_dash_month - 1,
-                            key="dashboard_report_month"
-                        )
-                        dash_month_num = dash_month_names.index(dash_month_name) + 1
-                    with rc2:
-                        dash_year = st.number_input(
-                            "Year",
-                            min_value=min_d.year,
-                            max_value=max_d.year,
-                            value=default_dash_year,
-                            step=1,
-                            key="dashboard_report_year"
-                        )
-                    pending_start = date(int(dash_year), int(dash_month_num), 1)
-                    pending_end = date(int(dash_year), int(dash_month_num), calendar.monthrange(int(dash_year), int(dash_month_num))[1])
-                    pending_start = max(pending_start, min_d)
-                    pending_end = min(pending_end, max_d)
-                else:
-                    rc1, rc2, rc3 = st.columns([2, 2, 1], gap="small", vertical_alignment="bottom")
-                    with rc1:
-                        pending_start = st.date_input(
-                            "Start Date",
-                            value=st.session_state["applied_start"],
-                            min_value=min_d,
-                            max_value=max_d,
-                            format="DD-MM-YYYY",
-                            key="dashboard_report_start"
-                        )
-                    with rc2:
-                        pending_end = st.date_input(
-                            "End Date",
-                            value=st.session_state["applied_end"],
-                            min_value=min_d,
-                            max_value=max_d,
-                            format="DD-MM-YYYY",
-                            key="dashboard_report_end"
-                        )
-                with rc3:
-                    apply_clicked = st.form_submit_button("Apply", type="primary", use_container_width=True)
+        gross_profit = total_rev - exact_cogs_sold
+        cogs_margin = (exact_cogs_sold / total_rev * 100) if total_rev > 0 else 0.0
+        gross_margin = (gross_profit / total_rev * 100) if total_rev > 0 else 0.0
+        net_profit = gross_profit - total_incurred_opex
+        net_margin = (net_profit / total_rev * 100) if total_rev > 0 else 0.0
+        opex_margin = (total_incurred_opex / total_rev * 100) if total_rev > 0 else 0.0
 
-            if apply_clicked:
-                st.session_state["applied_start"] = pending_start
-                st.session_state["applied_end"] = pending_end
-            range_start, range_end = st.session_state["applied_start"], st.session_state["applied_end"]
-        
-            if range_start > range_end: 
-                st.error("'From' date is after 'To' date - swap them and click Apply again.")
-                range_start, range_end = range_end, range_start
-            
-            pass
+        today_ref = date.today()
+        if dashboard_filter_mode == "Month":
+            if int(dash_year) == today_ref.year and int(dash_month_num) == today_ref.month:
+                elapsed_days = max(1, (today_ref - date(today_ref.year, today_ref.month, 1)).days)
+                avg_divisor_days = elapsed_days
+            else:
+                avg_divisor_days = max(1, calendar.monthrange(int(dash_year), int(dash_month_num))[1])
+        else:
+            avg_divisor_days = max(1, (range_end - range_start).days + 1)
 
-            range_df = daily_df[(daily_df["Date"].dt.date >= range_start) & (daily_df["Date"].dt.date <= range_end)] if not daily_df.empty else daily_df
-            range_exp = exp_df[(exp_df["Date"].dt.date >= range_start) & (exp_df["Date"].dt.date <= range_end)] if not exp_df.empty else exp_df
+        avg_rev_per_day = (total_rev / float(avg_divisor_days)) if avg_divisor_days > 0 else 0.0
+        avg_units_per_day = int(round(total_units / float(avg_divisor_days))) if avg_divisor_days > 0 else 0
 
-            total_rev = range_df["Total_Collection"].sum() if not range_df.empty else 0.0
-            total_units = int(round(range_df["Sold_Total"].sum())) if not range_df.empty else 0
+        return (
+            dashboard_filter_mode, dash_year, dash_month_num,
+            range_start, range_end, range_df, range_exp,
+            total_rev, total_units, exact_cogs_sold, capex_total,
+            staff_pay_breakdown, unassigned_labour_df, non_labour_opex_df,
+            tot_labour_incurred, other_opex_total, total_incurred_opex,
+            gross_profit, cogs_margin, gross_margin, net_profit, net_margin, opex_margin,
+            avg_divisor_days, avg_rev_per_day, avg_units_per_day
+        )
 
-            # COGS uses sold units in the selected range at each flavour's cost_price.
-            flavor_range_df = load_db_flavor_sales(start_date=range_start, end_date=range_end)
-            exact_cogs_sold = float(flavor_range_df["COGS (₹)"].sum()) if not flavor_range_df.empty else 0.0
+    def _render_7_financial_overview_boxes(total_rev, avg_units_per_day, total_units, exact_cogs_sold, cogs_margin, gross_profit, gross_margin, total_incurred_opex, opex_margin, net_profit, net_margin):
+        st.markdown('<div class="dashboard-kpi-row">', unsafe_allow_html=True)
+        mc1, mc2, mc3, mc4, mc5, mc6, mc7 = st.columns(7)
+        mc1.metric("Revenue", f"₹{total_rev:,.0f}")
+        mc2.metric("Avg Units / Day", f"{avg_units_per_day:,}")
+        mc3.metric("Units Sold", f"{total_units:,}")
+        mc4.metric(f"COGS ({cogs_margin:.1f}%)", f"₹{exact_cogs_sold:,.0f}")
+        mc5.metric(f"Gr. Profit ({gross_margin:.1f}%)", f"₹{gross_profit:,.0f}")
+        mc6.metric(f"OPEX ({opex_margin:.1f}%)", f"₹{total_incurred_opex:,.0f}")
+        mc7.metric(f"Net Profit ({net_margin:.1f}%)", f"₹{net_profit:,.0f}")
+        st.markdown('</div>', unsafe_allow_html=True)
 
-            # Expense buckets use expense_date within the selected range.
-            expense_types = range_exp["Expense_Type"].fillna("").astype(str).str.strip().str.upper() if not range_exp.empty else pd.Series(dtype=str)
-            expense_categories = range_exp["Category"].fillna("").astype(str).str.strip().str.casefold() if not range_exp.empty else pd.Series(dtype=str)
-            capex_total = float(range_exp.loc[expense_types == "CAPEX", "Amount"].sum()) if not range_exp.empty else 0.0
-            # Use the same gross payable salary/commission/allowance calculation as payslips.
-            # The Dashboard counts only the part of each employment period in the date range.
-            _, _, _, staff_pay_breakdown = calculate_incurred_labour_for_range(
-                range_start, range_end, limit_to_employment=True
-            )
-            staff_salary_total = sum(float(staff["incurred"]) for staff in staff_pay_breakdown.values())
-            unassigned_labour_df = range_exp[
-                (expense_types == "OPEX") & (expense_categories == "labour charges") & range_exp["Staff_Name"].isna()
-            ] if not range_exp.empty else pd.DataFrame()
-            unassigned_labour_total = float(unassigned_labour_df["Amount"].sum()) if not unassigned_labour_df.empty else 0.0
-            tot_labour_incurred = staff_salary_total + unassigned_labour_total
-            non_labour_opex_df = range_exp[(expense_types == "OPEX") & (~expense_categories.isin(["labour charges", "cost of goods"]))] if not range_exp.empty else pd.DataFrame()
-            other_opex_total = float(non_labour_opex_df["Amount"].sum()) if not non_labour_opex_df.empty else 0.0
+    active_dash_sub = st.session_state.get("dash_sub_page")
 
-            total_incurred_opex = tot_labour_incurred + other_opex_total
+    # ==================================================================
+    # DEFAULT MAIN DASHBOARD PAGE (WHEN NO SUB-PAGE IS OPEN)
+    # ==================================================================
+    if active_dash_sub is None:
+        st.subheader("Quick view")
+        today = pd.Timestamp(date.today())
+        day_labels = [today - pd.Timedelta(days=3), today - pd.Timedelta(days=2), today - pd.Timedelta(days=1)]
+        if not daily_df.empty:
+            day_rows = [daily_df[daily_df["Date"].dt.date == d.date()] for d in day_labels]
+            day_rev = [r["Total_Collection"].sum() for r in day_rows]
+            day_units = [int(round(r["Sold_Total"].sum())) for r in day_rows]
+            col_names = [d.strftime("%d-%b") for d in day_labels]
+            col_names[-1] = col_names[-1] + " (Yesterday)"
+            compare_df = pd.DataFrame({
+                "Metric": ["Revenue", "Units sold"], col_names[0]: [f"₹{day_rev[0]:,.0f}", f"{day_units[0]}"],
+                col_names[1]: [f"₹{day_rev[1]:,.0f}", f"{day_units[1]}"], col_names[2]: [f"₹{day_rev[2]:,.0f}", f"{day_units[2]}"],
+            })
+            st.markdown('<div id="last-3-days"></div>', unsafe_allow_html=True)
+            st.markdown("**Last 3 days**")
+            st.dataframe(compare_df, hide_index=True, use_container_width=True)
 
-            gross_profit = total_rev - exact_cogs_sold
-            cogs_margin = (exact_cogs_sold / total_rev * 100) if total_rev > 0 else 0.0
-            gross_margin = (gross_profit / total_rev * 100) if total_rev > 0 else 0.0
-            net_profit = gross_profit - total_incurred_opex
-            net_margin = (net_profit / total_rev * 100) if total_rev > 0 else 0.0
-            opex_margin = (total_incurred_opex / total_rev * 100) if total_rev > 0 else 0.0
+            st.markdown('<div id="revenue-trend"></div>', unsafe_allow_html=True)
+            st.markdown("**Revenue, last 14 days**")
 
+            trend_agg = daily_df.assign(Day=daily_df["Date"].dt.normalize()).groupby("Day", as_index=False).agg({
+                "PhonePe": "sum",
+                "Total_Collection": "sum"
+            }).sort_values("Day").tail(14)
 
-        # ------------------------------------------------------------------
-        # TOGGLE SECTION 1: DATE-WISE SALES LOG
-        # ------------------------------------------------------------------
-        if st.session_state["show_dash_date_sales_log"]:
+            trend_agg["Gross Cash"] = trend_agg["Total_Collection"] - trend_agg["PhonePe"]
+            trend_melt = trend_agg.melt(id_vars=["Day"], value_vars=["PhonePe", "Gross Cash"], var_name="Mode", value_name="Amount")
+
+            trend_chart = alt.Chart(trend_melt).mark_bar(width=16).encode(
+                x=alt.X("Day:T", title="", axis=alt.Axis(format="%d-%b", labelAngle=-45)),
+                y=alt.Y("Amount:Q", title="Revenue (₹)"),
+                color=alt.Color(
+                    "Mode:N",
+                    scale=alt.Scale(domain=["Gross Cash", "PhonePe"], range=["#2A9D8F", "#E76F51"]),
+                    legend=alt.Legend(title="", orient="bottom", direction="horizontal")
+                ),
+                tooltip=[
+                    alt.Tooltip("Day:T", title="Date", format="%d-%b-%y"),
+                    alt.Tooltip("Mode:N", title="Mode"),
+                    alt.Tooltip("Amount:Q", title="Amount (₹)", format=",.0f")
+                ]
+            ).properties(height=250)
+
+            st.altair_chart(trend_chart, use_container_width=True)
+        else:
+            st.info("No sales logged in database yet.")
+
+        if not daily_df.empty or not exp_df.empty:
             st.markdown("---")
-            _sl_hdr_c1, _sl_hdr_c2 = st.columns([3.2, 1.0], vertical_alignment="center")
-            with _sl_hdr_c1:
-                st.markdown("### 📋 Date-wise Sales Log")
-            with _sl_hdr_c2:
+            st.markdown("### Financials Overview")
+            (
+                dashboard_filter_mode, dash_year, dash_month_num,
+                range_start, range_end, range_df, range_exp,
+                total_rev, total_units, exact_cogs_sold, capex_total,
+                staff_pay_breakdown, unassigned_labour_df, non_labour_opex_df,
+                tot_labour_incurred, other_opex_total, total_incurred_opex,
+                gross_profit, cogs_margin, gross_margin, net_profit, net_margin, opex_margin,
+                avg_divisor_days, avg_rev_per_day, avg_units_per_day
+            ) = _render_dash_date_filter_and_compute(key_suffix="main_overview")
+
+            _render_7_financial_overview_boxes(
+                total_rev, avg_units_per_day, total_units,
+                exact_cogs_sold, cogs_margin, gross_profit, gross_margin,
+                total_incurred_opex, opex_margin, net_profit, net_margin
+            )
+
+            st.markdown("#### Daily Revenue Trend")
+            if not range_df.empty:
+                line_chart = alt.Chart(range_df.groupby("Date", as_index=False)["Total_Collection"].sum()).mark_line(point=True, color="#E8542A").encode(
+                    x=alt.X("Date:T", title="Date", axis=alt.Axis(format="%d-%b")),
+                    y=alt.Y("Total_Collection:Q", title="Revenue (₹)"),
+                    tooltip=[alt.Tooltip("Date:T", format="%d-%b-%y", title="Date"), alt.Tooltip("Total_Collection:Q", format=",.2f", title="Revenue (₹)")]
+                ).properties(height=270)
+                st.altair_chart(line_chart, use_container_width=True)
+            else:
+                st.caption("No revenue data available for this range to plot.")
+
+            st.markdown("<div style='height:6px;'></div>", unsafe_allow_html=True)
+            # 4 Navigation Buttons below the "Daily Revenue Trend" graph
+            btn_col1, btn_col2, btn_col3, btn_col4 = st.columns(4, gap="small")
+            with btn_col1:
                 st.button(
-                    "🔼 Hide Date-wise Sales Log",
-                    key="dash_inline_hide_sales_log",
+                    "📋 Date-wise Sales Log",
+                    key="dash_open_page_sales_log",
                     use_container_width=True,
-                    on_click=_toggle_dash_section,
-                    args=("show_dash_date_sales_log",),
+                    on_click=_open_dash_sub_page,
+                    args=("sales_log",),
                 )
+            with btn_col2:
+                st.button(
+                    "💰 Financials",
+                    key="dash_open_page_financials",
+                    use_container_width=True,
+                    on_click=_open_dash_sub_page,
+                    args=("financials",),
+                )
+            with btn_col3:
+                st.button(
+                    "📅 Month-Wise Performance Comparison",
+                    key="dash_open_page_month_comp",
+                    use_container_width=True,
+                    on_click=_open_dash_sub_page,
+                    args=("month_comp",),
+                )
+            with btn_col4:
+                st.button(
+                    "📆 Day-Wise & Timing Patterns",
+                    key="dash_open_page_dow_patterns",
+                    use_container_width=True,
+                    on_click=_open_dash_sub_page,
+                    args=("dow_patterns",),
+                )
+
+    # ==================================================================
+    # SEPARATE SUB-PAGES OPENED FROM THE 3 DASHBOARD BUTTONS
+    # ==================================================================
+    else:
+        # Top Navigation Bar to return to Main Dashboard or switch between the 4 sub-pages
+        nav_b1, nav_b2, nav_b3, nav_b4, nav_b5 = st.columns([1.15, 1.15, 0.95, 1.25, 1.30], gap="small")
+        with nav_b1:
+            st.button(
+                "⬅ Back to Dashboard",
+                key="dash_sub_back_top",
+                type="primary",
+                use_container_width=True,
+                on_click=_open_dash_sub_page,
+                args=(None,),
+            )
+        with nav_b2:
+            st.button(
+                "📋 Date-wise Sales Log",
+                key="dash_sub_switch_sales_log",
+                type="primary" if active_dash_sub == "sales_log" else "secondary",
+                use_container_width=True,
+                on_click=_open_dash_sub_page,
+                args=("sales_log",),
+            )
+        with nav_b3:
+            st.button(
+                "💰 Financials",
+                key="dash_sub_switch_financials",
+                type="primary" if active_dash_sub == "financials" else "secondary",
+                use_container_width=True,
+                on_click=_open_dash_sub_page,
+                args=("financials",),
+            )
+        with nav_b4:
+            st.button(
+                "📅 Month-Wise Comparison",
+                key="dash_sub_switch_month_comp",
+                type="primary" if active_dash_sub == "month_comp" else "secondary",
+                use_container_width=True,
+                on_click=_open_dash_sub_page,
+                args=("month_comp",),
+            )
+        with nav_b5:
+            st.button(
+                "📆 Day-Wise & Timing Patterns",
+                key="dash_sub_switch_dow_patterns",
+                type="primary" if active_dash_sub == "dow_patterns" else "secondary",
+                use_container_width=True,
+                on_click=_open_dash_sub_page,
+                args=("dow_patterns",),
+            )
+        st.markdown("---")
+
+        # ------------------------------------------------------------------
+        # SUB-PAGE 1: DATE-WISE SALES LOG
+        # ------------------------------------------------------------------
+        if active_dash_sub == "sales_log":
+            st.subheader("📋 Date-wise Sales Log")
+            (
+                dashboard_filter_mode, dash_year, dash_month_num,
+                range_start, range_end, range_df, range_exp,
+                total_rev, total_units, exact_cogs_sold, capex_total,
+                staff_pay_breakdown, unassigned_labour_df, non_labour_opex_df,
+                tot_labour_incurred, other_opex_total, total_incurred_opex,
+                gross_profit, cogs_margin, gross_margin, net_profit, net_margin, opex_margin,
+                avg_divisor_days, avg_rev_per_day, avg_units_per_day
+            ) = _render_dash_date_filter_and_compute(key_suffix="sub_sales_log")
             # Sales report tables show completed cart sales dates (<= yesterday) PLUS any direct Freezer sales in the range (including today).
             latest_completed_sales_date = date.today() - timedelta(days=1)
             if not range_df.empty:
@@ -12870,7 +13091,7 @@ elif page == "Dashboard" and user_role == "admin":
                     alignments = ["left"] + ["right"] * 8
                     cell_html = "".join(
                         f"<div style='padding:9px 6px;text-align:{alignments[i]};"
-                        f"font-weight:900;color:#1F1209;font-size:13.5px;line-height:1.25;"
+                        f"font-weight:900;color:#FFFFFF;font-size:13.5px;line-height:1.25;"
                         f"white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'>{escape(str(value))}</div>"
                         for i, value in enumerate(total_cells)
                     )
@@ -12879,8 +13100,8 @@ elif page == "Dashboard" and user_role == "admin":
                         <div style="
                             display:grid;
                             grid-template-columns:0.72fr 0.62fr 1.02fr 0.92fr 0.82fr 1.08fr 0.92fr 1.18fr 1.28fr;
-                            background:#F1A245;
-                            border:1.5px solid #AE7532;
+                            background:#70440E;
+                            border:1px solid #5F3508;
                             border-radius:0 0 7px 7px;
                             margin-top:-13px;
                             margin-bottom:8px;
@@ -13073,7 +13294,7 @@ elif page == "Dashboard" and user_role == "admin":
                     sum_table_df = pd.DataFrame(sum_rows)
                     st.dataframe(
                         sum_table_df.style.apply(
-                            lambda r: ["background-color:#4A2C11;font-weight:900;color:#4A2418;" if r.get("Date") == "SUMMARY TOTAL" else "" for _ in r],
+                            lambda r: ["background-color:#FFF2DC;font-weight:900;color:#4A2418;" if r.get("Date") == "SUMMARY TOTAL" else "" for _ in r],
                             axis=1
                         ),
                         hide_index=True,
@@ -13120,7 +13341,7 @@ elif page == "Dashboard" and user_role == "admin":
                     txn_table_df = pd.DataFrame(txn_rows)
                     st.dataframe(
                         txn_table_df.style.apply(
-                            lambda r: ["background-color:#4A2C11;font-weight:900;color:#4A2418;" if r.get("Txn #") == "SUMMARY TOTAL" else "" for _ in r],
+                            lambda r: ["background-color:#FFF2DC;font-weight:900;color:#4A2418;" if r.get("Txn #") == "SUMMARY TOTAL" else "" for _ in r],
                             axis=1
                         ),
                         hide_index=True,
@@ -13128,50 +13349,40 @@ elif page == "Dashboard" and user_role == "admin":
                     )
 
 
-        # ------------------------------------------------------------------
-        # TOGGLE SECTION 2: REVENUE CYCLE MANAGEMENT
-        # ------------------------------------------------------------------
-        if st.session_state["show_dash_rcm"]:
+
             st.markdown("---")
-            _rcm_hdr_c1, _rcm_hdr_c2 = st.columns([3.2, 1.0], vertical_alignment="center")
-            with _rcm_hdr_c1:
-                st.markdown("### 💰 Revenue Cycle Management")
-            with _rcm_hdr_c2:
+            b_back1, _ = st.columns([1.5, 3.5])
+            with b_back1:
                 st.button(
-                    "🔼 Hide Revenue Cycle Management",
-                    key="dash_inline_hide_rcm",
+                    "⬅ Back to Dashboard",
+                    key="dash_sub_back_bot_sales",
+                    type="primary",
                     use_container_width=True,
-                    on_click=_toggle_dash_section,
-                    args=("show_dash_rcm",),
+                    on_click=_open_dash_sub_page,
+                    args=(None,),
                 )
-            st.markdown("### 1. Revenue Cycle Management & Financial Performance")
 
-            # Calculate average days for the selected range:
-            # - Month filter: if current month, use 1st until yesterday (today - 1); else use month days count
-            # - Custom range: exact number of days in the selected date range
-            today_ref = date.today()
-            if dashboard_filter_mode == "Month":
-                if int(dash_year) == today_ref.year and int(dash_month_num) == today_ref.month:
-                    elapsed_days = max(1, (today_ref - date(today_ref.year, today_ref.month, 1)).days)
-                    avg_divisor_days = elapsed_days
-                else:
-                    avg_divisor_days = max(1, calendar.monthrange(int(dash_year), int(dash_month_num))[1])
-            else:
-                avg_divisor_days = max(1, (range_end - range_start).days + 1)
+        # ------------------------------------------------------------------
+        # SUB-PAGE 2: FINANCIALS
+        # ------------------------------------------------------------------
+        elif active_dash_sub == "financials":
+            st.subheader("💰 Financials")
+            (
+                dashboard_filter_mode, dash_year, dash_month_num,
+                range_start, range_end, range_df, range_exp,
+                total_rev, total_units, exact_cogs_sold, capex_total,
+                staff_pay_breakdown, unassigned_labour_df, non_labour_opex_df,
+                tot_labour_incurred, other_opex_total, total_incurred_opex,
+                gross_profit, cogs_margin, gross_margin, net_profit, net_margin, opex_margin,
+                avg_divisor_days, avg_rev_per_day, avg_units_per_day
+            ) = _render_dash_date_filter_and_compute(key_suffix="sub_financials")
 
-            avg_rev_per_day = (total_rev / float(avg_divisor_days)) if avg_divisor_days > 0 else 0.0
-
-            st.markdown('<div class="dashboard-kpi-row">', unsafe_allow_html=True)
-            mc1, mc2, mc3, mc4, mc5, mc6, mc7 = st.columns(7)
-            mc1.metric("Revenue", f"₹{total_rev:,.0f}")
-            mc2.metric("Avg Rev / Day", f"₹{avg_rev_per_day:,.0f}")
-            mc3.metric("Units Sold", f"{total_units:,}")
-            mc4.metric(f"COGS ({cogs_margin:.1f}%)", f"₹{exact_cogs_sold:,.0f}")
-            mc5.metric(f"Gr. Profit ({gross_margin:.1f}%)", f"₹{gross_profit:,.0f}")
-            mc6.metric(f"OPEX ({opex_margin:.1f}%)", f"₹{total_incurred_opex:,.0f}")
-            mc7.metric(f"Net Profit ({net_margin:.1f}%)", f"₹{net_profit:,.0f}")
-            st.markdown('</div>', unsafe_allow_html=True)
-
+            st.markdown("### Financials Overview")
+            _render_7_financial_overview_boxes(
+                total_rev, avg_units_per_day, total_units,
+                exact_cogs_sold, cogs_margin, gross_profit, gross_margin,
+                total_incurred_opex, opex_margin, net_profit, net_margin
+            )
             # ------------------------------------------------------------------
             # INTERACTIVE OPEX BREAKDOWN & INSIGHTS BUTTON + PANEL
             # ------------------------------------------------------------------
@@ -13207,14 +13418,14 @@ elif page == "Dashboard" and user_role == "admin":
                 with st.container(border=True):
                     st.markdown(
                         f"""
-                        <div style="background:linear-gradient(135deg, #FDAA48 0%, #F1A245 100%);border:1.5px solid #AE7532;padding:14px 18px;border-radius:10px;color:#1F1209;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                        <div style="background:linear-gradient(135deg, #4A2418 0%, #70440E 100%);padding:14px 18px;border-radius:10px;color:#FFFFFF;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
                             <div>
-                                <div style="font-size:11px;font-weight:800;color:#4A2C11;letter-spacing:0.6px;text-transform:uppercase;">OPERATING EXPENSE (OPEX) DEEP-DIVE & INSIGHTS</div>
+                                <div style="font-size:11px;font-weight:800;color:#F6E7CC;letter-spacing:0.6px;text-transform:uppercase;">OPERATING EXPENSE (OPEX) DEEP-DIVE & INSIGHTS</div>
                                 <div style="font-size:18px;font-weight:900;color:#FFFFFF;margin-top:2px;">Period: {range_start.strftime('%d %b %Y')} — {range_end.strftime('%d %b %Y')} ({avg_divisor_days} active days)</div>
                             </div>
                             <div style="text-align:right;">
-                                <div style="font-size:11px;color:#4A2C11;font-weight:700;">Total Incurred OPEX</div>
-                                <div style="font-size:22px;font-weight:900;color:#1F1209;">₹{total_incurred_opex:,.0f} <span style="font-size:13px;color:#4A2C11;">({opex_margin:.1f}% of Rev)</span></div>
+                                <div style="font-size:11px;color:#F6E7CC;font-weight:700;">Total Incurred OPEX</div>
+                                <div style="font-size:22px;font-weight:900;color:#FFD166;">₹{total_incurred_opex:,.0f} <span style="font-size:13px;color:#FFF2DC;">({opex_margin:.1f}% of Rev)</span></div>
                             </div>
                         </div>
                         """,
@@ -13424,7 +13635,7 @@ elif page == "Dashboard" and user_role == "admin":
                             )
                             st.dataframe(
                                 disp_opex_df.style.apply(
-                                    lambda r: ["background-color:#4A2C11;font-weight:900;color:#4A2418;" if r.get("Category") == "TOTAL INCURRED OPEX" else "" for _ in r],
+                                    lambda r: ["background-color:#FFF2DC;font-weight:900;color:#4A2418;" if r.get("Category") == "TOTAL INCURRED OPEX" else "" for _ in r],
                                     axis=1,
                                 ),
                                 hide_index=True,
@@ -13433,17 +13644,6 @@ elif page == "Dashboard" and user_role == "admin":
                             )
                     else:
                         st.info("No operating expenses incurred in the selected period.")
-
-            st.markdown("#### Daily Revenue Trend")
-            if not range_df.empty:
-                line_chart = alt.Chart(range_df.groupby("Date", as_index=False)["Total_Collection"].sum()).mark_line(point=True, color="#E8542A").encode(
-                    x=alt.X("Date:T", title="Date", axis=alt.Axis(format="%d-%b")),
-                    y=alt.Y("Total_Collection:Q", title="Revenue (₹)"),
-                    tooltip=[alt.Tooltip("Date:T", format="%d-%b-%y", title="Date"), alt.Tooltip("Total_Collection:Q", format=",.2f", title="Revenue (₹)")]
-                ).properties(height=300)
-                st.altair_chart(line_chart, use_container_width=True)
-            else:
-                st.caption("No revenue data available for this range to plot.")
 
             st.markdown("---")
             pl_c1, pl_c2 = st.columns([1.1, 1.2])
@@ -13578,89 +13778,22 @@ elif page == "Dashboard" and user_role == "admin":
                 st.caption("No cart sales in this date range.")
 
             st.markdown("---")
-            st.markdown("### 3. Day-Wise & Timing Patterns")
-            if not range_df.empty:
-                day_order = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-                dow_df = range_df[~range_df["Cart"].astype(str).str.strip().str.upper().isin(["FREEZER", "HOSUR FREEZER"])].copy()
-                dow_df["Day"] = dow_df["Date"].dt.day_name().str[:3]
-            
-                if not dow_df.empty:
-                    def show_compact_average_table(pivot):
-                        headers = "".join(f"<th>{escape(str(day))}</th>" for day in pivot.columns)
-                        rows = []
-                        for cart, values in pivot.iterrows():
-                            cells = "".join(f"<td>{int(round(value)):,}</td>" for value in values)
-                            rows.append(f"<tr><th scope='row'>{escape(str(cart))}</th>{cells}</tr>")
-                        st.html(
-                            "<style>"
-                            ".compact-dow-table{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:clamp(9px,.78vw,11.5px);line-height:1.35;background:#FFFEFA;border:1.5px solid #B8882D;border-radius:9px;overflow:hidden;box-shadow:0 3px 10px rgba(45,21,11,0.06)}"
-                            ".compact-dow-table th,.compact-dow-table td{padding:6px 5px;border-bottom:1px solid #E5D2B0;border-right:1px solid #EFE2CA;text-align:right;overflow-wrap:anywhere;color:#2A160C;font-weight:700}"
-                            ".compact-dow-table thead th{font-weight:800;background:linear-gradient(180deg,#FDAA48 0%,#F1A245 100%);color:#1F1209;border-bottom:2px solid #D4AF37;text-align:center}"
-                            ".compact-dow-table th:first-child{width:29%;text-align:left;padding-left:8px}"
-                            ".compact-dow-table tbody tr:nth-child(even) td,.compact-dow-table tbody tr:nth-child(even) th{background:#FAF2E1}"
-                            ".compact-dow-table tbody tr:first-child td,.compact-dow-table tbody tr:first-child th{font-weight:900;background:linear-gradient(90deg,#FBF0D9 0%,#F2DEC0 100%);color:#2D150B;border-bottom:1.5px solid #C89B3C}"
-                            "</style>"
-                            f"<table class='compact-dow-table'><thead><tr><th scope='col'>Cart</th>{headers}</tr></thead>"
-                            f"<tbody>{''.join(rows)}</tbody></table>"
-                        )
-
-                    dw1, dw2 = st.columns(2)
-                    with dw1: 
-                        st.write("**Average Units Sold per Day of Week**")
-                        units_df = dow_df[dow_df["Sold_Total"] > 0]
-                        if not units_df.empty:
-                            units_pivot = units_df.pivot_table(index="Cart", columns="Day", values="Sold_Total", aggfunc="mean", fill_value=0)
-                            day_cols = [d for d in day_order if d in units_pivot.columns]
-                            units_pivot = units_pivot.reindex(columns=day_cols)
-                            overall_units = units_df.groupby("Day")["Sold_Total"].mean().reindex(day_cols)
-                            units_pivot.loc["Overall Average (per cart)"] = overall_units
-                            units_pivot = units_pivot.reindex(["Overall Average (per cart)"] + [cart for cart in units_pivot.index if cart != "Overall Average (per cart)"])
-                            show_compact_average_table(units_pivot)
-                        else:
-                            st.caption("No units sold in this range.")
-                    with dw2: 
-                        st.write("**Average Revenue (₹) per Day of Week**")
-                        rev_pivot = dow_df.pivot_table(index="Cart", columns="Day", values="Total_Collection", aggfunc="mean", fill_value=0)
-                        rev_day_cols = [d for d in day_order if d in rev_pivot.columns]
-                        rev_pivot = rev_pivot.reindex(columns=rev_day_cols)
-                        overall_rev = dow_df.groupby("Day")["Total_Collection"].mean().reindex(rev_day_cols)
-                        rev_pivot.loc["Overall Average (per cart)"] = overall_rev
-                        rev_pivot = rev_pivot.reindex(["Overall Average (per cart)"] + [cart for cart in rev_pivot.index if cart != "Overall Average (per cart)"])
-                        show_compact_average_table(rev_pivot)
-
-                    max1, max2 = st.columns(2)
-                    with max1:
-                        st.write("**Maximum Units Sold per Day of Week**")
-                        if not dow_df.empty:
-                            max_units = dow_df.pivot_table(index="Cart", columns="Day", values="Sold_Total", aggfunc="max", fill_value=0)
-                            max_units = max_units.reindex(columns=[d for d in day_order if d in max_units.columns])
-                            st.dataframe(max_units.round(0).astype(int), use_container_width=True)
-                    with max2:
-                        st.write("**Maximum Revenue (₹) per Day of Week**")
-                        max_rev = dow_df.pivot_table(index="Cart", columns="Day", values="Total_Collection", aggfunc="max", fill_value=0)
-                        max_rev = max_rev.reindex(columns=[d for d in day_order if d in max_rev.columns])
-                        st.dataframe(max_rev.round(0).astype(int), use_container_width=True)
-                else: 
-                    st.caption("No cart entries found in this range.")
-        # ------------------------------------------------------------------
-        # TOGGLE SECTION 3: MONTH-WISE PERFORMANCE COMPARISON
-        # ------------------------------------------------------------------
-        if st.session_state["show_dash_month_comp"]:
-            # ------------------------------------------------------------------
-            # MONTH-WISE FULL-DATA COMPARISON TABLE & GRAPHIC VIEW
-            # ------------------------------------------------------------------
-            st.markdown("---")
-            _mc_hdr_c1, _mc_hdr_c2 = st.columns([3.2, 1.0], vertical_alignment="center")
-            with _mc_hdr_c1:
-                st.markdown("### 📅 Month-Wise Performance Comparison (Full-Data Months Only)")
-            with _mc_hdr_c2:
+            b_back2, _ = st.columns([1.5, 3.5])
+            with b_back2:
                 st.button(
-                    "🔼 Hide Month-Wise Performance Comparison",
-                    key="dash_inline_hide_month_comp",
+                    "⬅ Back to Dashboard",
+                    key="dash_sub_back_bot_fin",
+                    type="primary",
                     use_container_width=True,
-                    on_click=_toggle_dash_section,
-                    args=("show_dash_month_comp",),
+                    on_click=_open_dash_sub_page,
+                    args=(None,),
                 )
+
+        # ------------------------------------------------------------------
+        # SUB-PAGE 3: MONTH-WISE PERFORMANCE COMPARISON
+        # ------------------------------------------------------------------
+        elif active_dash_sub == "month_comp":
+            st.subheader("📅 Month-Wise Performance Comparison (Full-Data Months Only)")
             st.caption("Includes only completed calendar months where full month data is available from the 1st through the end of the month (partial months are excluded).")
 
             if not daily_df.empty:
@@ -13802,3 +13935,105 @@ elif page == "Dashboard" and user_role == "admin":
                         st.altair_chart(_build_month_bar_chart("Net_Profit_Pct", "Net Profit %", "#124A1D", ".1f"), use_container_width=True)
             else:
                 st.info("No sales data available for month-wise comparison.")
+            st.markdown("---")
+            b_back3, _ = st.columns([1.5, 3.5])
+            with b_back3:
+                st.button(
+                    "⬅ Back to Dashboard",
+                    key="dash_sub_back_bot_mc",
+                    type="primary",
+                    use_container_width=True,
+                    on_click=_open_dash_sub_page,
+                    args=(None,),
+                )
+
+        # ------------------------------------------------------------------
+        # SUB-PAGE 4: DAY-WISE & TIMING PATTERNS
+        # ------------------------------------------------------------------
+        elif active_dash_sub == "dow_patterns":
+            st.subheader("📆 Day-Wise & Timing Patterns")
+            (
+                dashboard_filter_mode, dash_year, dash_month_num,
+                range_start, range_end, range_df, range_exp,
+                total_rev, total_units, exact_cogs_sold, capex_total,
+                staff_pay_breakdown, unassigned_labour_df, non_labour_opex_df,
+                tot_labour_incurred, other_opex_total, total_incurred_opex,
+                gross_profit, cogs_margin, gross_margin, net_profit, net_margin, opex_margin,
+                avg_divisor_days, avg_rev_per_day, avg_units_per_day
+            ) = _render_dash_date_filter_and_compute(key_suffix="sub_dow_patterns")
+            if not range_df.empty:
+                day_order = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+                dow_df = range_df[~range_df["Cart"].astype(str).str.strip().str.upper().isin(["FREEZER", "HOSUR FREEZER"])].copy()
+                dow_df["Day"] = dow_df["Date"].dt.day_name().str[:3]
+            
+                if not dow_df.empty:
+                    def show_compact_average_table(pivot):
+                        headers = "".join(f"<th>{escape(str(day))}</th>" for day in pivot.columns)
+                        rows = []
+                        for cart, values in pivot.iterrows():
+                            cells = "".join(f"<td>{int(round(value)):,}</td>" for value in values)
+                            rows.append(f"<tr><th scope='row'>{escape(str(cart))}</th>{cells}</tr>")
+                        st.html(
+                            "<style>"
+                            ".compact-dow-table{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:clamp(9px,.78vw,11.5px);line-height:1.35;background:#FFFEFA;border:1.5px solid #B8882D;border-radius:9px;overflow:hidden;box-shadow:0 3px 10px rgba(45,21,11,0.06)}"
+                            ".compact-dow-table th,.compact-dow-table td{padding:6px 5px;border-bottom:1px solid #E5D2B0;border-right:1px solid #EFE2CA;text-align:right;overflow-wrap:anywhere;color:#2A160C;font-weight:700}"
+                            ".compact-dow-table thead th{font-weight:800;background:linear-gradient(180deg,#98535C 0%,#7B3A41 100%);color:#FCE8B2;border-bottom:2px solid #D4AF37;text-align:center}"
+                            ".compact-dow-table th:first-child{width:29%;text-align:left;padding-left:8px}"
+                            ".compact-dow-table tbody tr:nth-child(even) td,.compact-dow-table tbody tr:nth-child(even) th{background:#FAF2E1}"
+                            ".compact-dow-table tbody tr:first-child td,.compact-dow-table tbody tr:first-child th{font-weight:900;background:linear-gradient(90deg,#FBF0D9 0%,#F2DEC0 100%);color:#2D150B;border-bottom:1.5px solid #C89B3C}"
+                            "</style>"
+                            f"<table class='compact-dow-table'><thead><tr><th scope='col'>Cart</th>{headers}</tr></thead>"
+                            f"<tbody>{''.join(rows)}</tbody></table>"
+                        )
+
+                    dw1, dw2 = st.columns(2)
+                    with dw1: 
+                        st.write("**Average Units Sold per Day of Week**")
+                        units_df = dow_df[dow_df["Sold_Total"] > 0]
+                        if not units_df.empty:
+                            units_pivot = units_df.pivot_table(index="Cart", columns="Day", values="Sold_Total", aggfunc="mean", fill_value=0)
+                            day_cols = [d for d in day_order if d in units_pivot.columns]
+                            units_pivot = units_pivot.reindex(columns=day_cols)
+                            overall_units = units_df.groupby("Day")["Sold_Total"].mean().reindex(day_cols)
+                            units_pivot.loc["Overall Average (per cart)"] = overall_units
+                            units_pivot = units_pivot.reindex(["Overall Average (per cart)"] + [cart for cart in units_pivot.index if cart != "Overall Average (per cart)"])
+                            show_compact_average_table(units_pivot)
+                        else:
+                            st.caption("No units sold in this range.")
+                    with dw2: 
+                        st.write("**Average Revenue (₹) per Day of Week**")
+                        rev_pivot = dow_df.pivot_table(index="Cart", columns="Day", values="Total_Collection", aggfunc="mean", fill_value=0)
+                        rev_day_cols = [d for d in day_order if d in rev_pivot.columns]
+                        rev_pivot = rev_pivot.reindex(columns=rev_day_cols)
+                        overall_rev = dow_df.groupby("Day")["Total_Collection"].mean().reindex(rev_day_cols)
+                        rev_pivot.loc["Overall Average (per cart)"] = overall_rev
+                        rev_pivot = rev_pivot.reindex(["Overall Average (per cart)"] + [cart for cart in rev_pivot.index if cart != "Overall Average (per cart)"])
+                        show_compact_average_table(rev_pivot)
+
+                    max1, max2 = st.columns(2)
+                    with max1:
+                        st.write("**Maximum Units Sold per Day of Week**")
+                        if not dow_df.empty:
+                            max_units = dow_df.pivot_table(index="Cart", columns="Day", values="Sold_Total", aggfunc="max", fill_value=0)
+                            max_units = max_units.reindex(columns=[d for d in day_order if d in max_units.columns])
+                            st.dataframe(max_units.round(0).astype(int), use_container_width=True)
+                    with max2:
+                        st.write("**Maximum Revenue (₹) per Day of Week**")
+                        max_rev = dow_df.pivot_table(index="Cart", columns="Day", values="Total_Collection", aggfunc="max", fill_value=0)
+                        max_rev = max_rev.reindex(columns=[d for d in day_order if d in max_rev.columns])
+                        st.dataframe(max_rev.round(0).astype(int), use_container_width=True)
+                else: 
+                    st.caption("No cart entries found in this range.")
+
+
+            st.markdown("---")
+            b_back4, _ = st.columns([1.5, 3.5])
+            with b_back4:
+                st.button(
+                    "⬅ Back to Dashboard",
+                    key="dash_sub_back_bot_dow",
+                    type="primary",
+                    use_container_width=True,
+                    on_click=_open_dash_sub_page,
+                    args=(None,),
+                )
