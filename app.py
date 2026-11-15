@@ -42,18 +42,16 @@ except ImportError:
 st.set_page_config(page_title="Kulfi Ops", page_icon="🍦", layout="wide", initial_sidebar_state="collapsed")
 
 # ----------------------------------------------------------------------
-# GLOBAL UI STYLES — OPTION 3: ESPRESSO LUXE & CHAMPAGNE GOLD (3D SUITE)
+# GLOBAL UI STYLES — ROYAL OBSIDIAN, BURNISHED GOLD & PEARL IVORY (3D SUITE)
 # ----------------------------------------------------------------------
 st.html("""
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&family=Manrope:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-/* Warm Champagne-Latte & Alabaster Silk App Canvas */
+/* Luminous Warm Pearl-Alabaster Canvas for Maximum Contrast */
 .stApp, [data-testid="stAppViewContainer"], .main {
-    background:
-        radial-gradient(circle at 12% 6%, rgba(255, 253, 246, 0.96) 0%, rgba(250, 241, 222, 0.92) 45%, rgba(240, 226, 198, 0.96) 100%),
-        linear-gradient(180deg, #FBF5E8 0%, #F1E2C5 100%) !important;
-    color: #2A160C;
+    background: linear-gradient(135deg, #F8F7F4 0%, #F1EFEA 50%, #EAE6DD 100%) !important;
+    color: #0F172A !important;
 }
 
 /* Completely hide the left sidebar and sidebar toggle button */
@@ -65,32 +63,32 @@ section[data-testid="stSidebar"],
     min-width: 0 !important;
 }
 
+/* Compact, Full-Width Space Usage */
 .block-container {
-    padding-top: 2.4rem !important;
-    padding-bottom: 1.5rem !important;
-    padding-left: 1.8rem !important;
-    padding-right: 1.8rem !important;
+    padding-top: 2.0rem !important;
+    padding-bottom: 1.2rem !important;
+    padding-left: 1.4rem !important;
+    padding-right: 1.4rem !important;
     margin-top: 0 !important;
     max-width: 100% !important;
 }
 header[data-testid="stHeader"] {
     background-color: transparent !important;
-    height: 1.8rem !important;
+    height: 1.6rem !important;
 }
 html, body, [class*="css"] {
     font-family: 'Manrope', sans-serif;
     font-variant-numeric: tabular-nums;
 }
-h1, h2, h3 {
+h1, h2, h3, h4 {
     font-family: 'Fraunces', serif !important;
-    color: #381A0C !important;
+    color: #0F172A !important;
     letter-spacing: -0.01em;
-    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
 }
-h1 { font-size: 1.45rem !important; margin-top: 0 !important; }
-h2 { font-size: 1.2rem !important; }
-h3 { font-size: 1.06rem !important; }
-p, span, label, .stMarkdown { color: #2A160C; }
+h1 { font-size: 1.4rem !important; margin-top: 0 !important; }
+h2 { font-size: 1.18rem !important; }
+h3 { font-size: 1.04rem !important; }
+p, span, label, .stMarkdown { color: #0F172A; }
 
 /* Hide stepper buttons on number inputs */
 input[type=number]::-webkit-inner-spin-button, 
@@ -101,107 +99,121 @@ input[type=number]::-webkit-outer-spin-button {
 input[type=number] { -moz-appearance: textfield !important; }
 div[data-testid="stNumberInput"] button { display: none !important; }
 
-/* Pleasant Layered Cards, Containers, Expanders & Tabs */
+/* Crisp White & Gold Layered Containers, Expanders & Tabs */
 div[data-testid="stVerticalBlockBorderWrapper"] {
-    background: linear-gradient(180deg, #FFFEFA 0%, #F9F0DE 100%) !important;
-    border: 1.5px solid #CFA861 !important;
+    background: #FFFFFF !important;
+    border: 1.5px solid #CBD5E1 !important;
+    border-top: 3px solid #D4AF37 !important;
     border-radius: 12px !important;
-    box-shadow: inset 0 1px 0 #FFFFFF, 0 5px 14px rgba(45, 21, 11, 0.06) !important;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06) !important;
     padding: 12px 14px !important;
 }
 div[data-testid="stExpander"] {
-    background: linear-gradient(180deg, #FFFEFA 0%, #F8EFE0 100%) !important;
-    border: 1.5px solid #D4B06A !important;
+    background: #FFFFFF !important;
+    border: 1.5px solid #CBD5E1 !important;
     border-radius: 10px !important;
-    box-shadow: 0 3px 10px rgba(45, 21, 11, 0.05) !important;
+    box-shadow: 0 3px 10px rgba(15, 23, 42, 0.05) !important;
     overflow: hidden;
 }
 div[data-testid="stExpander"] summary {
-    background: linear-gradient(90deg, #F7EBD3 0%, #EFE0C0 100%) !important;
-    padding: 8px 12px !important;
+    background: linear-gradient(90deg, #0F172A 0%, #1E293B 100%) !important;
+    padding: 8px 14px !important;
     font-weight: 800 !important;
-    color: #381A0C !important;
+    color: #FFFFFF !important;
+}
+div[data-testid="stExpander"] summary p,
+div[data-testid="stExpander"] summary span,
+div[data-testid="stExpander"] summary svg {
+    color: #FDE68A !important;
+    fill: #FDE68A !important;
 }
 div[data-testid="stTabs"] [data-baseweb="tab-list"] {
     gap: 8px !important;
-    background: rgba(56, 26, 12, 0.06) !important;
+    background: #E2E8F0 !important;
     padding: 5px 6px !important;
     border-radius: 10px !important;
-    border: 1px solid #D5B577 !important;
+    border: 1px solid #CBD5E1 !important;
 }
 div[data-testid="stTabs"] button[data-baseweb="tab"] {
-    background: linear-gradient(180deg, #FFFDF9 0%, #F3E4C6 100%) !important;
-    border: 1px solid #C89B3C !important;
+    background: #FFFFFF !important;
+    border: 1.5px solid #94A3B8 !important;
     border-radius: 8px !important;
     padding: 6px 14px !important;
     font-weight: 800 !important;
-    color: #3B1D10 !important;
-    box-shadow: 0 2px 0 #9E7422 !important;
+    color: #0F172A !important;
+    box-shadow: 0 2px 0 #64748B !important;
     transition: all 0.14s ease !important;
 }
+div[data-testid="stTabs"] button[data-baseweb="tab"] p {
+    color: #0F172A !important;
+    font-weight: 800 !important;
+}
 div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] {
-    background: linear-gradient(180deg, #3B1D10 0%, #241008 100%) !important;
-    color: #FCE8B2 !important;
+    background: linear-gradient(180deg, #0F172A 0%, #1E293B 100%) !important;
+    color: #FDE68A !important;
     border-color: #D4AF37 !important;
-    box-shadow: 0 2px 0 #140803, 0 4px 10px rgba(45, 21, 11, 0.18) !important;
+    box-shadow: 0 2px 0 #020617, 0 4px 10px rgba(15, 23, 42, 0.22) !important;
 }
 div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] p {
-    color: #FCE8B2 !important;
+    color: #FDE68A !important;
 }
 
-/* Unified Espresso Luxe Top Command Bar Container */
-div[data-testid="stVerticalBlockBorderWrapper"]:has(.kulfi-top-cmd-bar-scope) {
-    background: linear-gradient(135deg, #220F07 0%, #3A1B0E 52%, #542815 100%) !important;
-    border: 1.5px solid #D4AF37 !important;
+/* ======================================================================
+   UNIFIED TOP COMMAND BAR — TARGETING stHorizontalBlock DIRECTLY
+   ====================================================================== */
+div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) {
+    background: linear-gradient(135deg, #0B132B 0%, #1C2541 55%, #0F172A 100%) !important;
+    border: 2px solid #D4AF37 !important;
     border-radius: 13px !important;
-    padding: 10px 16px !important;
-    margin-bottom: 10px !important;
+    padding: 8px 14px !important;
+    margin-bottom: 6px !important;
+    align-items: center !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 232, 178, 0.35),
-        0 4px 0 #150803,
-        0 10px 22px rgba(34, 15, 7, 0.20) !important;
+        inset 0 1px 0 rgba(253, 230, 138, 0.30),
+        0 4px 0 #050814,
+        0 10px 22px rgba(11, 19, 43, 0.18) !important;
 }
 .kulfi-cmd-left {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 11px;
     flex-wrap: nowrap;
+    padding: 2px 4px;
 }
 .kulfi-cmd-crest {
-    width: 38px;
-    height: 38px;
-    border-radius: 10px;
-    background: linear-gradient(145deg, #F5D78E 0%, #C8962E 100%);
-    border: 1.5px solid #FFF3D1;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    background: linear-gradient(145deg, #F59E0B 0%, #B45309 100%);
+    border: 1.5px solid #FDE68A;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.40);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 20px;
+    font-size: 19px;
     flex-shrink: 0;
 }
 .kulfi-cmd-title {
     font-family: 'Fraunces', serif !important;
-    font-size: 1.18rem;
-    font-weight: 700;
-    color: #FFF8E7 !important;
+    font-size: 1.15rem !important;
+    font-weight: 800 !important;
+    color: #FFFFFF !important;
     letter-spacing: 0.01em;
     line-height: 1.15;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.65);
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 .kulfi-cmd-sub {
-    font-size: 10.5px;
-    font-weight: 700;
-    color: #E6C687 !important;
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    color: #FBBF24 !important;
     letter-spacing: 0.03em;
+    margin-top: 1px;
 }
 
-/* Top Command Bar 3D Buttons — Strictly Equal 38px Height & Gold Bevel */
-div[data-testid="stVerticalBlockBorderWrapper"]:has(.kulfi-top-cmd-bar-scope) .stButton > button,
-div[data-testid="stVerticalBlockBorderWrapper"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button {
+/* Top Command Bar 3D Buttons — Strictly 38px Tall, High-Contrast Gold & Slate */
+div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton > button,
+div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button {
     min-height: 38px !important;
     height: 38px !important;
     padding: 0 12px !important;
@@ -209,64 +221,65 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(.kulfi-top-cmd-bar-scope) [d
     font-weight: 800 !important;
     border-radius: 9px !important;
     border: 1.5px solid #D4AF37 !important;
-    background: linear-gradient(180deg, #FFFDF9 0%, #F5E4C3 52%, #E4C790 100%) !important;
-    color: #241008 !important;
+    background: linear-gradient(180deg, #334155 0%, #1E293B 100%) !important;
+    color: #FFFFFF !important;
     box-shadow:
-        inset 0 1px 0 #FFFFFF,
-        0 3px 0 #7C5810,
-        0 5px 10px rgba(0, 0, 0, 0.28) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.25),
+        0 3px 0 #090D16,
+        0 4px 10px rgba(0, 0, 0, 0.35) !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
     margin: 0 !important;
     white-space: nowrap !important;
 }
-div[data-testid="stVerticalBlockBorderWrapper"]:has(.kulfi-top-cmd-bar-scope) .stButton > button p,
-div[data-testid="stVerticalBlockBorderWrapper"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button p,
-div[data-testid="stVerticalBlockBorderWrapper"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button span {
-    color: #241008 !important;
+div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton > button p,
+div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton > button span,
+div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button p,
+div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button span,
+div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button svg {
+    color: #FFFFFF !important;
+    fill: #FDE68A !important;
     font-weight: 800 !important;
     font-size: 12.5px !important;
 }
-div[data-testid="stVerticalBlockBorderWrapper"]:has(.kulfi-top-cmd-bar-scope) .stButton > button[kind="primary"] {
-    background: linear-gradient(180deg, #F5D78E 0%, #C8962E 100%) !important;
-    border: 1.5px solid #FFF3D1 !important;
-    color: #1F0D05 !important;
-    box-shadow:
-        inset 0 1px 0 #FFFDF9,
-        0 3px 0 #6E4B0A,
-        0 6px 14px rgba(0, 0, 0, 0.35) !important;
+div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton > button:hover,
+div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button:hover {
+    background: linear-gradient(180deg, #D97706 0%, #92400E 100%) !important;
+    border-color: #FDE68A !important;
+    color: #FFFFFF !important;
+    transform: translateY(-1px) !important;
 }
-div[data-testid="stVerticalBlockBorderWrapper"]:has(.kulfi-top-cmd-bar-scope) .stButton > button[kind="primary"] p {
-    color: #1F0D05 !important;
+div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton > button[kind="primary"] {
+    background: linear-gradient(180deg, #F59E0B 0%, #B45309 100%) !important;
+    border: 1.5px solid #FDE68A !important;
+    color: #FFFFFF !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.45),
+        0 3px 0 #78350F,
+        0 5px 12px rgba(245, 158, 11, 0.35) !important;
+}
+div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton > button[kind="primary"] p {
+    color: #FFFFFF !important;
     font-weight: 900 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45) !important;
 }
 
-/* Executive Launchpad Hero Strip */
-.launchpad-hero-strip {
-    background: linear-gradient(135deg, #FFFDF8 0%, #F6E9CE 60%, #ECD7B0 100%);
-    border: 1.5px solid #C89B3C;
-    border-radius: 12px;
-    padding: 11px 16px;
-    margin: 2px 0 12px 0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 10px;
-    box-shadow:
-        inset 0 1px 0 #FFFFFF,
-        0 3px 0 #9E7422,
-        0 8px 18px rgba(45, 21, 11, 0.07);
-}
+/* ======================================================================
+   LAUNCHPAD SECTION HEADERS & 4-COLUMN HIGH-CONTRAST 3D CARDS
+   ====================================================================== */
 .launchpad-section-hdr {
     font-family: 'Fraunces', serif !important;
-    font-size: 14px;
-    font-weight: 800;
-    color: #3A1B0E !important;
+    font-size: 13.5px !important;
+    font-weight: 800 !important;
+    color: #0F172A !important;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    margin: 10px 0 8px 2px;
+    margin: 6px 0 6px 2px;
+    padding: 5px 12px;
+    background: linear-gradient(90deg, #E2E8F0 0%, rgba(226, 232, 240, 0) 100%);
+    border-left: 4px solid #D97706;
+    border-radius: 4px;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -280,14 +293,15 @@ div[data-testid="stElementContainer"]:has(.kulfi-clickable-card-grid) {
     padding: 0 !important;
 }
 
-/* Directly Clickable 3D Luxury Cards (Home & Daily Entry Hub — Bold Title Only) */
-div[data-testid="stVerticalBlock"]:has(> div .kulfi-clickable-card-grid) .stButton > button {
-    background: linear-gradient(165deg, #FFFDF9 0%, #F9F0DF 56%, #EFE0C2 100%) !important;
-    border: 1.5px solid #C89B3C !important;
-    border-radius: 14px !important;
-    padding: 18px 20px !important;
-    min-height: 78px !important;
-    height: 78px !important;
+/* Directly Clickable 3D Luxury Cards — Strictly Scoped (Never Matches Top Bar!) */
+div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button {
+    background: linear-gradient(145deg, #1E293B 0%, #0F172A 100%) !important;
+    border: 1.5px solid #D4AF37 !important;
+    border-left: 5px solid #F59E0B !important;
+    border-radius: 12px !important;
+    padding: 14px 16px !important;
+    min-height: 66px !important;
+    height: 66px !important;
     width: 100% !important;
     display: flex !important;
     align-items: center !important;
@@ -295,59 +309,150 @@ div[data-testid="stVerticalBlock"]:has(> div .kulfi-clickable-card-grid) .stButt
     text-align: left !important;
     white-space: nowrap !important;
     box-shadow:
-        inset 0 0 0 2px rgba(255, 253, 248, 0.90),
-        inset 0 0 0 3px rgba(200, 155, 60, 0.25),
-        0 4px 0 #9E7422,
-        0 10px 20px rgba(45, 21, 11, 0.09) !important;
-    transition: all 0.16s ease !important;
-    margin-bottom: 6px !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.14),
+        0 4px 0 #020617,
+        0 8px 16px rgba(15, 23, 42, 0.16) !important;
+    transition: all 0.15s ease !important;
+    margin-bottom: 4px !important;
     cursor: pointer !important;
 }
-div[data-testid="stVerticalBlock"]:has(> div .kulfi-clickable-card-grid) .stButton > button:hover {
-    background: linear-gradient(165deg, #FFFFFF 0%, #FBF3E4 56%, #F3E4C8 100%) !important;
-    border-color: #9E6F14 !important;
+div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button:hover {
+    background: linear-gradient(145deg, #B45309 0%, #78350F 100%) !important;
+    border-color: #FDE68A !important;
+    border-left: 5px solid #FDE68A !important;
     transform: translateY(-2px) !important;
     box-shadow:
-        inset 0 0 0 2px rgba(255, 253, 248, 0.96),
-        inset 0 0 0 3px rgba(212, 175, 55, 0.45),
-        0 5px 0 #7C5810,
-        0 14px 26px rgba(45, 21, 11, 0.15) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.30),
+        0 5px 0 #451A03,
+        0 12px 22px rgba(180, 83, 9, 0.28) !important;
 }
-div[data-testid="stVerticalBlock"]:has(> div .kulfi-clickable-card-grid) .stButton > button:active {
+div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button:active {
     transform: translateY(2px) !important;
-    box-shadow:
-        inset 0 0 0 2px rgba(255, 253, 248, 0.8),
-        0 1px 0 #7C5810,
-        0 4px 8px rgba(45, 21, 11, 0.10) !important;
+    box-shadow: 0 1px 0 #020617 !important;
 }
-div[data-testid="stVerticalBlock"]:has(> div .kulfi-clickable-card-grid) .stButton > button > div[data-testid="stMarkdownContainer"] {
+div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button > div[data-testid="stMarkdownContainer"] {
     width: 100% !important;
     text-align: left !important;
 }
-div[data-testid="stVerticalBlock"]:has(> div .kulfi-clickable-card-grid) .stButton > button > div[data-testid="stMarkdownContainer"] p {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: flex-start !important;
-    gap: 10px !important;
-    margin: 0 !important;
-    font-family: 'Fraunces', serif !important;
-    font-size: 17px !important;
-    font-weight: 700 !important;
-    color: #2D150B !important;
+div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button > div[data-testid="stMarkdownContainer"] p,
+div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button > div[data-testid="stMarkdownContainer"] p strong {
+    font-family: 'Manrope', sans-serif !important;
+    font-size: 15px !important;
+    font-weight: 800 !important;
+    color: #FFFFFF !important;
     line-height: 1.25 !important;
+    margin: 0 !important;
+    letter-spacing: 0.01em !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45) !important;
 }
-div[data-testid="stVerticalBlock"]:has(> div .kulfi-clickable-card-grid) .stButton > button > div[data-testid="stMarkdownContainer"] p strong {
-    font-family: 'Fraunces', serif !important;
-    font-size: 17px !important;
-    font-weight: 700 !important;
-    color: #2D150B !important;
+
+/* ======================================================================
+   ALL STANDARD 3D BUTTONS ACROSS INDIVIDUAL SCREENS — HIGH CONTRAST
+   ====================================================================== */
+.stButton > button,
+[data-testid="stFormSubmitButton"] > button,
+.stDownloadButton > button,
+[data-testid="stLinkButton"] > a,
+[data-testid="stPopover"] > div > button {
+    background: linear-gradient(180deg, #1E293B 0%, #0F172A 100%) !important;
+    color: #FFFFFF !important;
+    border: 1.5px solid #D4AF37 !important;
+    border-radius: 9px !important;
+    font-weight: 800 !important;
+    font-size: 12.5px !important;
+    min-height: 38px !important;
+    height: 38px !important;
+    padding: 0 13px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    text-decoration: none !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.20),
+        0 3px 0 #020617,
+        0 5px 10px rgba(15, 23, 42, 0.16) !important;
+    transition: all 0.12s ease !important;
+    letter-spacing: 0.01em !important;
+}
+.stButton > button p,
+.stButton > button span,
+[data-testid="stFormSubmitButton"] > button p,
+[data-testid="stFormSubmitButton"] > button span,
+.stDownloadButton > button p,
+.stDownloadButton > button span,
+[data-testid="stLinkButton"] > a p,
+[data-testid="stLinkButton"] > a span,
+[data-testid="stPopover"] > div > button p,
+[data-testid="stPopover"] > div > button span {
+    color: #FFFFFF !important;
+    font-weight: 800 !important;
+}
+.stButton > button:hover,
+[data-testid="stFormSubmitButton"] > button:hover,
+.stDownloadButton > button:hover,
+[data-testid="stLinkButton"] > a:hover,
+[data-testid="stPopover"] > div > button:hover {
+    background: linear-gradient(180deg, #334155 0%, #1E293B 100%) !important;
+    border-color: #FBBF24 !important;
+    color: #FFFFFF !important;
+    transform: translateY(-1px) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.30),
+        0 4px 0 #020617,
+        0 7px 14px rgba(15, 23, 42, 0.22) !important;
+}
+.stButton > button:active,
+[data-testid="stFormSubmitButton"] > button:active,
+.stDownloadButton > button:active,
+[data-testid="stLinkButton"] > a:active,
+[data-testid="stPopover"] > div > button:active {
+    transform: translateY(2px) !important;
+    box-shadow: 0 1px 0 #020617 !important;
+}
+
+/* Primary 3D Action Buttons (Rich Burnished Copper-Amber) */
+.stButton > button[kind="primary"],
+[data-testid="stFormSubmitButton"] > button[kind="primary"],
+.stDownloadButton > button[kind="primary"],
+[data-testid="baseButton-primary"] {
+    background: linear-gradient(180deg, #D97706 0%, #B45309 55%, #92400E 100%) !important;
+    color: #FFFFFF !important;
+    border: 1.5px solid #FDE68A !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.40),
+        0 3px 0 #451A03,
+        0 6px 14px rgba(180, 83, 9, 0.28) !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.40) !important;
+}
+.stButton > button[kind="primary"]:hover,
+[data-testid="stFormSubmitButton"] > button[kind="primary"]:hover,
+.stDownloadButton > button[kind="primary"]:hover {
+    background: linear-gradient(180deg, #F59E0B 0%, #D97706 55%, #B45309 100%) !important;
+    border-color: #FEF3C7 !important;
+    color: #FFFFFF !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Compact 30px inline action buttons ONLY inside .ledger-cell table rows */
+div[data-testid="stHorizontalBlock"]:has(.ledger-cell) .stButton > button {
+    padding: 2px 5px !important;
+    min-height: 30px !important;
+    height: 30px !important;
+    font-size: 11.5px !important;
+    line-height: 1 !important;
+    border: 1px solid #D4AF37 !important;
+    background: linear-gradient(180deg, #1E293B 0%, #0F172A 100%) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 2px 0 #020617 !important;
 }
 
 /* High-Contrast Section Headers */
 .header-box-sales {
-    background: linear-gradient(90deg, #FFF5E1 0%, #F7E4BE 100%);
-    color: #3A1B0E !important;
-    border: 1.5px solid #C89B3C;
+    background: linear-gradient(90deg, #FEF3C7 0%, #FDE68A 100%);
+    color: #0F172A !important;
+    border: 1.5px solid #D97706;
     border-radius: 9px;
     padding: 8px 13px;
     font-weight: 800;
@@ -356,12 +461,12 @@ div[data-testid="stVerticalBlock"]:has(> div .kulfi-clickable-card-grid) .stButt
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: inset 0 1px 0 #FFFFFF, 0 2px 5px rgba(45, 21, 11, 0.06);
+    box-shadow: 0 2px 5px rgba(15, 23, 42, 0.06);
 }
 .header-box-restock {
-    background: linear-gradient(90deg, #EAF6EC 0%, #D7EEDC 100%);
-    color: #10421A !important;
-    border: 1.5px solid #68B678;
+    background: linear-gradient(90deg, #DCFCE7 0%, #BBF7D0 100%);
+    color: #064E3B !important;
+    border: 1.5px solid #16A34A;
     border-radius: 9px;
     padding: 8px 13px;
     font-weight: 800;
@@ -370,17 +475,17 @@ div[data-testid="stVerticalBlock"]:has(> div .kulfi-clickable-card-grid) .stButt
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: inset 0 1px 0 #FFFFFF, 0 2px 5px rgba(16, 66, 26, 0.06);
+    box-shadow: 0 2px 5px rgba(6, 78, 59, 0.06);
 }
 
 /* Compact Flavor Card Grid */
 .flavor-entry-row {
-    background: linear-gradient(180deg, #FFFFFF 0%, #FAF2E3 100%);
-    border: 1.2px solid #D4B272;
+    background: #FFFFFF;
+    border: 1.2px solid #CBD5E1;
     border-radius: 8px;
     padding: 5px 8px;
     margin-bottom: 5px;
-    box-shadow: 0 2px 4px rgba(45, 21, 11, 0.04);
+    box-shadow: 0 2px 4px rgba(15, 23, 42, 0.04);
 }
 .flavor-title-bar {
     display: flex;
@@ -391,36 +496,36 @@ div[data-testid="stVerticalBlock"]:has(> div .kulfi-clickable-card-grid) .stButt
 .flavor-name {
     font-weight: 800;
     font-size: 12.5px;
-    color: #381A0C;
+    color: #0F172A;
 }
 .badge-open {
-    background: #F4E8D3;
-    color: #5A3E1B;
-    font-weight: 700;
+    background: #FEF3C7;
+    color: #78350F;
+    font-weight: 800;
     font-size: 11px;
     padding: 1px 6px;
     border-radius: 6px;
 }
 .badge-sold {
-    background: #FCE8E2;
-    color: #C43D17;
+    background: #FEE2E2;
+    color: #991B1B;
     font-weight: 800;
     font-size: 11px;
     padding: 1px 6px;
     border-radius: 6px;
 }
 .badge-today-open {
-    background: #E8F5E9;
-    color: #19692C;
+    background: #DCFCE7;
+    color: #166534;
     font-weight: 800;
     font-size: 11.5px;
     padding: 2px 7px;
     border-radius: 6px;
-    border: 1px solid #C8E6C9;
+    border: 1px solid #86EFAC;
     display: inline-block;
 }
 
-/* Consistent Input Heights so Filter Bars Align Perfectly */
+/* Consistent Input Heights & High-Contrast Borders */
 .stSelectbox div[data-baseweb="select"] > div,
 .stDateInput div[data-baseweb="input"],
 .stTextInput div[data-baseweb="input"],
@@ -428,8 +533,9 @@ div[data-testid="stVerticalBlock"]:has(> div .kulfi-clickable-card-grid) .stButt
     min-height: 36px !important;
     height: 36px !important;
     border-radius: 7px !important;
+    background-color: #FFFFFF !important;
+    border: 1.5px solid #94A3B8 !important;
 }
-/* Keep collapsed-label number inputs inside 9-flavour entry grids compact at 28px */
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) .stNumberInput div[data-baseweb="input"] {
     min-height: 28px !important;
     height: 28px !important;
@@ -440,125 +546,24 @@ div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) .stNumberInpu
     font-size: 12.5px !important;
     text-align: left !important;
     font-weight: 700 !important;
+    color: #0F172A !important;
 }
 .stNumberInput label, .stTextInput label, .stSelectbox label, .stDateInput label {
     font-size: 11px !important;
     font-weight: 800 !important;
     margin-bottom: 2px !important;
     text-align: left !important;
-    color: #3A1B0E !important;
+    color: #0F172A !important;
 }
 
-/* 3D Tactile Buttons Across the Entire App — Uniform 38px Height & Centered */
-.stButton > button,
-[data-testid="stFormSubmitButton"] > button,
-.stDownloadButton > button,
-[data-testid="stLinkButton"] > a,
-[data-testid="stPopover"] > div > button {
-    background: linear-gradient(180deg, #FFFDF9 0%, #F5E6C8 52%, #E6CC9A 100%) !important;
-    color: #2D150B !important;
-    border: 1.5px solid #B6862C !important;
-    border-radius: 9px !important;
-    font-weight: 800 !important;
-    font-size: 12.5px !important;
-    min-height: 38px !important;
-    height: 38px !important;
-    padding: 0 12px !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    box-sizing: border-box !important;
-    margin: 0 !important;
-    text-decoration: none !important;
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.92),
-        0 3px 0 #875F14,
-        0 5px 10px rgba(45, 21, 11, 0.11) !important;
-    transition: all 0.12s ease !important;
-    letter-spacing: 0.01em !important;
-}
-.stButton > button:hover,
-[data-testid="stFormSubmitButton"] > button:hover,
-.stDownloadButton > button:hover,
-[data-testid="stLinkButton"] > a:hover,
-[data-testid="stPopover"] > div > button:hover {
-    background: linear-gradient(180deg, #FFFFFF 0%, #F9EDD4 52%, #EDD6A7 100%) !important;
-    border-color: #966B1B !important;
-    transform: translateY(-1px) !important;
-    box-shadow:
-        inset 0 1px 0 #FFFFFF,
-        0 4px 0 #75500D,
-        0 7px 14px rgba(45, 21, 11, 0.15) !important;
-}
-.stButton > button:active,
-[data-testid="stFormSubmitButton"] > button:active,
-.stDownloadButton > button:active,
-[data-testid="stLinkButton"] > a:active,
-[data-testid="stPopover"] > div > button:active {
-    transform: translateY(2px) !important;
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.6),
-        0 1px 0 #75500D,
-        0 2px 4px rgba(45, 21, 11, 0.10) !important;
-}
-
-/* Primary 3D Buttons (Burnished Copper-Terracotta & Gold) */
-.stButton > button[kind="primary"],
-[data-testid="stFormSubmitButton"] > button[kind="primary"],
-[data-testid="baseButton-primary"] {
-    background: linear-gradient(180deg, #F26B3F 0%, #D94B1E 54%, #B5320B 100%) !important;
-    color: #FFFFFF !important;
-    border: 1.5px solid #8A2205 !important;
-    box-shadow:
-        inset 0 1px 0 rgba(255, 224, 200, 0.65),
-        0 3px 0 #631602,
-        0 6px 14px rgba(181, 50, 11, 0.28) !important;
-    text-shadow: 0 1px 1px rgba(45, 21, 11, 0.35) !important;
-}
-.stButton > button[kind="primary"]:hover,
-[data-testid="stFormSubmitButton"] > button[kind="primary"]:hover {
-    background: linear-gradient(180deg, #F77A50 0%, #E25325 54%, #C23910 100%) !important;
-    border-color: #701A03 !important;
-    color: #FFFFFF !important;
-    transform: translateY(-1px) !important;
-    box-shadow:
-        inset 0 1px 0 rgba(255, 232, 214, 0.75),
-        0 4px 0 #571201,
-        0 8px 16px rgba(181, 50, 11, 0.34) !important;
-}
-.stButton > button[kind="primary"]:active,
-[data-testid="stFormSubmitButton"] > button[kind="primary"]:active {
-    transform: translateY(2px) !important;
-    box-shadow: 0 1px 0 #571201 !important;
-}
-.stButton > button[kind="primary"] p,
-[data-testid="stFormSubmitButton"] > button[kind="primary"] p {
-    color: #FFFFFF !important;
-}
-
-/* Compact 30px inline action buttons ONLY inside .ledger-cell table rows */
-div[data-testid="stHorizontalBlock"]:has(.ledger-cell) .stButton > button {
-    padding: 2px 5px !important;
-    min-height: 30px !important;
-    height: 30px !important;
-    font-size: 11.5px !important;
-    line-height: 1 !important;
-    border: 1.2px solid #B8882D !important;
-    background: linear-gradient(180deg, #FFFDF9 0%, #F5E6C8 55%, #E8D0A2 100%) !important;
-    color: #2D150B !important;
-    box-shadow: inset 0 1px 0 #FFFFFF, 0 2px 0 #8A6116 !important;
-}
-
-/* Metric Cards — Beveled Champagne & Gold */
+/* Metric Cards — Crisp White with Royal Obsidian & Gold Top Bar */
 div[data-testid="stMetric"] {
-    background: linear-gradient(165deg, #FFFDF9 0%, #F8EFE0 60%, #EFE0C4 100%);
-    border: 1.5px solid #C89B3C;
-    border-radius: 10px;
-    padding: 9px 12px;
-    box-shadow:
-        inset 0 1px 0 #FFFFFF,
-        0 3px 0 #9E7422,
-        0 6px 14px rgba(45, 21, 11, 0.07);
+    background: #FFFFFF !important;
+    border: 1.5px solid #CBD5E1 !important;
+    border-top: 3.5px solid #0F172A !important;
+    border-radius: 10px !important;
+    padding: 9px 12px !important;
+    box-shadow: 0 3px 10px rgba(15, 23, 42, 0.06) !important;
     height: 100%;
 }
 div[data-testid="stMetricLabel"], 
@@ -568,7 +573,7 @@ div[data-testid="stMetricLabel"] p,
 div[data-testid="stMetricLabel"] span { 
     font-weight: 800 !important; 
     font-size: 11px !important; 
-    color: #69461E !important; 
+    color: #475569 !important; 
     white-space: normal !important; 
     word-wrap: break-word !important; 
     overflow: visible !important; 
@@ -577,28 +582,28 @@ div[data-testid="stMetricLabel"] span {
 }
 div[data-testid="stMetricLabel"] {
     height: auto !important;
-    min-height: 28px;
+    min-height: 26px;
 }
 div[data-testid="stMetricValue"] { 
     font-family: 'Fraunces', serif; 
-    font-size: 1.12rem !important; 
-    font-weight: 700 !important;
-    color: #2D150B; 
-    margin-top: 6px;
+    font-size: 1.15rem !important; 
+    font-weight: 800 !important;
+    color: #0F172A !important; 
+    margin-top: 4px;
 }
 
 /* Luxury Data Grids & Tables Across the Entire App */
 div[data-testid="stDataFrame"], div[data-testid="stDataEditor"] {
     border-radius: 10px !important;
-    border: 2px solid #7C5418 !important;
-    background: #FFFEFA !important;
-    box-shadow: 0 3px 0 #5C3D0E, 0 8px 18px rgba(45, 21, 11, 0.08) !important;
+    border: 2px solid #0F172A !important;
+    background: #FFFFFF !important;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08) !important;
     overflow: hidden;
 }
 div[data-testid="stDataFrame"] th, div[data-testid="stDataEditor"] th {
     font-weight: 900 !important;
-    color: #FCE8B2 !important;
-    background: linear-gradient(180deg, #3A1B0E 0%, #261108 100%) !important;
+    color: #FDE68A !important;
+    background: linear-gradient(180deg, #1E293B 0%, #0F172A 100%) !important;
     border-bottom: 2px solid #D4AF37 !important;
     text-align: center !important;
     font-size: 12px !important;
@@ -606,24 +611,23 @@ div[data-testid="stDataFrame"] th, div[data-testid="stDataEditor"] th {
 div[data-testid="stDataFrame"] td, div[data-testid="stDataEditor"] td {
     text-align: center !important;
     font-size: 11.5px !important;
-    font-weight: 600 !important;
-    color: #2A160C !important;
+    font-weight: 700 !important;
+    color: #0F172A !important;
 }
-/* General Markdown / HTML Tables */
 .stMarkdown table {
     width: 100%;
     border-collapse: separate !important;
     border-spacing: 0 !important;
-    background: #FFFEFA;
-    border: 1.5px solid #B8882D;
+    background: #FFFFFF;
+    border: 1.5px solid #0F172A;
     border-radius: 10px;
     overflow: hidden;
-    box-shadow: 0 4px 12px rgba(45, 21, 11, 0.07);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.07);
     margin: 6px 0 12px 0;
 }
 .stMarkdown table th {
-    background: linear-gradient(180deg, #3A1B0E 0%, #261108 100%) !important;
-    color: #FCE8B2 !important;
+    background: linear-gradient(180deg, #1E293B 0%, #0F172A 100%) !important;
+    color: #FDE68A !important;
     font-weight: 800 !important;
     padding: 8px 10px !important;
     border-bottom: 2px solid #D4AF37 !important;
@@ -632,44 +636,42 @@ div[data-testid="stDataFrame"] td, div[data-testid="stDataEditor"] td {
 }
 .stMarkdown table td {
     padding: 7px 10px !important;
-    border-bottom: 1px solid #E6D3B3 !important;
-    border-right: 1px solid #EFE2CA !important;
+    border-bottom: 1px solid #E2E8F0 !important;
+    border-right: 1px solid #F1F5F9 !important;
     font-size: 12px !important;
     font-weight: 700 !important;
-    color: #2A160C !important;
+    color: #0F172A !important;
 }
 .stMarkdown table tr:nth-child(even) td {
-    background: #FAF2E1 !important;
+    background: #F8FAFC !important;
 }
 .stMarkdown table tr:hover td {
-    background: #F3E3C3 !important;
+    background: #FEF3C7 !important;
 }
 
-hr { border-color: #D4B272 !important; margin: 0.4rem 0 !important; }
+hr { border-color: #CBD5E1 !important; margin: 0.4rem 0 !important; }
 
 /* Distinct Editable Table Input Borders */
 div[data-testid="stNumberInput"] div[data-baseweb="input"] {
-    border: 1.8px solid #C88A1E !important;
-    background-color: #FFFDF5 !important;
+    border: 1.8px solid #D97706 !important;
+    background-color: #FFFBEB !important;
     border-radius: 6px !important;
-    box-shadow: inset 0 1px 2px rgba(45, 21, 11, 0.05), 0 1px 2px rgba(200, 138, 30, 0.10) !important;
 }
 div[data-testid="stNumberInput"] div[data-baseweb="input"]:focus-within {
-    border: 2px solid #19692C !important;
-    background-color: #ECFDF5 !important;
-    box-shadow: 0 0 0 2px rgba(25, 105, 44, 0.18) !important;
+    border: 2px solid #16A34A !important;
+    background-color: #F0FDF4 !important;
 }
 div[data-testid="stNumberInput"] input {
     text-align: left !important;
     font-weight: 800 !important;
-    color: #2A160C !important;
+    color: #0F172A !important;
     padding-left: 8px !important;
 }
 
 /* Luxury Daily Entry & Stock Grid Cells */
 .entry-grid-header {
-    background: linear-gradient(180deg, #3A1B0E 0%, #241008 100%);
-    color: #FCE8B2 !important;
+    background: linear-gradient(180deg, #1E293B 0%, #0F172A 100%);
+    color: #FDE68A !important;
     border: 1px solid #D4AF37;
     border-bottom: 2px solid #D4AF37;
     padding: 6px 10px;
@@ -678,11 +680,10 @@ div[data-testid="stNumberInput"] input {
     font-weight: 800;
     text-align: center;
     margin-bottom: 4px;
-    box-shadow: 0 2px 4px rgba(36, 16, 8, 0.15);
 }
 .entry-grid-cell {
-    background: linear-gradient(180deg, #FFFEFA 0%, #F7EFE0 100%);
-    border: 1px solid #D8BC8C;
+    background: #FFFFFF;
+    border: 1px solid #CBD5E1;
     border-radius: 6px;
     height: 28px;
     display: flex;
@@ -690,12 +691,12 @@ div[data-testid="stNumberInput"] input {
     justify-content: center;
     font-size: 12px;
     font-weight: 800;
-    color: #3A1B0E;
+    color: #0F172A;
 }
 .entry-grid-cell-flavour {
-    background: linear-gradient(180deg, #FFFFFF 0%, #FAF3E6 100%);
-    border: 1px solid #D8BC8C;
-    border-left: 3px solid #C89B3C;
+    background: #FFFFFF;
+    border: 1px solid #CBD5E1;
+    border-left: 3.5px solid #D97706;
     border-radius: 6px;
     height: 28px;
     display: flex;
@@ -704,11 +705,11 @@ div[data-testid="stNumberInput"] input {
     padding: 0 8px;
     font-size: 12px;
     font-weight: 800;
-    color: #2D150B;
+    color: #0F172A;
 }
 .entry-grid-cell-sold {
-    background: linear-gradient(180deg, #FFF0EC 0%, #FCE2DA 100%);
-    border: 1px solid #E8B09E;
+    background: #FEE2E2;
+    border: 1px solid #FCA5A5;
     border-radius: 6px;
     height: 28px;
     display: flex;
@@ -716,11 +717,11 @@ div[data-testid="stNumberInput"] input {
     justify-content: center;
     font-size: 12px;
     font-weight: 900;
-    color: #B8320B;
+    color: #991B1B;
 }
 .entry-grid-cell-amount {
-    background: linear-gradient(180deg, #EFFAF1 0%, #E0F2E3 100%);
-    border: 1px solid #9CD0A4;
+    background: #DCFCE7;
+    border: 1px solid #86EFAC;
     border-radius: 6px;
     height: 28px;
     display: flex;
@@ -729,25 +730,24 @@ div[data-testid="stNumberInput"] input {
     padding: 0 8px;
     font-size: 12px;
     font-weight: 900;
-    color: #10421A;
+    color: #064E3B;
 }
 .entry-grid-total-row {
-    background: linear-gradient(90deg, #FBF0D9 0%, #F2DEC0 100%);
-    border: 1.5px solid #B8882D;
+    background: linear-gradient(90deg, #FEF3C7 0%, #FDE68A 100%);
+    border: 1.5px solid #D97706;
     border-radius: 8px;
     padding: 7px 10px;
     margin-top: 6px;
     font-size: 12px;
     font-weight: 900;
-    color: #2D150B;
-    box-shadow: 0 2px 5px rgba(45, 21, 11, 0.08);
+    color: #0F172A;
 }
 
 /* Compact No-Scroll Ledger Rows for Expenses & Payments */
 .ledger-tbl-header {
-    background: linear-gradient(180deg, #3A1B0E 0%, #241008 100%);
-    color: #FCE8B2 !important;
-    border: 1px solid #C89B3C;
+    background: linear-gradient(180deg, #1E293B 0%, #0F172A 100%);
+    color: #FDE68A !important;
+    border: 1px solid #D4AF37;
     border-bottom: 2px solid #D4AF37;
     padding: 5px 6px;
     border-radius: 6px;
@@ -762,11 +762,10 @@ div[data-testid="stNumberInput"] input {
     overflow: hidden;
     text-overflow: ellipsis;
     min-height: 27px;
-    box-shadow: 0 2px 4px rgba(36, 16, 8, 0.14);
 }
 .ledger-cell {
-    background: linear-gradient(180deg, #FFFEFA 0%, #F7EFE0 100%);
-    border: 1px solid #DEC49A;
+    background: #FFFFFF;
+    border: 1px solid #CBD5E1;
     border-radius: 5px;
     min-height: 30px;
     height: 30px;
@@ -775,16 +774,16 @@ div[data-testid="stNumberInput"] input {
     align-items: center;
     font-size: 10.5px;
     font-weight: 700;
-    color: #2D150B;
+    color: #0F172A;
     line-height: 1.15;
     white-space: nowrap !important;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 .ledger-cell-desc {
-    background: linear-gradient(180deg, #FFFFFF 0%, #FAF3E6 100%);
-    border: 1px solid #DEC49A;
-    border-left: 2.5px solid #C89B3C;
+    background: #FFFFFF;
+    border: 1px solid #CBD5E1;
+    border-left: 3px solid #D97706;
     border-radius: 5px;
     min-height: 30px;
     height: 30px;
@@ -794,7 +793,7 @@ div[data-testid="stNumberInput"] input {
     justify-content: center;
     font-size: 10.5px;
     font-weight: 700;
-    color: #2A160C;
+    color: #0F172A;
     line-height: 1.12;
     overflow: hidden;
 }
@@ -808,14 +807,14 @@ div[data-testid="stNumberInput"] input {
 .ledger-subtext {
     font-size: 9px;
     font-weight: 700;
-    color: #8A5E17;
+    color: #B45309;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
 }
 .ledger-amt-total {
-    background: linear-gradient(180deg, #FFF9EB 0%, #F6E9CE 100%);
-    border: 1px solid #D4B272;
+    background: #FEF3C7;
+    border: 1px solid #F59E0B;
     border-radius: 5px;
     min-height: 30px;
     height: 30px;
@@ -825,12 +824,12 @@ div[data-testid="stNumberInput"] input {
     justify-content: flex-end;
     font-size: 10.5px;
     font-weight: 800;
-    color: #3A1B0E;
+    color: #78350F;
     white-space: nowrap !important;
 }
 .ledger-amt-paid {
-    background: linear-gradient(180deg, #EFFAF1 0%, #E0F2E3 100%);
-    border: 1px solid #A4D4AC;
+    background: #DCFCE7;
+    border: 1px solid #86EFAC;
     border-radius: 5px;
     min-height: 30px;
     height: 30px;
@@ -840,12 +839,12 @@ div[data-testid="stNumberInput"] input {
     justify-content: flex-end;
     font-size: 10.5px;
     font-weight: 800;
-    color: #10421A;
+    color: #064E3B;
     white-space: nowrap !important;
 }
 .ledger-amt-due {
-    background: linear-gradient(180deg, #FFF0EC 0%, #FCE2DA 100%);
-    border: 1px solid #E8B09E;
+    background: #FEE2E2;
+    border: 1px solid #FCA5A5;
     border-radius: 5px;
     min-height: 30px;
     height: 30px;
@@ -855,7 +854,7 @@ div[data-testid="stNumberInput"] input {
     justify-content: flex-end;
     font-size: 10.5px;
     font-weight: 800;
-    color: #B8320B;
+    color: #991B1B;
     white-space: nowrap !important;
 }
 .status-pill {
@@ -867,12 +866,12 @@ div[data-testid="stNumberInput"] input {
     text-align: center;
     white-space: nowrap !important;
 }
-.status-paid { background: #E6F4EA; color: #137333; border: 1px solid #CEEAD6; }
-.status-partial { background: #FEF7E0; color: #B06000; border: 1px solid #FEEFC3; }
-.status-pending { background: #FCE8E6; color: #C5221F; border: 1px solid #FAD2CF; }
-.status-other { background: #F1F3F4; color: #5F6368; border: 1px solid #DADCE0; }
+.status-paid { background: #DCFCE7; color: #166534; border: 1px solid #86EFAC; }
+.status-partial { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
+.status-pending { background: #FEE2E2; color: #991B1B; border: 1px solid #FCA5A5; }
+.status-other { background: #F1F5F9; color: #334155; border: 1px solid #CBD5E1; }
 
-/* Freezer Analysis Boxed Table Styling — Espresso Luxe Grid */
+/* Freezer Analysis Boxed Table Styling — Royal Obsidian & Gold Grid */
 .fa-boxed-table-wrap {
     width: 100%;
     overflow-x: auto;
@@ -882,16 +881,16 @@ div[data-testid="stNumberInput"] input {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
-    background: #FFFEFA;
-    border: 2px solid #8A5E17;
+    background: #FFFFFF;
+    border: 2px solid #0F172A;
     border-radius: 11px;
     overflow: hidden;
     font-size: 12.5px;
-    box-shadow: 0 3px 0 #5C3D0E, 0 8px 18px rgba(45, 21, 11, 0.08);
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
 }
 .fa-boxed-table th {
-    background: linear-gradient(180deg, #3A1B0E 0%, #241008 100%);
-    color: #FCE8B2;
+    background: linear-gradient(180deg, #1E293B 0%, #0F172A 100%);
+    color: #FDE68A;
     font-weight: 800;
     padding: 9px 10px;
     text-align: center;
@@ -902,24 +901,24 @@ div[data-testid="stNumberInput"] input {
 }
 .fa-boxed-table td {
     padding: 7px 10px;
-    border-bottom: 1px solid #E5D2B0;
-    border-right: 1px solid #EFE2CA;
+    border-bottom: 1px solid #E2E8F0;
+    border-right: 1px solid #F1F5F9;
     text-align: center;
     font-weight: 700;
-    color: #2A160C;
+    color: #0F172A;
 }
 .fa-boxed-table tr:nth-child(even) td {
-    background: #FAF2E1;
+    background: #F8FAFC;
 }
 .fa-boxed-table tr:hover td {
-    background: #F3E3C3;
+    background: #FEF3C7;
 }
 .fa-boxed-table tr.fa-total-row td {
-    background: linear-gradient(90deg, #FBF0D9 0%, #F2DEC0 100%) !important;
-    border-top: 2px solid #B8882D !important;
+    background: linear-gradient(90deg, #FEF3C7 0%, #FDE68A 100%) !important;
+    border-top: 2px solid #D97706 !important;
     border-bottom: none !important;
     font-weight: 900 !important;
-    color: #2D150B !important;
+    color: #0F172A !important;
     font-size: 13px;
 }
 /* Group Box 1: Audit */
@@ -949,13 +948,13 @@ div[data-testid="stNumberInput"] input {
 /* Group Box 4: Current */
 .fa-boxed-table th, .fa-boxed-table td { padding: 9px 14px !important; }
 .fa-box-cur-only-th { border-left: 2.5px solid #1D4ED8 !important; border-right: 2.5px solid #1D4ED8 !important; border-top: 2.5px solid #1D4ED8 !important; background: #1E3A8A !important; }
-.fa-box-cur-only-td { border-left: 2.5px solid #1D4ED8 !important; border-right: 2px solid #1D4ED8 !important; background: #EFF6FF !important; color: #124A1D !important; font-weight: 900 !important; font-size: 13.5px !important; }
+.fa-box-cur-only-td { border-left: 2px solid #1D4ED8 !important; border-right: 2px solid #1D4ED8 !important; background: #EFF6FF !important; color: #124A1D !important; font-weight: 900 !important; font-size: 13.5px !important; }
 .fa-box-cur-only-tot { border-left: 2.5px solid #1D4ED8 !important; border-right: 2.5px solid #1D4ED8 !important; border-bottom: 2.5px solid #1D4ED8 !important; color: #124A1D !important; font-size: 14px !important; }
 
 /* Read-only Live Sold cell in Sales Entry */
 .entry-grid-cell-livesold {
-    background: #EBF3FA;
-    border: 1px solid #90B8DF;
+    background: #EFF6FF;
+    border: 1px solid #93C5FD;
     border-radius: 6px;
     height: 28px;
     display: flex;
@@ -963,10 +962,10 @@ div[data-testid="stNumberInput"] input {
     justify-content: center;
     font-size: 12px;
     font-weight: 900;
-    color: #1B5E91;
+    color: #1E3A8A;
 }
 
-/* Bulk Order Planner Cards — 3D Champagne & Gold */
+/* Bulk Order Planner Cards */
 .bulk-kpi-strip {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
@@ -974,31 +973,32 @@ div[data-testid="stNumberInput"] input {
     margin: 10px 0 14px 0;
 }
 .bulk-kpi-card {
-    background: linear-gradient(165deg, #FFFDF9 0%, #F8EFE0 60%, #EFE0C4 100%);
-    border: 1.5px solid #C89B3C;
+    background: #FFFFFF;
+    border: 1.5px solid #CBD5E1;
+    border-top: 3.5px solid #0F172A;
     border-radius: 10px;
     padding: 10px 12px;
     text-align: center;
-    box-shadow: inset 0 1px 0 #FFFFFF, 0 3px 0 #9E7422, 0 6px 12px rgba(45, 21, 11, 0.07);
+    box-shadow: 0 3px 8px rgba(15, 23, 42, 0.06);
 }
 .bulk-kpi-label {
     font-size: 10.5px;
     font-weight: 800;
     text-transform: uppercase;
-    color: #69461E;
+    color: #475569;
     letter-spacing: 0.03em;
 }
 .bulk-kpi-val {
     font-family: 'Fraunces', serif;
     font-size: 17px;
     font-weight: 800;
-    color: #2D150B;
+    color: #0F172A;
     margin-top: 3px;
 }
 .bulk-kpi-sub {
     font-size: 10.5px;
     font-weight: 700;
-    color: #8A5E17;
+    color: #B45309;
     margin-top: 2px;
 }
 
@@ -4256,7 +4256,7 @@ def check_login():
 if not check_login(): st.stop()
 
 # ----------------------------------------------------------------------
-# NAVIGATION & ROLE CONFIG — ESPRESSO LUXE 3D COMMAND BAR & HOME CARDS
+# NAVIGATION & ROLE CONFIG — ROYAL OBSIDIAN 3D COMMAND BAR & HOME CARDS
 # ----------------------------------------------------------------------
 user_role = st.session_state.get("user_role", "admin")
 
@@ -4266,27 +4266,26 @@ if user_role == "entry":
     CARTS = get_carts_for_active_location(include_freezer=False)
     ATTRIBUTED_OPTIONS = ["Central / Freezer"] + CARTS
     page = "Daily Entry"
-    with st.container(border=True):
-        top_nav_c1, top_nav_c2 = st.columns([5.8, 1.2], gap="small", vertical_alignment="center")
-        with top_nav_c1:
-            st.markdown(
-                f"""
-                <span class="kulfi-top-cmd-bar-scope" style="display:none;"></span>
-                <div class="kulfi-cmd-left">
-                    <div class="kulfi-cmd-crest">🍦</div>
-                    <div>
-                        <div class="kulfi-cmd-title">Kulfi Ops — Daily Entry ({CITY})</div>
-                        <div class="kulfi-cmd-sub">DAILY CART SALES, RESTOCK &amp; STOCK LEDGER</div>
-                    </div>
+    top_nav_c1, top_nav_c2 = st.columns([5.8, 1.2], gap="small", vertical_alignment="center")
+    with top_nav_c1:
+        st.markdown(
+            f"""
+            <span class="kulfi-top-cmd-bar-scope" style="display:none;"></span>
+            <div class="kulfi-cmd-left">
+                <div class="kulfi-cmd-crest">🍦</div>
+                <div>
+                    <div class="kulfi-cmd-title">Kulfi Ops — Daily Entry ({CITY})</div>
+                    <div class="kulfi-cmd-sub">DAILY CART SALES, RESTOCK &amp; STOCK LEDGER</div>
                 </div>
-                """,
-                unsafe_allow_html=True,
-            )
-        with top_nav_c2:
-            if st.button("🚪 Log out", type="secondary", use_container_width=True, key="entry_top_logout_btn"):
-                st.session_state["authenticated"] = False
-                st.session_state["user_role"] = None
-                st.rerun()
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with top_nav_c2:
+        if st.button("🚪 Log out", type="secondary", use_container_width=True, key="entry_top_logout_btn"):
+            st.session_state["authenticated"] = False
+            st.session_state["user_role"] = None
+            st.rerun()
 else:
     if "_pending_page_nav" in st.session_state:
         st.session_state["page_nav"] = st.session_state.pop("_pending_page_nav")
@@ -4344,78 +4343,77 @@ else:
     ATTRIBUTED_OPTIONS = ["Central / Freezer"] + CARTS
     loc_badge = "All Locations" if get_active_location_filter() == "ALL" else get_active_location_filter()
 
-    # --- UNIFIED ESPRESSO LUXE & CHAMPAGNE GOLD TOP COMMAND BAR ---
-    with st.container(border=True):
-        cmd_c0, cmd_c1, cmd_c2, cmd_c3, cmd_c4 = st.columns(
-            [2.65, 0.90, 1.25, 1.35, 0.90],
-            gap="small",
-            vertical_alignment="center",
-        )
-        with cmd_c0:
-            st.markdown(
-                f"""
-                <span class="kulfi-top-cmd-bar-scope" style="display:none;"></span>
-                <div class="kulfi-cmd-left">
-                    <div class="kulfi-cmd-crest">🍦</div>
-                    <div>
-                        <div class="kulfi-cmd-title">Kulfi Ops — {page}</div>
-                        <div class="kulfi-cmd-sub">📍 {loc_badge} &nbsp;•&nbsp; {len(CARTS)} Active Carts</div>
-                    </div>
+    # --- UNIFIED ROYAL OBSIDIAN & GOLD TOP COMMAND BAR (SINGLE ROW) ---
+    cmd_c0, cmd_c1, cmd_c2, cmd_c3, cmd_c4 = st.columns(
+        [2.5, 0.95, 1.25, 1.30, 0.95],
+        gap="small",
+        vertical_alignment="center",
+    )
+    with cmd_c0:
+        st.markdown(
+            f"""
+            <span class="kulfi-top-cmd-bar-scope" style="display:none;"></span>
+            <div class="kulfi-cmd-left">
+                <div class="kulfi-cmd-crest">🍦</div>
+                <div>
+                    <div class="kulfi-cmd-title">Kulfi Ops — {page}</div>
+                    <div class="kulfi-cmd-sub">📍 {loc_badge} &nbsp;•&nbsp; {len(CARTS)} Active Carts</div>
                 </div>
-                """,
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with cmd_c1:
+        if st.button(
+            "🏠 Home",
+            type="primary" if page == "Home" else "secondary",
+            use_container_width=True,
+            key="top_cmd_home_btn",
+        ):
+            st.session_state["page_nav"] = "Home"
+            st.rerun()
+    with cmd_c2:
+        with st.popover("⇄ Switch Screen", use_container_width=True):
+            st.markdown(
+                "<div style='font-family:Fraunces,serif;font-size:13.5px;font-weight:800;color:#0F172A;"
+                "margin-bottom:6px;border-bottom:1.5px solid #D97706;padding-bottom:4px;'>"
+                "✨ Select Screen</div>",
                 unsafe_allow_html=True,
             )
-        with cmd_c1:
-            if st.button(
-                "🏠 Home",
-                type="primary" if page == "Home" else "secondary",
-                use_container_width=True,
-                key="top_cmd_home_btn",
-            ):
-                st.session_state["page_nav"] = "Home"
-                st.rerun()
-        with cmd_c2:
-            with st.popover("⇄ Switch Screen", use_container_width=True):
-                st.markdown(
-                    "<div style='font-family:Fraunces,serif;font-size:13.5px;font-weight:800;color:#3A1B0E;"
-                    "margin-bottom:6px;border-bottom:1.5px solid #C89B3C;padding-bottom:4px;'>"
-                    "✨ Select Screen</div>",
-                    unsafe_allow_html=True,
-                )
-                sw_cols = st.columns(2, gap="small")
-                for _idx, _opt in enumerate(nav_options):
-                    with sw_cols[_idx % 2]:
-                        if st.button(
-                            nav_labels.get(_opt, _opt),
-                            key=f"top_pop_nav_{_idx}_{_opt}",
-                            type="primary" if page == _opt else "secondary",
-                            use_container_width=True,
-                        ):
-                            st.session_state["page_nav"] = _opt
-                            st.rerun()
-        with cmd_c3:
-            with st.popover(f"📍 {loc_badge}", use_container_width=True):
-                st.markdown(
-                    "<div style='font-family:Fraunces,serif;font-size:13.5px;font-weight:800;color:#3A1B0E;"
-                    "margin-bottom:6px;border-bottom:1.5px solid #C89B3C;padding-bottom:4px;'>"
-                    "🌐 Operating Location</div>",
-                    unsafe_allow_html=True,
-                )
-                for _lidx, _loc_opt in enumerate(loc_options):
-                    _is_cur_loc = (st.session_state.get("current_location") == _loc_opt)
+            sw_cols = st.columns(2, gap="small")
+            for _idx, _opt in enumerate(nav_options):
+                with sw_cols[_idx % 2]:
                     if st.button(
-                        f"📍 {_loc_opt}",
-                        key=f"top_pop_loc_{_lidx}",
-                        type="primary" if _is_cur_loc else "secondary",
+                        nav_labels.get(_opt, _opt),
+                        key=f"top_pop_nav_{_idx}_{_opt}",
+                        type="primary" if page == _opt else "secondary",
                         use_container_width=True,
                     ):
-                        st.session_state["_pending_loc_change"] = _loc_opt
+                        st.session_state["page_nav"] = _opt
                         st.rerun()
-        with cmd_c4:
-            if st.button("🚪 Log out", type="secondary", use_container_width=True, key="top_cmd_logout_btn"):
-                st.session_state["authenticated"] = False
-                st.session_state["user_role"] = None
-                st.rerun()
+    with cmd_c3:
+        with st.popover(f"📍 {loc_badge}", use_container_width=True):
+            st.markdown(
+                "<div style='font-family:Fraunces,serif;font-size:13.5px;font-weight:800;color:#0F172A;"
+                "margin-bottom:6px;border-bottom:1.5px solid #D97706;padding-bottom:4px;'>"
+                "🌐 Operating Location</div>",
+                unsafe_allow_html=True,
+            )
+            for _lidx, _loc_opt in enumerate(loc_options):
+                _is_cur_loc = (st.session_state.get("current_location") == _loc_opt)
+                if st.button(
+                    f"📍 {_loc_opt}",
+                    key=f"top_pop_loc_{_lidx}",
+                    type="primary" if _is_cur_loc else "secondary",
+                    use_container_width=True,
+                ):
+                    st.session_state["_pending_loc_change"] = _loc_opt
+                    st.rerun()
+    with cmd_c4:
+        if st.button("🚪 Log out", type="secondary", use_container_width=True, key="top_cmd_logout_btn"):
+            st.session_state["authenticated"] = False
+            st.session_state["user_role"] = None
+            st.rerun()
 
 # ======================================================================
 # PAGE ROUTING
@@ -4424,104 +4422,26 @@ else:
 if page == "Home" and user_role == "admin":
     _launchpad_sections = [
         (
-            "📊 Revenue, Sales & Daily Operations",
+            "📊 Sales, Daily Operations & Finance",
             [
-                (
-                    "Dashboard",
-                    "📊",
-                    "ANALYTICS & P&L",
-                    "Dashboard & Financials",
-                    "Revenue, COGS, Gross/Net Margins, OPEX Breakdown, Month-Wise Comparison & Sales Logs.",
-                ),
-                (
-                    "Daily Entry",
-                    "🛒",
-                    "DAILY OPS",
-                    "Daily Entry Hub",
-                    "Record daily closing cart sales, restocks, cart-to-freezer returns & live cart stock tables.",
-                ),
-                (
-                    "Live Cart Tracking",
-                    "📡",
-                    "LIVE POS",
-                    "Live Cart Tracking",
-                    "Monitor real-time mobile POS cart sales, payment split & flavour-wise daily transactions.",
-                ),
-                (
-                    "Bulk Orders & Quotes",
-                    "📦",
-                    "COMMERCIAL",
-                    "Bulk Orders & Quotes",
-                    "Build event quotes by piece count or budget, customize flavour mix & generate PDF estimates.",
-                ),
-                (
-                    "Cash Custody",
-                    "💰",
-                    "TREASURY",
-                    "Cash Custody & Handover",
-                    "Track physical cash collections, admin handovers & progressive expense allocations.",
-                ),
-                (
-                    "Expenses",
-                    "💳",
-                    "FINANCE",
-                    "Expenses & Vendor Dues",
-                    "Record operational expenses, track pending/partial vendor dues & audit payment history.",
-                ),
+                ("Dashboard", "📊", "Dashboard & Financials"),
+                ("Daily Entry", "🛒", "Daily Entry Hub"),
+                ("Live Cart Tracking", "📡", "Live Cart Tracking"),
+                ("Bulk Orders & Quotes", "📦", "Bulk Orders & Quotes"),
+                ("Cash Custody", "💰", "Cash Custody & Handover"),
+                ("Expenses", "💳", "Expenses & Vendor Dues"),
+                ("Staff & Payroll", "👥", "Staff, Attendance & Payroll"),
+                ("Payslip Generator", "📄", "Payslip Generator"),
             ],
         ),
         (
-            "❄️ Supply Chain, Freezer Inventory & Team Administration",
+            "❄️ Supply Chain, Freezer Inventory & Setup",
             [
-                (
-                    "Purchase Orders",
-                    "🧾",
-                    "SUPPLY CHAIN",
-                    "Purchase Orders & Receipts",
-                    "Create factory purchase orders, verify stock received entries & export receipt reports.",
-                ),
-                (
-                    "Freezer Stock",
-                    "❄️",
-                    "INVENTORY",
-                    "Freezer Stock & Direct Sales",
-                    "Inspect live central freezer inventory, log direct freezer sales & update physical audits.",
-                ),
-                (
-                    "Freezer Analysis",
-                    "📈",
-                    "AUDIT MATRIX",
-                    "Freezer Analysis Matrix",
-                    "Reconcile opening audit, PO receipts, cart transfers, freezer sales & stock variance.",
-                ),
-                (
-                    "Stock Removed",
-                    "🗑️",
-                    "WRITE-OFFS",
-                    "Stock Removed & Spoilage",
-                    "Log damaged or melted stock write-offs with automatic cost-price expense booking.",
-                ),
-                (
-                    "Staff & Payroll",
-                    "👥",
-                    "HR & PAYROLL",
-                    "Staff, Attendance & Payroll",
-                    "Manage active/inactive staff roster, salary structures, attendance logs & staff advances.",
-                ),
-                (
-                    "Payslip Generator",
-                    "📄",
-                    "PAYSLIPS",
-                    "Payslip Generator",
-                    "Compute pro-rata monthly net pay with automatic last-working-day cutoffs & PDF payslips.",
-                ),
-                (
-                    "Locations & Logins",
-                    "🌐",
-                    "ADMIN SETUP",
-                    "Locations, Carts & Logins",
-                    "Configure operating cities, cart/freezer mappings & role-based login credentials.",
-                ),
+                ("Purchase Orders", "🧾", "Purchase Orders & Receipts"),
+                ("Freezer Stock", "❄️", "Freezer Stock & Direct Sales"),
+                ("Freezer Analysis", "📈", "Freezer Analysis Matrix"),
+                ("Stock Removed", "🗑️", "Stock Removed & Spoilage"),
+                ("Locations & Logins", "🌐", "Locations, Carts & Logins"),
             ],
         ),
     ]
@@ -4530,14 +4450,13 @@ if page == "Home" and user_role == "admin":
         st.markdown('<span class="kulfi-clickable-card-grid"></span>', unsafe_allow_html=True)
         for _sec_title, _sec_cards in _launchpad_sections:
             st.markdown(f'<div class="launchpad-section-hdr">{_sec_title}</div>', unsafe_allow_html=True)
-            for _row_start in range(0, len(_sec_cards), 3):
-                _row_items = _sec_cards[_row_start:_row_start + 3]
-                _cols = st.columns(3, gap="medium")
-                for _c_idx, (_target_page, _icon, _badge, _title, _desc) in enumerate(_row_items):
+            for _row_start in range(0, len(_sec_cards), 4):
+                _row_items = _sec_cards[_row_start:_row_start + 4]
+                _cols = st.columns(4, gap="small")
+                for _c_idx, (_target_page, _icon, _title) in enumerate(_row_items):
                     with _cols[_c_idx]:
-                        _card_label = f"{_icon}  **{_title}**"
                         if st.button(
-                            _card_label,
+                            f"{_icon}  **{_title}**",
                             key=f"launchpad_card_{_target_page}",
                             use_container_width=True,
                         ):
@@ -4838,82 +4757,45 @@ elif page == "Daily Entry":
 
         with st.container():
             st.markdown('<span class="kulfi-clickable-card-grid"></span>', unsafe_allow_html=True)
-            # Row 1: Core Cart Daily Operations (Sales, Restock, Extra Stock)
-            r1_c1, r1_c2, r1_c3 = st.columns(3, gap="medium")
+            r1_c1, r1_c2, r1_c3, r1_c4 = st.columns(4, gap="small")
             with r1_c1:
-                if st.button(
-                    "🧾  **Sales Entry (Carts)**",
-                    key="open_sales_entry",
-                    use_container_width=True,
-                ):
+                if st.button("🧾  **Sales Entry (Carts)**", key="open_sales_entry", use_container_width=True):
                     st.session_state.pop("_last_mismatch_modal_target", None)
                     st.session_state["daily_entry_mode"] = "sales"
                     st.rerun()
-
             with r1_c2:
-                if st.button(
-                    "📦  **Restock (Carts)**",
-                    key="open_restock_entry",
-                    use_container_width=True,
-                ):
+                if st.button("📦  **Restock (Carts)**", key="open_restock_entry", use_container_width=True):
                     st.session_state["daily_entry_mode"] = "restock"
                     st.rerun()
-
             with r1_c3:
-                if st.button(
-                    "➕  **Extra Stock (Carts)**",
-                    key="open_extra_stock",
-                    use_container_width=True,
-                ):
+                if st.button("➕  **Extra Stock (Carts)**", key="open_extra_stock", use_container_width=True):
                     for _cart in CARTS:
                         for _code in FLAVOR_CODES:
                             st.session_state[f"extra_stock_{_cart}_{_code}"] = 0
                     st.session_state["daily_entry_mode"] = "extra"
                     st.rerun()
-
-            # Row 2: Cart-to-Freezer Return, Read-Only Cart Snapshot, and Direct Freezer Sales
-            r2_c1, r2_c2, r2_c3 = st.columns(3, gap="medium")
-            with r2_c1:
-                if st.button(
-                    "🔄  **Remove Cart Stock**",
-                    key="open_remove_cart_stock",
-                    use_container_width=True,
-                ):
+            with r1_c4:
+                if st.button("🔄  **Remove Cart Stock**", key="open_remove_cart_stock", use_container_width=True):
                     for _cart in CARTS:
                         for _code in FLAVOR_CODES:
                             st.session_state[f"rm_cart_stock_{_cart}_{_code}"] = 0
                     st.session_state["daily_entry_mode"] = "remove_cart_stock"
                     st.rerun()
 
-            with r2_c2:
-                if st.button(
-                    "📋  **View Cart Stock**",
-                    key="open_view_cart_stock",
-                    use_container_width=True,
-                ):
+            r2_c1, r2_c2, r2_c3, _ = st.columns(4, gap="small")
+            with r2_c1:
+                if st.button("📋  **View Cart Stock**", key="open_view_cart_stock", use_container_width=True):
                     st.session_state["daily_entry_mode"] = "view_stock"
                     st.rerun()
-
-            with r2_c3:
-                if st.button(
-                    "❄️  **Sales Entry (Freezer)**",
-                    key="open_freezer_sales_entry",
-                    use_container_width=True,
-                ):
+            with r2_c2:
+                if st.button("❄️  **Sales Entry (Freezer)**", key="open_freezer_sales_entry", use_container_width=True):
                     st.session_state["fzr_sale_form_nonce"] = int(st.session_state.get("fzr_sale_form_nonce", 0)) + 1
                     st.session_state["fzr_entry_sub_mode"] = "new"
                     st.session_state.pop("_editing_freezer_txn_id", None)
                     st.session_state["daily_entry_mode"] = "freezer_sales"
                     st.rerun()
-
-            # Row 3: Live Cart Transactions Card
-            r3_c1, _, _ = st.columns(3, gap="medium")
-            with r3_c1:
-                if st.button(
-                    "📱  **Live Cart Transactions**",
-                    key="open_live_flavour_entry_view",
-                    use_container_width=True,
-                ):
+            with r2_c3:
+                if st.button("📱  **Live Cart Transactions**", key="open_live_flavour_entry_view", use_container_width=True):
                     st.session_state["daily_entry_mode"] = "live_flavour_view"
                     st.rerun()
     else:
