@@ -42,16 +42,16 @@ except ImportError:
 st.set_page_config(page_title="Kulfi Ops", page_icon="🍦", layout="wide", initial_sidebar_state="collapsed")
 
 # ----------------------------------------------------------------------
-# GLOBAL UI STYLES — ROYAL VELVET MAROON, ROASTED MAHOGANY & BURNISHED GOLD (3D SUITE)
+# GLOBAL UI STYLES — CALM ROASTED ESPRESSO, MUTED TAUPE-SAND & WARM IVORY (3D SUITE)
 # ----------------------------------------------------------------------
 st.html("""
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&family=Manrope:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-/* Luminous Warm Pearl-Almond Canvas for Maximum Contrast against Royal Maroon */
+/* Calm Warm Alabaster-Linen Canvas — Soft & Easy on the Eyes */
 .stApp, [data-testid="stAppViewContainer"], .main {
-    background: linear-gradient(135deg, #FCF9F5 0%, #F6EFE6 50%, #EFE5D8 100%) !important;
-    color: #3B1219 !important;
+    background: linear-gradient(135deg, #FAF8F5 0%, #F4EFE8 55%, #EDE6DC 100%) !important;
+    color: #2E221D !important;
 }
 
 /* Completely hide the left sidebar and sidebar toggle button */
@@ -82,13 +82,13 @@ html, body, [class*="css"] {
 }
 h1, h2, h3, h4 {
     font-family: 'Fraunces', serif !important;
-    color: #4A121E !important;
+    color: #382A22 !important;
     letter-spacing: -0.01em;
 }
 h1 { font-size: 1.4rem !important; margin-top: 0 !important; }
 h2 { font-size: 1.18rem !important; }
 h3 { font-size: 1.04rem !important; }
-p, span, label, .stMarkdown { color: #3B1219; }
+p, span, label, .stMarkdown { color: #2E221D; }
 
 /* Hide stepper buttons on number inputs */
 input[type=number]::-webkit-inner-spin-button, 
@@ -99,134 +99,163 @@ input[type=number]::-webkit-outer-spin-button {
 input[type=number] { -moz-appearance: textfield !important; }
 div[data-testid="stNumberInput"] button { display: none !important; }
 
-/* Crisp White & Gold Layered Containers, Expanders & Tabs */
+/* Crisp White & Muted Sand Layered Containers, Expanders & Tabs */
 div[data-testid="stVerticalBlockBorderWrapper"] {
     background: #FFFFFF !important;
-    border: 1.5px solid #DECBB4 !important;
-    border-top: 3px solid #D4AF37 !important;
+    border: 1.5px solid #DDD1C2 !important;
+    border-top: 3px solid #B08968 !important;
     border-radius: 12px !important;
-    box-shadow: 0 4px 14px rgba(74, 18, 30, 0.07) !important;
+    box-shadow: 0 3px 12px rgba(46, 34, 29, 0.05) !important;
     padding: 12px 14px !important;
 }
 div[data-testid="stExpander"] {
     background: #FFFFFF !important;
-    border: 1.5px solid #DECBB4 !important;
+    border: 1.5px solid #DDD1C2 !important;
     border-radius: 10px !important;
-    box-shadow: 0 3px 10px rgba(74, 18, 30, 0.06) !important;
+    box-shadow: 0 2px 8px rgba(46, 34, 29, 0.05) !important;
     overflow: hidden;
 }
 div[data-testid="stExpander"] summary {
-    background: linear-gradient(90deg, #5C1624 0%, #731C2E 100%) !important;
+    background: linear-gradient(90deg, #3E3028 0%, #4C3B32 100%) !important;
     padding: 8px 14px !important;
     font-weight: 800 !important;
-    color: #FFFFFF !important;
+    color: #FAF7F2 !important;
 }
 div[data-testid="stExpander"] summary p,
 div[data-testid="stExpander"] summary span,
 div[data-testid="stExpander"] summary svg {
-    color: #FDE68A !important;
-    fill: #FDE68A !important;
+    color: #EFE5D8 !important;
+    fill: #EFE5D8 !important;
 }
 div[data-testid="stTabs"] [data-baseweb="tab-list"] {
     gap: 8px !important;
-    background: #EFE4D6 !important;
+    background: #EAE1D5 !important;
     padding: 5px 6px !important;
     border-radius: 10px !important;
-    border: 1px solid #DECBB4 !important;
+    border: 1px solid #D8C9B8 !important;
 }
 div[data-testid="stTabs"] button[data-baseweb="tab"] {
     background: #FFFFFF !important;
-    border: 1.5px solid #C4A484 !important;
+    border: 1px solid #C4B299 !important;
     border-radius: 8px !important;
     padding: 6px 14px !important;
     font-weight: 800 !important;
-    color: #4A121E !important;
-    box-shadow: 0 2px 0 #9E7B5C !important;
+    color: #382A22 !important;
+    box-shadow: 0 2px 0 #A8947D !important;
     transition: all 0.14s ease !important;
 }
 div[data-testid="stTabs"] button[data-baseweb="tab"] p {
-    color: #4A121E !important;
+    color: #382A22 !important;
     font-weight: 800 !important;
 }
 div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] {
-    background: linear-gradient(180deg, #6E1B2D 0%, #4E1220 100%) !important;
-    color: #FDE68A !important;
-    border-color: #D4AF37 !important;
-    box-shadow: 0 2px 0 #2E0911, 0 4px 10px rgba(78, 18, 32, 0.24) !important;
+    background: linear-gradient(180deg, #4A3A31 0%, #382B24 100%) !important;
+    color: #FAF7F2 !important;
+    border-color: #C4B299 !important;
+    box-shadow: 0 2px 0 #231A15, 0 4px 10px rgba(46, 34, 29, 0.16) !important;
 }
 div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] p {
-    color: #FDE68A !important;
+    color: #FAF7F2 !important;
 }
 
 /* ======================================================================
-   UNIFIED TOP COMMAND BAR — ROYAL VELVET MAROON & BURNISHED GOLD
+   UNIFIED TOP COMMAND BAR — CALM ROASTED ESPRESSO & PERFECT VERTICAL CENTERING
    ====================================================================== */
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) {
-    background: linear-gradient(135deg, #521320 0%, #6E1B2D 52%, #430F1A 100%) !important;
-    border: 2px solid #E5B84B !important;
-    border-radius: 13px !important;
-    padding: 8px 14px !important;
-    margin-bottom: 6px !important;
+    background: linear-gradient(135deg, #3A2D26 0%, #483830 52%, #322620 100%) !important;
+    border: 1.5px solid #C4B299 !important;
+    border-radius: 12px !important;
+    padding: 10px 16px !important;
+    margin-bottom: 8px !important;
     align-items: center !important;
     box-shadow:
-        inset 0 1px 0 rgba(253, 230, 138, 0.35),
-        0 4px 0 #2A0810,
-        0 10px 22px rgba(67, 15, 26, 0.20) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.12),
+        0 3px 0 #221915,
+        0 6px 16px rgba(46, 34, 29, 0.12) !important;
+}
+/* Ensure every column and wrapper inside the top bar is strictly centered with zero extra gap */
+div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) > div[data-testid="stColumn"],
+div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) > div[data-testid="column"] {
+    display: flex !important;
+    align-items: center !important;
+}
+div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stVerticalBlock"],
+div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stElementContainer"],
+div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stMarkdownContainer"] {
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
 }
 .kulfi-cmd-left {
-    display: flex;
-    align-items: center;
-    gap: 11px;
-    flex-wrap: nowrap;
-    padding: 2px 4px;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    flex-wrap: nowrap !important;
+    margin: 0 !important;
+    padding: 0 2px !important;
+    min-height: 38px !important;
 }
 .kulfi-cmd-crest {
     width: 36px;
     height: 36px;
     border-radius: 9px;
-    background: linear-gradient(145deg, #F59E0B 0%, #B45309 100%);
-    border: 1.5px solid #FDE68A;
-    box-shadow: 0 2px 6px rgba(42, 8, 16, 0.45);
+    background: linear-gradient(145deg, #8C5A3C 0%, #6E452C 100%);
+    border: 1px solid #D6C7B2;
+    box-shadow: 0 2px 5px rgba(24, 17, 14, 0.35);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 19px;
+    font-size: 18px;
     flex-shrink: 0;
+    margin: 0 !important;
+}
+.kulfi-cmd-text {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 .kulfi-cmd-title {
     font-family: 'Fraunces', serif !important;
-    font-size: 1.15rem !important;
-    font-weight: 800 !important;
-    color: #FFFFFF !important;
+    font-size: 1.12rem !important;
+    font-weight: 700 !important;
+    color: #FAF7F2 !important;
     letter-spacing: 0.01em;
-    line-height: 1.15;
-    text-shadow: 0 1px 3px rgba(42, 8, 16, 0.65);
+    line-height: 1.15 !important;
+    margin: 0 !important;
+    padding: 0 !important;
     white-space: nowrap;
 }
 .kulfi-cmd-sub {
-    font-size: 11px !important;
-    font-weight: 800 !important;
-    color: #FDE68A !important;
+    font-size: 10.5px !important;
+    font-weight: 700 !important;
+    color: #DFCBB5 !important;
     letter-spacing: 0.03em;
-    margin-top: 1px;
+    line-height: 1.15 !important;
+    margin: 2px 0 0 0 !important;
+    padding: 0 !important;
 }
 
-/* Top Command Bar 3D Buttons — Strictly 38px Tall, High-Contrast Gold & Maroon */
+/* Top Command Bar 3D Buttons — Strictly 38px Tall, Calm Espresso & Warm Ivory */
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton > button,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button {
     min-height: 38px !important;
     height: 38px !important;
     padding: 0 12px !important;
     font-size: 12.5px !important;
-    font-weight: 800 !important;
-    border-radius: 9px !important;
-    border: 1.5px solid #E5B84B !important;
-    background: linear-gradient(180deg, #7D2237 0%, #581524 100%) !important;
-    color: #FFFFFF !important;
+    font-weight: 700 !important;
+    border-radius: 8px !important;
+    border: 1px solid #C4B299 !important;
+    background: linear-gradient(180deg, #524037 0%, #3E3029 100%) !important;
+    color: #FAF7F2 !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.25),
-        0 3px 0 #2A0810,
-        0 4px 10px rgba(42, 8, 16, 0.35) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.14),
+        0 2px 0 #221915,
+        0 3px 8px rgba(24, 17, 14, 0.22) !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -238,47 +267,46 @@ div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton > b
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button p,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button span,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button svg {
-    color: #FFFFFF !important;
-    fill: #FDE68A !important;
-    font-weight: 800 !important;
+    color: #FAF7F2 !important;
+    fill: #DFCBB5 !important;
+    font-weight: 700 !important;
     font-size: 12.5px !important;
 }
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton > button:hover,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button:hover {
-    background: linear-gradient(180deg, #B45309 0%, #78350F 100%) !important;
-    border-color: #FDE68A !important;
+    background: linear-gradient(180deg, #634E43 0%, #4C3B32 100%) !important;
+    border-color: #E2D4C3 !important;
     color: #FFFFFF !important;
     transform: translateY(-1px) !important;
 }
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton > button[kind="primary"] {
-    background: linear-gradient(180deg, #D97706 0%, #92400E 100%) !important;
-    border: 1.5px solid #FDE68A !important;
-    color: #FFFFFF !important;
+    background: linear-gradient(180deg, #8C583A 0%, #73452B 100%) !important;
+    border: 1px solid #DFCBB5 !important;
+    color: #FAF7F2 !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.45),
-        0 3px 0 #451A03,
-        0 5px 12px rgba(217, 119, 6, 0.35) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.22),
+        0 2px 0 #3D2416,
+        0 4px 10px rgba(115, 69, 43, 0.25) !important;
 }
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton > button[kind="primary"] p {
-    color: #FFFFFF !important;
-    font-weight: 900 !important;
-    text-shadow: 0 1px 2px rgba(42, 8, 16, 0.45) !important;
+    color: #FAF7F2 !important;
+    font-weight: 800 !important;
 }
 
 /* ======================================================================
-   LAUNCHPAD SECTION HEADERS & 4-COLUMN HIGH-CONTRAST 3D MAROON CARDS
+   LAUNCHPAD SECTION HEADERS & 4-COLUMN REFINED ESPRESSO-MOCHA 3D CARDS
    ====================================================================== */
 .launchpad-section-hdr {
     font-family: 'Fraunces', serif !important;
-    font-size: 13.5px !important;
-    font-weight: 800 !important;
-    color: #4A121E !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    color: #382A22 !important;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.05em;
     margin: 6px 0 6px 2px;
     padding: 5px 12px;
-    background: linear-gradient(90deg, #F3E5D3 0%, rgba(243, 229, 211, 0) 100%);
-    border-left: 4px solid #6E1B2D;
+    background: linear-gradient(90deg, #EAE1D5 0%, rgba(234, 225, 213, 0) 100%);
+    border-left: 3.5px solid #7C5841;
     border-radius: 4px;
     display: flex;
     align-items: center;
@@ -293,15 +321,15 @@ div[data-testid="stElementContainer"]:has(.kulfi-clickable-card-grid) {
     padding: 0 !important;
 }
 
-/* Directly Clickable 3D Luxury Cards — Strictly Scoped (Never Matches Top Bar!) */
+/* Directly Clickable 3D Cards — Understated Warm Espresso-Mocha */
 div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button {
-    background: linear-gradient(145deg, #6E1B2D 0%, #4E1220 100%) !important;
-    border: 1.5px solid #E5B84B !important;
-    border-left: 5px solid #F59E0B !important;
-    border-radius: 12px !important;
+    background: linear-gradient(145deg, #483830 0%, #382B24 100%) !important;
+    border: 1px solid #C4B299 !important;
+    border-left: 4px solid #B08968 !important;
+    border-radius: 11px !important;
     padding: 14px 16px !important;
-    min-height: 66px !important;
-    height: 66px !important;
+    min-height: 64px !important;
+    height: 64px !important;
     width: 100% !important;
     display: flex !important;
     align-items: center !important;
@@ -309,26 +337,26 @@ div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kul
     text-align: left !important;
     white-space: nowrap !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.18),
-        0 4px 0 #2A0810,
-        0 8px 16px rgba(78, 18, 32, 0.18) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.10),
+        0 3px 0 #231A15,
+        0 5px 12px rgba(46, 34, 29, 0.11) !important;
     transition: all 0.15s ease !important;
     margin-bottom: 4px !important;
     cursor: pointer !important;
 }
 div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button:hover {
-    background: linear-gradient(145deg, #9A3412 0%, #7C2D12 100%) !important;
-    border-color: #FDE68A !important;
-    border-left: 5px solid #FDE68A !important;
-    transform: translateY(-2px) !important;
+    background: linear-gradient(145deg, #5C473D 0%, #483830 100%) !important;
+    border-color: #DFCBB5 !important;
+    border-left: 4px solid #DFCBB5 !important;
+    transform: translateY(-1px) !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.30),
-        0 5px 0 #431407,
-        0 12px 22px rgba(154, 52, 18, 0.28) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+        0 4px 0 #231A15,
+        0 8px 16px rgba(46, 34, 29, 0.16) !important;
 }
 div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button:active {
-    transform: translateY(2px) !important;
-    box-shadow: 0 1px 0 #2A0810 !important;
+    transform: translateY(1px) !important;
+    box-shadow: 0 1px 0 #231A15 !important;
 }
 div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button > div[data-testid="stMarkdownContainer"] {
     width: 100% !important;
@@ -337,28 +365,27 @@ div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kul
 div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button > div[data-testid="stMarkdownContainer"] p,
 div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button > div[data-testid="stMarkdownContainer"] p strong {
     font-family: 'Manrope', sans-serif !important;
-    font-size: 15px !important;
-    font-weight: 800 !important;
-    color: #FFFFFF !important;
+    font-size: 14.5px !important;
+    font-weight: 700 !important;
+    color: #FAF7F2 !important;
     line-height: 1.25 !important;
     margin: 0 !important;
     letter-spacing: 0.01em !important;
-    text-shadow: 0 1px 2px rgba(42, 8, 16, 0.50) !important;
 }
 
 /* ======================================================================
-   ALL STANDARD 3D BUTTONS ACROSS INDIVIDUAL SCREENS — ROYAL MAROON
+   ALL STANDARD 3D BUTTONS ACROSS INDIVIDUAL SCREENS — CALM ESPRESSO
    ====================================================================== */
 .stButton > button,
 [data-testid="stFormSubmitButton"] > button,
 .stDownloadButton > button,
 [data-testid="stLinkButton"] > a,
 [data-testid="stPopover"] > div > button {
-    background: linear-gradient(180deg, #6E1B2D 0%, #4E1220 100%) !important;
-    color: #FFFFFF !important;
-    border: 1.5px solid #E5B84B !important;
-    border-radius: 9px !important;
-    font-weight: 800 !important;
+    background: linear-gradient(180deg, #4A3A31 0%, #382B24 100%) !important;
+    color: #FAF7F2 !important;
+    border: 1px solid #C4B299 !important;
+    border-radius: 8px !important;
+    font-weight: 700 !important;
     font-size: 12.5px !important;
     min-height: 38px !important;
     height: 38px !important;
@@ -370,9 +397,9 @@ div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kul
     margin: 0 !important;
     text-decoration: none !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.22),
-        0 3px 0 #2A0810,
-        0 5px 10px rgba(78, 18, 32, 0.18) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.12),
+        0 2px 0 #231A15,
+        0 4px 8px rgba(46, 34, 29, 0.12) !important;
     transition: all 0.12s ease !important;
     letter-spacing: 0.01em !important;
 }
@@ -386,51 +413,50 @@ div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kul
 [data-testid="stLinkButton"] > a span,
 [data-testid="stPopover"] > div > button p,
 [data-testid="stPopover"] > div > button span {
-    color: #FFFFFF !important;
-    font-weight: 800 !important;
+    color: #FAF7F2 !important;
+    font-weight: 700 !important;
 }
 .stButton > button:hover,
 [data-testid="stFormSubmitButton"] > button:hover,
 .stDownloadButton > button:hover,
 [data-testid="stLinkButton"] > a:hover,
 [data-testid="stPopover"] > div > button:hover {
-    background: linear-gradient(180deg, #882339 0%, #631728 100%) !important;
-    border-color: #FDE68A !important;
+    background: linear-gradient(180deg, #5E493E 0%, #483830 100%) !important;
+    border-color: #DFCBB5 !important;
     color: #FFFFFF !important;
     transform: translateY(-1px) !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.30),
-        0 4px 0 #2A0810,
-        0 7px 14px rgba(78, 18, 32, 0.24) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+        0 3px 0 #231A15,
+        0 5px 10px rgba(46, 34, 29, 0.16) !important;
 }
 .stButton > button:active,
 [data-testid="stFormSubmitButton"] > button:active,
 .stDownloadButton > button:active,
 [data-testid="stLinkButton"] > a:active,
 [data-testid="stPopover"] > div > button:active {
-    transform: translateY(2px) !important;
-    box-shadow: 0 1px 0 #2A0810 !important;
+    transform: translateY(1px) !important;
+    box-shadow: 0 1px 0 #231A15 !important;
 }
 
-/* Primary 3D Action Buttons (Rich Warm Copper-Saffron) */
+/* Primary 3D Action Buttons (Muted Warm Cinnamon-Caramel) */
 .stButton > button[kind="primary"],
 [data-testid="stFormSubmitButton"] > button[kind="primary"],
 .stDownloadButton > button[kind="primary"],
 [data-testid="baseButton-primary"] {
-    background: linear-gradient(180deg, #C2410C 0%, #9A3412 55%, #7C2D12 100%) !important;
-    color: #FFFFFF !important;
-    border: 1.5px solid #FDE68A !important;
+    background: linear-gradient(180deg, #8C583A 0%, #73452B 100%) !important;
+    color: #FAF7F2 !important;
+    border: 1px solid #DFCBB5 !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.40),
-        0 3px 0 #431407,
-        0 6px 14px rgba(154, 52, 18, 0.28) !important;
-    text-shadow: 0 1px 2px rgba(42, 8, 16, 0.40) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.22),
+        0 2px 0 #3D2416,
+        0 4px 10px rgba(115, 69, 43, 0.20) !important;
 }
 .stButton > button[kind="primary"]:hover,
 [data-testid="stFormSubmitButton"] > button[kind="primary"]:hover,
 .stDownloadButton > button[kind="primary"]:hover {
-    background: linear-gradient(180deg, #D97706 0%, #B45309 55%, #92400E 100%) !important;
-    border-color: #FEF3C7 !important;
+    background: linear-gradient(180deg, #9E6544 0%, #824F32 100%) !important;
+    border-color: #EFE5D8 !important;
     color: #FFFFFF !important;
     transform: translateY(-1px) !important;
 }
@@ -442,17 +468,17 @@ div[data-testid="stHorizontalBlock"]:has(.ledger-cell) .stButton > button {
     height: 30px !important;
     font-size: 11.5px !important;
     line-height: 1 !important;
-    border: 1px solid #E5B84B !important;
-    background: linear-gradient(180deg, #6E1B2D 0%, #4E1220 100%) !important;
-    color: #FFFFFF !important;
-    box-shadow: 0 2px 0 #2A0810 !important;
+    border: 1px solid #C4B299 !important;
+    background: linear-gradient(180deg, #4A3A31 0%, #382B24 100%) !important;
+    color: #FAF7F2 !important;
+    box-shadow: 0 2px 0 #231A15 !important;
 }
 
 /* High-Contrast Section Headers */
 .header-box-sales {
-    background: linear-gradient(90deg, #FEF3C7 0%, #FDE68A 100%);
-    color: #4A121E !important;
-    border: 1.5px solid #D97706;
+    background: linear-gradient(90deg, #F5EBE0 0%, #EBDCCB 100%);
+    color: #382A22 !important;
+    border: 1px solid #C4B299;
     border-radius: 9px;
     padding: 8px 13px;
     font-weight: 800;
@@ -461,12 +487,12 @@ div[data-testid="stHorizontalBlock"]:has(.ledger-cell) .stButton > button {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 2px 5px rgba(74, 18, 30, 0.06);
+    box-shadow: 0 2px 5px rgba(46, 34, 29, 0.05);
 }
 .header-box-restock {
     background: linear-gradient(90deg, #DCFCE7 0%, #BBF7D0 100%);
     color: #064E3B !important;
-    border: 1.5px solid #16A34A;
+    border: 1px solid #86EFAC;
     border-radius: 9px;
     padding: 8px 13px;
     font-weight: 800;
@@ -475,17 +501,17 @@ div[data-testid="stHorizontalBlock"]:has(.ledger-cell) .stButton > button {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 2px 5px rgba(6, 78, 59, 0.06);
+    box-shadow: 0 2px 5px rgba(6, 78, 59, 0.05);
 }
 
 /* Compact Flavor Card Grid */
 .flavor-entry-row {
     background: #FFFFFF;
-    border: 1.2px solid #DECBB4;
+    border: 1px solid #DDD1C2;
     border-radius: 8px;
     padding: 5px 8px;
     margin-bottom: 5px;
-    box-shadow: 0 2px 4px rgba(74, 18, 30, 0.04);
+    box-shadow: 0 2px 4px rgba(46, 34, 29, 0.04);
 }
 .flavor-title-bar {
     display: flex;
@@ -496,11 +522,11 @@ div[data-testid="stHorizontalBlock"]:has(.ledger-cell) .stButton > button {
 .flavor-name {
     font-weight: 800;
     font-size: 12.5px;
-    color: #3B1219;
+    color: #2E221D;
 }
 .badge-open {
-    background: #FEF3C7;
-    color: #78350F;
+    background: #F5EBE0;
+    color: #5C3D28;
     font-weight: 800;
     font-size: 11px;
     padding: 1px 6px;
@@ -525,7 +551,7 @@ div[data-testid="stHorizontalBlock"]:has(.ledger-cell) .stButton > button {
     display: inline-block;
 }
 
-/* Consistent Input Heights & High-Contrast Borders */
+/* Consistent Input Heights & Calm Borders */
 .stSelectbox div[data-baseweb="select"] > div,
 .stDateInput div[data-baseweb="input"],
 .stTextInput div[data-baseweb="input"],
@@ -534,7 +560,7 @@ div[data-testid="stHorizontalBlock"]:has(.ledger-cell) .stButton > button {
     height: 36px !important;
     border-radius: 7px !important;
     background-color: #FFFFFF !important;
-    border: 1.5px solid #B89778 !important;
+    border: 1.5px solid #C4B299 !important;
 }
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) .stNumberInput div[data-baseweb="input"] {
     min-height: 28px !important;
@@ -546,24 +572,24 @@ div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) .stNumberInpu
     font-size: 12.5px !important;
     text-align: left !important;
     font-weight: 700 !important;
-    color: #3B1219 !important;
+    color: #2E221D !important;
 }
 .stNumberInput label, .stTextInput label, .stSelectbox label, .stDateInput label {
     font-size: 11px !important;
     font-weight: 800 !important;
     margin-bottom: 2px !important;
     text-align: left !important;
-    color: #4A121E !important;
+    color: #382A22 !important;
 }
 
-/* Metric Cards — Crisp White with Royal Maroon & Gold Top Bar */
+/* Metric Cards — Crisp White with Warm Espresso Top Bar */
 div[data-testid="stMetric"] {
     background: #FFFFFF !important;
-    border: 1.5px solid #DECBB4 !important;
-    border-top: 3.5px solid #6E1B2D !important;
+    border: 1px solid #DDD1C2 !important;
+    border-top: 3px solid #4A3A31 !important;
     border-radius: 10px !important;
     padding: 9px 12px !important;
-    box-shadow: 0 3px 10px rgba(74, 18, 30, 0.06) !important;
+    box-shadow: 0 2px 8px rgba(46, 34, 29, 0.05) !important;
     height: 100%;
 }
 div[data-testid="stMetricLabel"], 
@@ -571,9 +597,9 @@ div[data-testid="stMetricLabel"] > div,
 div[data-testid="stMetricLabel"] label,
 div[data-testid="stMetricLabel"] p, 
 div[data-testid="stMetricLabel"] span { 
-    font-weight: 800 !important; 
+    font-weight: 700 !important; 
     font-size: 11px !important; 
-    color: #6B342A !important; 
+    color: #6E5A4F !important; 
     white-space: normal !important; 
     word-wrap: break-word !important; 
     overflow: visible !important; 
@@ -588,23 +614,23 @@ div[data-testid="stMetricValue"] {
     font-family: 'Fraunces', serif; 
     font-size: 1.15rem !important; 
     font-weight: 800 !important;
-    color: #4A121E !important; 
+    color: #2E221D !important; 
     margin-top: 4px;
 }
 
-/* Luxury Data Grids & Tables Across the Entire App */
+/* Data Grids & Tables Across the Entire App — Warm Espresso & Soft Sand */
 div[data-testid="stDataFrame"], div[data-testid="stDataEditor"] {
     border-radius: 10px !important;
-    border: 2px solid #5C1624 !important;
+    border: 1.5px solid #4A3A31 !important;
     background: #FFFFFF !important;
-    box-shadow: 0 4px 14px rgba(74, 18, 30, 0.08) !important;
+    box-shadow: 0 3px 10px rgba(46, 34, 29, 0.06) !important;
     overflow: hidden;
 }
 div[data-testid="stDataFrame"] th, div[data-testid="stDataEditor"] th {
-    font-weight: 900 !important;
-    color: #FDE68A !important;
-    background: linear-gradient(180deg, #6E1B2D 0%, #4E1220 100%) !important;
-    border-bottom: 2px solid #D4AF37 !important;
+    font-weight: 800 !important;
+    color: #EFE5D8 !important;
+    background: linear-gradient(180deg, #4A3A31 0%, #382B24 100%) !important;
+    border-bottom: 1.5px solid #B08968 !important;
     text-align: center !important;
     font-size: 12px !important;
 }
@@ -612,49 +638,49 @@ div[data-testid="stDataFrame"] td, div[data-testid="stDataEditor"] td {
     text-align: center !important;
     font-size: 11.5px !important;
     font-weight: 700 !important;
-    color: #3B1219 !important;
+    color: #2E221D !important;
 }
 .stMarkdown table {
     width: 100%;
     border-collapse: separate !important;
     border-spacing: 0 !important;
     background: #FFFFFF;
-    border: 1.5px solid #5C1624;
+    border: 1.5px solid #4A3A31;
     border-radius: 10px;
     overflow: hidden;
-    box-shadow: 0 4px 12px rgba(74, 18, 30, 0.07);
+    box-shadow: 0 3px 10px rgba(46, 34, 29, 0.06);
     margin: 6px 0 12px 0;
 }
 .stMarkdown table th {
-    background: linear-gradient(180deg, #6E1B2D 0%, #4E1220 100%) !important;
-    color: #FDE68A !important;
+    background: linear-gradient(180deg, #4A3A31 0%, #382B24 100%) !important;
+    color: #EFE5D8 !important;
     font-weight: 800 !important;
     padding: 8px 10px !important;
-    border-bottom: 2px solid #D4AF37 !important;
-    border-right: 1px solid rgba(212, 175, 55, 0.25) !important;
+    border-bottom: 1.5px solid #B08968 !important;
+    border-right: 1px solid rgba(196, 178, 153, 0.25) !important;
     font-size: 11.5px !important;
 }
 .stMarkdown table td {
     padding: 7px 10px !important;
-    border-bottom: 1px solid #EFE4D6 !important;
-    border-right: 1px solid #F7EFE5 !important;
+    border-bottom: 1px solid #EAE1D5 !important;
+    border-right: 1px solid #F4EFE8 !important;
     font-size: 12px !important;
     font-weight: 700 !important;
-    color: #3B1219 !important;
+    color: #2E221D !important;
 }
 .stMarkdown table tr:nth-child(even) td {
-    background: #FDF9F3 !important;
+    background: #FAF8F5 !important;
 }
 .stMarkdown table tr:hover td {
-    background: #FEF3C7 !important;
+    background: #F5EBE0 !important;
 }
 
-hr { border-color: #DECBB4 !important; margin: 0.4rem 0 !important; }
+hr { border-color: #DDD1C2 !important; margin: 0.4rem 0 !important; }
 
 /* Distinct Editable Table Input Borders */
 div[data-testid="stNumberInput"] div[data-baseweb="input"] {
-    border: 1.8px solid #D97706 !important;
-    background-color: #FFFBEB !important;
+    border: 1.5px solid #B08968 !important;
+    background-color: #FDFBF7 !important;
     border-radius: 6px !important;
 }
 div[data-testid="stNumberInput"] div[data-baseweb="input"]:focus-within {
@@ -664,16 +690,16 @@ div[data-testid="stNumberInput"] div[data-baseweb="input"]:focus-within {
 div[data-testid="stNumberInput"] input {
     text-align: left !important;
     font-weight: 800 !important;
-    color: #3B1219 !important;
+    color: #2E221D !important;
     padding-left: 8px !important;
 }
 
-/* Luxury Daily Entry & Stock Grid Cells */
+/* Daily Entry & Stock Grid Cells */
 .entry-grid-header {
-    background: linear-gradient(180deg, #6E1B2D 0%, #4E1220 100%);
-    color: #FDE68A !important;
-    border: 1px solid #D4AF37;
-    border-bottom: 2px solid #D4AF37;
+    background: linear-gradient(180deg, #4A3A31 0%, #382B24 100%);
+    color: #EFE5D8 !important;
+    border: 1px solid #B08968;
+    border-bottom: 1.5px solid #B08968;
     padding: 6px 10px;
     border-radius: 7px;
     font-size: 11.5px;
@@ -683,7 +709,7 @@ div[data-testid="stNumberInput"] input {
 }
 .entry-grid-cell {
     background: #FFFFFF;
-    border: 1px solid #DECBB4;
+    border: 1px solid #DDD1C2;
     border-radius: 6px;
     height: 28px;
     display: flex;
@@ -691,12 +717,12 @@ div[data-testid="stNumberInput"] input {
     justify-content: center;
     font-size: 12px;
     font-weight: 800;
-    color: #3B1219;
+    color: #2E221D;
 }
 .entry-grid-cell-flavour {
     background: #FFFFFF;
-    border: 1px solid #DECBB4;
-    border-left: 3.5px solid #D97706;
+    border: 1px solid #DDD1C2;
+    border-left: 3.5px solid #8C583A;
     border-radius: 6px;
     height: 28px;
     display: flex;
@@ -705,7 +731,7 @@ div[data-testid="stNumberInput"] input {
     padding: 0 8px;
     font-size: 12px;
     font-weight: 800;
-    color: #3B1219;
+    color: #2E221D;
 }
 .entry-grid-cell-sold {
     background: #FEE2E2;
@@ -733,22 +759,22 @@ div[data-testid="stNumberInput"] input {
     color: #064E3B;
 }
 .entry-grid-total-row {
-    background: linear-gradient(90deg, #FEF3C7 0%, #FDE68A 100%);
-    border: 1.5px solid #D97706;
+    background: linear-gradient(90deg, #F5EBE0 0%, #EBDCCB 100%);
+    border: 1.5px solid #B08968;
     border-radius: 8px;
     padding: 7px 10px;
     margin-top: 6px;
     font-size: 12px;
     font-weight: 900;
-    color: #4A121E;
+    color: #2E221D;
 }
 
 /* Compact No-Scroll Ledger Rows for Expenses & Payments */
 .ledger-tbl-header {
-    background: linear-gradient(180deg, #6E1B2D 0%, #4E1220 100%);
-    color: #FDE68A !important;
-    border: 1px solid #D4AF37;
-    border-bottom: 2px solid #D4AF37;
+    background: linear-gradient(180deg, #4A3A31 0%, #382B24 100%);
+    color: #EFE5D8 !important;
+    border: 1px solid #B08968;
+    border-bottom: 1.5px solid #B08968;
     padding: 5px 6px;
     border-radius: 6px;
     font-size: 10px;
@@ -765,7 +791,7 @@ div[data-testid="stNumberInput"] input {
 }
 .ledger-cell {
     background: #FFFFFF;
-    border: 1px solid #DECBB4;
+    border: 1px solid #DDD1C2;
     border-radius: 5px;
     min-height: 30px;
     height: 30px;
@@ -774,7 +800,7 @@ div[data-testid="stNumberInput"] input {
     align-items: center;
     font-size: 10.5px;
     font-weight: 700;
-    color: #3B1219;
+    color: #2E221D;
     line-height: 1.15;
     white-space: nowrap !important;
     overflow: hidden;
@@ -782,8 +808,8 @@ div[data-testid="stNumberInput"] input {
 }
 .ledger-cell-desc {
     background: #FFFFFF;
-    border: 1px solid #DECBB4;
-    border-left: 3px solid #D97706;
+    border: 1px solid #DDD1C2;
+    border-left: 3px solid #8C583A;
     border-radius: 5px;
     min-height: 30px;
     height: 30px;
@@ -793,7 +819,7 @@ div[data-testid="stNumberInput"] input {
     justify-content: center;
     font-size: 10.5px;
     font-weight: 700;
-    color: #3B1219;
+    color: #2E221D;
     line-height: 1.12;
     overflow: hidden;
 }
@@ -807,14 +833,14 @@ div[data-testid="stNumberInput"] input {
 .ledger-subtext {
     font-size: 9px;
     font-weight: 700;
-    color: #B45309;
+    color: #8C583A;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
 }
 .ledger-amt-total {
-    background: #FEF3C7;
-    border: 1px solid #F59E0B;
+    background: #F5EBE0;
+    border: 1px solid #D5BDA2;
     border-radius: 5px;
     min-height: 30px;
     height: 30px;
@@ -824,7 +850,7 @@ div[data-testid="stNumberInput"] input {
     justify-content: flex-end;
     font-size: 10.5px;
     font-weight: 800;
-    color: #78350F;
+    color: #4A3324;
     white-space: nowrap !important;
 }
 .ledger-amt-paid {
@@ -869,9 +895,9 @@ div[data-testid="stNumberInput"] input {
 .status-paid { background: #DCFCE7; color: #166534; border: 1px solid #86EFAC; }
 .status-partial { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
 .status-pending { background: #FEE2E2; color: #991B1B; border: 1px solid #FCA5A5; }
-.status-other { background: #FDF8F3; color: #5C1624; border: 1px solid #DECBB4; }
+.status-other { background: #F4EFE8; color: #4A3A31; border: 1px solid #DDD1C2; }
 
-/* Freezer Analysis Boxed Table Styling — Royal Maroon & Gold Grid */
+/* Freezer Analysis Boxed Table Styling — Calm Espresso & Sand Grid */
 .fa-boxed-table-wrap {
     width: 100%;
     overflow-x: auto;
@@ -882,79 +908,79 @@ div[data-testid="stNumberInput"] input {
     border-collapse: separate;
     border-spacing: 0;
     background: #FFFFFF;
-    border: 2px solid #5C1624;
+    border: 1.5px solid #4A3A31;
     border-radius: 11px;
     overflow: hidden;
     font-size: 12.5px;
-    box-shadow: 0 4px 14px rgba(74, 18, 30, 0.08);
+    box-shadow: 0 3px 10px rgba(46, 34, 29, 0.06);
 }
 .fa-boxed-table th {
-    background: linear-gradient(180deg, #6E1B2D 0%, #4E1220 100%);
-    color: #FDE68A;
+    background: linear-gradient(180deg, #4A3A31 0%, #382B24 100%);
+    color: #EFE5D8;
     font-weight: 800;
     padding: 9px 10px;
     text-align: center;
     font-size: 11.5px;
     letter-spacing: 0.02em;
-    border-bottom: 2px solid #D4AF37;
-    border-right: 1px solid rgba(212, 175, 55, 0.25);
+    border-bottom: 1.5px solid #B08968;
+    border-right: 1px solid rgba(196, 178, 153, 0.25);
 }
 .fa-boxed-table td {
     padding: 7px 10px;
-    border-bottom: 1px solid #EFE4D6;
-    border-right: 1px solid #F7EFE5;
+    border-bottom: 1px solid #EAE1D5;
+    border-right: 1px solid #F4EFE8;
     text-align: center;
     font-weight: 700;
-    color: #3B1219;
+    color: #2E221D;
 }
 .fa-boxed-table tr:nth-child(even) td {
-    background: #FDF9F3;
+    background: #FAF8F5;
 }
 .fa-boxed-table tr:hover td {
-    background: #FEF3C7;
+    background: #F5EBE0;
 }
 .fa-boxed-table tr.fa-total-row td {
-    background: linear-gradient(90deg, #FEF3C7 0%, #FDE68A 100%) !important;
-    border-top: 2px solid #D97706 !important;
+    background: linear-gradient(90deg, #F5EBE0 0%, #EBDCCB 100%) !important;
+    border-top: 2px solid #8C583A !important;
     border-bottom: none !important;
     font-weight: 900 !important;
-    color: #4A121E !important;
+    color: #2E221D !important;
     font-size: 13px;
 }
 /* Group Box 1: Audit */
-.fa-box-audit-th { border-left: 2.5px solid #D97706 !important; border-right: 2.5px solid #D97706 !important; border-top: 2.5px solid #D97706 !important; background: #854D0E !important; }
-.fa-box-audit-td { border-left: 2px solid #D97706 !important; border-right: 2px solid #D97706 !important; background: #FFFBEB !important; }
-.fa-box-audit-tot { border-left: 2.5px solid #D97706 !important; border-right: 2.5px solid #D97706 !important; border-bottom: 2.5px solid #D97706 !important; }
+.fa-box-audit-th { border-left: 2px solid #B08968 !important; border-right: 2px solid #B08968 !important; border-top: 2px solid #B08968 !important; background: #5C4332 !important; }
+.fa-box-audit-td { border-left: 1.5px solid #B08968 !important; border-right: 1.5px solid #B08968 !important; background: #FDFBF7 !important; }
+.fa-box-audit-tot { border-left: 2px solid #B08968 !important; border-right: 2px solid #B08968 !important; border-bottom: 2px solid #B08968 !important; }
 
 /* Group Box 2: Recv & Frm Cart */
-.fa-box-in-left-th { border-left: 2.5px solid #15803D !important; border-top: 2.5px solid #15803D !important; background: #14532D !important; }
-.fa-box-in-right-th { border-right: 2.5px solid #15803D !important; border-top: 2.5px solid #15803D !important; background: #166534 !important; }
-.fa-box-in-left-td { border-left: 2px solid #15803D !important; background: #F0FDF4 !important; }
-.fa-box-in-right-td { border-right: 2px solid #15803D !important; background: #DCFCE7 !important; color: #166534 !important; font-weight: 800 !important; }
-.fa-box-in-left-tot { border-left: 2.5px solid #15803D !important; border-bottom: 2.5px solid #15803D !important; }
-.fa-box-in-right-tot { border-right: 2.5px solid #15803D !important; border-bottom: 2.5px solid #15803D !important; color: #166534 !important; }
+.fa-box-in-left-th { border-left: 2px solid #15803D !important; border-top: 2px solid #15803D !important; background: #14532D !important; }
+.fa-box-in-right-th { border-right: 2px solid #15803D !important; border-top: 2px solid #15803D !important; background: #166534 !important; }
+.fa-box-in-left-td { border-left: 1.5px solid #15803D !important; background: #F0FDF4 !important; }
+.fa-box-in-right-td { border-right: 1.5px solid #15803D !important; background: #DCFCE7 !important; color: #166534 !important; font-weight: 800 !important; }
+.fa-box-in-left-tot { border-left: 2px solid #15803D !important; border-bottom: 2px solid #15803D !important; }
+.fa-box-in-right-tot { border-right: 2px solid #15803D !important; border-bottom: 2px solid #15803D !important; color: #166534 !important; }
 
 /* Group Box 3: To Cart, FZR Sale, Rem */
-.fa-box-out-left-th { border-left: 2.5px solid #C2410C !important; border-top: 2.5px solid #C2410C !important; background: #7C2D12 !important; }
-.fa-box-out-mid-th { border-top: 2.5px solid #C2410C !important; background: #7C2D12 !important; }
-.fa-box-out-right-th { border-right: 2.5px solid #C2410C !important; border-top: 2.5px solid #C2410C !important; background: #7C2D12 !important; }
-.fa-box-out-left-td { border-left: 2px solid #C2410C !important; background: #FFF7ED !important; }
-.fa-box-out-mid-td { background: #FFF7ED !important; color: #C43D17 !important; font-weight: 800 !important; }
-.fa-box-out-right-td { border-right: 2px solid #C2410C !important; background: #FFF7ED !important; }
-.fa-box-out-left-tot { border-left: 2.5px solid #C2410C !important; border-bottom: 2.5px solid #C2410C !important; }
-.fa-box-out-mid-tot { border-bottom: 2.5px solid #C2410C !important; color: #C43D17 !important; }
-.fa-box-out-right-tot { border-right: 2.5px solid #C2410C !important; border-bottom: 2.5px solid #C2410C !important; }
+.fa-box-out-left-th { border-left: 2px solid #9A5B3E !important; border-top: 2px solid #9A5B3E !important; background: #633B28 !important; }
+.fa-box-out-mid-th { border-top: 2px solid #9A5B3E !important; background: #633B28 !important; }
+.fa-box-out-right-th { border-right: 2px solid #9A5B3E !important; border-top: 2px solid #9A5B3E !important; background: #633B28 !important; }
+.fa-box-out-left-td { border-left: 1.5px solid #9A5B3E !important; background: #FFF7ED !important; }
+.fa-box-out-mid-td { background: #FFF7ED !important; color: #8C4A27 !important; font-weight: 800 !important; }
+.fa-box-out-right-td { border-right: 1.5px solid #9A5B3E !important; background: #FFF7ED !important; }
+.fa-box-out-left-tot { border-left: 2px solid #9A5B3E !important; border-bottom: 2px solid #9A5B3E !important; }
+.fa-box-out-mid-tot { border-bottom: 2px solid #9A5B3E !important; color: #8C4A27 !important; }
+.fa-box-out-right-tot { border-right: 2px solid #9A5B3E !important; border-bottom: 2px solid #9A5B3E !important; }
 
 /* Group Box 4: Current */
 .fa-boxed-table th, .fa-boxed-table td { padding: 9px 14px !important; }
-.fa-box-cur-only-th { border-left: 2.5px solid #B45309 !important; border-right: 2.5px solid #B45309 !important; border-top: 2.5px solid #B45309 !important; background: #5C1624 !important; }
-.fa-box-cur-only-td { border-left: 2px solid #B45309 !important; border-right: 2px solid #B45309 !important; background: #FFFBEB !important; color: #4A121E !important; font-weight: 900 !important; font-size: 13.5px !important; }
-.fa-box-cur-only-tot { border-left: 2.5px solid #B45309 !important; border-right: 2.5px solid #B45309 !important; border-bottom: 2.5px solid #B45309 !important; color: #4A121E !important; font-size: 14px !important; }
+.fa-box-cur-only-th { border-left: 2px solid #8C583A !important; border-right: 2px solid #8C583A !important; border-top: 2px solid #8C583A !important; background: #3E3028 !important; }
+.fa-box-cur-only-td { border-left: 1.5px solid #8C583A !important; border-right: 1.5px solid #8C583A !important; background: #FDFBF7 !important; color: #2E221D !important; font-weight: 900 !important; font-size: 13.5px !important; }
+.fa-box-cur-only-tot { border-left: 2px solid #8C583A !important; border-right: 2px solid #8C583A !important; border-bottom: 2px solid #8C583A !important; color: #2E221D !important; font-size: 14px !important; }
 
 /* Read-only Live Sold cell in Sales Entry */
 .entry-grid-cell-livesold {
-    background: #FDF2F4;
-    border: 1px solid #E5B84B;
+    background: #F5EBE0;
+    border: 1px solid #C4B299;
     border-radius: 6px;
     height: 28px;
     display: flex;
@@ -962,7 +988,7 @@ div[data-testid="stNumberInput"] input {
     justify-content: center;
     font-size: 12px;
     font-weight: 900;
-    color: #5C1624;
+    color: #382A22;
 }
 
 /* Bulk Order Planner Cards */
@@ -974,31 +1000,31 @@ div[data-testid="stNumberInput"] input {
 }
 .bulk-kpi-card {
     background: #FFFFFF;
-    border: 1.5px solid #DECBB4;
-    border-top: 3.5px solid #6E1B2D;
+    border: 1px solid #DDD1C2;
+    border-top: 3px solid #4A3A31;
     border-radius: 10px;
     padding: 10px 12px;
     text-align: center;
-    box-shadow: 0 3px 8px rgba(74, 18, 30, 0.06);
+    box-shadow: 0 2px 8px rgba(46, 34, 29, 0.05);
 }
 .bulk-kpi-label {
     font-size: 10.5px;
     font-weight: 800;
     text-transform: uppercase;
-    color: #6B342A;
+    color: #6E5A4F;
     letter-spacing: 0.03em;
 }
 .bulk-kpi-val {
     font-family: 'Fraunces', serif;
     font-size: 17px;
     font-weight: 800;
-    color: #4A121E;
+    color: #2E221D;
     margin-top: 3px;
 }
 .bulk-kpi-sub {
     font-size: 10.5px;
     font-weight: 700;
-    color: #B45309;
+    color: #8C583A;
     margin-top: 2px;
 }
 
@@ -4269,16 +4295,12 @@ if user_role == "entry":
     top_nav_c1, top_nav_c2 = st.columns([5.8, 1.2], gap="small", vertical_alignment="center")
     with top_nav_c1:
         st.markdown(
-            f"""
-            <span class="kulfi-top-cmd-bar-scope" style="display:none;"></span>
-            <div class="kulfi-cmd-left">
-                <div class="kulfi-cmd-crest">🍦</div>
-                <div>
-                    <div class="kulfi-cmd-title">Kulfi Ops — Daily Entry ({CITY})</div>
-                    <div class="kulfi-cmd-sub">DAILY CART SALES, RESTOCK &amp; STOCK LEDGER</div>
-                </div>
-            </div>
-            """,
+            f'<div class="kulfi-cmd-left kulfi-top-cmd-bar-scope">'
+            f'<div class="kulfi-cmd-crest">🍦</div>'
+            f'<div class="kulfi-cmd-text">'
+            f'<div class="kulfi-cmd-title">Kulfi Ops — Daily Entry ({CITY})</div>'
+            f'<div class="kulfi-cmd-sub">DAILY CART SALES, RESTOCK &amp; STOCK LEDGER</div>'
+            f'</div></div>',
             unsafe_allow_html=True,
         )
     with top_nav_c2:
@@ -4351,16 +4373,12 @@ else:
     )
     with cmd_c0:
         st.markdown(
-            f"""
-            <span class="kulfi-top-cmd-bar-scope" style="display:none;"></span>
-            <div class="kulfi-cmd-left">
-                <div class="kulfi-cmd-crest">🍦</div>
-                <div>
-                    <div class="kulfi-cmd-title">Kulfi Ops — {page}</div>
-                    <div class="kulfi-cmd-sub">📍 {loc_badge} &nbsp;•&nbsp; {len(CARTS)} Active Carts</div>
-                </div>
-            </div>
-            """,
+            f'<div class="kulfi-cmd-left kulfi-top-cmd-bar-scope">'
+            f'<div class="kulfi-cmd-crest">🍦</div>'
+            f'<div class="kulfi-cmd-text">'
+            f'<div class="kulfi-cmd-title">Kulfi Ops — {page}</div>'
+            f'<div class="kulfi-cmd-sub">📍 {loc_badge} &nbsp;•&nbsp; {len(CARTS)} Active Carts</div>'
+            f'</div></div>',
             unsafe_allow_html=True,
         )
     with cmd_c1:
@@ -4375,7 +4393,7 @@ else:
     with cmd_c2:
         with st.popover("⇄ Switch Screen", use_container_width=True):
             st.markdown(
-                "<div style='font-family:Fraunces,serif;font-size:13.5px;font-weight:800;color:#4A121E;"
+                "<div style='font-family:Fraunces,serif;font-size:13.5px;font-weight:800;color:#382A22;"
                 "margin-bottom:6px;border-bottom:1.5px solid #D97706;padding-bottom:4px;'>"
                 "✨ Select Screen</div>",
                 unsafe_allow_html=True,
@@ -4394,7 +4412,7 @@ else:
     with cmd_c3:
         with st.popover(f"📍 {loc_badge}", use_container_width=True):
             st.markdown(
-                "<div style='font-family:Fraunces,serif;font-size:13.5px;font-weight:800;color:#4A121E;"
+                "<div style='font-family:Fraunces,serif;font-size:13.5px;font-weight:800;color:#382A22;"
                 "margin-bottom:6px;border-bottom:1.5px solid #D97706;padding-bottom:4px;'>"
                 "🌐 Operating Location</div>",
                 unsafe_allow_html=True,
@@ -13449,7 +13467,7 @@ elif page == "Dashboard" and user_role == "admin":
                             "<style>"
                             ".compact-dow-table{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:clamp(9px,.78vw,11.5px);line-height:1.35;background:#FFFEFA;border:1.5px solid #B8882D;border-radius:9px;overflow:hidden;box-shadow:0 3px 10px rgba(45,21,11,0.06)}"
                             ".compact-dow-table th,.compact-dow-table td{padding:6px 5px;border-bottom:1px solid #E5D2B0;border-right:1px solid #EFE2CA;text-align:right;overflow-wrap:anywhere;color:#2A160C;font-weight:700}"
-                            ".compact-dow-table thead th{font-weight:800;background:linear-gradient(180deg,#6E1B2D 0%,#4E1220 100%);color:#FCE8B2;border-bottom:2px solid #D4AF37;text-align:center}"
+                            ".compact-dow-table thead th{font-weight:800;background:linear-gradient(180deg,#4A3A31 0%,#382B24 100%);color:#FCE8B2;border-bottom:2px solid #D4AF37;text-align:center}"
                             ".compact-dow-table th:first-child{width:29%;text-align:left;padding-left:8px}"
                             ".compact-dow-table tbody tr:nth-child(even) td,.compact-dow-table tbody tr:nth-child(even) th{background:#FAF2E1}"
                             ".compact-dow-table tbody tr:first-child td,.compact-dow-table tbody tr:first-child th{font-weight:900;background:linear-gradient(90deg,#FBF0D9 0%,#F2DEC0 100%);color:#2D150B;border-bottom:1.5px solid #C89B3C}"
