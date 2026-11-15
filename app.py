@@ -42,28 +42,43 @@ except ImportError:
 st.set_page_config(page_title="Kulfi Ops", page_icon="🍦", layout="wide")
 
 # ----------------------------------------------------------------------
-# GLOBAL UI STYLES
+# GLOBAL UI STYLES — OPTION 3: ESPRESSO LUXE & CHAMPAGNE GOLD (3D SUITE)
 # ----------------------------------------------------------------------
 st.html("""
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&family=Manrope:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
+/* Warm Champagne-Latte & Alabaster Silk App Canvas */
+.stApp, [data-testid="stAppViewContainer"], .main {
+    background:
+        radial-gradient(circle at 12% 6%, rgba(255, 253, 246, 0.96) 0%, rgba(250, 241, 222, 0.92) 45%, rgba(240, 226, 198, 0.96) 100%),
+        linear-gradient(180deg, #FBF5E8 0%, #F1E2C5 100%) !important;
+    color: #2A160C;
+}
 .block-container {
-    padding-top: 0.8rem !important;
-    padding-bottom: 1.2rem !important;
+    padding-top: 0.65rem !important;
+    padding-bottom: 1.5rem !important;
     margin-top: 0 !important;
     max-width: 100% !important;
 }
 header[data-testid="stHeader"] {
     background-color: transparent !important;
-    height: 1rem !important;
+    height: 0.8rem !important;
 }
-html, body, [class*="css"] { font-family: 'Manrope', sans-serif; }
-h1, h2, h3 { font-family: 'Fraunces', serif !important; color: #8A5E17 !important; letter-spacing: -0.01em; }
+html, body, [class*="css"] {
+    font-family: 'Manrope', sans-serif;
+    font-variant-numeric: tabular-nums;
+}
+h1, h2, h3 {
+    font-family: 'Fraunces', serif !important;
+    color: #381A0C !important;
+    letter-spacing: -0.01em;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
+}
 h1 { font-size: 1.45rem !important; margin-top: 0 !important; }
 h2 { font-size: 1.2rem !important; }
-h3 { font-size: 1.05rem !important; }
-p, span, label, .stMarkdown { color: #2A1B10; }
+h3 { font-size: 1.06rem !important; }
+p, span, label, .stMarkdown { color: #2A160C; }
 
 /* Hide stepper buttons on number inputs */
 input[type=number]::-webkit-inner-spin-button, 
@@ -74,45 +89,273 @@ input[type=number]::-webkit-outer-spin-button {
 input[type=number] { -moz-appearance: textfield !important; }
 div[data-testid="stNumberInput"] button { display: none !important; }
 
-/* High-Contrast Section Headers */
-.header-box-sales {
-    background: #FFF2DC;
-    color: #4A2206 !important;
-    border: 1.5px solid #DEB887;
-    border-radius: 8px;
-    padding: 7px 12px;
-    font-weight: 800;
-    font-size: 13px;
-    margin-bottom: 8px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+/* Pleasant Layered Cards, Containers, Expanders & Tabs */
+div[data-testid="stVerticalBlockBorderWrapper"] {
+    background: linear-gradient(180deg, #FFFEFA 0%, #F9F0DE 100%) !important;
+    border: 1.5px solid #CFA861 !important;
+    border-radius: 12px !important;
+    box-shadow: inset 0 1px 0 #FFFFFF, 0 5px 14px rgba(45, 21, 11, 0.06) !important;
+    padding: 12px 14px !important;
+}
+div[data-testid="stExpander"] {
+    background: linear-gradient(180deg, #FFFEFA 0%, #F8EFE0 100%) !important;
+    border: 1.5px solid #D4B06A !important;
+    border-radius: 10px !important;
+    box-shadow: 0 3px 10px rgba(45, 21, 11, 0.05) !important;
+    overflow: hidden;
+}
+div[data-testid="stExpander"] summary {
+    background: linear-gradient(90deg, #F7EBD3 0%, #EFE0C0 100%) !important;
+    padding: 8px 12px !important;
+    font-weight: 800 !important;
+    color: #381A0C !important;
+}
+div[data-testid="stTabs"] [data-baseweb="tab-list"] {
+    gap: 8px !important;
+    background: rgba(56, 26, 12, 0.06) !important;
+    padding: 5px 6px !important;
+    border-radius: 10px !important;
+    border: 1px solid #D5B577 !important;
+}
+div[data-testid="stTabs"] button[data-baseweb="tab"] {
+    background: linear-gradient(180deg, #FFFDF9 0%, #F3E4C6 100%) !important;
+    border: 1px solid #C89B3C !important;
+    border-radius: 8px !important;
+    padding: 6px 14px !important;
+    font-weight: 800 !important;
+    color: #3B1D10 !important;
+    box-shadow: 0 2px 0 #9E7422 !important;
+    transition: all 0.14s ease !important;
+}
+div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] {
+    background: linear-gradient(180deg, #3B1D10 0%, #241008 100%) !important;
+    color: #FCE8B2 !important;
+    border-color: #D4AF37 !important;
+    box-shadow: 0 2px 0 #140803, 0 4px 10px rgba(45, 21, 11, 0.18) !important;
+}
+div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] p {
+    color: #FCE8B2 !important;
 }
 
-.header-box-restock {
-    background: #EAF4EC;
-    color: #124A1D !important;
-    border: 1.5px solid #A8D5AF;
-    border-radius: 8px;
-    padding: 7px 12px;
+/* Espresso Luxe Top Command Bar */
+.kulfi-cmd-banner {
+    background: linear-gradient(135deg, #220F07 0%, #3A1B0E 52%, #542815 100%);
+    border: 1.5px solid #D4AF37;
+    border-radius: 13px;
+    padding: 10px 16px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 232, 178, 0.35),
+        0 4px 0 #150803,
+        0 10px 22px rgba(34, 15, 7, 0.20);
+}
+.kulfi-cmd-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.kulfi-cmd-crest {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: linear-gradient(145deg, #F5D78E 0%, #C8962E 100%);
+    border: 1.5px solid #FFF3D1;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+}
+.kulfi-cmd-title {
+    font-family: 'Fraunces', serif !important;
+    font-size: 1.22rem;
+    font-weight: 700;
+    color: #FFF8E7 !important;
+    letter-spacing: 0.01em;
+    line-height: 1.15;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+.kulfi-cmd-sub {
+    font-size: 11px;
+    font-weight: 700;
+    color: #E6C687 !important;
+    letter-spacing: 0.03em;
+}
+.kulfi-cmd-badges {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.kulfi-gold-pill {
+    background: linear-gradient(180deg, #3E2010 0%, #291308 100%);
+    border: 1px solid #D4AF37;
+    color: #FCE8B2 !important;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 4px 11px;
+    border-radius: 999px;
+    letter-spacing: 0.03em;
+    box-shadow: inset 0 1px 0 rgba(255, 232, 178, 0.22), 0 2px 4px rgba(0,0,0,0.25);
+}
+.kulfi-loc-pill {
+    background: linear-gradient(180deg, #F5D78E 0%, #CFA03C 100%);
+    border: 1px solid #FFF3D1;
+    color: #241008 !important;
+    font-size: 11px;
+    font-weight: 900;
+    padding: 4px 11px;
+    border-radius: 999px;
+    letter-spacing: 0.03em;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.25);
+}
+
+/* Executive Launchpad Hero Strip & 3D Beveled Module Cards */
+.launchpad-hero-strip {
+    background: linear-gradient(135deg, #FFFDF8 0%, #F6E9CE 60%, #ECD7B0 100%);
+    border: 1.5px solid #C89B3C;
+    border-radius: 12px;
+    padding: 11px 16px;
+    margin: 4px 0 14px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    box-shadow:
+        inset 0 1px 0 #FFFFFF,
+        0 3px 0 #9E7422,
+        0 8px 18px rgba(45, 21, 11, 0.07);
+}
+.launchpad-section-hdr {
+    font-family: 'Fraunces', serif !important;
+    font-size: 14px;
+    font-weight: 800;
+    color: #3A1B0E !important;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 10px 0 8px 2px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.luxe-launchpad-card {
+    background: linear-gradient(165deg, #FFFDF9 0%, #F9F0DF 56%, #EFE0C2 100%);
+    border: 1.5px solid #C89B3C;
+    border-radius: 14px;
+    padding: 15px 16px 12px 16px;
+    min-height: 144px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow:
+        inset 0 0 0 2px rgba(255, 253, 248, 0.90),
+        inset 0 0 0 3px rgba(200, 155, 60, 0.25),
+        0 4px 0 #9E7422,
+        0 10px 20px rgba(45, 21, 11, 0.09);
+    transition: all 0.16s ease;
+    margin-bottom: 6px;
+}
+.luxe-launchpad-card:hover {
+    border-color: #B8860B;
+    transform: translateY(-2px);
+    box-shadow:
+        inset 0 0 0 2px rgba(255, 253, 248, 0.95),
+        inset 0 0 0 3px rgba(212, 175, 55, 0.40),
+        0 5px 0 #8A6214,
+        0 14px 26px rgba(45, 21, 11, 0.14);
+}
+.luxe-card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+}
+.luxe-card-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 11px;
+    background: linear-gradient(145deg, #3A1B0E 0%, #230F07 100%);
+    border: 1.5px solid #D4AF37;
+    box-shadow: inset 0 1px 0 rgba(255, 232, 178, 0.35), 0 3px 6px rgba(35, 15, 7, 0.22);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 21px;
+    flex-shrink: 0;
+}
+.luxe-card-badge {
+    font-size: 9.5px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #FDF4DC 0%, #F2DEC0 100%);
+    color: #5C3409;
+    border: 1px solid #C89B3C;
+    box-shadow: inset 0 1px 0 #FFFFFF;
+}
+.luxe-card-title {
+    font-family: 'Fraunces', serif !important;
+    font-size: 16px;
+    font-weight: 700;
+    color: #2D150B;
+    margin: 9px 0 3px 0;
+    line-height: 1.2;
+}
+.luxe-card-desc {
+    font-size: 11.8px;
+    font-weight: 600;
+    color: #5C3D24;
+    line-height: 1.36;
+    margin-bottom: 2px;
+}
+
+/* High-Contrast Section Headers */
+.header-box-sales {
+    background: linear-gradient(90deg, #FFF5E1 0%, #F7E4BE 100%);
+    color: #3A1B0E !important;
+    border: 1.5px solid #C89B3C;
+    border-radius: 9px;
+    padding: 8px 13px;
     font-weight: 800;
     font-size: 13px;
     margin-bottom: 8px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    box-shadow: inset 0 1px 0 #FFFFFF, 0 2px 5px rgba(45, 21, 11, 0.06);
+}
+.header-box-restock {
+    background: linear-gradient(90deg, #EAF6EC 0%, #D7EEDC 100%);
+    color: #10421A !important;
+    border: 1.5px solid #68B678;
+    border-radius: 9px;
+    padding: 8px 13px;
+    font-weight: 800;
+    font-size: 13px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: inset 0 1px 0 #FFFFFF, 0 2px 5px rgba(16, 66, 26, 0.06);
 }
 
 /* Compact Flavor Card Grid */
 .flavor-entry-row {
-    background: #FFFFFF;
-    border: 1.2px solid #E6D4B5;
+    background: linear-gradient(180deg, #FFFFFF 0%, #FAF2E3 100%);
+    border: 1.2px solid #D4B272;
     border-radius: 8px;
     padding: 5px 8px;
     margin-bottom: 5px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    box-shadow: 0 2px 4px rgba(45, 21, 11, 0.04);
 }
 .flavor-title-bar {
     display: flex;
@@ -123,7 +366,7 @@ div[data-testid="stNumberInput"] button { display: none !important; }
 .flavor-name {
     font-weight: 800;
     font-size: 12.5px;
-    color: #4A2418;
+    color: #381A0C;
 }
 .badge-open {
     background: #F4E8D3;
@@ -171,83 +414,152 @@ div[data-testid="stNumberInput"] button { display: none !important; }
     text-align: left !important;
 }
 
+/* Espresso Luxe & Champagne Gold Sidebar */
 section[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #FFFDF9 0%, #FFF6E6 100%) !important;
-    border-right: 1.5px solid #E2C99E !important;
-    box-shadow: 2px 0 12px rgba(74, 36, 24, 0.04) !important;
+    background: linear-gradient(180deg, #231008 0%, #35190D 55%, #281209 100%) !important;
+    border-right: 2px solid #C89B3C !important;
+    box-shadow: 4px 0 18px rgba(34, 15, 7, 0.22) !important;
 }
 section[data-testid="stSidebar"] [data-testid="stSidebarContent"] {
     padding-top: 0.75rem !important;
 }
+section[data-testid="stSidebar"] h2,
+section[data-testid="stSidebar"] label,
+section[data-testid="stSidebar"] .stMarkdown p {
+    color: #FCE8B2 !important;
+}
 section[data-testid="stSidebar"] h2 {
-    font-size: 17px !important;
-    color: #4A2418 !important;
+    font-size: 17.5px !important;
+    color: #FFF6DF !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
 }
 section[data-testid="stSidebar"] .stRadio > div[role="radiogroup"] {
     gap: 5px !important;
     padding-top: 2px !important;
 }
-/* Hide default radio button circle for a sleek pill-menu look */
 section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label > div:first-child {
     display: none !important;
 }
 section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label {
-    background: rgba(255, 255, 255, 0.85) !important;
-    border: 1px solid #E8D5B5 !important;
+    background: linear-gradient(180deg, rgba(255, 250, 238, 0.10) 0%, rgba(212, 175, 55, 0.06) 100%) !important;
+    border: 1px solid rgba(212, 175, 55, 0.32) !important;
     border-left: 3.5px solid transparent !important;
-    border-radius: 10px !important;
-    padding: 8px 12px !important;
+    border-radius: 9px !important;
+    padding: 7px 12px !important;
     margin-bottom: 0px !important;
     width: 100% !important;
-    transition: all 0.16s ease !important;
-    box-shadow: 0 1px 2px rgba(74, 36, 24, 0.02) !important;
+    transition: all 0.15s ease !important;
+    box-shadow: 0 2px 0 rgba(12, 5, 2, 0.45) !important;
 }
 section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label:hover {
-    background: #FFF3DC !important;
-    border-color: #D4AF72 !important;
-    border-left: 3.5px solid #C88A2B !important;
+    background: linear-gradient(90deg, rgba(212, 175, 55, 0.22) 0%, rgba(255, 243, 209, 0.12) 100%) !important;
+    border-color: #D4AF37 !important;
+    border-left: 3.5px solid #F5D78E !important;
     transform: translateX(2px);
 }
 section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label p {
-    font-size: 13px !important;
+    font-size: 12.8px !important;
     font-weight: 700 !important;
-    color: #4A2418 !important;
+    color: #F7E6C4 !important;
     margin: 0 !important;
     letter-spacing: 0.01em !important;
 }
 section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label:has(input:checked) {
-    background: linear-gradient(90deg, #4A2418 0%, #70440E 100%) !important;
-    border-color: #4A2418 !important;
-    border-left: 4px solid #F59E0B !important;
-    box-shadow: 0 4px 10px rgba(74, 36, 24, 0.16) !important;
+    background: linear-gradient(180deg, #F5D78E 0%, #CFA03C 100%) !important;
+    border: 1px solid #FFF3D1 !important;
+    border-left: 4px solid #FFFDF9 !important;
+    box-shadow: 0 3px 0 #7C5810, 0 6px 14px rgba(0, 0, 0, 0.35) !important;
 }
 section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label:has(input:checked) p {
-    color: #FFFFFF !important;
+    color: #231008 !important;
+    font-weight: 900 !important;
+}
+
+/* 3D Tactile Buttons Across the Entire App */
+.stButton button,
+[data-testid="stFormSubmitButton"] button,
+.stDownloadButton button,
+[data-testid="stPopover"] > div > button {
+    background: linear-gradient(180deg, #FFFDF9 0%, #F5E6C8 52%, #E6CC9A 100%) !important;
+    color: #2D150B !important;
+    border: 1.5px solid #B6862C !important;
+    border-radius: 9px !important;
     font-weight: 800 !important;
+    padding: 0.38rem 0.85rem !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.92),
+        0 3px 0 #875F14,
+        0 5px 10px rgba(45, 21, 11, 0.11) !important;
+    transition: all 0.12s ease !important;
+    letter-spacing: 0.01em !important;
+}
+.stButton button:hover,
+[data-testid="stFormSubmitButton"] button:hover,
+.stDownloadButton button:hover,
+[data-testid="stPopover"] > div > button:hover {
+    background: linear-gradient(180deg, #FFFFFF 0%, #F9EDD4 52%, #EDD6A7 100%) !important;
+    border-color: #966B1B !important;
+    transform: translateY(-1px) !important;
+    box-shadow:
+        inset 0 1px 0 #FFFFFF,
+        0 4px 0 #75500D,
+        0 7px 14px rgba(45, 21, 11, 0.15) !important;
+}
+.stButton button:active,
+[data-testid="stFormSubmitButton"] button:active,
+.stDownloadButton button:active,
+[data-testid="stPopover"] > div > button:active {
+    transform: translateY(2px) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.6),
+        0 1px 0 #75500D,
+        0 2px 4px rgba(45, 21, 11, 0.10) !important;
 }
 
-/* Buttons */
-.stButton button, [data-testid="stFormSubmitButton"] button, [data-testid="baseButton-primary"] {
-    border-radius: 6px !important;
-    font-weight: 700 !important;
-    border: none !important;
-    padding: 0.35rem 0.75rem !important;
+/* Primary 3D Buttons (Burnished Copper-Terracotta & Gold) */
+.stButton button[kind="primary"],
+[data-testid="stFormSubmitButton"] button[kind="primary"],
+[data-testid="baseButton-primary"] {
+    background: linear-gradient(180deg, #F26B3F 0%, #D94B1E 54%, #B5320B 100%) !important;
+    color: #FFFFFF !important;
+    border: 1.5px solid #8A2205 !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 224, 200, 0.65),
+        0 3px 0 #631602,
+        0 6px 14px rgba(181, 50, 11, 0.28) !important;
+    text-shadow: 0 1px 1px rgba(45, 21, 11, 0.35) !important;
 }
-.stButton button[kind="primary"], [data-testid="stFormSubmitButton"] button[kind="primary"] {
-    background: #E8542A !important;
-    box-shadow: 0 2px 6px rgba(232,84,42,0.3);
+.stButton button[kind="primary"]:hover,
+[data-testid="stFormSubmitButton"] button[kind="primary"]:hover {
+    background: linear-gradient(180deg, #F77A50 0%, #E25325 54%, #C23910 100%) !important;
+    border-color: #701A03 !important;
+    color: #FFFFFF !important;
+    transform: translateY(-1px) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 232, 214, 0.75),
+        0 4px 0 #571201,
+        0 8px 16px rgba(181, 50, 11, 0.34) !important;
 }
-.stButton button[kind="primary"]:hover { 
-    background: #C43D17 !important; 
+.stButton button[kind="primary"]:active,
+[data-testid="stFormSubmitButton"] button[kind="primary"]:active {
+    transform: translateY(2px) !important;
+    box-shadow: 0 1px 0 #571201 !important;
+}
+.stButton button[kind="primary"] p,
+[data-testid="stFormSubmitButton"] button[kind="primary"] p {
+    color: #FFFFFF !important;
 }
 
-/* Metric Cards */
+/* Metric Cards — Beveled Champagne & Gold */
 div[data-testid="stMetric"] {
-    background: #FFFBF2;
-    border: 1px solid #E3CBA0;
-    border-radius: 8px;
-    padding: 8px 12px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    background: linear-gradient(165deg, #FFFDF9 0%, #F8EFE0 60%, #EFE0C4 100%);
+    border: 1.5px solid #C89B3C;
+    border-radius: 10px;
+    padding: 9px 12px;
+    box-shadow:
+        inset 0 1px 0 #FFFFFF,
+        0 3px 0 #9E7422,
+        0 6px 14px rgba(45, 21, 11, 0.07);
     height: 100%;
 }
 div[data-testid="stMetricLabel"], 
@@ -255,9 +567,9 @@ div[data-testid="stMetricLabel"] > div,
 div[data-testid="stMetricLabel"] label,
 div[data-testid="stMetricLabel"] p, 
 div[data-testid="stMetricLabel"] span { 
-    font-weight: 700 !important; 
+    font-weight: 800 !important; 
     font-size: 11px !important; 
-    color: #7A5A34 !important; 
+    color: #69461E !important; 
     white-space: normal !important; 
     word-wrap: break-word !important; 
     overflow: visible !important; 
@@ -270,35 +582,78 @@ div[data-testid="stMetricLabel"] {
 }
 div[data-testid="stMetricValue"] { 
     font-family: 'Fraunces', serif; 
-    font-size: 1.1rem !important; 
-    color: #4A2418; 
+    font-size: 1.12rem !important; 
+    font-weight: 700 !important;
+    color: #2D150B; 
     margin-top: 6px;
 }
 
-/* Tables */
+/* Luxury Data Grids & Tables Across the Entire App */
 div[data-testid="stDataFrame"], div[data-testid="stDataEditor"] {
-    border-radius: 8px;
-    border: 1.5px solid #8A5E17 !important;
+    border-radius: 10px !important;
+    border: 2px solid #7C5418 !important;
+    background: #FFFEFA !important;
+    box-shadow: 0 3px 0 #5C3D0E, 0 8px 18px rgba(45, 21, 11, 0.08) !important;
     overflow: hidden;
 }
 div[data-testid="stDataFrame"] th, div[data-testid="stDataEditor"] th {
     font-weight: 900 !important;
-    color: #FFFFFF !important;
-    background-color: #70440E !important;
+    color: #FCE8B2 !important;
+    background: linear-gradient(180deg, #3A1B0E 0%, #261108 100%) !important;
+    border-bottom: 2px solid #D4AF37 !important;
     text-align: center !important;
     font-size: 12px !important;
 }
 div[data-testid="stDataFrame"] td, div[data-testid="stDataEditor"] td {
     text-align: center !important;
     font-size: 11.5px !important;
+    font-weight: 600 !important;
+    color: #2A160C !important;
 }
-hr { border-color: #E3CBA0 !important; margin: 0.35rem 0 !important; }
+/* General Markdown / HTML Tables */
+.stMarkdown table {
+    width: 100%;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    background: #FFFEFA;
+    border: 1.5px solid #B8882D;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(45, 21, 11, 0.07);
+    margin: 6px 0 12px 0;
+}
+.stMarkdown table th {
+    background: linear-gradient(180deg, #3A1B0E 0%, #261108 100%) !important;
+    color: #FCE8B2 !important;
+    font-weight: 800 !important;
+    padding: 8px 10px !important;
+    border-bottom: 2px solid #D4AF37 !important;
+    border-right: 1px solid rgba(212, 175, 55, 0.25) !important;
+    font-size: 11.5px !important;
+}
+.stMarkdown table td {
+    padding: 7px 10px !important;
+    border-bottom: 1px solid #E6D3B3 !important;
+    border-right: 1px solid #EFE2CA !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    color: #2A160C !important;
+}
+.stMarkdown table tr:nth-child(even) td {
+    background: #FAF2E1 !important;
+}
+.stMarkdown table tr:hover td {
+    background: #F3E3C3 !important;
+}
+
+hr { border-color: #D4B272 !important; margin: 0.4rem 0 !important; }
+
 /* Distinct Editable Table Input Borders */
 div[data-testid="stNumberInput"] div[data-baseweb="input"] {
-    border: 1.8px solid #D97706 !important;
-    background-color: #FFFBEB !important;
+    border: 1.8px solid #C88A1E !important;
+    background-color: #FFFDF5 !important;
     border-radius: 6px !important;
-    box-shadow: 0 1px 2px rgba(217, 119, 6, 0.08) !important;
+    box-shadow: inset 0 1px 2px rgba(45, 21, 11, 0.05), 0 1px 2px rgba(200, 138, 30, 0.10) !important;
 }
 div[data-testid="stNumberInput"] div[data-baseweb="input"]:focus-within {
     border: 2px solid #19692C !important;
@@ -308,22 +663,27 @@ div[data-testid="stNumberInput"] div[data-baseweb="input"]:focus-within {
 div[data-testid="stNumberInput"] input {
     text-align: left !important;
     font-weight: 800 !important;
-    color: #2A1B10 !important;
+    color: #2A160C !important;
     padding-left: 8px !important;
 }
+
+/* Luxury Daily Entry & Stock Grid Cells */
 .entry-grid-header {
-    background: #70440E;
-    color: #FFFFFF !important;
+    background: linear-gradient(180deg, #3A1B0E 0%, #241008 100%);
+    color: #FCE8B2 !important;
+    border: 1px solid #D4AF37;
+    border-bottom: 2px solid #D4AF37;
     padding: 6px 10px;
-    border-radius: 6px;
+    border-radius: 7px;
     font-size: 11.5px;
     font-weight: 800;
     text-align: center;
     margin-bottom: 4px;
+    box-shadow: 0 2px 4px rgba(36, 16, 8, 0.15);
 }
 .entry-grid-cell {
-    background: #FFFBF2;
-    border: 1px solid #E6D4B5;
+    background: linear-gradient(180deg, #FFFEFA 0%, #F7EFE0 100%);
+    border: 1px solid #D8BC8C;
     border-radius: 6px;
     height: 28px;
     display: flex;
@@ -331,11 +691,12 @@ div[data-testid="stNumberInput"] input {
     justify-content: center;
     font-size: 12px;
     font-weight: 800;
-    color: #4A2418;
+    color: #3A1B0E;
 }
 .entry-grid-cell-flavour {
-    background: #FFFFFF;
-    border: 1px solid #E6D4B5;
+    background: linear-gradient(180deg, #FFFFFF 0%, #FAF3E6 100%);
+    border: 1px solid #D8BC8C;
+    border-left: 3px solid #C89B3C;
     border-radius: 6px;
     height: 28px;
     display: flex;
@@ -344,11 +705,11 @@ div[data-testid="stNumberInput"] input {
     padding: 0 8px;
     font-size: 12px;
     font-weight: 800;
-    color: #4A2418;
+    color: #2D150B;
 }
 .entry-grid-cell-sold {
-    background: #FCE8E2;
-    border: 1px solid #F3C3B6;
+    background: linear-gradient(180deg, #FFF0EC 0%, #FCE2DA 100%);
+    border: 1px solid #E8B09E;
     border-radius: 6px;
     height: 28px;
     display: flex;
@@ -356,11 +717,11 @@ div[data-testid="stNumberInput"] input {
     justify-content: center;
     font-size: 12px;
     font-weight: 900;
-    color: #C43D17;
+    color: #B8320B;
 }
 .entry-grid-cell-amount {
-    background: #EAF4EC;
-    border: 1px solid #B7DFB9;
+    background: linear-gradient(180deg, #EFFAF1 0%, #E0F2E3 100%);
+    border: 1px solid #9CD0A4;
     border-radius: 6px;
     height: 28px;
     display: flex;
@@ -369,27 +730,31 @@ div[data-testid="stNumberInput"] input {
     padding: 0 8px;
     font-size: 12px;
     font-weight: 900;
-    color: #124A1D;
+    color: #10421A;
 }
 .entry-grid-total-row {
-    background: #FFF2DC;
-    border: 1.5px solid #CDAE76;
-    border-radius: 7px;
-    padding: 6px 10px;
+    background: linear-gradient(90deg, #FBF0D9 0%, #F2DEC0 100%);
+    border: 1.5px solid #B8882D;
+    border-radius: 8px;
+    padding: 7px 10px;
     margin-top: 6px;
     font-size: 12px;
     font-weight: 900;
-    color: #4A2418;
+    color: #2D150B;
+    box-shadow: 0 2px 5px rgba(45, 21, 11, 0.08);
 }
+
 /* Compact No-Scroll Ledger Rows for Expenses & Payments */
 .ledger-tbl-header {
-    background: linear-gradient(90deg, #70440E 0%, #8A5E17 100%);
-    color: #FFFFFF !important;
+    background: linear-gradient(180deg, #3A1B0E 0%, #241008 100%);
+    color: #FCE8B2 !important;
+    border: 1px solid #C89B3C;
+    border-bottom: 2px solid #D4AF37;
     padding: 5px 6px;
-    border-radius: 5px;
+    border-radius: 6px;
     font-size: 10px;
     font-weight: 800;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.03em;
     text-transform: uppercase;
     margin-bottom: 3px;
     display: flex;
@@ -397,11 +762,12 @@ div[data-testid="stNumberInput"] input {
     white-space: nowrap !important;
     overflow: hidden;
     text-overflow: ellipsis;
-    min-height: 26px;
+    min-height: 27px;
+    box-shadow: 0 2px 4px rgba(36, 16, 8, 0.14);
 }
 .ledger-cell {
-    background: #FFFBF2;
-    border: 1px solid #E6D4B5;
+    background: linear-gradient(180deg, #FFFEFA 0%, #F7EFE0 100%);
+    border: 1px solid #DEC49A;
     border-radius: 5px;
     min-height: 30px;
     height: 30px;
@@ -410,15 +776,16 @@ div[data-testid="stNumberInput"] input {
     align-items: center;
     font-size: 10.5px;
     font-weight: 700;
-    color: #3A2312;
+    color: #2D150B;
     line-height: 1.15;
     white-space: nowrap !important;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 .ledger-cell-desc {
-    background: #FFFFFF;
-    border: 1px solid #E6D4B5;
+    background: linear-gradient(180deg, #FFFFFF 0%, #FAF3E6 100%);
+    border: 1px solid #DEC49A;
+    border-left: 2.5px solid #C89B3C;
     border-radius: 5px;
     min-height: 30px;
     height: 30px;
@@ -428,7 +795,7 @@ div[data-testid="stNumberInput"] input {
     justify-content: center;
     font-size: 10.5px;
     font-weight: 700;
-    color: #2A1B10;
+    color: #2A160C;
     line-height: 1.12;
     overflow: hidden;
 }
@@ -441,15 +808,15 @@ div[data-testid="stNumberInput"] input {
 }
 .ledger-subtext {
     font-size: 9px;
-    font-weight: 600;
+    font-weight: 700;
     color: #8A5E17;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
 }
 .ledger-amt-total {
-    background: #FFF8EB;
-    border: 1px solid #E3CBA0;
+    background: linear-gradient(180deg, #FFF9EB 0%, #F6E9CE 100%);
+    border: 1px solid #D4B272;
     border-radius: 5px;
     min-height: 30px;
     height: 30px;
@@ -459,12 +826,12 @@ div[data-testid="stNumberInput"] input {
     justify-content: flex-end;
     font-size: 10.5px;
     font-weight: 800;
-    color: #4A2418;
+    color: #3A1B0E;
     white-space: nowrap !important;
 }
 .ledger-amt-paid {
-    background: #EAF4EC;
-    border: 1px solid #B7DFB9;
+    background: linear-gradient(180deg, #EFFAF1 0%, #E0F2E3 100%);
+    border: 1px solid #A4D4AC;
     border-radius: 5px;
     min-height: 30px;
     height: 30px;
@@ -474,12 +841,12 @@ div[data-testid="stNumberInput"] input {
     justify-content: flex-end;
     font-size: 10.5px;
     font-weight: 800;
-    color: #124A1D;
+    color: #10421A;
     white-space: nowrap !important;
 }
 .ledger-amt-due {
-    background: #FCE8E2;
-    border: 1px solid #F3C3B6;
+    background: linear-gradient(180deg, #FFF0EC 0%, #FCE2DA 100%);
+    border: 1px solid #E8B09E;
     border-radius: 5px;
     min-height: 30px;
     height: 30px;
@@ -489,7 +856,7 @@ div[data-testid="stNumberInput"] input {
     justify-content: flex-end;
     font-size: 10.5px;
     font-weight: 800;
-    color: #C43D17;
+    color: #B8320B;
     white-space: nowrap !important;
 }
 .status-pill {
@@ -506,45 +873,82 @@ div[data-testid="stNumberInput"] input {
 .status-pending { background: #FCE8E6; color: #C5221F; border: 1px solid #FAD2CF; }
 .status-other { background: #F1F3F4; color: #5F6368; border: 1px solid #DADCE0; }
 
-/* Make inline row action buttons compact, clean, and guaranteed visible */
+/* Make inline row action buttons compact, 3D-beveled, and guaranteed visible */
 div[data-testid="stHorizontalBlock"] .stButton button {
-    padding: 2px 4px !important;
+    padding: 2px 6px !important;
     min-height: 30px !important;
     height: 30px !important;
     font-size: 11.5px !important;
     line-height: 1 !important;
-    border: 1px solid #D8C29D !important;
-    background-color: #FFFBF2 !important;
-    color: #4A2418 !important;
+    border: 1.2px solid #B8882D !important;
+    background: linear-gradient(180deg, #FFFDF9 0%, #F5E6C8 55%, #E8D0A2 100%) !important;
+    color: #2D150B !important;
+    box-shadow: inset 0 1px 0 #FFFFFF, 0 2px 0 #8A6116 !important;
 }
 div[data-testid="stHorizontalBlock"] .stButton button:hover {
-    background-color: #F4E4C8 !important;
+    background: linear-gradient(180deg, #FFFFFF 0%, #F9EDD4 55%, #EDD6A7 100%) !important;
     border-color: #8A5E17 !important;
 }
 div[data-testid="stHorizontalBlock"] .stButton button[kind="primary"] {
-    background: #E8542A !important;
+    background: linear-gradient(180deg, #F26B3F 0%, #D94B1E 54%, #B5320B 100%) !important;
     color: #FFFFFF !important;
-    border: none !important;
+    border: 1.2px solid #8A2205 !important;
+    box-shadow: inset 0 1px 0 rgba(255, 224, 200, 0.6), 0 2px 0 #631602 !important;
 }
 
-/* Graceful Entry Hub Cards (2x3 Grid) */
+/* Top Command Bar 3D Buttons (Taller & Executive) */
+.cmd-deck-row div[data-testid="stHorizontalBlock"] .stButton button,
+.cmd-deck-row [data-testid="stPopover"] > div > button {
+    min-height: 36px !important;
+    height: 36px !important;
+    font-size: 12.5px !important;
+    font-weight: 800 !important;
+    border-radius: 9px !important;
+    border: 1.5px solid #C89B3C !important;
+    background: linear-gradient(180deg, #FFFDF9 0%, #F5E4C3 52%, #E4C790 100%) !important;
+    color: #241008 !important;
+    box-shadow:
+        inset 0 1px 0 #FFFFFF,
+        0 3px 0 #7C5810,
+        0 5px 12px rgba(36, 16, 8, 0.14) !important;
+}
+.cmd-deck-row div[data-testid="stHorizontalBlock"] .stButton button[kind="primary"] {
+    background: linear-gradient(180deg, #3B1D10 0%, #241008 100%) !important;
+    color: #FCE8B2 !important;
+    border: 1.5px solid #D4AF37 !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 232, 178, 0.35),
+        0 3px 0 #120703,
+        0 6px 14px rgba(36, 16, 8, 0.22) !important;
+}
+.cmd-deck-row div[data-testid="stHorizontalBlock"] .stButton button[kind="primary"] p {
+    color: #FCE8B2 !important;
+}
+
+/* Graceful Entry Hub Cards (2x3 Grid) — Upgraded to Espresso & Gold 3D Bevel */
 .entry-hub-card {
-    background: linear-gradient(180deg, #FFFFFF 0%, #FFFDF9 100%);
-    border: 1.5px solid #E3CBA0;
+    background: linear-gradient(165deg, #FFFDF9 0%, #F9F0DF 56%, #EFE0C2 100%);
+    border: 1.5px solid #C89B3C;
     border-radius: 14px;
     padding: 16px 18px 12px 18px;
-    min-height: 138px;
+    min-height: 140px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    box-shadow: 0 3px 10px rgba(74, 36, 24, 0.05);
+    box-shadow:
+        inset 0 0 0 2px rgba(255, 253, 248, 0.88),
+        0 4px 0 #9E7422,
+        0 10px 20px rgba(45, 21, 11, 0.08);
     transition: all 0.18s ease;
     margin-bottom: 6px;
 }
 .entry-hub-card:hover {
-    border-color: #C89B54;
-    box-shadow: 0 6px 16px rgba(74, 36, 24, 0.09);
-    transform: translateY(-1px);
+    border-color: #B8860B;
+    box-shadow:
+        inset 0 0 0 2px rgba(255, 253, 248, 0.95),
+        0 5px 0 #8A6214,
+        0 14px 24px rgba(45, 21, 11, 0.13);
+    transform: translateY(-2px);
 }
 .entry-hub-top {
     display: flex;
@@ -561,6 +965,8 @@ div[data-testid="stHorizontalBlock"] .stButton button[kind="primary"] {
     justify-content: center;
     font-size: 22px;
     flex-shrink: 0;
+    border: 1px solid rgba(200, 155, 60, 0.45);
+    box-shadow: 0 2px 5px rgba(45, 21, 11, 0.08);
 }
 .entry-hub-badge {
     font-size: 9.5px;
@@ -574,18 +980,19 @@ div[data-testid="stHorizontalBlock"] .stButton button[kind="primary"] {
     font-family: 'Fraunces', serif !important;
     font-size: 16.5px;
     font-weight: 700;
-    color: #4A2418;
+    color: #2D150B;
     margin: 10px 0 4px 0;
     line-height: 1.2;
 }
 .entry-hub-desc {
     font-size: 12px;
-    color: #6B5138;
+    font-weight: 600;
+    color: #5C3D24;
     line-height: 1.38;
     margin-bottom: 4px;
 }
 
-/* Freezer Analysis Boxed Table Styling */
+/* Freezer Analysis Boxed Table Styling — Espresso Luxe Grid */
 .fa-boxed-table-wrap {
     width: 100%;
     overflow-x: auto;
@@ -595,37 +1002,44 @@ div[data-testid="stHorizontalBlock"] .stButton button[kind="primary"] {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
-    background: #FFFFFF;
-    border: 1.5px solid #D8C19A;
-    border-radius: 10px;
+    background: #FFFEFA;
+    border: 2px solid #8A5E17;
+    border-radius: 11px;
     overflow: hidden;
     font-size: 12.5px;
+    box-shadow: 0 3px 0 #5C3D0E, 0 8px 18px rgba(45, 21, 11, 0.08);
 }
 .fa-boxed-table th {
-    background: #70440E;
-    color: #FFFFFF;
+    background: linear-gradient(180deg, #3A1B0E 0%, #241008 100%);
+    color: #FCE8B2;
     font-weight: 800;
     padding: 9px 10px;
     text-align: center;
     font-size: 11.5px;
-    letter-spacing: 0.01em;
+    letter-spacing: 0.02em;
+    border-bottom: 2px solid #D4AF37;
+    border-right: 1px solid rgba(212, 175, 55, 0.25);
 }
 .fa-boxed-table td {
     padding: 7px 10px;
-    border-bottom: 1px solid #EFE3D0;
+    border-bottom: 1px solid #E5D2B0;
+    border-right: 1px solid #EFE2CA;
     text-align: center;
     font-weight: 700;
-    color: #2A1B10;
+    color: #2A160C;
 }
 .fa-boxed-table tr:nth-child(even) td {
-    background: #FFFDF8;
+    background: #FAF2E1;
+}
+.fa-boxed-table tr:hover td {
+    background: #F3E3C3;
 }
 .fa-boxed-table tr.fa-total-row td {
-    background: #FFF2DC !important;
-    border-top: 2px solid #CDAE76 !important;
+    background: linear-gradient(90deg, #FBF0D9 0%, #F2DEC0 100%) !important;
+    border-top: 2px solid #B8882D !important;
     border-bottom: none !important;
     font-weight: 900 !important;
-    color: #4A2418 !important;
+    color: #2D150B !important;
     font-size: 13px;
 }
 /* Group Box 1: Audit */
@@ -652,7 +1066,7 @@ div[data-testid="stHorizontalBlock"] .stButton button[kind="primary"] {
 .fa-box-out-mid-tot { border-bottom: 2.5px solid #C2410C !important; color: #C43D17 !important; }
 .fa-box-out-right-tot { border-right: 2.5px solid #C2410C !important; border-bottom: 2.5px solid #C2410C !important; }
 
-/* Group Box 4: Current (Spacious single-column box after removing Value column) */
+/* Group Box 4: Current */
 .fa-boxed-table th, .fa-boxed-table td { padding: 9px 14px !important; }
 .fa-box-cur-only-th { border-left: 2.5px solid #1D4ED8 !important; border-right: 2.5px solid #1D4ED8 !important; border-top: 2.5px solid #1D4ED8 !important; background: #1E3A8A !important; }
 .fa-box-cur-only-td { border-left: 2px solid #1D4ED8 !important; border-right: 2px solid #1D4ED8 !important; background: #EFF6FF !important; color: #124A1D !important; font-weight: 900 !important; font-size: 13.5px !important; }
@@ -672,7 +1086,7 @@ div[data-testid="stHorizontalBlock"] .stButton button[kind="primary"] {
     color: #1B5E91;
 }
 
-/* Bulk Order Planner Cards */
+/* Bulk Order Planner Cards — 3D Champagne & Gold */
 .bulk-kpi-strip {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
@@ -680,23 +1094,25 @@ div[data-testid="stHorizontalBlock"] .stButton button[kind="primary"] {
     margin: 10px 0 14px 0;
 }
 .bulk-kpi-card {
-    background: #FFFBF2;
-    border: 1.5px solid #E3CBA0;
+    background: linear-gradient(165deg, #FFFDF9 0%, #F8EFE0 60%, #EFE0C4 100%);
+    border: 1.5px solid #C89B3C;
     border-radius: 10px;
     padding: 10px 12px;
     text-align: center;
+    box-shadow: inset 0 1px 0 #FFFFFF, 0 3px 0 #9E7422, 0 6px 12px rgba(45, 21, 11, 0.07);
 }
 .bulk-kpi-label {
     font-size: 10.5px;
     font-weight: 800;
     text-transform: uppercase;
-    color: #7A5A34;
+    color: #69461E;
     letter-spacing: 0.03em;
 }
 .bulk-kpi-val {
+    font-family: 'Fraunces', serif;
     font-size: 17px;
-    font-weight: 900;
-    color: #4A2418;
+    font-weight: 800;
+    color: #2D150B;
     margin-top: 3px;
 }
 .bulk-kpi-sub {
@@ -3964,7 +4380,7 @@ def check_login():
 if not check_login(): st.stop()
 
 # ----------------------------------------------------------------------
-# NAVIGATION & ROLE CONFIG
+# NAVIGATION & ROLE CONFIG — ESPRESSO LUXE 3D COMMAND BAR & LAUNCHPAD
 # ----------------------------------------------------------------------
 user_role = st.session_state.get("user_role", "admin")
 
@@ -3974,18 +4390,77 @@ if user_role == "entry":
     CARTS = get_carts_for_active_location(include_freezer=False)
     ATTRIBUTED_OPTIONS = ["Central / Freezer"] + CARTS
     page = "Daily Entry"
-    top_nav_c1, top_nav_c2 = st.columns([6, 1])
-    with top_nav_c1: st.title("🍦 Kulfi Ops — Daily Entry")
+    top_nav_c1, top_nav_c2 = st.columns([6.2, 1.2])
+    with top_nav_c1:
+        st.markdown(
+            f"""
+            <div class="kulfi-cmd-banner">
+                <div class="kulfi-cmd-left">
+                    <div class="kulfi-cmd-crest">🍦</div>
+                    <div>
+                        <div class="kulfi-cmd-title">Kulfi Ops — Daily Entry</div>
+                        <div class="kulfi-cmd-sub">DAILY CART SALES, RESTOCK & STOCK LEDGER</div>
+                    </div>
+                </div>
+                <div class="kulfi-cmd-badges">
+                    <span class="kulfi-loc-pill">📍 {CITY}</span>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
     with top_nav_c2:
-        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-        if st.button("🚪 Log out", type="secondary", use_container_width=True):
-            st.session_state["authenticated"] = False; st.session_state["user_role"] = None; st.rerun()
+        st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+        if st.button("🚪 Log out", type="secondary", use_container_width=True, key="entry_top_logout_btn"):
+            st.session_state["authenticated"] = False
+            st.session_state["user_role"] = None
+            st.rerun()
 else:
-    # Apply navigation requested by a button on another page BEFORE the
-    # sidebar radio is created. Streamlit does not allow changing the
-    # session-state value of an already-instantiated widget.
+    # Apply navigation or location switch requested by a 3D button BEFORE
+    # sidebar widgets are instantiated.
     if "_pending_page_nav" in st.session_state:
         st.session_state["page_nav"] = st.session_state.pop("_pending_page_nav")
+    if "_pending_loc_change" in st.session_state:
+        _new_loc = st.session_state.pop("_pending_loc_change")
+        st.session_state["current_location"] = _new_loc
+        st.session_state["global_location_selector"] = _new_loc
+        st.session_state.pop("entry_cart_shared", None)
+
+    configured_locs = load_configured_locations_list(include_inactive=False)
+    loc_options = ["All Locations (Aggregated)"] + configured_locs
+
+    nav_options = [
+        "Home",
+        "Dashboard",
+        "Daily Entry",
+        "Bulk Orders & Quotes",
+        "Live Cart Tracking",
+        "Cash Custody",
+        "Purchase Orders",
+        "Freezer Stock",
+        "Freezer Analysis",
+        "Stock Removed",
+        "Expenses",
+        "Staff & Payroll",
+        "Payslip Generator",
+        "Locations & Logins",
+    ]
+    nav_labels = {
+        "Home": "🏠  Home Launchpad",
+        "Dashboard": "📊  Dashboard",
+        "Daily Entry": "🛒  Daily Entry",
+        "Bulk Orders & Quotes": "📦  Bulk Orders & Quotes",
+        "Live Cart Tracking": "📡  Live Cart Tracking",
+        "Cash Custody": "💰  Cash Custody",
+        "Purchase Orders": "🧾  Purchase Orders",
+        "Freezer Stock": "❄️  Freezer Stock",
+        "Freezer Analysis": "📈  Freezer Analysis",
+        "Stock Removed": "🗑️  Stock Removed",
+        "Expenses": "💳  Expenses",
+        "Staff & Payroll": "👥  Staff & Payroll",
+        "Payslip Generator": "📄  Payslip Generator",
+        "Locations & Logins": "🌐  Locations & Logins",
+    }
 
     with st.sidebar:
         if os.path.exists("assets/logo.png"):
@@ -3996,8 +4471,6 @@ else:
             st.markdown("## 🍦 Kulfi Ops")
 
         # --- Multi-Location Selector for Admin ---
-        configured_locs = load_configured_locations_list(include_inactive=False)
-        loc_options = ["All Locations (Aggregated)"] + configured_locs
         default_loc = st.session_state.get("current_location", "HOSUR")
         if default_loc not in loc_options:
             default_loc = "HOSUR" if "HOSUR" in loc_options else loc_options[0]
@@ -4012,43 +4485,13 @@ else:
             st.session_state.pop("entry_cart_shared", None)
 
         st.markdown(
-            "<div style='font-size:10px;font-weight:800;color:#8A5E17;letter-spacing:0.08em;"
-            "text-transform:uppercase;margin:8px 0 4px 4px;'>Menu</div>",
+            "<div style='font-size:10px;font-weight:800;color:#F5D78E;letter-spacing:0.08em;"
+            "text-transform:uppercase;margin:8px 0 4px 4px;'>Executive Suite</div>",
             unsafe_allow_html=True,
         )
 
-        nav_options = [
-            "Dashboard",
-            "Daily Entry",
-            "Bulk Orders & Quotes",
-            "Live Cart Tracking",
-            "Cash Custody",
-            "Purchase Orders",
-            "Freezer Stock",
-            "Freezer Analysis",
-            "Stock Removed",
-            "Expenses",
-            "Staff & Payroll",
-            "Payslip Generator",
-            "Locations & Logins",
-        ]
-        nav_labels = {
-            "Dashboard": "📊  Dashboard",
-            "Daily Entry": "🛒  Daily Entry",
-            "Bulk Orders & Quotes": "📦  Bulk Orders & Quotes",
-            "Live Cart Tracking": "📡  Live Cart Tracking",
-            "Cash Custody": "💰  Cash Custody",
-            "Purchase Orders": "🧾  Purchase Orders",
-            "Freezer Stock": "❄️  Freezer Stock",
-            "Freezer Analysis": "📈  Freezer Analysis",
-            "Stock Removed": "🗑️  Stock Removed",
-            "Expenses": "💳  Expenses",
-            "Staff & Payroll": "👥  Staff & Payroll",
-            "Payslip Generator": "📄  Payslip Generator",
-            "Locations & Logins": "🌐  Locations & Logins",
-        }
         if st.session_state.get("page_nav") not in nav_options:
-            st.session_state["page_nav"] = "Dashboard"
+            st.session_state["page_nav"] = "Home"
         page = st.radio(
             "Go to",
             nav_options,
@@ -4057,18 +4500,255 @@ else:
             key="page_nav",
         )
         st.markdown("<div style='height:6px;'></div>", unsafe_allow_html=True)
-        if st.button("🚪 Log out", use_container_width=True):
-            st.session_state["authenticated"] = False; st.session_state["user_role"] = None; st.rerun()
+        if st.button("🚪 Log out", use_container_width=True, key="sidebar_logout_btn"):
+            st.session_state["authenticated"] = False
+            st.session_state["user_role"] = None
+            st.rerun()
 
     CITY = get_default_write_city()
     CARTS = get_carts_for_active_location(include_freezer=False)
     ATTRIBUTED_OPTIONS = ["Central / Freezer"] + CARTS
     loc_badge = "All Locations" if get_active_location_filter() == "ALL" else get_active_location_filter()
-    st.title(f"🍦 Kulfi Ops — {page} ({loc_badge})")
+    page_display_title = "Executive Launchpad" if page == "Home" else page
+
+    # --- ESPRESSO LUXE & CHAMPAGNE GOLD TOP COMMAND BAR ---
+    st.markdown(
+        f"""
+        <div class="kulfi-cmd-banner">
+            <div class="kulfi-cmd-left">
+                <div class="kulfi-cmd-crest">🍦</div>
+                <div>
+                    <div class="kulfi-cmd-title">Kulfi Ops — {page_display_title}</div>
+                    <div class="kulfi-cmd-sub">ARTISANAL FRANCHISE COMMAND SUITE</div>
+                </div>
+            </div>
+            <div class="kulfi-cmd-badges">
+                <span class="kulfi-gold-pill">{nav_labels.get(page, page)}</span>
+                <span class="kulfi-loc-pill">📍 {loc_badge}</span>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown('<div class="cmd-deck-row">', unsafe_allow_html=True)
+    cmd_c1, cmd_c2, cmd_c3, cmd_c4 = st.columns([1.25, 1.55, 1.55, 1.0])
+    with cmd_c1:
+        if st.button(
+            "🏠 Home Launchpad",
+            type="primary" if page == "Home" else "secondary",
+            use_container_width=True,
+            key="top_cmd_home_btn",
+        ):
+            st.session_state["_pending_page_nav"] = "Home"
+            st.rerun()
+    with cmd_c2:
+        with st.popover("⇄ Switch Screen", use_container_width=True):
+            st.markdown(
+                "<div style='font-family:Fraunces,serif;font-size:13.5px;font-weight:800;color:#3A1B0E;"
+                "margin-bottom:6px;border-bottom:1.5px solid #C89B3C;padding-bottom:4px;'>"
+                "✨ Quick-Jump to Screen</div>",
+                unsafe_allow_html=True,
+            )
+            sw_cols = st.columns(2)
+            for _idx, _opt in enumerate(nav_options):
+                with sw_cols[_idx % 2]:
+                    if st.button(
+                        nav_labels.get(_opt, _opt),
+                        key=f"top_pop_nav_{_idx}_{_opt}",
+                        type="primary" if page == _opt else "secondary",
+                        use_container_width=True,
+                    ):
+                        st.session_state["_pending_page_nav"] = _opt
+                        st.rerun()
+    with cmd_c3:
+        with st.popover(f"📍 Location: {loc_badge}", use_container_width=True):
+            st.markdown(
+                "<div style='font-family:Fraunces,serif;font-size:13.5px;font-weight:800;color:#3A1B0E;"
+                "margin-bottom:6px;border-bottom:1.5px solid #C89B3C;padding-bottom:4px;'>"
+                "🌐 Switch Operating Location</div>",
+                unsafe_allow_html=True,
+            )
+            for _lidx, _loc_opt in enumerate(loc_options):
+                _is_cur_loc = (st.session_state.get("current_location") == _loc_opt)
+                if st.button(
+                    f"📍 {_loc_opt}",
+                    key=f"top_pop_loc_{_lidx}",
+                    type="primary" if _is_cur_loc else "secondary",
+                    use_container_width=True,
+                ):
+                    st.session_state["_pending_loc_change"] = _loc_opt
+                    st.rerun()
+    with cmd_c4:
+        if st.button("🚪 Log out", type="secondary", use_container_width=True, key="top_cmd_logout_btn"):
+            st.session_state["authenticated"] = False
+            st.session_state["user_role"] = None
+            st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # ======================================================================
 # PAGE ROUTING
 # ======================================================================
+
+if page == "Home" and user_role == "admin":
+    st.markdown(
+        f"""
+        <div class="launchpad-hero-strip">
+            <div>
+                <div style="font-family:'Fraunces',serif;font-size:15px;font-weight:800;color:#2D150B;">
+                    ✨ Welcome to the Kulfi Ops Executive Suite — {loc_badge}
+                </div>
+                <div style="font-size:12px;font-weight:600;color:#5C3D24;margin-top:2px;">
+                    Select any 3D module card below to enter that workspace, or use the top 3D command bar to switch screens at any time.
+                </div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                <span style="background:#FFFDF9;border:1.5px solid #C89B3C;border-radius:999px;padding:4px 12px;font-size:11.5px;font-weight:800;color:#3A1B0E;">
+                    🛒 Active Carts: {len(CARTS)}
+                </span>
+                <span style="background:#3A1B0E;border:1.5px solid #D4AF37;border-radius:999px;padding:4px 12px;font-size:11.5px;font-weight:800;color:#FCE8B2;">
+                    🌐 Scope: {loc_badge}
+                </span>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    _launchpad_sections = [
+        (
+            "📊 Revenue, Sales & Daily Operations",
+            [
+                (
+                    "Dashboard",
+                    "📊",
+                    "ANALYTICS & P&L",
+                    "Dashboard & Financials",
+                    "Revenue, COGS, Gross/Net Margins, OPEX Breakdown, Month-Wise Comparison & Sales Logs.",
+                ),
+                (
+                    "Daily Entry",
+                    "🛒",
+                    "DAILY OPS",
+                    "Daily Entry Hub",
+                    "Record daily closing cart sales, restocks, cart-to-freezer returns & live cart stock tables.",
+                ),
+                (
+                    "Live Cart Tracking",
+                    "📡",
+                    "LIVE POS",
+                    "Live Cart Tracking",
+                    "Monitor real-time mobile POS cart sales, payment split & flavour-wise daily transactions.",
+                ),
+                (
+                    "Bulk Orders & Quotes",
+                    "📦",
+                    "COMMERCIAL",
+                    "Bulk Orders & Quotes",
+                    "Build event quotes by piece count or budget, customize flavour mix & generate PDF estimates.",
+                ),
+                (
+                    "Cash Custody",
+                    "💰",
+                    "TREASURY",
+                    "Cash Custody & Handover",
+                    "Track physical cash collections, admin handovers & progressive expense allocations.",
+                ),
+                (
+                    "Expenses",
+                    "💳",
+                    "FINANCE",
+                    "Expenses & Vendor Dues",
+                    "Record operational expenses, track pending/partial vendor dues & audit payment history.",
+                ),
+            ],
+        ),
+        (
+            "❄️ Supply Chain, Freezer Inventory & Team Administration",
+            [
+                (
+                    "Purchase Orders",
+                    "🧾",
+                    "SUPPLY CHAIN",
+                    "Purchase Orders & Receipts",
+                    "Create factory purchase orders, verify stock received entries & export receipt reports.",
+                ),
+                (
+                    "Freezer Stock",
+                    "❄️",
+                    "INVENTORY",
+                    "Freezer Stock & Direct Sales",
+                    "Inspect live central freezer inventory, log direct freezer sales & update physical audits.",
+                ),
+                (
+                    "Freezer Analysis",
+                    "📈",
+                    "AUDIT MATRIX",
+                    "Freezer Analysis Matrix",
+                    "Reconcile opening audit, PO receipts, cart transfers, freezer sales & stock variance.",
+                ),
+                (
+                    "Stock Removed",
+                    "🗑️",
+                    "WRITE-OFFS",
+                    "Stock Removed & Spoilage",
+                    "Log damaged or melted stock write-offs with automatic cost-price expense booking.",
+                ),
+                (
+                    "Staff & Payroll",
+                    "👥",
+                    "HR & PAYROLL",
+                    "Staff, Attendance & Payroll",
+                    "Manage active/inactive staff roster, salary structures, attendance logs & staff advances.",
+                ),
+                (
+                    "Payslip Generator",
+                    "📄",
+                    "PAYSLIPS",
+                    "Payslip Generator",
+                    "Compute pro-rata monthly net pay with automatic last-working-day cutoffs & PDF payslips.",
+                ),
+                (
+                    "Locations & Logins",
+                    "🌐",
+                    "ADMIN SETUP",
+                    "Locations, Carts & Logins",
+                    "Configure operating cities, cart/freezer mappings & role-based login credentials.",
+                ),
+            ],
+        ),
+    ]
+
+    for _sec_title, _sec_cards in _launchpad_sections:
+        st.markdown(f'<div class="launchpad-section-hdr">{_sec_title}</div>', unsafe_allow_html=True)
+        for _row_start in range(0, len(_sec_cards), 3):
+            _row_items = _sec_cards[_row_start:_row_start + 3]
+            _cols = st.columns(3)
+            for _c_idx, (_target_page, _icon, _badge, _title, _desc) in enumerate(_row_items):
+                with _cols[_c_idx]:
+                    st.markdown(
+                        f"""
+                        <div class="luxe-launchpad-card">
+                            <div>
+                                <div class="luxe-card-top">
+                                    <div class="luxe-card-icon">{_icon}</div>
+                                    <span class="luxe-card-badge">{_badge}</span>
+                                </div>
+                                <div class="luxe-card-title">{_title}</div>
+                                <div class="luxe-card-desc">{_desc}</div>
+                            </div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+                    if st.button(
+                        f"Open {_title}  ➔",
+                        key=f"launchpad_open_{_target_page}",
+                        type="primary" if _target_page in ("Dashboard", "Daily Entry") else "secondary",
+                        use_container_width=True,
+                    ):
+                        st.session_state["_pending_page_nav"] = _target_page
+                        st.rerun()
 
 if page == "Locations & Logins" and user_role == "admin":
     st.subheader("🌐 Locations, Carts / Freezers & Logins Setup")
@@ -13231,11 +13911,12 @@ elif page == "Dashboard" and user_role == "admin":
                         rows.append(f"<tr><th scope='row'>{escape(str(cart))}</th>{cells}</tr>")
                     st.html(
                         "<style>"
-                        ".compact-dow-table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:clamp(8px,.75vw,11px);line-height:1.3}"
-                        ".compact-dow-table th,.compact-dow-table td{padding:6px 2px;border-bottom:1px solid #e8e2d9;text-align:right;overflow-wrap:anywhere}"
-                        ".compact-dow-table thead th{font-weight:700;background:#f7f3ea}"
-                        ".compact-dow-table th:first-child{width:29%;text-align:left}"
-                        ".compact-dow-table tbody tr:first-child{font-weight:700;background:#faf5e8}"
+                        ".compact-dow-table{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:clamp(9px,.78vw,11.5px);line-height:1.35;background:#FFFEFA;border:1.5px solid #B8882D;border-radius:9px;overflow:hidden;box-shadow:0 3px 10px rgba(45,21,11,0.06)}"
+                        ".compact-dow-table th,.compact-dow-table td{padding:6px 5px;border-bottom:1px solid #E5D2B0;border-right:1px solid #EFE2CA;text-align:right;overflow-wrap:anywhere;color:#2A160C;font-weight:700}"
+                        ".compact-dow-table thead th{font-weight:800;background:linear-gradient(180deg,#3A1B0E 0%,#241008 100%);color:#FCE8B2;border-bottom:2px solid #D4AF37;text-align:center}"
+                        ".compact-dow-table th:first-child{width:29%;text-align:left;padding-left:8px}"
+                        ".compact-dow-table tbody tr:nth-child(even) td,.compact-dow-table tbody tr:nth-child(even) th{background:#FAF2E1}"
+                        ".compact-dow-table tbody tr:first-child td,.compact-dow-table tbody tr:first-child th{font-weight:900;background:linear-gradient(90deg,#FBF0D9 0%,#F2DEC0 100%);color:#2D150B;border-bottom:1.5px solid #C89B3C}"
                         "</style>"
                         f"<table class='compact-dow-table'><thead><tr><th scope='col'>Cart</th>{headers}</tr></thead>"
                         f"<tbody>{''.join(rows)}</tbody></table>"
