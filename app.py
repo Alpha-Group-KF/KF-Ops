@@ -39,7 +39,7 @@ try:
 except ImportError:
     REPORTLAB_AVAILABLE = False
 
-st.set_page_config(page_title="Kulfi Ops", page_icon="🍦", layout="wide")
+st.set_page_config(page_title="Kulfi Ops", page_icon="🍦", layout="wide", initial_sidebar_state="collapsed")
 
 # ----------------------------------------------------------------------
 # GLOBAL UI STYLES — OPTION 3: ESPRESSO LUXE & CHAMPAGNE GOLD (3D SUITE)
@@ -55,15 +55,27 @@ st.html("""
         linear-gradient(180deg, #FBF5E8 0%, #F1E2C5 100%) !important;
     color: #2A160C;
 }
+
+/* Completely hide the left sidebar and sidebar toggle button */
+section[data-testid="stSidebar"],
+[data-testid="collapsedControl"],
+[data-testid="stSidebarCollapsedControl"] {
+    display: none !important;
+    width: 0 !important;
+    min-width: 0 !important;
+}
+
 .block-container {
-    padding-top: 0.65rem !important;
+    padding-top: 2.4rem !important;
     padding-bottom: 1.5rem !important;
+    padding-left: 1.8rem !important;
+    padding-right: 1.8rem !important;
     margin-top: 0 !important;
     max-width: 100% !important;
 }
 header[data-testid="stHeader"] {
     background-color: transparent !important;
-    height: 0.8rem !important;
+    height: 1.8rem !important;
 }
 html, body, [class*="css"] {
     font-family: 'Manrope', sans-serif;
@@ -137,28 +149,23 @@ div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] p {
     color: #FCE8B2 !important;
 }
 
-/* Espresso Luxe Top Command Bar */
-.kulfi-cmd-banner {
-    background: linear-gradient(135deg, #220F07 0%, #3A1B0E 52%, #542815 100%);
-    border: 1.5px solid #D4AF37;
-    border-radius: 13px;
-    padding: 10px 16px;
-    margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 10px;
+/* Unified Espresso Luxe Top Command Bar Container */
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.kulfi-top-cmd-bar-scope) {
+    background: linear-gradient(135deg, #220F07 0%, #3A1B0E 52%, #542815 100%) !important;
+    border: 1.5px solid #D4AF37 !important;
+    border-radius: 13px !important;
+    padding: 10px 16px !important;
+    margin-bottom: 10px !important;
     box-shadow:
         inset 0 1px 0 rgba(255, 232, 178, 0.35),
         0 4px 0 #150803,
-        0 10px 22px rgba(34, 15, 7, 0.20);
+        0 10px 22px rgba(34, 15, 7, 0.20) !important;
 }
 .kulfi-cmd-left {
     display: flex;
     align-items: center;
     gap: 12px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
 }
 .kulfi-cmd-crest {
     width: 38px;
@@ -171,58 +178,77 @@ div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] p {
     align-items: center;
     justify-content: center;
     font-size: 20px;
+    flex-shrink: 0;
 }
 .kulfi-cmd-title {
     font-family: 'Fraunces', serif !important;
-    font-size: 1.22rem;
+    font-size: 1.18rem;
     font-weight: 700;
     color: #FFF8E7 !important;
     letter-spacing: 0.01em;
     line-height: 1.15;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .kulfi-cmd-sub {
-    font-size: 11px;
+    font-size: 10.5px;
     font-weight: 700;
     color: #E6C687 !important;
     letter-spacing: 0.03em;
 }
-.kulfi-cmd-badges {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-.kulfi-gold-pill {
-    background: linear-gradient(180deg, #3E2010 0%, #291308 100%);
-    border: 1px solid #D4AF37;
-    color: #FCE8B2 !important;
-    font-size: 11px;
-    font-weight: 800;
-    padding: 4px 11px;
-    border-radius: 999px;
-    letter-spacing: 0.03em;
-    box-shadow: inset 0 1px 0 rgba(255, 232, 178, 0.22), 0 2px 4px rgba(0,0,0,0.25);
-}
-.kulfi-loc-pill {
-    background: linear-gradient(180deg, #F5D78E 0%, #CFA03C 100%);
-    border: 1px solid #FFF3D1;
+
+/* Top Command Bar 3D Buttons — Strictly Equal 38px Height & Gold Bevel */
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.kulfi-top-cmd-bar-scope) .stButton > button,
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button {
+    min-height: 38px !important;
+    height: 38px !important;
+    padding: 0 12px !important;
+    font-size: 12.5px !important;
+    font-weight: 800 !important;
+    border-radius: 9px !important;
+    border: 1.5px solid #D4AF37 !important;
+    background: linear-gradient(180deg, #FFFDF9 0%, #F5E4C3 52%, #E4C790 100%) !important;
     color: #241008 !important;
-    font-size: 11px;
-    font-weight: 900;
-    padding: 4px 11px;
-    border-radius: 999px;
-    letter-spacing: 0.03em;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.25);
+    box-shadow:
+        inset 0 1px 0 #FFFFFF,
+        0 3px 0 #7C5810,
+        0 5px 10px rgba(0, 0, 0, 0.28) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 !important;
+    white-space: nowrap !important;
+}
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.kulfi-top-cmd-bar-scope) .stButton > button p,
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button p,
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button span {
+    color: #241008 !important;
+    font-weight: 800 !important;
+    font-size: 12.5px !important;
+}
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.kulfi-top-cmd-bar-scope) .stButton > button[kind="primary"] {
+    background: linear-gradient(180deg, #F5D78E 0%, #C8962E 100%) !important;
+    border: 1.5px solid #FFF3D1 !important;
+    color: #1F0D05 !important;
+    box-shadow:
+        inset 0 1px 0 #FFFDF9,
+        0 3px 0 #6E4B0A,
+        0 6px 14px rgba(0, 0, 0, 0.35) !important;
+}
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.kulfi-top-cmd-bar-scope) .stButton > button[kind="primary"] p {
+    color: #1F0D05 !important;
+    font-weight: 900 !important;
 }
 
-/* Executive Launchpad Hero Strip & 3D Beveled Module Cards */
+/* Executive Launchpad Hero Strip */
 .launchpad-hero-strip {
     background: linear-gradient(135deg, #FFFDF8 0%, #F6E9CE 60%, #ECD7B0 100%);
     border: 1.5px solid #C89B3C;
     border-radius: 12px;
     padding: 11px 16px;
-    margin: 4px 0 14px 0;
+    margin: 2px 0 12px 0;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -245,77 +271,76 @@ div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] p {
     align-items: center;
     gap: 8px;
 }
-.luxe-launchpad-card {
-    background: linear-gradient(165deg, #FFFDF9 0%, #F9F0DF 56%, #EFE0C2 100%);
-    border: 1.5px solid #C89B3C;
-    border-radius: 14px;
-    padding: 15px 16px 12px 16px;
-    min-height: 144px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+
+/* Zero-height marker element for Clickable 3D Card Grids */
+div[data-testid="stElementContainer"]:has(.kulfi-clickable-card-grid) {
+    display: none !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Directly Clickable 3D Luxury Cards (Home & Daily Entry Hub — Bold Title Only) */
+div[data-testid="stVerticalBlock"]:has(> div .kulfi-clickable-card-grid) .stButton > button {
+    background: linear-gradient(165deg, #FFFDF9 0%, #F9F0DF 56%, #EFE0C2 100%) !important;
+    border: 1.5px solid #C89B3C !important;
+    border-radius: 14px !important;
+    padding: 18px 20px !important;
+    min-height: 78px !important;
+    height: 78px !important;
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    text-align: left !important;
+    white-space: nowrap !important;
     box-shadow:
         inset 0 0 0 2px rgba(255, 253, 248, 0.90),
         inset 0 0 0 3px rgba(200, 155, 60, 0.25),
         0 4px 0 #9E7422,
-        0 10px 20px rgba(45, 21, 11, 0.09);
-    transition: all 0.16s ease;
-    margin-bottom: 6px;
+        0 10px 20px rgba(45, 21, 11, 0.09) !important;
+    transition: all 0.16s ease !important;
+    margin-bottom: 6px !important;
+    cursor: pointer !important;
 }
-.luxe-launchpad-card:hover {
-    border-color: #B8860B;
-    transform: translateY(-2px);
+div[data-testid="stVerticalBlock"]:has(> div .kulfi-clickable-card-grid) .stButton > button:hover {
+    background: linear-gradient(165deg, #FFFFFF 0%, #FBF3E4 56%, #F3E4C8 100%) !important;
+    border-color: #9E6F14 !important;
+    transform: translateY(-2px) !important;
     box-shadow:
-        inset 0 0 0 2px rgba(255, 253, 248, 0.95),
-        inset 0 0 0 3px rgba(212, 175, 55, 0.40),
-        0 5px 0 #8A6214,
-        0 14px 26px rgba(45, 21, 11, 0.14);
+        inset 0 0 0 2px rgba(255, 253, 248, 0.96),
+        inset 0 0 0 3px rgba(212, 175, 55, 0.45),
+        0 5px 0 #7C5810,
+        0 14px 26px rgba(45, 21, 11, 0.15) !important;
 }
-.luxe-card-top {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 10px;
+div[data-testid="stVerticalBlock"]:has(> div .kulfi-clickable-card-grid) .stButton > button:active {
+    transform: translateY(2px) !important;
+    box-shadow:
+        inset 0 0 0 2px rgba(255, 253, 248, 0.8),
+        0 1px 0 #7C5810,
+        0 4px 8px rgba(45, 21, 11, 0.10) !important;
 }
-.luxe-card-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 11px;
-    background: linear-gradient(145deg, #3A1B0E 0%, #230F07 100%);
-    border: 1.5px solid #D4AF37;
-    box-shadow: inset 0 1px 0 rgba(255, 232, 178, 0.35), 0 3px 6px rgba(35, 15, 7, 0.22);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 21px;
-    flex-shrink: 0;
+div[data-testid="stVerticalBlock"]:has(> div .kulfi-clickable-card-grid) .stButton > button > div[data-testid="stMarkdownContainer"] {
+    width: 100% !important;
+    text-align: left !important;
 }
-.luxe-card-badge {
-    font-size: 9.5px;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    padding: 3px 9px;
-    border-radius: 999px;
-    background: linear-gradient(180deg, #FDF4DC 0%, #F2DEC0 100%);
-    color: #5C3409;
-    border: 1px solid #C89B3C;
-    box-shadow: inset 0 1px 0 #FFFFFF;
-}
-.luxe-card-title {
+div[data-testid="stVerticalBlock"]:has(> div .kulfi-clickable-card-grid) .stButton > button > div[data-testid="stMarkdownContainer"] p {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 10px !important;
+    margin: 0 !important;
     font-family: 'Fraunces', serif !important;
-    font-size: 16px;
-    font-weight: 700;
-    color: #2D150B;
-    margin: 9px 0 3px 0;
-    line-height: 1.2;
+    font-size: 17px !important;
+    font-weight: 700 !important;
+    color: #2D150B !important;
+    line-height: 1.25 !important;
 }
-.luxe-card-desc {
-    font-size: 11.8px;
-    font-weight: 600;
-    color: #5C3D24;
-    line-height: 1.36;
-    margin-bottom: 2px;
+div[data-testid="stVerticalBlock"]:has(> div .kulfi-clickable-card-grid) .stButton > button > div[data-testid="stMarkdownContainer"] p strong {
+    font-family: 'Fraunces', serif !important;
+    font-size: 17px !important;
+    font-weight: 700 !important;
+    color: #2D150B !important;
 }
 
 /* High-Contrast Section Headers */
@@ -395,97 +420,56 @@ div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] p {
     display: inline-block;
 }
 
-/* Compact Inputs */
-.stTextInput div[data-baseweb="input"], .stNumberInput div[data-baseweb="input"] {
+/* Consistent Input Heights so Filter Bars Align Perfectly */
+.stSelectbox div[data-baseweb="select"] > div,
+.stDateInput div[data-baseweb="input"],
+.stTextInput div[data-baseweb="input"],
+.stNumberInput div[data-baseweb="input"] {
+    min-height: 36px !important;
+    height: 36px !important;
+    border-radius: 7px !important;
+}
+/* Keep collapsed-label number inputs inside 9-flavour entry grids compact at 28px */
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) .stNumberInput div[data-baseweb="input"] {
     min-height: 28px !important;
     height: 28px !important;
     border-radius: 6px !important;
 }
-.stTextInput input, .stNumberInput input {
-    padding: 2px 6px !important;
-    font-size: 12px !important;
+.stTextInput input, .stNumberInput input, .stDateInput input {
+    padding: 2px 8px !important;
+    font-size: 12.5px !important;
     text-align: left !important;
-    font-weight: 600 !important;
-}
-.stNumberInput label, .stTextInput label {
-    font-size: 10.5px !important;
     font-weight: 700 !important;
-    margin-bottom: 1px !important;
+}
+.stNumberInput label, .stTextInput label, .stSelectbox label, .stDateInput label {
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    margin-bottom: 2px !important;
     text-align: left !important;
+    color: #3A1B0E !important;
 }
 
-/* Espresso Luxe & Champagne Gold Sidebar */
-section[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #231008 0%, #35190D 55%, #281209 100%) !important;
-    border-right: 2px solid #C89B3C !important;
-    box-shadow: 4px 0 18px rgba(34, 15, 7, 0.22) !important;
-}
-section[data-testid="stSidebar"] [data-testid="stSidebarContent"] {
-    padding-top: 0.75rem !important;
-}
-section[data-testid="stSidebar"] h2,
-section[data-testid="stSidebar"] label,
-section[data-testid="stSidebar"] .stMarkdown p {
-    color: #FCE8B2 !important;
-}
-section[data-testid="stSidebar"] h2 {
-    font-size: 17.5px !important;
-    color: #FFF6DF !important;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
-}
-section[data-testid="stSidebar"] .stRadio > div[role="radiogroup"] {
-    gap: 5px !important;
-    padding-top: 2px !important;
-}
-section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label > div:first-child {
-    display: none !important;
-}
-section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label {
-    background: linear-gradient(180deg, rgba(255, 250, 238, 0.10) 0%, rgba(212, 175, 55, 0.06) 100%) !important;
-    border: 1px solid rgba(212, 175, 55, 0.32) !important;
-    border-left: 3.5px solid transparent !important;
-    border-radius: 9px !important;
-    padding: 7px 12px !important;
-    margin-bottom: 0px !important;
-    width: 100% !important;
-    transition: all 0.15s ease !important;
-    box-shadow: 0 2px 0 rgba(12, 5, 2, 0.45) !important;
-}
-section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label:hover {
-    background: linear-gradient(90deg, rgba(212, 175, 55, 0.22) 0%, rgba(255, 243, 209, 0.12) 100%) !important;
-    border-color: #D4AF37 !important;
-    border-left: 3.5px solid #F5D78E !important;
-    transform: translateX(2px);
-}
-section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label p {
-    font-size: 12.8px !important;
-    font-weight: 700 !important;
-    color: #F7E6C4 !important;
-    margin: 0 !important;
-    letter-spacing: 0.01em !important;
-}
-section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label:has(input:checked) {
-    background: linear-gradient(180deg, #F5D78E 0%, #CFA03C 100%) !important;
-    border: 1px solid #FFF3D1 !important;
-    border-left: 4px solid #FFFDF9 !important;
-    box-shadow: 0 3px 0 #7C5810, 0 6px 14px rgba(0, 0, 0, 0.35) !important;
-}
-section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label:has(input:checked) p {
-    color: #231008 !important;
-    font-weight: 900 !important;
-}
-
-/* 3D Tactile Buttons Across the Entire App */
-.stButton button,
-[data-testid="stFormSubmitButton"] button,
-.stDownloadButton button,
+/* 3D Tactile Buttons Across the Entire App — Uniform 38px Height & Centered */
+.stButton > button,
+[data-testid="stFormSubmitButton"] > button,
+.stDownloadButton > button,
+[data-testid="stLinkButton"] > a,
 [data-testid="stPopover"] > div > button {
     background: linear-gradient(180deg, #FFFDF9 0%, #F5E6C8 52%, #E6CC9A 100%) !important;
     color: #2D150B !important;
     border: 1.5px solid #B6862C !important;
     border-radius: 9px !important;
     font-weight: 800 !important;
-    padding: 0.38rem 0.85rem !important;
+    font-size: 12.5px !important;
+    min-height: 38px !important;
+    height: 38px !important;
+    padding: 0 12px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    text-decoration: none !important;
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.92),
         0 3px 0 #875F14,
@@ -493,9 +477,10 @@ section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label:has(inp
     transition: all 0.12s ease !important;
     letter-spacing: 0.01em !important;
 }
-.stButton button:hover,
-[data-testid="stFormSubmitButton"] button:hover,
-.stDownloadButton button:hover,
+.stButton > button:hover,
+[data-testid="stFormSubmitButton"] > button:hover,
+.stDownloadButton > button:hover,
+[data-testid="stLinkButton"] > a:hover,
 [data-testid="stPopover"] > div > button:hover {
     background: linear-gradient(180deg, #FFFFFF 0%, #F9EDD4 52%, #EDD6A7 100%) !important;
     border-color: #966B1B !important;
@@ -505,9 +490,10 @@ section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label:has(inp
         0 4px 0 #75500D,
         0 7px 14px rgba(45, 21, 11, 0.15) !important;
 }
-.stButton button:active,
-[data-testid="stFormSubmitButton"] button:active,
-.stDownloadButton button:active,
+.stButton > button:active,
+[data-testid="stFormSubmitButton"] > button:active,
+.stDownloadButton > button:active,
+[data-testid="stLinkButton"] > a:active,
 [data-testid="stPopover"] > div > button:active {
     transform: translateY(2px) !important;
     box-shadow:
@@ -517,8 +503,8 @@ section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label:has(inp
 }
 
 /* Primary 3D Buttons (Burnished Copper-Terracotta & Gold) */
-.stButton button[kind="primary"],
-[data-testid="stFormSubmitButton"] button[kind="primary"],
+.stButton > button[kind="primary"],
+[data-testid="stFormSubmitButton"] > button[kind="primary"],
 [data-testid="baseButton-primary"] {
     background: linear-gradient(180deg, #F26B3F 0%, #D94B1E 54%, #B5320B 100%) !important;
     color: #FFFFFF !important;
@@ -529,8 +515,8 @@ section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label:has(inp
         0 6px 14px rgba(181, 50, 11, 0.28) !important;
     text-shadow: 0 1px 1px rgba(45, 21, 11, 0.35) !important;
 }
-.stButton button[kind="primary"]:hover,
-[data-testid="stFormSubmitButton"] button[kind="primary"]:hover {
+.stButton > button[kind="primary"]:hover,
+[data-testid="stFormSubmitButton"] > button[kind="primary"]:hover {
     background: linear-gradient(180deg, #F77A50 0%, #E25325 54%, #C23910 100%) !important;
     border-color: #701A03 !important;
     color: #FFFFFF !important;
@@ -540,14 +526,27 @@ section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label:has(inp
         0 4px 0 #571201,
         0 8px 16px rgba(181, 50, 11, 0.34) !important;
 }
-.stButton button[kind="primary"]:active,
-[data-testid="stFormSubmitButton"] button[kind="primary"]:active {
+.stButton > button[kind="primary"]:active,
+[data-testid="stFormSubmitButton"] > button[kind="primary"]:active {
     transform: translateY(2px) !important;
     box-shadow: 0 1px 0 #571201 !important;
 }
-.stButton button[kind="primary"] p,
-[data-testid="stFormSubmitButton"] button[kind="primary"] p {
+.stButton > button[kind="primary"] p,
+[data-testid="stFormSubmitButton"] > button[kind="primary"] p {
     color: #FFFFFF !important;
+}
+
+/* Compact 30px inline action buttons ONLY inside .ledger-cell table rows */
+div[data-testid="stHorizontalBlock"]:has(.ledger-cell) .stButton > button {
+    padding: 2px 5px !important;
+    min-height: 30px !important;
+    height: 30px !important;
+    font-size: 11.5px !important;
+    line-height: 1 !important;
+    border: 1.2px solid #B8882D !important;
+    background: linear-gradient(180deg, #FFFDF9 0%, #F5E6C8 55%, #E8D0A2 100%) !important;
+    color: #2D150B !important;
+    box-shadow: inset 0 1px 0 #FFFFFF, 0 2px 0 #8A6116 !important;
 }
 
 /* Metric Cards — Beveled Champagne & Gold */
@@ -873,125 +872,6 @@ div[data-testid="stNumberInput"] input {
 .status-pending { background: #FCE8E6; color: #C5221F; border: 1px solid #FAD2CF; }
 .status-other { background: #F1F3F4; color: #5F6368; border: 1px solid #DADCE0; }
 
-/* Make inline row action buttons compact, 3D-beveled, and guaranteed visible */
-div[data-testid="stHorizontalBlock"] .stButton button {
-    padding: 2px 6px !important;
-    min-height: 30px !important;
-    height: 30px !important;
-    font-size: 11.5px !important;
-    line-height: 1 !important;
-    border: 1.2px solid #B8882D !important;
-    background: linear-gradient(180deg, #FFFDF9 0%, #F5E6C8 55%, #E8D0A2 100%) !important;
-    color: #2D150B !important;
-    box-shadow: inset 0 1px 0 #FFFFFF, 0 2px 0 #8A6116 !important;
-}
-div[data-testid="stHorizontalBlock"] .stButton button:hover {
-    background: linear-gradient(180deg, #FFFFFF 0%, #F9EDD4 55%, #EDD6A7 100%) !important;
-    border-color: #8A5E17 !important;
-}
-div[data-testid="stHorizontalBlock"] .stButton button[kind="primary"] {
-    background: linear-gradient(180deg, #F26B3F 0%, #D94B1E 54%, #B5320B 100%) !important;
-    color: #FFFFFF !important;
-    border: 1.2px solid #8A2205 !important;
-    box-shadow: inset 0 1px 0 rgba(255, 224, 200, 0.6), 0 2px 0 #631602 !important;
-}
-
-/* Top Command Bar 3D Buttons (Taller & Executive) */
-.cmd-deck-row div[data-testid="stHorizontalBlock"] .stButton button,
-.cmd-deck-row [data-testid="stPopover"] > div > button {
-    min-height: 36px !important;
-    height: 36px !important;
-    font-size: 12.5px !important;
-    font-weight: 800 !important;
-    border-radius: 9px !important;
-    border: 1.5px solid #C89B3C !important;
-    background: linear-gradient(180deg, #FFFDF9 0%, #F5E4C3 52%, #E4C790 100%) !important;
-    color: #241008 !important;
-    box-shadow:
-        inset 0 1px 0 #FFFFFF,
-        0 3px 0 #7C5810,
-        0 5px 12px rgba(36, 16, 8, 0.14) !important;
-}
-.cmd-deck-row div[data-testid="stHorizontalBlock"] .stButton button[kind="primary"] {
-    background: linear-gradient(180deg, #3B1D10 0%, #241008 100%) !important;
-    color: #FCE8B2 !important;
-    border: 1.5px solid #D4AF37 !important;
-    box-shadow:
-        inset 0 1px 0 rgba(255, 232, 178, 0.35),
-        0 3px 0 #120703,
-        0 6px 14px rgba(36, 16, 8, 0.22) !important;
-}
-.cmd-deck-row div[data-testid="stHorizontalBlock"] .stButton button[kind="primary"] p {
-    color: #FCE8B2 !important;
-}
-
-/* Graceful Entry Hub Cards (2x3 Grid) — Upgraded to Espresso & Gold 3D Bevel */
-.entry-hub-card {
-    background: linear-gradient(165deg, #FFFDF9 0%, #F9F0DF 56%, #EFE0C2 100%);
-    border: 1.5px solid #C89B3C;
-    border-radius: 14px;
-    padding: 16px 18px 12px 18px;
-    min-height: 140px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    box-shadow:
-        inset 0 0 0 2px rgba(255, 253, 248, 0.88),
-        0 4px 0 #9E7422,
-        0 10px 20px rgba(45, 21, 11, 0.08);
-    transition: all 0.18s ease;
-    margin-bottom: 6px;
-}
-.entry-hub-card:hover {
-    border-color: #B8860B;
-    box-shadow:
-        inset 0 0 0 2px rgba(255, 253, 248, 0.95),
-        0 5px 0 #8A6214,
-        0 14px 24px rgba(45, 21, 11, 0.13);
-    transform: translateY(-2px);
-}
-.entry-hub-top {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
-}
-.entry-hub-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 22px;
-    flex-shrink: 0;
-    border: 1px solid rgba(200, 155, 60, 0.45);
-    box-shadow: 0 2px 5px rgba(45, 21, 11, 0.08);
-}
-.entry-hub-badge {
-    font-size: 9.5px;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    padding: 3px 8px;
-    border-radius: 999px;
-}
-.entry-hub-title {
-    font-family: 'Fraunces', serif !important;
-    font-size: 16.5px;
-    font-weight: 700;
-    color: #2D150B;
-    margin: 10px 0 4px 0;
-    line-height: 1.2;
-}
-.entry-hub-desc {
-    font-size: 12px;
-    font-weight: 600;
-    color: #5C3D24;
-    line-height: 1.38;
-    margin-bottom: 4px;
-}
-
 /* Freezer Analysis Boxed Table Styling — Espresso Luxe Grid */
 .fa-boxed-table-wrap {
     width: 100%;
@@ -1069,7 +949,7 @@ div[data-testid="stHorizontalBlock"] .stButton button[kind="primary"] {
 /* Group Box 4: Current */
 .fa-boxed-table th, .fa-boxed-table td { padding: 9px 14px !important; }
 .fa-box-cur-only-th { border-left: 2.5px solid #1D4ED8 !important; border-right: 2.5px solid #1D4ED8 !important; border-top: 2.5px solid #1D4ED8 !important; background: #1E3A8A !important; }
-.fa-box-cur-only-td { border-left: 2px solid #1D4ED8 !important; border-right: 2px solid #1D4ED8 !important; background: #EFF6FF !important; color: #124A1D !important; font-weight: 900 !important; font-size: 13.5px !important; }
+.fa-box-cur-only-td { border-left: 2.5px solid #1D4ED8 !important; border-right: 2px solid #1D4ED8 !important; background: #EFF6FF !important; color: #124A1D !important; font-weight: 900 !important; font-size: 13.5px !important; }
 .fa-box-cur-only-tot { border-left: 2.5px solid #1D4ED8 !important; border-right: 2.5px solid #1D4ED8 !important; border-bottom: 2.5px solid #1D4ED8 !important; color: #124A1D !important; font-size: 14px !important; }
 
 /* Read-only Live Sold cell in Sales Entry */
@@ -3069,9 +2949,8 @@ def render_live_cart_flavour_tables_section(key_prefix="live_flv"):
     if dt_key not in st.session_state:
         st.session_state[dt_key] = date.today()
 
-    fc1, fc2, fc3, fc4, fc5 = st.columns([1.3, 0.9, 0.9, 0.9, 1.0])
+    fc1, fc2, fc3, fc4, fc5 = st.columns([1.3, 0.9, 0.9, 0.9, 1.0], gap="small", vertical_alignment="bottom")
     with fc2:
-        st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
         st.button(
             "📅 Today",
             use_container_width=True,
@@ -3080,7 +2959,6 @@ def render_live_cart_flavour_tables_section(key_prefix="live_flv"):
             args=(dt_key, date.today()),
         )
     with fc3:
-        st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
         st.button(
             "⏪ Yesterday",
             use_container_width=True,
@@ -3089,7 +2967,6 @@ def render_live_cart_flavour_tables_section(key_prefix="live_flv"):
             args=(dt_key, date.today() - timedelta(days=1)),
         )
     with fc4:
-        st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
         st.button(
             "⏪ Today - 2",
             use_container_width=True,
@@ -3098,7 +2975,6 @@ def render_live_cart_flavour_tables_section(key_prefix="live_flv"):
             args=(dt_key, date.today() - timedelta(days=2)),
         )
     with fc5:
-        st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
         if st.button("🔄 Refresh", type="primary", use_container_width=True, key=f"{key_prefix}_btn_refresh"):
             st.cache_data.clear()
             st.rerun()
@@ -4380,7 +4256,7 @@ def check_login():
 if not check_login(): st.stop()
 
 # ----------------------------------------------------------------------
-# NAVIGATION & ROLE CONFIG — ESPRESSO LUXE 3D COMMAND BAR & LAUNCHPAD
+# NAVIGATION & ROLE CONFIG — ESPRESSO LUXE 3D COMMAND BAR & HOME CARDS
 # ----------------------------------------------------------------------
 user_role = st.session_state.get("user_role", "admin")
 
@@ -4390,44 +4266,41 @@ if user_role == "entry":
     CARTS = get_carts_for_active_location(include_freezer=False)
     ATTRIBUTED_OPTIONS = ["Central / Freezer"] + CARTS
     page = "Daily Entry"
-    top_nav_c1, top_nav_c2 = st.columns([6.2, 1.2])
-    with top_nav_c1:
-        st.markdown(
-            f"""
-            <div class="kulfi-cmd-banner">
+    with st.container(border=True):
+        top_nav_c1, top_nav_c2 = st.columns([5.8, 1.2], gap="small", vertical_alignment="center")
+        with top_nav_c1:
+            st.markdown(
+                f"""
+                <span class="kulfi-top-cmd-bar-scope" style="display:none;"></span>
                 <div class="kulfi-cmd-left">
                     <div class="kulfi-cmd-crest">🍦</div>
                     <div>
-                        <div class="kulfi-cmd-title">Kulfi Ops — Daily Entry</div>
-                        <div class="kulfi-cmd-sub">DAILY CART SALES, RESTOCK & STOCK LEDGER</div>
+                        <div class="kulfi-cmd-title">Kulfi Ops — Daily Entry ({CITY})</div>
+                        <div class="kulfi-cmd-sub">DAILY CART SALES, RESTOCK &amp; STOCK LEDGER</div>
                     </div>
                 </div>
-                <div class="kulfi-cmd-badges">
-                    <span class="kulfi-loc-pill">📍 {CITY}</span>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    with top_nav_c2:
-        st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
-        if st.button("🚪 Log out", type="secondary", use_container_width=True, key="entry_top_logout_btn"):
-            st.session_state["authenticated"] = False
-            st.session_state["user_role"] = None
-            st.rerun()
+                """,
+                unsafe_allow_html=True,
+            )
+        with top_nav_c2:
+            if st.button("🚪 Log out", type="secondary", use_container_width=True, key="entry_top_logout_btn"):
+                st.session_state["authenticated"] = False
+                st.session_state["user_role"] = None
+                st.rerun()
 else:
-    # Apply navigation or location switch requested by a 3D button BEFORE
-    # sidebar widgets are instantiated.
     if "_pending_page_nav" in st.session_state:
         st.session_state["page_nav"] = st.session_state.pop("_pending_page_nav")
     if "_pending_loc_change" in st.session_state:
         _new_loc = st.session_state.pop("_pending_loc_change")
         st.session_state["current_location"] = _new_loc
-        st.session_state["global_location_selector"] = _new_loc
         st.session_state.pop("entry_cart_shared", None)
 
     configured_locs = load_configured_locations_list(include_inactive=False)
     loc_options = ["All Locations (Aggregated)"] + configured_locs
+    default_loc = st.session_state.get("current_location", "HOSUR")
+    if default_loc not in loc_options:
+        default_loc = "HOSUR" if "HOSUR" in loc_options else loc_options[0]
+    st.session_state["current_location"] = default_loc
 
     nav_options = [
         "Home",
@@ -4446,7 +4319,7 @@ else:
         "Locations & Logins",
     ]
     nav_labels = {
-        "Home": "🏠  Home Launchpad",
+        "Home": "🏠  Home",
         "Dashboard": "📊  Dashboard",
         "Daily Entry": "🛒  Daily Entry",
         "Bulk Orders & Quotes": "📦  Bulk Orders & Quotes",
@@ -4462,159 +4335,93 @@ else:
         "Locations & Logins": "🌐  Locations & Logins",
     }
 
-    with st.sidebar:
-        if os.path.exists("assets/logo.png"):
-            _, logo_col, _ = st.columns([0.18, 0.64, 0.18])
-            with logo_col:
-                st.image("assets/logo.png", use_container_width=True)
-        else:
-            st.markdown("## 🍦 Kulfi Ops")
-
-        # --- Multi-Location Selector for Admin ---
-        default_loc = st.session_state.get("current_location", "HOSUR")
-        if default_loc not in loc_options:
-            default_loc = "HOSUR" if "HOSUR" in loc_options else loc_options[0]
-        selected_location = st.selectbox(
-            "🌐 Operating Location",
-            loc_options,
-            index=loc_options.index(default_loc),
-            key="global_location_selector"
-        )
-        if st.session_state.get("current_location") != selected_location:
-            st.session_state["current_location"] = selected_location
-            st.session_state.pop("entry_cart_shared", None)
-
-        st.markdown(
-            "<div style='font-size:10px;font-weight:800;color:#F5D78E;letter-spacing:0.08em;"
-            "text-transform:uppercase;margin:8px 0 4px 4px;'>Executive Suite</div>",
-            unsafe_allow_html=True,
-        )
-
-        if st.session_state.get("page_nav") not in nav_options:
-            st.session_state["page_nav"] = "Home"
-        page = st.radio(
-            "Go to",
-            nav_options,
-            format_func=lambda x: nav_labels.get(x, x),
-            label_visibility="collapsed",
-            key="page_nav",
-        )
-        st.markdown("<div style='height:6px;'></div>", unsafe_allow_html=True)
-        if st.button("🚪 Log out", use_container_width=True, key="sidebar_logout_btn"):
-            st.session_state["authenticated"] = False
-            st.session_state["user_role"] = None
-            st.rerun()
+    if st.session_state.get("page_nav") not in nav_options:
+        st.session_state["page_nav"] = "Home"
+    page = st.session_state["page_nav"]
 
     CITY = get_default_write_city()
     CARTS = get_carts_for_active_location(include_freezer=False)
     ATTRIBUTED_OPTIONS = ["Central / Freezer"] + CARTS
     loc_badge = "All Locations" if get_active_location_filter() == "ALL" else get_active_location_filter()
-    page_display_title = "Executive Launchpad" if page == "Home" else page
 
-    # --- ESPRESSO LUXE & CHAMPAGNE GOLD TOP COMMAND BAR ---
-    st.markdown(
-        f"""
-        <div class="kulfi-cmd-banner">
-            <div class="kulfi-cmd-left">
-                <div class="kulfi-cmd-crest">🍦</div>
-                <div>
-                    <div class="kulfi-cmd-title">Kulfi Ops — {page_display_title}</div>
-                    <div class="kulfi-cmd-sub">ARTISANAL FRANCHISE COMMAND SUITE</div>
-                </div>
-            </div>
-            <div class="kulfi-cmd-badges">
-                <span class="kulfi-gold-pill">{nav_labels.get(page, page)}</span>
-                <span class="kulfi-loc-pill">📍 {loc_badge}</span>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    st.markdown('<div class="cmd-deck-row">', unsafe_allow_html=True)
-    cmd_c1, cmd_c2, cmd_c3, cmd_c4 = st.columns([1.25, 1.55, 1.55, 1.0])
-    with cmd_c1:
-        if st.button(
-            "🏠 Home Launchpad",
-            type="primary" if page == "Home" else "secondary",
-            use_container_width=True,
-            key="top_cmd_home_btn",
-        ):
-            st.session_state["_pending_page_nav"] = "Home"
-            st.rerun()
-    with cmd_c2:
-        with st.popover("⇄ Switch Screen", use_container_width=True):
+    # --- UNIFIED ESPRESSO LUXE & CHAMPAGNE GOLD TOP COMMAND BAR ---
+    with st.container(border=True):
+        cmd_c0, cmd_c1, cmd_c2, cmd_c3, cmd_c4 = st.columns(
+            [2.65, 0.90, 1.25, 1.35, 0.90],
+            gap="small",
+            vertical_alignment="center",
+        )
+        with cmd_c0:
             st.markdown(
-                "<div style='font-family:Fraunces,serif;font-size:13.5px;font-weight:800;color:#3A1B0E;"
-                "margin-bottom:6px;border-bottom:1.5px solid #C89B3C;padding-bottom:4px;'>"
-                "✨ Quick-Jump to Screen</div>",
+                f"""
+                <span class="kulfi-top-cmd-bar-scope" style="display:none;"></span>
+                <div class="kulfi-cmd-left">
+                    <div class="kulfi-cmd-crest">🍦</div>
+                    <div>
+                        <div class="kulfi-cmd-title">Kulfi Ops — {page}</div>
+                        <div class="kulfi-cmd-sub">📍 {loc_badge} &nbsp;•&nbsp; {len(CARTS)} Active Carts</div>
+                    </div>
+                </div>
+                """,
                 unsafe_allow_html=True,
             )
-            sw_cols = st.columns(2)
-            for _idx, _opt in enumerate(nav_options):
-                with sw_cols[_idx % 2]:
+        with cmd_c1:
+            if st.button(
+                "🏠 Home",
+                type="primary" if page == "Home" else "secondary",
+                use_container_width=True,
+                key="top_cmd_home_btn",
+            ):
+                st.session_state["page_nav"] = "Home"
+                st.rerun()
+        with cmd_c2:
+            with st.popover("⇄ Switch Screen", use_container_width=True):
+                st.markdown(
+                    "<div style='font-family:Fraunces,serif;font-size:13.5px;font-weight:800;color:#3A1B0E;"
+                    "margin-bottom:6px;border-bottom:1.5px solid #C89B3C;padding-bottom:4px;'>"
+                    "✨ Select Screen</div>",
+                    unsafe_allow_html=True,
+                )
+                sw_cols = st.columns(2, gap="small")
+                for _idx, _opt in enumerate(nav_options):
+                    with sw_cols[_idx % 2]:
+                        if st.button(
+                            nav_labels.get(_opt, _opt),
+                            key=f"top_pop_nav_{_idx}_{_opt}",
+                            type="primary" if page == _opt else "secondary",
+                            use_container_width=True,
+                        ):
+                            st.session_state["page_nav"] = _opt
+                            st.rerun()
+        with cmd_c3:
+            with st.popover(f"📍 {loc_badge}", use_container_width=True):
+                st.markdown(
+                    "<div style='font-family:Fraunces,serif;font-size:13.5px;font-weight:800;color:#3A1B0E;"
+                    "margin-bottom:6px;border-bottom:1.5px solid #C89B3C;padding-bottom:4px;'>"
+                    "🌐 Operating Location</div>",
+                    unsafe_allow_html=True,
+                )
+                for _lidx, _loc_opt in enumerate(loc_options):
+                    _is_cur_loc = (st.session_state.get("current_location") == _loc_opt)
                     if st.button(
-                        nav_labels.get(_opt, _opt),
-                        key=f"top_pop_nav_{_idx}_{_opt}",
-                        type="primary" if page == _opt else "secondary",
+                        f"📍 {_loc_opt}",
+                        key=f"top_pop_loc_{_lidx}",
+                        type="primary" if _is_cur_loc else "secondary",
                         use_container_width=True,
                     ):
-                        st.session_state["_pending_page_nav"] = _opt
+                        st.session_state["_pending_loc_change"] = _loc_opt
                         st.rerun()
-    with cmd_c3:
-        with st.popover(f"📍 Location: {loc_badge}", use_container_width=True):
-            st.markdown(
-                "<div style='font-family:Fraunces,serif;font-size:13.5px;font-weight:800;color:#3A1B0E;"
-                "margin-bottom:6px;border-bottom:1.5px solid #C89B3C;padding-bottom:4px;'>"
-                "🌐 Switch Operating Location</div>",
-                unsafe_allow_html=True,
-            )
-            for _lidx, _loc_opt in enumerate(loc_options):
-                _is_cur_loc = (st.session_state.get("current_location") == _loc_opt)
-                if st.button(
-                    f"📍 {_loc_opt}",
-                    key=f"top_pop_loc_{_lidx}",
-                    type="primary" if _is_cur_loc else "secondary",
-                    use_container_width=True,
-                ):
-                    st.session_state["_pending_loc_change"] = _loc_opt
-                    st.rerun()
-    with cmd_c4:
-        if st.button("🚪 Log out", type="secondary", use_container_width=True, key="top_cmd_logout_btn"):
-            st.session_state["authenticated"] = False
-            st.session_state["user_role"] = None
-            st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
+        with cmd_c4:
+            if st.button("🚪 Log out", type="secondary", use_container_width=True, key="top_cmd_logout_btn"):
+                st.session_state["authenticated"] = False
+                st.session_state["user_role"] = None
+                st.rerun()
 
 # ======================================================================
 # PAGE ROUTING
 # ======================================================================
 
 if page == "Home" and user_role == "admin":
-    st.markdown(
-        f"""
-        <div class="launchpad-hero-strip">
-            <div>
-                <div style="font-family:'Fraunces',serif;font-size:15px;font-weight:800;color:#2D150B;">
-                    ✨ Welcome to the Kulfi Ops Executive Suite — {loc_badge}
-                </div>
-                <div style="font-size:12px;font-weight:600;color:#5C3D24;margin-top:2px;">
-                    Select any 3D module card below to enter that workspace, or use the top 3D command bar to switch screens at any time.
-                </div>
-            </div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-                <span style="background:#FFFDF9;border:1.5px solid #C89B3C;border-radius:999px;padding:4px 12px;font-size:11.5px;font-weight:800;color:#3A1B0E;">
-                    🛒 Active Carts: {len(CARTS)}
-                </span>
-                <span style="background:#3A1B0E;border:1.5px solid #D4AF37;border-radius:999px;padding:4px 12px;font-size:11.5px;font-weight:800;color:#FCE8B2;">
-                    🌐 Scope: {loc_badge}
-                </span>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
     _launchpad_sections = [
         (
             "📊 Revenue, Sales & Daily Operations",
@@ -4719,36 +4526,23 @@ if page == "Home" and user_role == "admin":
         ),
     ]
 
-    for _sec_title, _sec_cards in _launchpad_sections:
-        st.markdown(f'<div class="launchpad-section-hdr">{_sec_title}</div>', unsafe_allow_html=True)
-        for _row_start in range(0, len(_sec_cards), 3):
-            _row_items = _sec_cards[_row_start:_row_start + 3]
-            _cols = st.columns(3)
-            for _c_idx, (_target_page, _icon, _badge, _title, _desc) in enumerate(_row_items):
-                with _cols[_c_idx]:
-                    st.markdown(
-                        f"""
-                        <div class="luxe-launchpad-card">
-                            <div>
-                                <div class="luxe-card-top">
-                                    <div class="luxe-card-icon">{_icon}</div>
-                                    <span class="luxe-card-badge">{_badge}</span>
-                                </div>
-                                <div class="luxe-card-title">{_title}</div>
-                                <div class="luxe-card-desc">{_desc}</div>
-                            </div>
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
-                    if st.button(
-                        f"Open {_title}  ➔",
-                        key=f"launchpad_open_{_target_page}",
-                        type="primary" if _target_page in ("Dashboard", "Daily Entry") else "secondary",
-                        use_container_width=True,
-                    ):
-                        st.session_state["_pending_page_nav"] = _target_page
-                        st.rerun()
+    with st.container():
+        st.markdown('<span class="kulfi-clickable-card-grid"></span>', unsafe_allow_html=True)
+        for _sec_title, _sec_cards in _launchpad_sections:
+            st.markdown(f'<div class="launchpad-section-hdr">{_sec_title}</div>', unsafe_allow_html=True)
+            for _row_start in range(0, len(_sec_cards), 3):
+                _row_items = _sec_cards[_row_start:_row_start + 3]
+                _cols = st.columns(3, gap="medium")
+                for _c_idx, (_target_page, _icon, _badge, _title, _desc) in enumerate(_row_items):
+                    with _cols[_c_idx]:
+                        _card_label = f"{_icon}  **{_title}**"
+                        if st.button(
+                            _card_label,
+                            key=f"launchpad_card_{_target_page}",
+                            use_container_width=True,
+                        ):
+                            st.session_state["page_nav"] = _target_page
+                            st.rerun()
 
 if page == "Locations & Logins" and user_role == "admin":
     st.subheader("🌐 Locations, Carts / Freezers & Logins Setup")
@@ -5042,151 +4836,84 @@ elif page == "Daily Entry":
             unsafe_allow_html=True,
         )
 
-        # Row 1: Core Cart Daily Operations (Sales, Restock, Extra Stock)
-        r1_c1, r1_c2, r1_c3 = st.columns(3, gap="medium")
-        with r1_c1:
-            st.markdown(
-                """
-                <div class='entry-hub-card' style='border-top:4px solid #E8542A;'>
-                    <div>
-                        <div class='entry-hub-top'>
-                            <div class='entry-hub-icon' style='background:#FCE8E2;color:#C43D17;'>🧾</div>
-                            <span class='entry-hub-badge' style='background:#FCE8E2;color:#C43D17;'>DAILY CLOSING</span>
-                        </div>
-                        <div class='entry-hub-title'>Sales Entry (Carts)</div>
-                        <div class='entry-hub-desc'>Closing stock, sales &amp; collections</div>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-            if st.button("Open Sales (Carts) →", key="open_sales_entry", type="primary", use_container_width=True):
-                st.session_state.pop("_last_mismatch_modal_target", None)
-                st.session_state["daily_entry_mode"] = "sales"
-                st.rerun()
+        with st.container():
+            st.markdown('<span class="kulfi-clickable-card-grid"></span>', unsafe_allow_html=True)
+            # Row 1: Core Cart Daily Operations (Sales, Restock, Extra Stock)
+            r1_c1, r1_c2, r1_c3 = st.columns(3, gap="medium")
+            with r1_c1:
+                if st.button(
+                    "🧾  **Sales Entry (Carts)**",
+                    key="open_sales_entry",
+                    use_container_width=True,
+                ):
+                    st.session_state.pop("_last_mismatch_modal_target", None)
+                    st.session_state["daily_entry_mode"] = "sales"
+                    st.rerun()
 
-        with r1_c2:
-            st.markdown(
-                """
-                <div class='entry-hub-card' style='border-top:4px solid #124A1D;'>
-                    <div>
-                        <div class='entry-hub-top'>
-                            <div class='entry-hub-icon' style='background:#EAF4EC;color:#124A1D;'>📦</div>
-                            <span class='entry-hub-badge' style='background:#EAF4EC;color:#124A1D;'>MORNING LOAD</span>
-                        </div>
-                        <div class='entry-hub-title'>Restock (Carts)</div>
-                        <div class='entry-hub-desc'>Morning cart stock load</div>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-            if st.button("Open Restock (Carts) →", key="open_restock_entry", type="primary", use_container_width=True):
-                st.session_state["daily_entry_mode"] = "restock"
-                st.rerun()
+            with r1_c2:
+                if st.button(
+                    "📦  **Restock (Carts)**",
+                    key="open_restock_entry",
+                    use_container_width=True,
+                ):
+                    st.session_state["daily_entry_mode"] = "restock"
+                    st.rerun()
 
-        with r1_c3:
-            st.markdown(
-                """
-                <div class='entry-hub-card' style='border-top:4px solid #D97706;'>
-                    <div>
-                        <div class='entry-hub-top'>
-                            <div class='entry-hub-icon' style='background:#FFF2DC;color:#B45309;'>➕</div>
-                            <span class='entry-hub-badge' style='background:#FFF2DC;color:#B45309;'>MID-DAY TOP-UP</span>
-                        </div>
-                        <div class='entry-hub-title'>Extra Stock (Carts)</div>
-                        <div class='entry-hub-desc'>Mid-day stock top-up</div>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-            if st.button("Open Extra Stock (Carts) →", key="open_extra_stock", type="primary", use_container_width=True):
-                for _cart in CARTS:
-                    for _code in FLAVOR_CODES:
-                        st.session_state[f"extra_stock_{_cart}_{_code}"] = 0
-                st.session_state["daily_entry_mode"] = "extra"
-                st.rerun()
+            with r1_c3:
+                if st.button(
+                    "➕  **Extra Stock (Carts)**",
+                    key="open_extra_stock",
+                    use_container_width=True,
+                ):
+                    for _cart in CARTS:
+                        for _code in FLAVOR_CODES:
+                            st.session_state[f"extra_stock_{_cart}_{_code}"] = 0
+                    st.session_state["daily_entry_mode"] = "extra"
+                    st.rerun()
 
-        st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+            # Row 2: Cart-to-Freezer Return, Read-Only Cart Snapshot, and Direct Freezer Sales
+            r2_c1, r2_c2, r2_c3 = st.columns(3, gap="medium")
+            with r2_c1:
+                if st.button(
+                    "🔄  **Remove Cart Stock**",
+                    key="open_remove_cart_stock",
+                    use_container_width=True,
+                ):
+                    for _cart in CARTS:
+                        for _code in FLAVOR_CODES:
+                            st.session_state[f"rm_cart_stock_{_cart}_{_code}"] = 0
+                    st.session_state["daily_entry_mode"] = "remove_cart_stock"
+                    st.rerun()
 
-        # Row 2: Cart-to-Freezer Return, Read-Only Cart Snapshot, and Direct Freezer Sales
-        r2_c1, r2_c2, r2_c3 = st.columns(3, gap="medium")
-        with r2_c1:
-            st.markdown(
-                """
-                <div class='entry-hub-card' style='border-top:4px solid #0D9488;'>
-                    <div>
-                        <div class='entry-hub-top'>
-                            <div class='entry-hub-icon' style='background:#E6FFFA;color:#0F766E;'>🔄</div>
-                            <span class='entry-hub-badge' style='background:#CCFBF1;color:#0F766E;'>CART → FREEZER</span>
-                        </div>
-                        <div class='entry-hub-title'>Remove Cart Stock</div>
-                        <div class='entry-hub-desc'>Empty / Return cart stock</div>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-            if st.button("Open Remove Cart Stock →", key="open_remove_cart_stock", type="primary", use_container_width=True):
-                for _cart in CARTS:
-                    for _code in FLAVOR_CODES:
-                        st.session_state[f"rm_cart_stock_{_cart}_{_code}"] = 0
-                st.session_state["daily_entry_mode"] = "remove_cart_stock"
-                st.rerun()
+            with r2_c2:
+                if st.button(
+                    "📋  **View Cart Stock**",
+                    key="open_view_cart_stock",
+                    use_container_width=True,
+                ):
+                    st.session_state["daily_entry_mode"] = "view_stock"
+                    st.rerun()
 
-        with r2_c2:
-            st.markdown(
-                """
-                <div class='entry-hub-card' style='border-top:4px solid #6D28D9;'>
-                    <div>
-                        <div class='entry-hub-top'>
-                            <div class='entry-hub-icon' style='background:#F3E8FF;color:#6D28D9;'>📋</div>
-                            <span class='entry-hub-badge' style='background:#F3E8FF;color:#6D28D9;'>READ-ONLY VIEW</span>
-                        </div>
-                        <div class='entry-hub-title'>View Cart Stock</div>
-                        <div class='entry-hub-desc'>Read-only cart stock snapshot</div>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-            if st.button("View Cart Stock →", key="open_view_cart_stock", type="primary", use_container_width=True):
-                st.session_state["daily_entry_mode"] = "view_stock"
-                st.rerun()
+            with r2_c3:
+                if st.button(
+                    "❄️  **Sales Entry (Freezer)**",
+                    key="open_freezer_sales_entry",
+                    use_container_width=True,
+                ):
+                    st.session_state["fzr_sale_form_nonce"] = int(st.session_state.get("fzr_sale_form_nonce", 0)) + 1
+                    st.session_state["fzr_entry_sub_mode"] = "new"
+                    st.session_state.pop("_editing_freezer_txn_id", None)
+                    st.session_state["daily_entry_mode"] = "freezer_sales"
+                    st.rerun()
 
-        with r2_c3:
-            st.markdown(
-                """
-                <div class='entry-hub-card' style='border-top:4px solid #1B5E91;'>
-                    <div>
-                        <div class='entry-hub-top'>
-                            <div class='entry-hub-icon' style='background:#EBF3FA;color:#1B5E91;'>❄️</div>
-                            <span class='entry-hub-badge' style='background:#EBF3FA;color:#1B5E91;'>DIRECT FREEZER SALE</span>
-                        </div>
-                        <div class='entry-hub-title'>Sales Entry (Freezer)</div>
-                        <div class='entry-hub-desc'>Direct sales from Freezer</div>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-            if st.button("Open Sales (Freezer) →", key="open_freezer_sales_entry", type="primary", use_container_width=True):
-                st.session_state["fzr_sale_form_nonce"] = int(st.session_state.get("fzr_sale_form_nonce", 0)) + 1
-                st.session_state["fzr_entry_sub_mode"] = "new"
-                st.session_state.pop("_editing_freezer_txn_id", None)
-                st.session_state["daily_entry_mode"] = "freezer_sales"
-                st.rerun()
-
-        st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
-        with st.container(border=True):
-            lvc1, lvc2 = st.columns([3.5, 1.5])
-            with lvc1:
-                st.markdown("#### 📱 Live Cart Transactions")
-                st.caption("Date-wise live POS sales by cart & flavour")
-            with lvc2:
-                st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
-                if st.button("Open Live Cart Transactions →", key="open_live_flavour_entry_view", type="primary", use_container_width=True):
+            # Row 3: Live Cart Transactions Card
+            r3_c1, _, _ = st.columns(3, gap="medium")
+            with r3_c1:
+                if st.button(
+                    "📱  **Live Cart Transactions**",
+                    key="open_live_flavour_entry_view",
+                    use_container_width=True,
+                ):
                     st.session_state["daily_entry_mode"] = "live_flavour_view"
                     st.rerun()
     else:
@@ -5516,12 +5243,10 @@ elif page == "Daily Entry":
             fzr_sub_mode = st.session_state["fzr_entry_sub_mode"]
             editing_txn_id = st.session_state.get("_editing_freezer_txn_id")
 
-            hdr_c1, hdr_c2, hdr_c3 = st.columns([2.4, 1.3, 1.3], gap="small")
+            hdr_c1, hdr_c2, hdr_c3 = st.columns([2.2, 1.4, 1.4], gap="small", vertical_alignment="center")
             with hdr_c1:
                 st.subheader("❄️ Sales Entry (Freezer)")
-                pass
             with hdr_c2:
-                st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
                 if st.button(
                     "➕ New Freezer Sale Entry",
                     key="btn_fzr_mode_new",
@@ -5533,7 +5258,6 @@ elif page == "Daily Entry":
                     st.session_state["fzr_sale_form_nonce"] = int(st.session_state.get("fzr_sale_form_nonce", 0)) + 1
                     st.rerun()
             with hdr_c3:
-                st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
                 if st.button(
                     f"✏️ Editing Sale #{editing_txn_id}" if (fzr_sub_mode == "edit" and editing_txn_id) else "✏️ Edit Previous Entries",
                     key="btn_fzr_mode_list",
@@ -6159,7 +5883,7 @@ elif page == "Daily Entry":
             if st.session_state.get("_rm_cart_success_msg"):
                 st.success(st.session_state.pop("_rm_cart_success_msg"))
 
-            rc1, rc2, rc3, rc4 = st.columns([1.3, 1.0, 1.0, 0.8])
+            rc1, rc2, rc3, rc4 = st.columns([1.3, 1.0, 1.0, 0.8], gap="small", vertical_alignment="bottom")
             with rc1:
                 cart_name = st.selectbox("Select Cart", CARTS, key="entry_cart_shared")
             with rc2:
@@ -6179,14 +5903,13 @@ elif page == "Daily Entry":
                     key=f"rm_cart_staff_disp_{cart_name}",
                 )
             with rc4:
-                st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
                 if st.button("↻ Refresh Stock", use_container_width=True, key=f"refresh_rm_cart_{cart_name}"):
                     st.cache_data.clear()
                     st.rerun()
 
             tot_in_cart_now = sum(max(0, int(today_stock_state[c]["closing"])) for c in FLAVOR_CODES)
 
-            top_bar1, top_bar2, top_bar3 = st.columns([2.2, 1.1, 1.1])
+            top_bar1, top_bar2, top_bar3 = st.columns([2.2, 1.1, 1.1], gap="small", vertical_alignment="center")
             with top_bar1:
                 st.markdown(
                     f"<div class='header-box-restock' style='margin-bottom:0;'>"
@@ -6849,7 +6572,7 @@ elif page == "Bulk Orders & Quotes" and user_role == "admin":
 
         # STEP 2: Interactive Flavour Checkboxes & Editable Quantities Table
         with st.container(border=True):
-            st_hdr1, st_hdr2, st_hdr3, st_hdr4 = st.columns([2.2, 1.0, 1.2, 1.1])
+            st_hdr1, st_hdr2, st_hdr3, st_hdr4 = st.columns([2.0, 1.1, 1.25, 1.1], gap="small", vertical_alignment="center")
             with st_hdr1:
                 st.markdown("#### 2. Flavour Selection & Quantity Distribution")
             with st_hdr2:
@@ -6862,7 +6585,7 @@ elif page == "Bulk Orders & Quotes" and user_role == "admin":
                 )
             with st_hdr3:
                 st.button(
-                    "🍦 Stick Kulfis Only (No Matka)",
+                    "🍦 Stick Kulfis Only",
                     use_container_width=True,
                     key="bulk_sel_no_bm",
                     on_click=_select_bulk_flavour_preset,
@@ -9010,13 +8733,12 @@ elif page == "Freezer Stock" and user_role == "admin":
                     })
 
                 # 1. Top Overall Units & Overall Cost (So Far) + PDF Download Button
-                top_k1, top_k2, top_k3 = st.columns([1.8, 1.8, 1.4])
+                top_k1, top_k2, top_k3 = st.columns([1.8, 1.8, 1.4], gap="small", vertical_alignment="center")
                 with top_k1:
                     st.metric("📦 Overall Units Received (So Far)", f"{overall_units_all_months:,} units")
                 with top_k2:
                     st.metric("💰 Overall Gross Cost (So Far)", f"₹{overall_cost_all_months:,.0f}")
                 with top_k3:
-                    st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
                     if REPORTLAB_AVAILABLE:
                         pdf_bytes = generate_stock_received_report_pdf(
                             monthly_sections,
@@ -10673,7 +10395,7 @@ elif page == "Expenses" and user_role == "admin":
                         f"[{'✓ Expense #' + str(int(r['linked_expense_id'])) if pd.notna(r.get('linked_expense_id')) else 'Pending Expense'}]"
                         for r in ops_records
                     ]
-                    oc1, oc2 = st.columns([3.8, 1.2], gap="small")
+                    oc1, oc2 = st.columns([3.8, 1.2], gap="small", vertical_alignment="bottom")
                     with oc1:
                         sel_ops_spend_label = st.selectbox(
                             "Select an Ops Cash Spend Entry to pre-fill Expense & Immediate Cash Payment",
@@ -10681,7 +10403,6 @@ elif page == "Expenses" and user_role == "admin":
                             key="ops_spend_prefill_picker",
                         )
                     with oc2:
-                        st.markdown("<div style='height: 19px;'></div>", unsafe_allow_html=True)
                         if st.button("🧾 Load Spend", type="primary", use_container_width=True, key="btn_load_ops_spend"):
                             chosen_ops = ops_records[ops_labels.index(sel_ops_spend_label)]
                             _populate_expense_from_ops_spend(chosen_ops)
@@ -10715,7 +10436,7 @@ elif page == "Expenses" and user_role == "admin":
                 )
 
             with st.container(border=True):
-                cl_c1, cl_c2 = st.columns([3.8, 1.2], gap="small")
+                cl_c1, cl_c2 = st.columns([3.8, 1.2], gap="small", vertical_alignment="bottom")
                 if not expenses_summary_df.empty:
                     clone_records = expenses_summary_df.to_dict("records")
                     clone_labels = ["— Select an existing expense to clone —"] + [
@@ -10732,7 +10453,6 @@ elif page == "Expenses" and user_role == "admin":
                             help="Pick any past expense and click 'Load Details' to pre-fill the fields below."
                         )
                     with cl_c2:
-                        st.markdown("<div style='height: 19px;'></div>", unsafe_allow_html=True)
                         if st.button("📋 Load Details", use_container_width=True, key="btn_apply_exp_clone", disabled=(sel_clone_label == clone_labels[0])):
                             src_exp = clone_records[clone_labels.index(sel_clone_label) - 1]
                             _populate_expense_clone_state(src_exp)
@@ -12889,7 +12609,7 @@ elif page == "Dashboard" and user_role == "admin":
 
         with st.form("date_range_form"):
             if dashboard_filter_mode == "Month":
-                rc1, rc2, rc3 = st.columns([2, 2, 1])
+                rc1, rc2, rc3 = st.columns([2, 2, 1], gap="small", vertical_alignment="bottom")
                 dash_month_names = list(calendar.month_name)[1:]
                 default_dash_month = st.session_state["applied_start"].month
                 default_dash_year = st.session_state["applied_start"].year
@@ -12915,7 +12635,7 @@ elif page == "Dashboard" and user_role == "admin":
                 pending_start = max(pending_start, min_d)
                 pending_end = min(pending_end, max_d)
             else:
-                rc1, rc2, rc3 = st.columns([2, 2, 1])
+                rc1, rc2, rc3 = st.columns([2, 2, 1], gap="small", vertical_alignment="bottom")
                 with rc1:
                     pending_start = st.date_input(
                         "Start Date",
@@ -12935,7 +12655,6 @@ elif page == "Dashboard" and user_role == "admin":
                         key="dashboard_report_end"
                     )
             with rc3:
-                st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
                 apply_clicked = st.form_submit_button("Apply", type="primary", use_container_width=True)
 
         if apply_clicked:
@@ -13023,7 +12742,7 @@ elif page == "Dashboard" and user_role == "admin":
         def _toggle_dash_opex_breakdown():
             st.session_state["show_dash_opex_breakdown"] = not bool(st.session_state.get("show_dash_opex_breakdown", False))
 
-        opex_btn_c1, opex_btn_c2 = st.columns([1.4, 2.6])
+        opex_btn_c1, opex_btn_c2 = st.columns([1.5, 2.5], gap="small", vertical_alignment="center")
         with opex_btn_c1:
             opex_btn_lbl = (
                 "🔼 Hide OPEX Breakdown & Insights"
@@ -13039,7 +12758,7 @@ elif page == "Dashboard" and user_role == "admin":
             )
         with opex_btn_c2:
             st.markdown(
-                "<div style='padding-top:7px;font-size:12px;font-weight:700;color:#6B5138;'>"
+                "<div style='font-size:12px;font-weight:700;color:#5C3D24;'>"
                 "Category & sub-category split, labour & burn rate"
                 "</div>",
                 unsafe_allow_html=True,
