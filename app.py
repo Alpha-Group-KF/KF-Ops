@@ -42,16 +42,16 @@ except ImportError:
 st.set_page_config(page_title="Kulfi Ops", page_icon="🍦", layout="wide", initial_sidebar_state="collapsed")
 
 # ----------------------------------------------------------------------
-# GLOBAL UI STYLES — SOFT DUSTY ROSEWOOD (#98535C / #8A474F / #7B3A41) & WARM IVORY (3D SUITE)
+# GLOBAL UI STYLES — WARM TERRACOTTA-ORANGE (#E4763D), SOFT CREAM-IVORY (#F4F2E8) & LIGHT MINT GREEN (3D SUITE)
 # ----------------------------------------------------------------------
 st.html("""
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&family=Manrope:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-/* Soft Warm Blush-Sand Outer Backdrop so the 80% Framed Screen Stands Out */
+/* Soft Warm Cream-Sand Outer Backdrop so the 80% Framed Screen Stands Out */
 .stApp, [data-testid="stAppViewContainer"], .main {
-    background: linear-gradient(135deg, #F2E7E4 0%, #EADBD7 50%, #E3D0CB 100%) !important;
-    color: #3D1F21 !important;
+    background: linear-gradient(135deg, #EAE6D7 0%, #E2DEC9 50%, #DAD5BE 100%) !important;
+    color: #140A04 !important;
 }
 
 /* Completely hide the left sidebar and sidebar toggle button */
@@ -63,16 +63,16 @@ section[data-testid="stSidebar"],
     min-width: 0 !important;
 }
 
-/* Compact & Nicely Centered ~80% Page Layout with Aesthetic Double-Framed Border */
+/* Compact & Nicely Centered ~80% Page Layout with Aesthetic #E4763D Double-Framed Border */
 .block-container,
 div[data-testid="stMainBlockContainer"] {
-    background: linear-gradient(180deg, #FFFDFA 0%, #FAF4F2 100%) !important;
-    border: 2px solid #8A474F !important;
-    outline: 4px solid rgba(138, 71, 79, 0.12) !important;
+    background: linear-gradient(180deg, #FAF8F1 0%, #F4F2E8 100%) !important;
+    border: 2.5px solid #E4763D !important;
+    outline: 4px solid rgba(228, 118, 61, 0.16) !important;
     border-radius: 18px !important;
     box-shadow:
-        inset 0 0 0 2px #F2D7C4,
-        0 12px 32px rgba(86, 44, 49, 0.14) !important;
+        inset 0 0 0 2px #FFFDF8,
+        0 12px 32px rgba(158, 71, 27, 0.14) !important;
     padding-top: 1.35rem !important;
     padding-bottom: 1.6rem !important;
     padding-left: 1.6rem !important;
@@ -100,16 +100,17 @@ header[data-testid="stHeader"] {
 html, body, [class*="css"] {
     font-family: 'Manrope', sans-serif;
     font-variant-numeric: tabular-nums;
+    color: #140A04;
 }
 h1, h2, h3, h4 {
     font-family: 'Fraunces', serif !important;
-    color: #633339 !important;
+    color: #140A04 !important;
     letter-spacing: -0.01em;
 }
 h1 { font-size: 1.4rem !important; margin-top: 0 !important; }
 h2 { font-size: 1.18rem !important; }
 h3 { font-size: 1.04rem !important; }
-p, span, label, .stMarkdown { color: #3D1F21; }
+p, span, label, .stMarkdown { color: #140A04; }
 
 /* Hide stepper buttons on number inputs */
 input[type=number]::-webkit-inner-spin-button, 
@@ -120,79 +121,82 @@ input[type=number]::-webkit-outer-spin-button {
 input[type=number] { -moz-appearance: textfield !important; }
 div[data-testid="stNumberInput"] button { display: none !important; }
 
-/* Crisp White & Rosewood Layered Containers, Expanders & Tabs */
+/* Cream-Ivory (#F4F2E8) & Terracotta (#E4763D) Layered Containers, Expanders & Tabs */
 div[data-testid="stVerticalBlockBorderWrapper"] {
-    background: #FFFFFF !important;
-    border: 1.5px solid #E2CECC !important;
-    border-top: 3px solid #8A474F !important;
+    background: #FAF8F1 !important;
+    border: 1.5px solid #E4763D !important;
+    border-top: 3.5px solid #E4763D !important;
     border-radius: 12px !important;
-    box-shadow: 0 3px 12px rgba(142, 65, 69, 0.07) !important;
+    box-shadow: 0 3px 12px rgba(228, 118, 61, 0.09) !important;
     padding: 12px 14px !important;
 }
 div[data-testid="stExpander"] {
-    background: #FFFFFF !important;
-    border: 1.5px solid #E2CECC !important;
+    background: #FAF8F1 !important;
+    border: 1.5px solid #E4763D !important;
     border-radius: 10px !important;
-    box-shadow: 0 2px 8px rgba(142, 65, 69, 0.06) !important;
+    box-shadow: 0 2px 8px rgba(228, 118, 61, 0.08) !important;
     overflow: hidden;
 }
 div[data-testid="stExpander"] summary {
-    background: linear-gradient(90deg, #98535C 0%, #7B3A41 100%) !important;
+    background: linear-gradient(90deg, #EE854F 0%, #E4763D 55%, #CE622B 100%) !important;
     padding: 8px 14px !important;
     font-weight: 800 !important;
-    color: #FFFFFF !important;
+    color: #111111 !important;
+    border-bottom: 1.5px solid #9E471B !important;
 }
 div[data-testid="stExpander"] summary p,
 div[data-testid="stExpander"] summary span,
 div[data-testid="stExpander"] summary svg {
-    color: #FFF7F5 !important;
-    fill: #FFF7F5 !important;
+    color: #111111 !important;
+    fill: #111111 !important;
+    font-weight: 800 !important;
 }
 div[data-testid="stTabs"] [data-baseweb="tab-list"] {
     gap: 8px !important;
-    background: #F2E4E2 !important;
+    background: #EAE6D7 !important;
     padding: 5px 6px !important;
     border-radius: 10px !important;
-    border: 1px solid #E2CECC !important;
+    border: 1.5px solid #E4763D !important;
 }
 div[data-testid="stTabs"] button[data-baseweb="tab"] {
-    background: #FFFFFF !important;
-    border: 1px solid #CFAFB0 !important;
+    background: #F4F2E8 !important;
+    border: 1.5px solid #E4763D !important;
     border-radius: 8px !important;
     padding: 6px 14px !important;
     font-weight: 800 !important;
-    color: #633339 !important;
-    box-shadow: 0 2px 0 #B89294 !important;
+    color: #111111 !important;
+    box-shadow: 0 2px 0 #9E471B !important;
     transition: all 0.14s ease !important;
 }
 div[data-testid="stTabs"] button[data-baseweb="tab"] p {
-    color: #633339 !important;
+    color: #111111 !important;
     font-weight: 800 !important;
 }
 div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] {
-    background: linear-gradient(180deg, #98535C 0%, #7B3A41 100%) !important;
-    color: #FFFFFF !important;
-    border-color: #E8C5B0 !important;
-    box-shadow: 0 2px 0 #562C31, 0 4px 10px rgba(142, 65, 69, 0.18) !important;
+    background: linear-gradient(180deg, #EE854F 0%, #E4763D 55%, #CE622B 100%) !important;
+    color: #111111 !important;
+    border-color: #9E471B !important;
+    box-shadow: 0 2px 0 #7C3512, 0 4px 10px rgba(228, 118, 61, 0.24) !important;
 }
 div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] p {
-    color: #FFFFFF !important;
+    color: #111111 !important;
+    font-weight: 900 !important;
 }
 
 /* ======================================================================
-   UNIFIED TOP COMMAND BAR — EXACT DUSTY ROSEWOOD SWATCH & CENTERED TEXT
+   UNIFIED TOP COMMAND BAR — ATTACHED #E4763D SWATCH & BLACK/DARK TEXT
    ====================================================================== */
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) {
-    background: linear-gradient(135deg, #98535C 0%, #8A474F 52%, #7B3A41 100%) !important;
-    border: 1.5px solid #E6C8B8 !important;
+    background: linear-gradient(135deg, #EE854F 0%, #E4763D 52%, #CE622B 100%) !important;
+    border: 2px solid #9E471B !important;
     border-radius: 12px !important;
     padding: 10px 16px !important;
     margin-bottom: 8px !important;
     align-items: center !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.20),
-        0 3px 0 #562C31,
-        0 6px 16px rgba(129, 57, 61, 0.16) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.35),
+        0 3px 0 #9E471B,
+        0 6px 16px rgba(158, 71, 27, 0.18) !important;
 }
 /* Ensure every column and wrapper inside the top bar is strictly centered with zero extra gap */
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) > div[data-testid="stColumn"],
@@ -223,9 +227,9 @@ div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid=
     width: 36px;
     height: 36px;
     border-radius: 9px;
-    background: linear-gradient(145deg, #A45A63 0%, #773D44 100%);
-    border: 1px solid #F2DEC8;
-    box-shadow: 0 2px 5px rgba(88, 40, 43, 0.30);
+    background: linear-gradient(145deg, #FAF8F1 0%, #F4F2E8 100%);
+    border: 1.5px solid #9E471B;
+    box-shadow: 0 2px 5px rgba(20, 10, 4, 0.18);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -243,41 +247,41 @@ div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid=
 .kulfi-cmd-title {
     font-family: 'Fraunces', serif !important;
     font-size: 1.12rem !important;
-    font-weight: 700 !important;
-    color: #FFFFFF !important;
+    font-weight: 800 !important;
+    color: #111111 !important;
     letter-spacing: 0.01em;
     line-height: 1.15 !important;
     margin: 0 !important;
     padding: 0 !important;
     white-space: nowrap;
-    text-shadow: 0 1px 2px rgba(61, 31, 33, 0.30);
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.30);
 }
 .kulfi-cmd-sub {
     font-size: 10.5px !important;
-    font-weight: 700 !important;
-    color: #F7E4D4 !important;
+    font-weight: 800 !important;
+    color: #1F1108 !important;
     letter-spacing: 0.03em;
     line-height: 1.15 !important;
     margin: 2px 0 0 0 !important;
     padding: 0 !important;
 }
 
-/* Top Command Bar 3D Buttons — Strictly 38px Tall, Dusty Rosewood & Crisp White */
+/* Top Command Bar 3D Buttons — Strictly 38px Tall, Cream #F4F2E8 & Black Text */
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton button,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button {
     min-height: 38px !important;
     height: 38px !important;
     padding: 0 12px !important;
     font-size: 12.5px !important;
-    font-weight: 700 !important;
+    font-weight: 800 !important;
     border-radius: 8px !important;
-    border: 1px solid #EBCBB8 !important;
-    background: linear-gradient(180deg, #A45A63 0%, #773D44 100%) !important;
-    color: #FFFFFF !important;
+    border: 1.5px solid #9E471B !important;
+    background: linear-gradient(180deg, #FAF8F1 0%, #F4F2E8 100%) !important;
+    color: #111111 !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.22),
-        0 2px 0 #562C31,
-        0 3px 8px rgba(61, 31, 33, 0.22) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.85),
+        0 2px 0 #9E471B,
+        0 3px 8px rgba(20, 10, 4, 0.16) !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -289,46 +293,46 @@ div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton but
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button p,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button span,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button svg {
-    color: #FFFFFF !important;
-    fill: #F7E4D4 !important;
-    font-weight: 700 !important;
+    color: #111111 !important;
+    fill: #111111 !important;
+    font-weight: 800 !important;
     font-size: 12.5px !important;
 }
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton button:hover,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button:hover {
-    background: linear-gradient(180deg, #B0585C 0%, #8A474F 100%) !important;
-    border-color: #FFF2E6 !important;
-    color: #FFFFFF !important;
+    background: linear-gradient(180deg, #FFFFFF 0%, #FAF8F1 100%) !important;
+    border-color: #111111 !important;
+    color: #111111 !important;
     transform: translateY(-1px) !important;
 }
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton button[kind="primary"] {
-    background: linear-gradient(180deg, #773D44 0%, #562C31 100%) !important;
-    border: 1.5px solid #F7E4D4 !important;
-    color: #FFFFFF !important;
+    background: linear-gradient(180deg, #F4F2E8 0%, #E5DFCE 100%) !important;
+    border: 2px solid #111111 !important;
+    color: #111111 !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.25),
-        0 2px 0 #3D1B1E,
-        0 4px 10px rgba(88, 40, 43, 0.28) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.90),
+        0 2px 0 #111111,
+        0 4px 10px rgba(20, 10, 4, 0.22) !important;
 }
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton button[kind="primary"] p {
-    color: #FFFFFF !important;
-    font-weight: 800 !important;
+    color: #111111 !important;
+    font-weight: 900 !important;
 }
 
 /* ======================================================================
-   LAUNCHPAD SECTION HEADERS & 4-COLUMN DUSTY ROSEWOOD 3D CARDS
+   LAUNCHPAD SECTION HEADERS & 4-COLUMN CLICKABLE 3D CARDS
    ====================================================================== */
 .launchpad-section-hdr {
     font-family: 'Fraunces', serif !important;
     font-size: 13px !important;
-    font-weight: 700 !important;
-    color: #633339 !important;
+    font-weight: 800 !important;
+    color: #111111 !important;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     margin: 6px 0 6px 2px;
-    padding: 5px 12px;
-    background: linear-gradient(90deg, #F2E2E0 0%, rgba(242, 226, 224, 0) 100%);
-    border-left: 3.5px solid #8A474F;
+    padding: 6px 12px;
+    background: linear-gradient(90deg, rgba(228, 118, 61, 0.22) 0%, rgba(244, 242, 232, 0) 100%);
+    border-left: 4px solid #E4763D;
     border-radius: 4px;
     display: flex;
     align-items: center;
@@ -349,32 +353,32 @@ div[data-testid="stElementContainer"]:has(.kulfi-card-set-4) {
 
 /* Section Headers for the 4 Landing Page Sets */
 .launchpad-section-hdr.set-1 {
-    color: #633339 !important;
-    background: linear-gradient(90deg, #F2E2E0 0%, rgba(242, 226, 224, 0) 100%) !important;
-    border-left: 4px solid #8A474F !important;
+    color: #111111 !important;
+    background: linear-gradient(90deg, rgba(228, 118, 61, 0.26) 0%, rgba(244, 242, 232, 0) 100%) !important;
+    border-left: 4px solid #E4763D !important;
 }
 .launchpad-section-hdr.set-2 {
-    color: #23474C !important;
-    background: linear-gradient(90deg, #DFECEE 0%, rgba(223, 236, 238, 0) 100%) !important;
-    border-left: 4px solid #2F5B61 !important;
+    color: #111111 !important;
+    background: linear-gradient(90deg, rgba(245, 158, 11, 0.22) 0%, rgba(244, 242, 232, 0) 100%) !important;
+    border-left: 4px solid #D97706 !important;
 }
 .launchpad-section-hdr.set-3 {
-    color: #54341D !important;
-    background: linear-gradient(90deg, #F0E4D4 0%, rgba(240, 228, 212, 0) 100%) !important;
-    border-left: 4px solid #784E30 !important;
+    color: #111111 !important;
+    background: linear-gradient(90deg, rgba(228, 118, 61, 0.18) 0%, rgba(244, 242, 232, 0) 100%) !important;
+    border-left: 4px solid #C85A22 !important;
 }
 .launchpad-section-hdr.set-4 {
-    color: #264230 !important;
-    background: linear-gradient(90deg, #E0EDE3 0%, rgba(224, 237, 227, 0) 100%) !important;
-    border-left: 4px solid #385943 !important;
+    color: #111111 !important;
+    background: linear-gradient(90deg, #D1FAE5 0%, rgba(209, 250, 229, 0) 100%) !important;
+    border-left: 4px solid #22C55E !important;
 }
 
-/* Directly Clickable 3D Cards — Base Geometry & Dusty Rosewood Default */
+/* Directly Clickable 3D Cards — Base Geometry & Terracotta #E4763D Default */
 div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-clickable-card-grid) .stButton button {
-    background: linear-gradient(135deg, #98535C 0%, #8A474F 52%, #7B3A41 100%) !important;
-    border: 1px solid #E2C2B9 !important;
-    border-left: 4.5px solid #F2D7C4 !important;
+    background: linear-gradient(135deg, #EE854F 0%, #E4763D 52%, #CE622B 100%) !important;
+    border: 1.5px solid #9E471B !important;
+    border-left: 4.5px solid #F4F2E8 !important;
     border-radius: 11px !important;
     padding: 14px 16px !important;
     min-height: 64px !important;
@@ -386,27 +390,27 @@ div[data-testid="stHorizontalBlock"]:has(.kulfi-clickable-card-grid) .stButton b
     text-align: left !important;
     white-space: nowrap !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.18),
-        0 3px 0 #562C31,
-        0 5px 12px rgba(142, 65, 69, 0.14) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.35),
+        0 3px 0 #9E471B,
+        0 5px 12px rgba(228, 118, 61, 0.18) !important;
     transition: all 0.15s ease !important;
     margin-bottom: 4px !important;
     cursor: pointer !important;
 }
 div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button:hover,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-clickable-card-grid) .stButton button:hover {
-    background: linear-gradient(135deg, #A45A63 0%, #98535C 55%, #8A474F 100%) !important;
-    border-color: #F7E4D4 !important;
-    border-left: 4.5px solid #FFFFFF !important;
+    background: linear-gradient(135deg, #F39362 0%, #EE854F 55%, #E4763D 100%) !important;
+    border-color: #111111 !important;
+    border-left: 4.5px solid #111111 !important;
     transform: translateY(-1px) !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.25),
-        0 4px 0 #562C31,
-        0 8px 16px rgba(142, 65, 69, 0.20) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.45),
+        0 4px 0 #9E471B,
+        0 8px 16px rgba(228, 118, 61, 0.25) !important;
 }
 div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button:active {
     transform: translateY(1px) !important;
-    box-shadow: 0 1px 0 #562C31 !important;
+    box-shadow: 0 1px 0 #9E471B !important;
 }
 div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button > div[data-testid="stMarkdownContainer"] {
     width: 100% !important;
@@ -416,27 +420,27 @@ div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kul
 div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button > div[data-testid="stMarkdownContainer"] p strong {
     font-family: 'Manrope', sans-serif !important;
     font-size: 14.5px !important;
-    font-weight: 700 !important;
-    color: #FFFFFF !important;
+    font-weight: 800 !important;
+    color: #111111 !important;
     line-height: 1.25 !important;
     margin: 0 !important;
     letter-spacing: 0.01em !important;
-    text-shadow: 0 1px 2px rgba(61, 31, 33, 0.28) !important;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.28) !important;
 }
 
 /* ======================================================================
-   ALL STANDARD 3D BUTTONS ACROSS INDIVIDUAL SCREENS — DUSTY ROSEWOOD
+   ALL STANDARD 3D BUTTONS ACROSS INDIVIDUAL SCREENS — TERRACOTTA #E4763D & BLACK TEXT
    ====================================================================== */
 .stButton button,
 [data-testid="stFormSubmitButton"] > button,
 .stDownloadButton > button,
 [data-testid="stLinkButton"] > a,
 [data-testid="stPopover"] > div > button {
-    background: linear-gradient(180deg, #98535C 0%, #7B3A41 100%) !important;
-    color: #FFFFFF !important;
-    border: 1px solid #E2C2B9 !important;
+    background: linear-gradient(180deg, #EE854F 0%, #E4763D 55%, #CE622B 100%) !important;
+    color: #111111 !important;
+    border: 1.5px solid #9E471B !important;
     border-radius: 8px !important;
-    font-weight: 700 !important;
+    font-weight: 800 !important;
     font-size: 12.5px !important;
     min-height: 38px !important;
     height: 38px !important;
@@ -448,14 +452,15 @@ div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kul
     margin: 0 !important;
     text-decoration: none !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.18),
-        0 2px 0 #562C31,
-        0 4px 8px rgba(142, 65, 69, 0.14) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.35),
+        0 2px 0 #9E471B,
+        0 4px 8px rgba(228, 118, 61, 0.16) !important;
     transition: all 0.12s ease !important;
     letter-spacing: 0.01em !important;
 }
 .stButton button p,
 .stButton button span,
+.stButton button strong,
 [data-testid="stFormSubmitButton"] > button p,
 [data-testid="stFormSubmitButton"] > button span,
 .stDownloadButton > button p,
@@ -464,22 +469,22 @@ div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kul
 [data-testid="stLinkButton"] > a span,
 [data-testid="stPopover"] > div > button p,
 [data-testid="stPopover"] > div > button span {
-    color: #FFFFFF !important;
-    font-weight: 700 !important;
+    color: #111111 !important;
+    font-weight: 800 !important;
 }
 .stButton button:hover,
 [data-testid="stFormSubmitButton"] > button:hover,
 .stDownloadButton > button:hover,
 [data-testid="stLinkButton"] > a:hover,
 [data-testid="stPopover"] > div > button:hover {
-    background: linear-gradient(180deg, #A45A63 0%, #8A474F 100%) !important;
-    border-color: #F7E4D4 !important;
-    color: #FFFFFF !important;
+    background: linear-gradient(180deg, #F39362 0%, #E4763D 100%) !important;
+    border-color: #111111 !important;
+    color: #111111 !important;
     transform: translateY(-1px) !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.24),
-        0 3px 0 #562C31,
-        0 5px 10px rgba(142, 65, 69, 0.18) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.45),
+        0 3px 0 #9E471B,
+        0 5px 10px rgba(228, 118, 61, 0.22) !important;
 }
 .stButton button:active,
 [data-testid="stFormSubmitButton"] > button:active,
@@ -487,142 +492,163 @@ div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kul
 [data-testid="stLinkButton"] > a:active,
 [data-testid="stPopover"] > div > button:active {
     transform: translateY(1px) !important;
-    box-shadow: 0 1px 0 #562C31 !important;
+    box-shadow: 0 1px 0 #9E471B !important;
 }
 
 /* ======================================================================
    LANDING PAGE 4 CARD SET BUTTON THEMES (PLACED AFTER .stButton FOR PRIORITY)
    ====================================================================== */
-/* Set 1 Buttons: Sales, Daily Operations & Financials — Dusty Rosewood (#98535C -> #7B3A41) */
+/* Set 1 Buttons: Sales, Daily Operations & Financials — Attached Terracotta-Orange (#E4763D) with Black Text */
 div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-1) .stButton button,
 div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-1):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button,
 div[class*="st-key-launchpad_card_kulfi_card_set_1_"] button {
-    background: linear-gradient(135deg, #98535C 0%, #8A474F 52%, #7B3A41 100%) !important;
-    border: 1px solid #E2C2B9 !important;
-    border-left: 4.5px solid #F2D7C4 !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.20), 0 3px 0 #562C31, 0 5px 12px rgba(142, 65, 69, 0.16) !important;
+    background: linear-gradient(135deg, #EE854F 0%, #E4763D 52%, #CE622B 100%) !important;
+    border: 1.5px solid #9E471B !important;
+    border-left: 4.5px solid #F4F2E8 !important;
+    color: #111111 !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 3px 0 #9E471B, 0 5px 12px rgba(228, 118, 61, 0.18) !important;
 }
 div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-1) .stButton button:hover,
 div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-1):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button:hover,
 div[class*="st-key-launchpad_card_kulfi_card_set_1_"] button:hover {
-    background: linear-gradient(135deg, #A85E68 0%, #98535C 55%, #8A474F 100%) !important;
-    border-color: #F7E4D4 !important;
-    border-left: 4.5px solid #FFFFFF !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 4px 0 #562C31, 0 8px 16px rgba(142, 65, 69, 0.22) !important;
+    background: linear-gradient(135deg, #F39362 0%, #EE854F 55%, #E4763D 100%) !important;
+    border-color: #111111 !important;
+    border-left: 4.5px solid #111111 !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 4px 0 #9E471B, 0 8px 16px rgba(228, 118, 61, 0.25) !important;
 }
 
-/* Set 2 Buttons: Stock & Freezer — Muted Glacier Slate-Teal (#3B6E75 -> #25484D) */
+/* Set 2 Buttons: Stock & Freezer — Soft Warm Saffron-Gold (#FDE68A -> #F59E0B) with Black Text */
 div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-2) .stButton button,
 div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-2):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button,
 div[class*="st-key-launchpad_card_kulfi_card_set_2_"] button {
-    background: linear-gradient(135deg, #3B6E75 0%, #2F5B61 52%, #25484D 100%) !important;
-    border: 1px solid #9DC7CC !important;
-    border-left: 4.5px solid #CFEFF2 !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.20), 0 3px 0 #173034, 0 5px 12px rgba(37, 72, 77, 0.16) !important;
+    background: linear-gradient(135deg, #FDE68A 0%, #FBBF24 55%, #F59E0B 100%) !important;
+    border: 1.5px solid #B45309 !important;
+    border-left: 4.5px solid #E4763D !important;
+    color: #111111 !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), 0 3px 0 #B45309, 0 5px 12px rgba(245, 158, 11, 0.18) !important;
 }
 div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-2) .stButton button:hover,
 div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-2):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button:hover,
 div[class*="st-key-launchpad_card_kulfi_card_set_2_"] button:hover {
-    background: linear-gradient(135deg, #488189 0%, #3B6E75 55%, #2F5B61 100%) !important;
-    border-color: #E3F6F8 !important;
-    border-left: 4.5px solid #FFFFFF !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 4px 0 #173034, 0 8px 16px rgba(37, 72, 77, 0.22) !important;
+    background: linear-gradient(135deg, #FEF08A 0%, #FDE68A 55%, #FBBF24 100%) !important;
+    border-color: #111111 !important;
+    border-left: 4.5px solid #111111 !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.70), 0 4px 0 #B45309, 0 8px 16px rgba(245, 158, 11, 0.24) !important;
 }
 
-/* Set 3 Buttons: POs, Expenses & Cash — Warm Roasted Bronze-Walnut (#8C5E3C -> #633F25) */
+/* Set 3 Buttons: POs, Expenses & Cash — Rich Cream-Ivory (#FAF8F1 -> #E8E2CE) Framed in #E4763D with Black Text */
 div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-3) .stButton button,
 div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-3):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button,
 div[class*="st-key-launchpad_card_kulfi_card_set_3_"] button {
-    background: linear-gradient(135deg, #8C5E3C 0%, #784E30 52%, #633F25 100%) !important;
-    border: 1px solid #DEC2A4 !important;
-    border-left: 4.5px solid #F5DFC3 !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.20), 0 3px 0 #422917, 0 5px 12px rgba(99, 63, 37, 0.16) !important;
+    background: linear-gradient(135deg, #FFFDF8 0%, #F4F2E8 52%, #E6E0CE 100%) !important;
+    border: 1.5px solid #E4763D !important;
+    border-left: 4.5px solid #E4763D !important;
+    color: #111111 !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85), 0 3px 0 #9E471B, 0 5px 12px rgba(228, 118, 61, 0.14) !important;
 }
 div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-3) .stButton button:hover,
 div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-3):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button:hover,
 div[class*="st-key-launchpad_card_kulfi_card_set_3_"] button:hover {
-    background: linear-gradient(135deg, #9E6D48 0%, #8C5E3C 55%, #784E30 100%) !important;
-    border-color: #FAEAD6 !important;
-    border-left: 4.5px solid #FFFFFF !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 4px 0 #422917, 0 8px 16px rgba(99, 63, 37, 0.22) !important;
+    background: linear-gradient(135deg, #FFFFFF 0%, #FAF8F1 55%, #F4F2E8 100%) !important;
+    border-color: #111111 !important;
+    border-left: 4.5px solid #111111 !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95), 0 4px 0 #9E471B, 0 8px 16px rgba(228, 118, 61, 0.22) !important;
 }
 
-/* Set 4 Buttons: Staff Payroll & Admin Setup — Muted Sage-Forest (#466B53 -> #2B4634) */
+/* Set 4 Buttons: Staff Payroll & Admin Setup — VERY LIGHTER GREEN (#E6FAEE -> #BBF7D0) with Crisp Black Text */
 div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-4) .stButton button,
 div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-4):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button,
 div[class*="st-key-launchpad_card_kulfi_card_set_4_"] button {
-    background: linear-gradient(135deg, #466B53 0%, #385943 52%, #2B4634 100%) !important;
-    border: 1px solid #B2D1BC !important;
-    border-left: 4.5px solid #D7EFE0 !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.20), 0 3px 0 #1B2E21, 0 5px 12px rgba(43, 70, 52, 0.16) !important;
+    background: linear-gradient(135deg, #E6FAEE 0%, #D1FAE5 52%, #BBF7D0 100%) !important;
+    border: 1.5px solid #4ADE80 !important;
+    border-left: 4.5px solid #16A34A !important;
+    color: #111111 !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85), 0 3px 0 #22C55E, 0 5px 12px rgba(22, 163, 74, 0.14) !important;
+}
+div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-4) .stButton button p,
+div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-4) .stButton button span,
+div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-4) .stButton button strong,
+div[class*="st-key-launchpad_card_kulfi_card_set_4_"] button p,
+div[class*="st-key-launchpad_card_kulfi_card_set_4_"] button span,
+div[class*="st-key-launchpad_card_kulfi_card_set_4_"] button strong {
+    color: #111111 !important;
+    font-weight: 800 !important;
+    text-shadow: none !important;
 }
 div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-4) .stButton button:hover,
 div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-4):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button:hover,
 div[class*="st-key-launchpad_card_kulfi_card_set_4_"] button:hover {
-    background: linear-gradient(135deg, #558064 0%, #466B53 55%, #385943 100%) !important;
-    border-color: #E6F6EC !important;
-    border-left: 4.5px solid #FFFFFF !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 4px 0 #1B2E21, 0 8px 16px rgba(43, 70, 52, 0.22) !important;
+    background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 55%, #BBF7D0 100%) !important;
+    border-color: #15803D !important;
+    border-left: 4.5px solid #111111 !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95), 0 4px 0 #16A34A, 0 8px 16px rgba(22, 163, 74, 0.20) !important;
 }
 
-/* Primary 3D Action Buttons (Deep Rosewood-Berry for Active/Primary State) */
+/* Primary 3D Action Buttons (Warm Terracotta #E4763D -> #C85A22 with Crisp Black Text) */
 .stButton button[kind="primary"],
 [data-testid="stFormSubmitButton"] > button[kind="primary"],
 .stDownloadButton > button[kind="primary"],
 [data-testid="baseButton-primary"] {
-    background: linear-gradient(180deg, #773D44 0%, #562C31 100%) !important;
-    color: #FFFFFF !important;
-    border: 1.5px solid #F2D7C4 !important;
+    background: linear-gradient(180deg, #EE854F 0%, #E4763D 50%, #C85A22 100%) !important;
+    color: #111111 !important;
+    border: 1.5px solid #111111 !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.24),
-        0 2px 0 #3D1B1E,
-        0 4px 10px rgba(88, 40, 43, 0.22) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.40),
+        0 2px 0 #7C3512,
+        0 4px 10px rgba(228, 118, 61, 0.24) !important;
+}
+.stButton button[kind="primary"] p,
+.stButton button[kind="primary"] span,
+[data-testid="stFormSubmitButton"] > button[kind="primary"] p,
+.stDownloadButton > button[kind="primary"] p {
+    color: #111111 !important;
+    font-weight: 900 !important;
 }
 .stButton button[kind="primary"]:hover,
 [data-testid="stFormSubmitButton"] > button[kind="primary"]:hover,
 .stDownloadButton > button[kind="primary"]:hover {
-    background: linear-gradient(180deg, #7B3A41 0%, #773D44 100%) !important;
-    border-color: #FFF2E6 !important;
-    color: #FFFFFF !important;
+    background: linear-gradient(180deg, #F39362 0%, #E4763D 100%) !important;
+    border-color: #111111 !important;
+    color: #111111 !important;
     transform: translateY(-1px) !important;
 }
 
-/* Aesthetic Bordered Frames Around Each Set of Landing Page Cards */
+/* Aesthetic Bordered Frames Around Each Set of Landing Page Cards (#F4F2E8 Cream + #E4763D Borders) */
 div[data-testid="stVerticalBlockBorderWrapper"]:has(.kulfi-card-set-1) {
-    background: linear-gradient(180deg, #FFFDFC 0%, #FAF0EE 100%) !important;
-    border: 1.5px solid #D8B0AC !important;
-    border-top: 4px solid #8A474F !important;
+    background: linear-gradient(180deg, #FAF8F1 0%, #F4F2E8 100%) !important;
+    border: 2px solid #E4763D !important;
+    border-top: 4.5px solid #E4763D !important;
     border-radius: 14px !important;
     padding: 10px 14px 12px 14px !important;
     margin-bottom: 10px !important;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.75), 0 4px 14px rgba(138, 71, 79, 0.08) !important;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.80), 0 4px 14px rgba(228, 118, 61, 0.10) !important;
 }
 div[data-testid="stVerticalBlockBorderWrapper"]:has(.kulfi-card-set-2) {
-    background: linear-gradient(180deg, #FCFEFE 0%, #EEF6F7 100%) !important;
-    border: 1.5px solid #9EC4C9 !important;
-    border-top: 4px solid #2F5B61 !important;
+    background: linear-gradient(180deg, #FAF8F1 0%, #F4F2E8 100%) !important;
+    border: 2px solid #E4763D !important;
+    border-top: 4.5px solid #D97706 !important;
     border-radius: 14px !important;
     padding: 10px 14px 12px 14px !important;
     margin-bottom: 10px !important;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.75), 0 4px 14px rgba(47, 91, 97, 0.08) !important;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.80), 0 4px 14px rgba(228, 118, 61, 0.10) !important;
 }
 div[data-testid="stVerticalBlockBorderWrapper"]:has(.kulfi-card-set-3) {
-    background: linear-gradient(180deg, #FFFEFC 0%, #F8F0E6 100%) !important;
-    border: 1.5px solid #D4B596 !important;
-    border-top: 4px solid #784E30 !important;
+    background: linear-gradient(180deg, #FAF8F1 0%, #F4F2E8 100%) !important;
+    border: 2px solid #E4763D !important;
+    border-top: 4.5px solid #C85A22 !important;
     border-radius: 14px !important;
     padding: 10px 14px 12px 14px !important;
     margin-bottom: 10px !important;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.75), 0 4px 14px rgba(120, 78, 48, 0.08) !important;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.80), 0 4px 14px rgba(228, 118, 61, 0.10) !important;
 }
 div[data-testid="stVerticalBlockBorderWrapper"]:has(.kulfi-card-set-4) {
-    background: linear-gradient(180deg, #FCFDFC 0%, #EEF5F0 100%) !important;
-    border: 1.5px solid #A6C7B0 !important;
-    border-top: 4px solid #385943 !important;
+    background: linear-gradient(180deg, #FAFDFB 0%, #F0FDF4 100%) !important;
+    border: 2px solid #E4763D !important;
+    border-top: 4.5px solid #22C55E !important;
     border-radius: 14px !important;
     padding: 10px 14px 12px 14px !important;
     margin-bottom: 10px !important;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.75), 0 4px 14px rgba(56, 89, 67, 0.08) !important;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.80), 0 4px 14px rgba(22, 163, 74, 0.08) !important;
 }
 .launchpad-section-hdr {
     margin: 0 0 8px 0 !important;
@@ -647,10 +673,10 @@ div[class*="st-key-row_del_"] button {
     font-size: 13px !important;
     line-height: 1 !important;
     border-radius: 6px !important;
-    border: 1px solid #E2C2B9 !important;
-    background: linear-gradient(180deg, #98535C 0%, #7B3A41 100%) !important;
-    color: #FFFFFF !important;
-    box-shadow: 0 2px 0 #562C31 !important;
+    border: 1.5px solid #9E471B !important;
+    background: linear-gradient(180deg, #EE854F 0%, #E4763D 100%) !important;
+    color: #111111 !important;
+    box-shadow: 0 2px 0 #9E471B !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -666,27 +692,27 @@ div[class*="st-key-row_del_"] button p {
     line-height: 1 !important;
     margin: 0 !important;
     padding: 0 !important;
-    color: #FFFFFF !important;
+    color: #111111 !important;
     overflow: visible !important;
     white-space: nowrap !important;
 }
-/* Distinct subtle color coding for Edit (Rosewood), Copy (Slate-Teal), and Delete (Crimson) */
+/* Distinct subtle color coding for Edit (Terracotta), Copy (Cream), and Delete (Soft Coral) */
 div[class*="st-key-row_clone_"] button {
-    background: linear-gradient(180deg, #3B6E75 0%, #25484D 100%) !important;
-    border-color: #9DC7CC !important;
-    box-shadow: 0 2px 0 #173034 !important;
+    background: linear-gradient(180deg, #FAF8F1 0%, #F4F2E8 100%) !important;
+    border-color: #E4763D !important;
+    box-shadow: 0 2px 0 #9E471B !important;
 }
 div[class*="st-key-row_del_"] button {
-    background: linear-gradient(180deg, #B91C1C 0%, #7F1D1D 100%) !important;
-    border-color: #FCA5A5 !important;
-    box-shadow: 0 2px 0 #450A0A !important;
+    background: linear-gradient(180deg, #FEE2E2 0%, #FECACA 100%) !important;
+    border-color: #EF4444 !important;
+    box-shadow: 0 2px 0 #B91C1C !important;
 }
 
 /* High-Contrast Section Headers */
 .header-box-sales {
-    background: linear-gradient(90deg, #F9ECEA 0%, #F2DDD9 100%);
-    color: #633339 !important;
-    border: 1px solid #D8B4B0;
+    background: linear-gradient(90deg, #EE854F 0%, #E4763D 100%);
+    color: #111111 !important;
+    border: 1.5px solid #9E471B;
     border-radius: 9px;
     padding: 8px 13px;
     font-weight: 800;
@@ -695,12 +721,12 @@ div[class*="st-key-row_del_"] button {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 2px 5px rgba(142, 65, 69, 0.05);
+    box-shadow: 0 2px 5px rgba(228, 118, 61, 0.14);
 }
 .header-box-restock {
-    background: linear-gradient(90deg, #DCFCE7 0%, #BBF7D0 100%);
-    color: #064E3B !important;
-    border: 1px solid #86EFAC;
+    background: linear-gradient(90deg, #E6FAEE 0%, #BBF7D0 100%);
+    color: #111111 !important;
+    border: 1.5px solid #4ADE80;
     border-radius: 9px;
     padding: 8px 13px;
     font-weight: 800;
@@ -709,17 +735,17 @@ div[class*="st-key-row_del_"] button {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 2px 5px rgba(6, 78, 59, 0.05);
+    box-shadow: 0 2px 5px rgba(22, 163, 74, 0.08);
 }
 
 /* Compact Flavor Card Grid */
 .flavor-entry-row {
-    background: #FFFFFF;
-    border: 1px solid #E2CECC;
+    background: #FAF8F1;
+    border: 1px solid #E4763D;
     border-radius: 8px;
     padding: 5px 8px;
     margin-bottom: 5px;
-    box-shadow: 0 2px 4px rgba(142, 65, 69, 0.04);
+    box-shadow: 0 2px 4px rgba(228, 118, 61, 0.06);
 }
 .flavor-title-bar {
     display: flex;
@@ -730,11 +756,12 @@ div[class*="st-key-row_del_"] button {
 .flavor-name {
     font-weight: 800;
     font-size: 12.5px;
-    color: #3D1F21;
+    color: #111111;
 }
 .badge-open {
-    background: #F9ECEA;
-    color: #633339;
+    background: #F4F2E8;
+    color: #111111;
+    border: 1px solid #E4763D;
     font-weight: 800;
     font-size: 11px;
     padding: 1px 6px;
@@ -750,7 +777,7 @@ div[class*="st-key-row_del_"] button {
 }
 .badge-today-open {
     background: #DCFCE7;
-    color: #166534;
+    color: #111111;
     font-weight: 800;
     font-size: 11.5px;
     padding: 2px 7px;
@@ -759,7 +786,7 @@ div[class*="st-key-row_del_"] button {
     display: inline-block;
 }
 
-/* Consistent Input Heights & Calm Borders */
+/* Consistent Input Heights & Terracotta Borders */
 .stSelectbox div[data-baseweb="select"] > div,
 .stDateInput div[data-baseweb="input"],
 .stTextInput div[data-baseweb="input"],
@@ -767,8 +794,8 @@ div[class*="st-key-row_del_"] button {
     min-height: 36px !important;
     height: 36px !important;
     border-radius: 7px !important;
-    background-color: #FFFFFF !important;
-    border: 1.5px solid #CFAFB0 !important;
+    background-color: #FFFDF8 !important;
+    border: 1.5px solid #E4763D !important;
 }
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) .stNumberInput div[data-baseweb="input"] {
     min-height: 28px !important;
@@ -780,24 +807,24 @@ div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) .stNumberInpu
     font-size: 12.5px !important;
     text-align: left !important;
     font-weight: 700 !important;
-    color: #3D1F21 !important;
+    color: #111111 !important;
 }
 .stNumberInput label, .stTextInput label, .stSelectbox label, .stDateInput label {
     font-size: 11px !important;
     font-weight: 800 !important;
     margin-bottom: 2px !important;
     text-align: left !important;
-    color: #633339 !important;
+    color: #111111 !important;
 }
 
-/* Metric Cards — Crisp White with Dusty Rosewood Top Bar */
+/* Metric Cards — Soft Cream #F4F2E8 with Terracotta #E4763D Top Bar */
 div[data-testid="stMetric"] {
-    background: #FFFFFF !important;
-    border: 1px solid #E2CECC !important;
-    border-top: 3px solid #8A474F !important;
+    background: #FAF8F1 !important;
+    border: 1.5px solid #E4763D !important;
+    border-top: 3.5px solid #E4763D !important;
     border-radius: 10px !important;
     padding: 9px 12px !important;
-    box-shadow: 0 2px 8px rgba(142, 65, 69, 0.05) !important;
+    box-shadow: 0 2px 8px rgba(228, 118, 61, 0.08) !important;
     height: 100%;
 }
 div[data-testid="stMetricLabel"], 
@@ -805,9 +832,9 @@ div[data-testid="stMetricLabel"] > div,
 div[data-testid="stMetricLabel"] label,
 div[data-testid="stMetricLabel"] p, 
 div[data-testid="stMetricLabel"] span { 
-    font-weight: 700 !important; 
+    font-weight: 800 !important; 
     font-size: 11px !important; 
-    color: #7A4B4E !important; 
+    color: #3D2210 !important; 
     white-space: normal !important; 
     word-wrap: break-word !important; 
     overflow: visible !important; 
@@ -822,23 +849,23 @@ div[data-testid="stMetricValue"] {
     font-family: 'Fraunces', serif; 
     font-size: 1.15rem !important; 
     font-weight: 800 !important;
-    color: #633339 !important; 
+    color: #111111 !important; 
     margin-top: 4px;
 }
 
-/* Data Grids & Tables Across the Entire App — Dusty Rosewood & Warm Ivory */
+/* Data Grids & Tables Across the Entire App — Terracotta #E4763D & Cream #F4F2E8 */
 div[data-testid="stDataFrame"], div[data-testid="stDataEditor"] {
     border-radius: 10px !important;
-    border: 1.5px solid #8A474F !important;
-    background: #FFFFFF !important;
-    box-shadow: 0 3px 10px rgba(142, 65, 69, 0.06) !important;
+    border: 1.5px solid #E4763D !important;
+    background: #FAF8F1 !important;
+    box-shadow: 0 3px 10px rgba(228, 118, 61, 0.08) !important;
     overflow: hidden;
 }
 div[data-testid="stDataFrame"] th, div[data-testid="stDataEditor"] th {
     font-weight: 800 !important;
-    color: #FFFFFF !important;
-    background: linear-gradient(180deg, #98535C 0%, #7B3A41 100%) !important;
-    border-bottom: 1.5px solid #E6C8B8 !important;
+    color: #111111 !important;
+    background: linear-gradient(180deg, #EE854F 0%, #E4763D 100%) !important;
+    border-bottom: 1.5px solid #9E471B !important;
     text-align: center !important;
     font-size: 12px !important;
 }
@@ -846,68 +873,68 @@ div[data-testid="stDataFrame"] td, div[data-testid="stDataEditor"] td {
     text-align: center !important;
     font-size: 11.5px !important;
     font-weight: 700 !important;
-    color: #3D1F21 !important;
+    color: #111111 !important;
 }
 .stMarkdown table {
     width: 100%;
     border-collapse: separate !important;
     border-spacing: 0 !important;
-    background: #FFFFFF;
-    border: 1.5px solid #8A474F;
+    background: #FAF8F1;
+    border: 1.5px solid #E4763D;
     border-radius: 10px;
     overflow: hidden;
-    box-shadow: 0 3px 10px rgba(142, 65, 69, 0.06);
+    box-shadow: 0 3px 10px rgba(228, 118, 61, 0.08);
     margin: 6px 0 12px 0;
 }
 .stMarkdown table th {
-    background: linear-gradient(180deg, #98535C 0%, #7B3A41 100%) !important;
-    color: #FFFFFF !important;
+    background: linear-gradient(180deg, #EE854F 0%, #E4763D 100%) !important;
+    color: #111111 !important;
     font-weight: 800 !important;
     padding: 8px 10px !important;
-    border-bottom: 1.5px solid #E6C8B8 !important;
-    border-right: 1px solid rgba(255, 255, 255, 0.18) !important;
+    border-bottom: 1.5px solid #9E471B !important;
+    border-right: 1px solid rgba(20, 10, 4, 0.14) !important;
     font-size: 11.5px !important;
 }
 .stMarkdown table td {
     padding: 7px 10px !important;
-    border-bottom: 1px solid #F0E2E0 !important;
-    border-right: 1px solid #F7EFEE !important;
+    border-bottom: 1px solid #E5DFCE !important;
+    border-right: 1px solid #EFECE0 !important;
     font-size: 12px !important;
     font-weight: 700 !important;
-    color: #3D1F21 !important;
+    color: #111111 !important;
 }
 .stMarkdown table tr:nth-child(even) td {
-    background: #FCF8F7 !important;
+    background: #F4F2E8 !important;
 }
 .stMarkdown table tr:hover td {
-    background: #F9ECEA !important;
+    background: #FDE8D7 !important;
 }
 
-hr { border-color: #E2CECC !important; margin: 0.4rem 0 !important; }
+hr { border-color: #E4763D !important; opacity: 0.45 !important; margin: 0.4rem 0 !important; }
 
 /* Distinct Editable Table Input Borders */
 div[data-testid="stNumberInput"] div[data-baseweb="input"] {
-    border: 1.5px solid #98535C !important;
-    background-color: #FFFDFC !important;
+    border: 1.5px solid #E4763D !important;
+    background-color: #FFFDF8 !important;
     border-radius: 6px !important;
 }
 div[data-testid="stNumberInput"] div[data-baseweb="input"]:focus-within {
-    border: 2px solid #16A34A !important;
+    border: 2px solid #22C55E !important;
     background-color: #F0FDF4 !important;
 }
 div[data-testid="stNumberInput"] input {
     text-align: left !important;
     font-weight: 800 !important;
-    color: #3D1F21 !important;
+    color: #111111 !important;
     padding-left: 8px !important;
 }
 
 /* Daily Entry & Stock Grid Cells */
 .entry-grid-header {
-    background: linear-gradient(180deg, #98535C 0%, #7B3A41 100%);
-    color: #FFFFFF !important;
-    border: 1px solid #E6C8B8;
-    border-bottom: 1.5px solid #E6C8B8;
+    background: linear-gradient(180deg, #EE854F 0%, #E4763D 100%);
+    color: #111111 !important;
+    border: 1px solid #9E471B;
+    border-bottom: 1.5px solid #9E471B;
     padding: 6px 10px;
     border-radius: 7px;
     font-size: 11.5px;
@@ -916,8 +943,8 @@ div[data-testid="stNumberInput"] input {
     margin-bottom: 4px;
 }
 .entry-grid-cell {
-    background: #FFFFFF;
-    border: 1px solid #E2CECC;
+    background: #FAF8F1;
+    border: 1px solid #E4763D;
     border-radius: 6px;
     height: 28px;
     display: flex;
@@ -925,12 +952,12 @@ div[data-testid="stNumberInput"] input {
     justify-content: center;
     font-size: 12px;
     font-weight: 800;
-    color: #3D1F21;
+    color: #111111;
 }
 .entry-grid-cell-flavour {
-    background: #FFFFFF;
-    border: 1px solid #E2CECC;
-    border-left: 3.5px solid #8A474F;
+    background: #FAF8F1;
+    border: 1px solid #E4763D;
+    border-left: 3.5px solid #E4763D;
     border-radius: 6px;
     height: 28px;
     display: flex;
@@ -939,7 +966,7 @@ div[data-testid="stNumberInput"] input {
     padding: 0 8px;
     font-size: 12px;
     font-weight: 800;
-    color: #3D1F21;
+    color: #111111;
 }
 .entry-grid-cell-sold {
     background: #FEE2E2;
@@ -954,7 +981,7 @@ div[data-testid="stNumberInput"] input {
     color: #991B1B;
 }
 .entry-grid-cell-amount {
-    background: #DCFCE7;
+    background: #E6FAEE;
     border: 1px solid #86EFAC;
     border-radius: 6px;
     height: 28px;
@@ -964,25 +991,25 @@ div[data-testid="stNumberInput"] input {
     padding: 0 8px;
     font-size: 12px;
     font-weight: 900;
-    color: #064E3B;
+    color: #111111;
 }
 .entry-grid-total-row {
-    background: linear-gradient(90deg, #F9ECEA 0%, #F2DDD9 100%);
-    border: 1.5px solid #8A474F;
+    background: linear-gradient(90deg, #FDE8D7 0%, #F4F2E8 100%);
+    border: 1.5px solid #E4763D;
     border-radius: 8px;
     padding: 7px 10px;
     margin-top: 6px;
     font-size: 12px;
     font-weight: 900;
-    color: #633339;
+    color: #111111;
 }
 
 /* Compact No-Scroll Ledger Rows for Expenses & Payments */
 .ledger-tbl-header {
-    background: linear-gradient(180deg, #98535C 0%, #7B3A41 100%);
-    color: #FFFFFF !important;
-    border: 1px solid #E6C8B8;
-    border-bottom: 1.5px solid #E6C8B8;
+    background: linear-gradient(180deg, #EE854F 0%, #E4763D 100%);
+    color: #111111 !important;
+    border: 1px solid #9E471B;
+    border-bottom: 1.5px solid #9E471B;
     padding: 5px 6px;
     border-radius: 6px;
     font-size: 10px;
@@ -998,8 +1025,8 @@ div[data-testid="stNumberInput"] input {
     min-height: 27px;
 }
 .ledger-cell {
-    background: #FFFFFF;
-    border: 1px solid #E2CECC;
+    background: #FAF8F1;
+    border: 1px solid #E4763D;
     border-radius: 5px;
     min-height: 30px;
     height: 30px;
@@ -1008,16 +1035,16 @@ div[data-testid="stNumberInput"] input {
     align-items: center;
     font-size: 10.5px;
     font-weight: 700;
-    color: #3D1F21;
+    color: #111111;
     line-height: 1.15;
     white-space: nowrap !important;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 .ledger-cell-desc {
-    background: #FFFFFF;
-    border: 1px solid #E2CECC;
-    border-left: 3px solid #8A474F;
+    background: #FAF8F1;
+    border: 1px solid #E4763D;
+    border-left: 3px solid #E4763D;
     border-radius: 5px;
     min-height: 30px;
     height: 30px;
@@ -1027,7 +1054,7 @@ div[data-testid="stNumberInput"] input {
     justify-content: center;
     font-size: 10.5px;
     font-weight: 700;
-    color: #3D1F21;
+    color: #111111;
     line-height: 1.12;
     overflow: hidden;
 }
@@ -1040,15 +1067,15 @@ div[data-testid="stNumberInput"] input {
 }
 .ledger-subtext {
     font-size: 9px;
-    font-weight: 700;
-    color: #8A474F;
+    font-weight: 800;
+    color: #9E471B;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
 }
 .ledger-amt-total {
-    background: #F9ECEA;
-    border: 1px solid #DFBFBC;
+    background: #F4F2E8;
+    border: 1px solid #E4763D;
     border-radius: 5px;
     min-height: 30px;
     height: 30px;
@@ -1058,11 +1085,11 @@ div[data-testid="stNumberInput"] input {
     justify-content: flex-end;
     font-size: 10.5px;
     font-weight: 800;
-    color: #633339;
+    color: #111111;
     white-space: nowrap !important;
 }
 .ledger-amt-paid {
-    background: #DCFCE7;
+    background: #E6FAEE;
     border: 1px solid #86EFAC;
     border-radius: 5px;
     min-height: 30px;
@@ -1073,7 +1100,7 @@ div[data-testid="stNumberInput"] input {
     justify-content: flex-end;
     font-size: 10.5px;
     font-weight: 800;
-    color: #064E3B;
+    color: #111111;
     white-space: nowrap !important;
 }
 .ledger-amt-due {
@@ -1100,12 +1127,12 @@ div[data-testid="stNumberInput"] input {
     text-align: center;
     white-space: nowrap !important;
 }
-.status-paid { background: #DCFCE7; color: #166534; border: 1px solid #86EFAC; }
-.status-partial { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
+.status-paid { background: #E6FAEE; color: #111111; border: 1px solid #86EFAC; }
+.status-partial { background: #FEF3C7; color: #111111; border: 1px solid #FDE68A; }
 .status-pending { background: #FEE2E2; color: #991B1B; border: 1px solid #FCA5A5; }
-.status-other { background: #F9ECEA; color: #633339; border: 1px solid #E2CECC; }
+.status-other { background: #F4F2E8; color: #111111; border: 1px solid #E4763D; }
 
-/* Freezer Analysis Boxed Table Styling — Dusty Rosewood Grid */
+/* Freezer Analysis Boxed Table Styling — Terracotta #E4763D & Light Mint Grid */
 .fa-boxed-table-wrap {
     width: 100%;
     overflow-x: auto;
@@ -1115,80 +1142,80 @@ div[data-testid="stNumberInput"] input {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
-    background: #FFFFFF;
-    border: 1.5px solid #8A474F;
+    background: #FAF8F1;
+    border: 1.5px solid #E4763D;
     border-radius: 11px;
     overflow: hidden;
     font-size: 12.5px;
-    box-shadow: 0 3px 10px rgba(142, 65, 69, 0.06);
+    box-shadow: 0 3px 10px rgba(228, 118, 61, 0.08);
 }
 .fa-boxed-table th {
-    background: linear-gradient(180deg, #98535C 0%, #7B3A41 100%);
-    color: #FFFFFF;
+    background: linear-gradient(180deg, #EE854F 0%, #E4763D 100%);
+    color: #111111 !important;
     font-weight: 800;
     padding: 9px 10px;
     text-align: center;
     font-size: 11.5px;
     letter-spacing: 0.02em;
-    border-bottom: 1.5px solid #E6C8B8;
-    border-right: 1px solid rgba(255, 255, 255, 0.18);
+    border-bottom: 1.5px solid #9E471B;
+    border-right: 1px solid rgba(20, 10, 4, 0.14);
 }
 .fa-boxed-table td {
     padding: 7px 10px;
-    border-bottom: 1px solid #F0E2E0;
-    border-right: 1px solid #F7EFEE;
+    border-bottom: 1px solid #E5DFCE;
+    border-right: 1px solid #EFECE0;
     text-align: center;
     font-weight: 700;
-    color: #3D1F21;
+    color: #111111;
 }
 .fa-boxed-table tr:nth-child(even) td {
-    background: #FCF8F7;
+    background: #F4F2E8;
 }
 .fa-boxed-table tr:hover td {
-    background: #F9ECEA;
+    background: #FDE8D7;
 }
 .fa-boxed-table tr.fa-total-row td {
-    background: linear-gradient(90deg, #F9ECEA 0%, #F2DDD9 100%) !important;
-    border-top: 2px solid #8A474F !important;
+    background: linear-gradient(90deg, #EE854F 0%, #E4763D 100%) !important;
+    border-top: 2px solid #9E471B !important;
     border-bottom: none !important;
     font-weight: 900 !important;
-    color: #633339 !important;
+    color: #111111 !important;
     font-size: 13px;
 }
 /* Group Box 1: Audit */
-.fa-box-audit-th { border-left: 2px solid #D8B4B0 !important; border-right: 2px solid #D8B4B0 !important; border-top: 2px solid #D8B4B0 !important; background: #773D44 !important; }
-.fa-box-audit-td { border-left: 1.5px solid #D8B4B0 !important; border-right: 1.5px solid #D8B4B0 !important; background: #FFFDFC !important; }
-.fa-box-audit-tot { border-left: 2px solid #D8B4B0 !important; border-right: 2px solid #D8B4B0 !important; border-bottom: 2px solid #D8B4B0 !important; }
+.fa-box-audit-th { border-left: 2px solid #9E471B !important; border-right: 2px solid #9E471B !important; border-top: 2px solid #9E471B !important; background: #E4763D !important; color: #111111 !important; }
+.fa-box-audit-td { border-left: 1.5px solid #E4763D !important; border-right: 1.5px solid #E4763D !important; background: #FAF8F1 !important; }
+.fa-box-audit-tot { border-left: 2px solid #9E471B !important; border-right: 2px solid #9E471B !important; border-bottom: 2px solid #9E471B !important; }
 
-/* Group Box 2: Recv & Frm Cart */
-.fa-box-in-left-th { border-left: 2px solid #15803D !important; border-top: 2px solid #15803D !important; background: #14532D !important; }
-.fa-box-in-right-th { border-right: 2px solid #15803D !important; border-top: 2px solid #15803D !important; background: #166534 !important; }
-.fa-box-in-left-td { border-left: 1.5px solid #15803D !important; background: #F0FDF4 !important; }
-.fa-box-in-right-td { border-right: 1.5px solid #15803D !important; background: #DCFCE7 !important; color: #166534 !important; font-weight: 800 !important; }
-.fa-box-in-left-tot { border-left: 2px solid #15803D !important; border-bottom: 2px solid #15803D !important; }
-.fa-box-in-right-tot { border-right: 2px solid #15803D !important; border-bottom: 2px solid #15803D !important; color: #166534 !important; }
+/* Group Box 2: Recv & Frm Cart — Very Lighter Green with Black Text */
+.fa-box-in-left-th { border-left: 2px solid #22C55E !important; border-top: 2px solid #22C55E !important; background: #D1FAE5 !important; color: #111111 !important; }
+.fa-box-in-right-th { border-right: 2px solid #22C55E !important; border-top: 2px solid #22C55E !important; background: #BBF7D0 !important; color: #111111 !important; }
+.fa-box-in-left-td { border-left: 1.5px solid #22C55E !important; background: #F0FDF4 !important; color: #111111 !important; }
+.fa-box-in-right-td { border-right: 1.5px solid #22C55E !important; background: #E6FAEE !important; color: #111111 !important; font-weight: 800 !important; }
+.fa-box-in-left-tot { border-left: 2px solid #22C55E !important; border-bottom: 2px solid #22C55E !important; color: #111111 !important; }
+.fa-box-in-right-tot { border-right: 2px solid #22C55E !important; border-bottom: 2px solid #22C55E !important; color: #111111 !important; }
 
 /* Group Box 3: To Cart, FZR Sale, Rem */
-.fa-box-out-left-th { border-left: 2px solid #98535C !important; border-top: 2px solid #98535C !important; background: #7B3A41 !important; }
-.fa-box-out-mid-th { border-top: 2px solid #98535C !important; background: #7B3A41 !important; }
-.fa-box-out-right-th { border-right: 2px solid #98535C !important; border-top: 2px solid #98535C !important; background: #7B3A41 !important; }
-.fa-box-out-left-td { border-left: 1.5px solid #98535C !important; background: #FFF7F5 !important; }
-.fa-box-out-mid-td { background: #FFF7F5 !important; color: #633339 !important; font-weight: 800 !important; }
-.fa-box-out-right-td { border-right: 1.5px solid #98535C !important; background: #FFF7F5 !important; }
-.fa-box-out-left-tot { border-left: 2px solid #98535C !important; border-bottom: 2px solid #98535C !important; }
-.fa-box-out-mid-tot { border-bottom: 2px solid #98535C !important; color: #633339 !important; }
-.fa-box-out-right-tot { border-right: 2px solid #98535C !important; border-bottom: 2px solid #98535C !important; }
+.fa-box-out-left-th { border-left: 2px solid #9E471B !important; border-top: 2px solid #9E471B !important; background: #EE854F !important; color: #111111 !important; }
+.fa-box-out-mid-th { border-top: 2px solid #9E471B !important; background: #EE854F !important; color: #111111 !important; }
+.fa-box-out-right-th { border-right: 2px solid #9E471B !important; border-top: 2px solid #9E471B !important; background: #EE854F !important; color: #111111 !important; }
+.fa-box-out-left-td { border-left: 1.5px solid #E4763D !important; background: #FAF8F1 !important; }
+.fa-box-out-mid-td { background: #FAF8F1 !important; color: #111111 !important; font-weight: 800 !important; }
+.fa-box-out-right-td { border-right: 1.5px solid #E4763D !important; background: #FAF8F1 !important; }
+.fa-box-out-left-tot { border-left: 2px solid #9E471B !important; border-bottom: 2px solid #9E471B !important; }
+.fa-box-out-mid-tot { border-bottom: 2px solid #9E471B !important; color: #111111 !important; }
+.fa-box-out-right-tot { border-right: 2px solid #9E471B !important; border-bottom: 2px solid #9E471B !important; }
 
 /* Group Box 4: Current */
 .fa-boxed-table th, .fa-boxed-table td { padding: 9px 14px !important; }
-.fa-box-cur-only-th { border-left: 2px solid #8A474F !important; border-right: 2px solid #8A474F !important; border-top: 2px solid #8A474F !important; background: #562C31 !important; }
-.fa-box-cur-only-td { border-left: 1.5px solid #8A474F !important; border-right: 1.5px solid #8A474F !important; background: #FFFDFC !important; color: #633339 !important; font-weight: 900 !important; font-size: 13.5px !important; }
-.fa-box-cur-only-tot { border-left: 2px solid #8A474F !important; border-right: 2px solid #8A474F !important; border-bottom: 2px solid #8A474F !important; color: #633339 !important; font-size: 14px !important; }
+.fa-box-cur-only-th { border-left: 2px solid #9E471B !important; border-right: 2px solid #9E471B !important; border-top: 2px solid #9E471B !important; background: #E4763D !important; color: #111111 !important; }
+.fa-box-cur-only-td { border-left: 1.5px solid #E4763D !important; border-right: 1.5px solid #E4763D !important; background: #F4F2E8 !important; color: #111111 !important; font-weight: 900 !important; font-size: 13.5px !important; }
+.fa-box-cur-only-tot { border-left: 2px solid #9E471B !important; border-right: 2px solid #9E471B !important; border-bottom: 2px solid #9E471B !important; color: #111111 !important; font-size: 14px !important; }
 
 /* Read-only Live Sold cell in Sales Entry */
 .entry-grid-cell-livesold {
-    background: #F9ECEA;
-    border: 1px solid #D8B4B0;
+    background: #F4F2E8;
+    border: 1px solid #E4763D;
     border-radius: 6px;
     height: 28px;
     display: flex;
@@ -1196,7 +1223,7 @@ div[data-testid="stNumberInput"] input {
     justify-content: center;
     font-size: 12px;
     font-weight: 900;
-    color: #633339;
+    color: #111111;
 }
 
 /* Bulk Order Planner Cards */
@@ -1207,32 +1234,32 @@ div[data-testid="stNumberInput"] input {
     margin: 10px 0 14px 0;
 }
 .bulk-kpi-card {
-    background: #FFFFFF;
-    border: 1px solid #E2CECC;
-    border-top: 3px solid #8A474F;
+    background: #FAF8F1;
+    border: 1.5px solid #E4763D;
+    border-top: 3.5px solid #E4763D;
     border-radius: 10px;
     padding: 10px 12px;
     text-align: center;
-    box-shadow: 0 2px 8px rgba(142, 65, 69, 0.05);
+    box-shadow: 0 2px 8px rgba(228, 118, 61, 0.08);
 }
 .bulk-kpi-label {
     font-size: 10.5px;
     font-weight: 800;
     text-transform: uppercase;
-    color: #7A4B4E;
+    color: #3D2210;
     letter-spacing: 0.03em;
 }
 .bulk-kpi-val {
     font-family: 'Fraunces', serif;
     font-size: 17px;
     font-weight: 800;
-    color: #633339;
+    color: #111111;
     margin-top: 3px;
 }
 .bulk-kpi-sub {
     font-size: 10.5px;
     font-weight: 700;
-    color: #8A474F;
+    color: #9E471B;
     margin-top: 2px;
 }
 
@@ -3277,7 +3304,7 @@ def render_live_cart_flavour_tables_section(key_prefix="live_flv"):
                 st.markdown(
                     f"""
                     <div style='background:#FFFFFF;border:1.5px solid #D8C19A;border-radius:11px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,0.04);margin-bottom:14px;'>
-                        <div style='background:linear-gradient(90deg, #70440E 0%, #8A5E17 100%);color:#FFFFFF;padding:9px 12px;display:flex;justify-content:space-between;align-items:center;'>
+                        <div style='background:linear-gradient(90deg, #EE854F 0%, #E4763D 100%);color:#111111;border-bottom:1.5px solid #9E471B;padding:9px 12px;display:flex;justify-content:space-between;align-items:center;'>
                             <span style='font-weight:900;font-size:13.5px;'>🛒 {escape(cname)}</span>
                             <span style='font-size:11px;font-weight:700;background:rgba(255,255,255,0.18);padding:2px 8px;border-radius:999px;'>
                                 Staff: {escape(staff_lbl)}
@@ -4602,8 +4629,8 @@ else:
     with cmd_c2:
         with st.popover("⇄ Switch Screen", use_container_width=True):
             st.markdown(
-                "<div style='font-family:Fraunces,serif;font-size:13.5px;font-weight:800;color:#633339;"
-                "margin-bottom:6px;border-bottom:1.5px solid #D97706;padding-bottom:4px;'>"
+                "<div style='font-family:Fraunces,serif;font-size:13.5px;font-weight:800;color:#111111;"
+                "margin-bottom:6px;border-bottom:1.5px solid #E4763D;padding-bottom:4px;'>"
                 "✨ Select Screen</div>",
                 unsafe_allow_html=True,
             )
@@ -4622,8 +4649,8 @@ else:
     with cmd_c3:
         with st.popover(f"📍 {loc_badge}", use_container_width=True):
             st.markdown(
-                "<div style='font-family:Fraunces,serif;font-size:13.5px;font-weight:800;color:#633339;"
-                "margin-bottom:6px;border-bottom:1.5px solid #D97706;padding-bottom:4px;'>"
+                "<div style='font-family:Fraunces,serif;font-size:13.5px;font-weight:800;color:#111111;"
+                "margin-bottom:6px;border-bottom:1.5px solid #E4763D;padding-bottom:4px;'>"
                 "🌐 Operating Location</div>",
                 unsafe_allow_html=True,
             )
@@ -5000,7 +5027,7 @@ elif page == "Daily Entry":
                         Cart sales, restocks, returns &amp; freezer sales
                     </div>
                 </div>
-                <div style='background:#70440E;color:#FFFFFF;padding:6px 14px;border-radius:999px;font-size:12px;font-weight:800;'>
+                <div style='background:#E4763D;color:#111111;border:1.5px solid #9E471B;padding:6px 14px;border-radius:999px;font-size:12px;font-weight:800;'>
                     📅 {_entry_date_display(today_val)}
                 </div>
             </div>
@@ -5163,7 +5190,7 @@ elif page == "Daily Entry":
                     hc3.markdown("<div class='entry-grid-header'>+ Add ✏️</div>", unsafe_allow_html=True)
                     hc4.markdown("<div class='entry-grid-header'>Close ✏️</div>", unsafe_allow_html=True)
                     hc5.markdown("<div class='entry-grid-header'>Sold</div>", unsafe_allow_html=True)
-                    hc6.markdown("<div class='entry-grid-header' style='background:#1B5E91;' title='Units recorded in Live Cart POS on this date'>Live Sold</div>", unsafe_allow_html=True)
+                    hc6.markdown("<div class='entry-grid-header' style='background:#DBEAFE;color:#111111;border:1px solid #60A5FA;' title='Units recorded in Live Cart POS on this date'>Live Sold</div>", unsafe_allow_html=True)
                     hc7.markdown("<div class='entry-grid-header' style='text-align:right;'>Sale (₹)</div>", unsafe_allow_html=True)
 
                     for code in FLAVOR_CODES:
@@ -5415,7 +5442,7 @@ elif page == "Daily Entry":
                     st.info("No previous Freezer sale transactions found.")
                 else:
                     pass
-                    col_w = [0.65, 0.85, 0.80, 1.00, 1.00, 0.65, 0.82, 0.82, 0.82, 0.82, 1.45, 1.10, 0.48, 0.48]
+                    col_w = [0.65, 0.85, 0.80, 0.98, 0.98, 0.65, 0.80, 0.80, 0.80, 0.80, 1.40, 1.05, 0.55, 0.55]
                     hdrs = [
                         ("Txn #", "Transaction ID"),
                         ("Date", "Sale Date"),
@@ -5747,10 +5774,10 @@ elif page == "Daily Entry":
             )
             with st.container(border=True):
                 rh1, rh2, rh3, rh4 = st.columns([2.2, 1.0, 1.2, 1.2], gap="small")
-                rh1.markdown("<div class='entry-grid-header' style='background:#124A1D;text-align:left;'>Flavour</div>", unsafe_allow_html=True)
-                rh2.markdown("<div class='entry-grid-header' style='background:#124A1D;'>Opening</div>", unsafe_allow_html=True)
-                rh3.markdown("<div class='entry-grid-header' style='background:#124A1D;'>+ Restock ✏️</div>", unsafe_allow_html=True)
-                rh4.markdown("<div class='entry-grid-header' style='background:#124A1D;text-align:right;'>Total Opening</div>", unsafe_allow_html=True)
+                rh1.markdown("<div class='entry-grid-header' style='background:#D1FAE5;color:#111111;border:1px solid #4ADE80;text-align:left;'>Flavour</div>", unsafe_allow_html=True)
+                rh2.markdown("<div class='entry-grid-header' style='background:#D1FAE5;color:#111111;border:1px solid #4ADE80;'>Opening</div>", unsafe_allow_html=True)
+                rh3.markdown("<div class='entry-grid-header' style='background:#D1FAE5;color:#111111;border:1px solid #4ADE80;'>+ Restock ✏️</div>", unsafe_allow_html=True)
+                rh4.markdown("<div class='entry-grid-header' style='background:#D1FAE5;color:#111111;border:1px solid #4ADE80;text-align:right;'>Total Opening</div>", unsafe_allow_html=True)
 
                 for code in FLAVOR_CODES:
                     f_info = FLAVOR_MAP[code]
@@ -6071,7 +6098,7 @@ elif page == "Daily Entry":
                 rh1.markdown("<div class='entry-grid-header' style='text-align:left;'>Flavour</div>", unsafe_allow_html=True)
                 rh2.markdown("<div class='entry-grid-header'>Opening</div>", unsafe_allow_html=True)
                 rh3.markdown("<div class='entry-grid-header'>In Cart Now</div>", unsafe_allow_html=True)
-                rh4.markdown("<div class='entry-grid-header' style='background:#0F766E;'>Move to Fzr ✏️</div>", unsafe_allow_html=True)
+                rh4.markdown("<div class='entry-grid-header' style='background:#D1FAE5;color:#111111;border:1px solid #4ADE80;'>Move to Fzr ✏️</div>", unsafe_allow_html=True)
                 rh5.markdown("<div class='entry-grid-header' style='text-align:right;'>Rem. in Cart</div>", unsafe_allow_html=True)
 
                 for code in FLAVOR_CODES:
@@ -6740,10 +6767,10 @@ elif page == "Bulk Orders & Quotes" and user_role == "admin":
             bh2.markdown("<div class='entry-grid-header' style='text-align:left;'>Flavour</div>", unsafe_allow_html=True)
             bh3.markdown("<div class='entry-grid-header'>Cost (CP)</div>", unsafe_allow_html=True)
             bh4.markdown("<div class='entry-grid-header'>MRP</div>", unsafe_allow_html=True)
-            bh5.markdown("<div class='entry-grid-header' style='background:#124A1D;'>Qty (Pcs) ✏️</div>", unsafe_allow_html=True)
+            bh5.markdown("<div class='entry-grid-header' style='background:#D1FAE5;color:#111111;border:1px solid #4ADE80;'>Qty (Pcs) ✏️</div>", unsafe_allow_html=True)
             bh6.markdown("<div class='entry-grid-header'>Total CP</div>", unsafe_allow_html=True)
             bh7.markdown("<div class='entry-grid-header'>Gross MRP</div>", unsafe_allow_html=True)
-            bh8.markdown("<div class='entry-grid-header' style='text-align:right;background:#E8542A;'>After Disc.</div>", unsafe_allow_html=True)
+            bh8.markdown("<div class='entry-grid-header' style='text-align:right;background:#E4763D;color:#111111;border:1px solid #9E471B;'>After Disc.</div>", unsafe_allow_html=True)
 
             curr_disc_pct = float(st.session_state.get("bulk_discount_pct", 0.0) or 0.0)
             disc_mult = 1.0 - (curr_disc_pct / 100.0)
@@ -8929,7 +8956,7 @@ elif page == "Freezer Stock" and user_role == "admin":
                             overflow-x: auto;
                             margin-top: 4px;
                             margin-bottom: 10px;
-                            border: 1.5px solid #8A5E17;
+                            border: 1.5px solid #E4763D;
                             border-radius: 8px;
                             background: #FFFFFF;
                             box-shadow: 0 2px 5px rgba(0,0,0,0.04);
@@ -8946,8 +8973,8 @@ elif page == "Freezer Stock" and user_role == "admin":
                             white-space: nowrap;
                         }}
                         .sr-matrix-tbl thead th {{
-                            background: #70440E;
-                            color: #FFFFFF;
+                            background: #E4763D;
+                            color: #111111;
                             font-weight: 800;
                             font-size: 13px;
                         }}
@@ -10815,7 +10842,7 @@ elif page == "Expenses" and user_role == "admin":
                     page_size = st.selectbox("Rows per page", [25, 50, 100, 500], index=0, key="exp_view_page_size", label_visibility="collapsed")
 
                 # ID and Month removed from table columns (Month filter retained above); COPY header with Clone tooltip
-                col_weights = [0.75, 1.45, 2.00, 0.80, 0.80, 0.80, 0.74, 0.74, 0.56, 0.46, 0.46, 0.46]
+                col_weights = [0.74, 1.38, 1.85, 0.78, 0.78, 0.78, 0.72, 0.70, 0.54, 0.54, 0.54, 0.54]
                 headers = [
                     ("Date", "Expense Date"),
                     ("Category", "Category & Sub-Category"),
@@ -11137,7 +11164,7 @@ elif page == "Expenses" and user_role == "admin":
                     pay_page_size = st.selectbox("Rows per page", [25, 50, 100, 500], index=0, key="pay_view_page_size", label_visibility="collapsed")
 
                 # ID and RCPT removed from table list; View Receipt section below removed completely
-                p_weights = [0.80, 2.00, 0.92, 1.20, 1.30, 1.80, 0.46, 0.46, 0.46]
+                p_weights = [0.80, 1.90, 0.90, 1.15, 1.25, 1.65, 0.54, 0.54, 0.54]
                 p_headers = [
                     ("Date", "Payment Date"),
                     ("Expense Link", "Linked Expense"),
@@ -11751,7 +11778,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                     <style>
                     .comp-history-wrap {width:100%; overflow-x:hidden; margin-bottom:0.7rem;}
                     .comp-history-table {width:100%; table-layout:fixed; border-collapse:collapse; font-size:12px;}
-                    .comp-history-table th {background:#70440E; color:white; font-size:11.5px; font-weight:800; padding:6px 4px; border:1px solid #E3CBA0; white-space:normal; line-height:1.2;}
+                    .comp-history-table th {background:#E4763D; color:#111111; font-size:11.5px; font-weight:800; padding:6px 4px; border:1px solid #9E471B; white-space:normal; line-height:1.2;}
                     .comp-history-table td {font-size:12px; padding:6px 4px; border:1px solid #E3CBA0; text-align:center; white-space:normal; overflow-wrap:anywhere; line-height:1.2;}
                     .comp-history-table tr:nth-child(even) td {background:#FFFBF2;}
                     </style>
@@ -13091,7 +13118,7 @@ elif page == "Dashboard" and user_role == "admin":
                     alignments = ["left"] + ["right"] * 8
                     cell_html = "".join(
                         f"<div style='padding:9px 6px;text-align:{alignments[i]};"
-                        f"font-weight:900;color:#FFFFFF;font-size:13.5px;line-height:1.25;"
+                        f"font-weight:900;color:#111111;font-size:13.5px;line-height:1.25;"
                         f"white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'>{escape(str(value))}</div>"
                         for i, value in enumerate(total_cells)
                     )
@@ -13100,8 +13127,8 @@ elif page == "Dashboard" and user_role == "admin":
                         <div style="
                             display:grid;
                             grid-template-columns:0.72fr 0.62fr 1.02fr 0.92fr 0.82fr 1.08fr 0.92fr 1.18fr 1.28fr;
-                            background:#70440E;
-                            border:1px solid #5F3508;
+                            background:#E4763D;
+                            border:1.5px solid #9E471B;
                             border-radius:0 0 7px 7px;
                             margin-top:-13px;
                             margin-bottom:8px;
@@ -13418,14 +13445,14 @@ elif page == "Dashboard" and user_role == "admin":
                 with st.container(border=True):
                     st.markdown(
                         f"""
-                        <div style="background:linear-gradient(135deg, #4A2418 0%, #70440E 100%);padding:14px 18px;border-radius:10px;color:#FFFFFF;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                        <div style="background:linear-gradient(135deg, #EE854F 0%, #E4763D 100%);border:1.5px solid #9E471B;padding:14px 18px;border-radius:10px;color:#111111;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
                             <div>
-                                <div style="font-size:11px;font-weight:800;color:#F6E7CC;letter-spacing:0.6px;text-transform:uppercase;">OPERATING EXPENSE (OPEX) DEEP-DIVE & INSIGHTS</div>
-                                <div style="font-size:18px;font-weight:900;color:#FFFFFF;margin-top:2px;">Period: {range_start.strftime('%d %b %Y')} — {range_end.strftime('%d %b %Y')} ({avg_divisor_days} active days)</div>
+                                <div style="font-size:11px;font-weight:800;color:#111111;letter-spacing:0.6px;text-transform:uppercase;">OPERATING EXPENSE (OPEX) DEEP-DIVE & INSIGHTS</div>
+                                <div style="font-size:18px;font-weight:900;color:#111111;margin-top:2px;">Period: {range_start.strftime('%d %b %Y')} — {range_end.strftime('%d %b %Y')} ({avg_divisor_days} active days)</div>
                             </div>
                             <div style="text-align:right;">
-                                <div style="font-size:11px;color:#F6E7CC;font-weight:700;">Total Incurred OPEX</div>
-                                <div style="font-size:22px;font-weight:900;color:#FFD166;">₹{total_incurred_opex:,.0f} <span style="font-size:13px;color:#FFF2DC;">({opex_margin:.1f}% of Rev)</span></div>
+                                <div style="font-size:11px;color:#111111;font-weight:800;">Total Incurred OPEX</div>
+                                <div style="font-size:22px;font-weight:900;color:#111111;">₹{total_incurred_opex:,.0f} <span style="font-size:13px;color:#1F1108;">({opex_margin:.1f}% of Rev)</span></div>
                             </div>
                         </div>
                         """,
@@ -13975,9 +14002,9 @@ elif page == "Dashboard" and user_role == "admin":
                             rows.append(f"<tr><th scope='row'>{escape(str(cart))}</th>{cells}</tr>")
                         st.html(
                             "<style>"
-                            ".compact-dow-table{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:clamp(9px,.78vw,11.5px);line-height:1.35;background:#FFFEFA;border:1.5px solid #B8882D;border-radius:9px;overflow:hidden;box-shadow:0 3px 10px rgba(45,21,11,0.06)}"
-                            ".compact-dow-table th,.compact-dow-table td{padding:6px 5px;border-bottom:1px solid #E5D2B0;border-right:1px solid #EFE2CA;text-align:right;overflow-wrap:anywhere;color:#2A160C;font-weight:700}"
-                            ".compact-dow-table thead th{font-weight:800;background:linear-gradient(180deg,#98535C 0%,#7B3A41 100%);color:#FCE8B2;border-bottom:2px solid #D4AF37;text-align:center}"
+                            ".compact-dow-table{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:clamp(9px,.78vw,11.5px);line-height:1.35;background:#FAF8F1;border:1.5px solid #E4763D;border-radius:9px;overflow:hidden;box-shadow:0 3px 10px rgba(228,118,61,0.08)}"
+                            ".compact-dow-table th,.compact-dow-table td{padding:6px 5px;border-bottom:1px solid #E5DFCE;border-right:1px solid #EFECE0;text-align:right;overflow-wrap:anywhere;color:#111111;font-weight:700}"
+                            ".compact-dow-table thead th{font-weight:800;background:linear-gradient(180deg,#EE854F 0%,#E4763D 100%);color:#111111;border-bottom:2px solid #9E471B;text-align:center}"
                             ".compact-dow-table th:first-child{width:29%;text-align:left;padding-left:8px}"
                             ".compact-dow-table tbody tr:nth-child(even) td,.compact-dow-table tbody tr:nth-child(even) th{background:#FAF2E1}"
                             ".compact-dow-table tbody tr:first-child td,.compact-dow-table tbody tr:first-child th{font-weight:900;background:linear-gradient(90deg,#FBF0D9 0%,#F2DEC0 100%);color:#2D150B;border-bottom:1.5px solid #C89B3C}"
