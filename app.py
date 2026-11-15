@@ -359,63 +359,12 @@ div[data-testid="stElementContainer"]:has(.kulfi-card-set-4) {
     border-left: 4px solid #385943 !important;
 }
 
-/* Set 1 Cards: Sales, Daily Operations & Financials — Dusty Rosewood */
-div[data-testid="stVerticalBlock"]:has(.kulfi-card-set-1):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button {
+/* Directly Clickable 3D Cards — Base Geometry & Dusty Rosewood Default */
+div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button,
+div[data-testid="stHorizontalBlock"]:has(.kulfi-clickable-card-grid) .stButton > button {
     background: linear-gradient(135deg, #98535C 0%, #8A474F 52%, #7B3A41 100%) !important;
     border: 1px solid #E2C2B9 !important;
-    border-left: 4px solid #F2D7C4 !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 3px 0 #562C31, 0 5px 12px rgba(142, 65, 69, 0.14) !important;
-}
-div[data-testid="stVerticalBlock"]:has(.kulfi-card-set-1):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button:hover {
-    background: linear-gradient(135deg, #A65C66 0%, #98535C 55%, #8A474F 100%) !important;
-    border-color: #F7E4D4 !important;
-    border-left: 4px solid #FFFFFF !important;
-}
-
-/* Set 2 Cards: Stock & Freezer — Muted Glacier Slate-Teal */
-div[data-testid="stVerticalBlock"]:has(.kulfi-card-set-2):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button {
-    background: linear-gradient(135deg, #3B6E75 0%, #2F5B61 52%, #25484D 100%) !important;
-    border: 1px solid #A8CFD4 !important;
-    border-left: 4px solid #D4EFF2 !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 3px 0 #173034, 0 5px 12px rgba(37, 72, 77, 0.14) !important;
-}
-div[data-testid="stVerticalBlock"]:has(.kulfi-card-set-2):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button:hover {
-    background: linear-gradient(135deg, #467E86 0%, #3B6E75 55%, #2F5B61 100%) !important;
-    border-color: #E3F6F8 !important;
-    border-left: 4px solid #FFFFFF !important;
-}
-
-/* Set 3 Cards: POs, Expenses & Cash — Warm Roasted Bronze-Walnut */
-div[data-testid="stVerticalBlock"]:has(.kulfi-card-set-3):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button {
-    background: linear-gradient(135deg, #8C5E3C 0%, #784E30 52%, #633F25 100%) !important;
-    border: 1px solid #DEC2A4 !important;
-    border-left: 4px solid #F5DFC3 !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 3px 0 #422917, 0 5px 12px rgba(99, 63, 37, 0.14) !important;
-}
-div[data-testid="stVerticalBlock"]:has(.kulfi-card-set-3):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button:hover {
-    background: linear-gradient(135deg, #9C6B46 0%, #8C5E3C 55%, #784E30 100%) !important;
-    border-color: #FAEAD6 !important;
-    border-left: 4px solid #FFFFFF !important;
-}
-
-/* Set 4 Cards: Staff Payroll & Admin Setup — Muted Sage-Forest */
-div[data-testid="stVerticalBlock"]:has(.kulfi-card-set-4):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button {
-    background: linear-gradient(135deg, #466B53 0%, #385943 52%, #2B4634 100%) !important;
-    border: 1px solid #B2D1BC !important;
-    border-left: 4px solid #D7EFE0 !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 3px 0 #1B2E21, 0 5px 12px rgba(43, 70, 52, 0.14) !important;
-}
-div[data-testid="stVerticalBlock"]:has(.kulfi-card-set-4):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button:hover {
-    background: linear-gradient(135deg, #537B61 0%, #466B53 55%, #385943 100%) !important;
-    border-color: #E6F6EC !important;
-    border-left: 4px solid #FFFFFF !important;
-}
-
-/* Directly Clickable 3D Cards — Exact Dusty Rosewood Swatch */
-div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button {
-    background: linear-gradient(135deg, #98535C 0%, #8A474F 52%, #7B3A41 100%) !important;
-    border: 1px solid #E2C2B9 !important;
-    border-left: 4px solid #F2D7C4 !important;
+    border-left: 4.5px solid #F2D7C4 !important;
     border-radius: 11px !important;
     padding: 14px 16px !important;
     min-height: 64px !important;
@@ -434,10 +383,11 @@ div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kul
     margin-bottom: 4px !important;
     cursor: pointer !important;
 }
-div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button:hover {
+div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button:hover,
+div[data-testid="stHorizontalBlock"]:has(.kulfi-clickable-card-grid) .stButton > button:hover {
     background: linear-gradient(135deg, #A45A63 0%, #98535C 55%, #8A474F 100%) !important;
     border-color: #F7E4D4 !important;
-    border-left: 4px solid #FFFFFF !important;
+    border-left: 4.5px solid #FFFFFF !important;
     transform: translateY(-1px) !important;
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.25),
@@ -528,6 +478,81 @@ div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kul
 [data-testid="stPopover"] > div > button:active {
     transform: translateY(1px) !important;
     box-shadow: 0 1px 0 #562C31 !important;
+}
+
+/* ======================================================================
+   LANDING PAGE 4 CARD SET BUTTON THEMES (PLACED AFTER .stButton FOR PRIORITY)
+   ====================================================================== */
+/* Set 1 Buttons: Sales, Daily Operations & Financials — Dusty Rosewood (#98535C -> #7B3A41) */
+div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-1) .stButton > button,
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-1):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button,
+div[class*="st-key-launchpad_card_kulfi_card_set_1_"] button {
+    background: linear-gradient(135deg, #98535C 0%, #8A474F 52%, #7B3A41 100%) !important;
+    border: 1px solid #E2C2B9 !important;
+    border-left: 4.5px solid #F2D7C4 !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.20), 0 3px 0 #562C31, 0 5px 12px rgba(142, 65, 69, 0.16) !important;
+}
+div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-1) .stButton > button:hover,
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-1):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button:hover,
+div[class*="st-key-launchpad_card_kulfi_card_set_1_"] button:hover {
+    background: linear-gradient(135deg, #A85E68 0%, #98535C 55%, #8A474F 100%) !important;
+    border-color: #F7E4D4 !important;
+    border-left: 4.5px solid #FFFFFF !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 4px 0 #562C31, 0 8px 16px rgba(142, 65, 69, 0.22) !important;
+}
+
+/* Set 2 Buttons: Stock & Freezer — Muted Glacier Slate-Teal (#3B6E75 -> #25484D) */
+div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-2) .stButton > button,
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-2):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button,
+div[class*="st-key-launchpad_card_kulfi_card_set_2_"] button {
+    background: linear-gradient(135deg, #3B6E75 0%, #2F5B61 52%, #25484D 100%) !important;
+    border: 1px solid #9DC7CC !important;
+    border-left: 4.5px solid #CFEFF2 !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.20), 0 3px 0 #173034, 0 5px 12px rgba(37, 72, 77, 0.16) !important;
+}
+div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-2) .stButton > button:hover,
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-2):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button:hover,
+div[class*="st-key-launchpad_card_kulfi_card_set_2_"] button:hover {
+    background: linear-gradient(135deg, #488189 0%, #3B6E75 55%, #2F5B61 100%) !important;
+    border-color: #E3F6F8 !important;
+    border-left: 4.5px solid #FFFFFF !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 4px 0 #173034, 0 8px 16px rgba(37, 72, 77, 0.22) !important;
+}
+
+/* Set 3 Buttons: POs, Expenses & Cash — Warm Roasted Bronze-Walnut (#8C5E3C -> #633F25) */
+div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-3) .stButton > button,
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-3):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button,
+div[class*="st-key-launchpad_card_kulfi_card_set_3_"] button {
+    background: linear-gradient(135deg, #8C5E3C 0%, #784E30 52%, #633F25 100%) !important;
+    border: 1px solid #DEC2A4 !important;
+    border-left: 4.5px solid #F5DFC3 !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.20), 0 3px 0 #422917, 0 5px 12px rgba(99, 63, 37, 0.16) !important;
+}
+div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-3) .stButton > button:hover,
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-3):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button:hover,
+div[class*="st-key-launchpad_card_kulfi_card_set_3_"] button:hover {
+    background: linear-gradient(135deg, #9E6D48 0%, #8C5E3C 55%, #784E30 100%) !important;
+    border-color: #FAEAD6 !important;
+    border-left: 4.5px solid #FFFFFF !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 4px 0 #422917, 0 8px 16px rgba(99, 63, 37, 0.22) !important;
+}
+
+/* Set 4 Buttons: Staff Payroll & Admin Setup — Muted Sage-Forest (#466B53 -> #2B4634) */
+div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-4) .stButton > button,
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-4):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button,
+div[class*="st-key-launchpad_card_kulfi_card_set_4_"] button {
+    background: linear-gradient(135deg, #466B53 0%, #385943 52%, #2B4634 100%) !important;
+    border: 1px solid #B2D1BC !important;
+    border-left: 4.5px solid #D7EFE0 !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.20), 0 3px 0 #1B2E21, 0 5px 12px rgba(43, 70, 52, 0.16) !important;
+}
+div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-4) .stButton > button:hover,
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-4):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button:hover,
+div[class*="st-key-launchpad_card_kulfi_card_set_4_"] button:hover {
+    background: linear-gradient(135deg, #558064 0%, #466B53 55%, #385943 100%) !important;
+    border-color: #E6F6EC !important;
+    border-left: 4.5px solid #FFFFFF !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 4px 0 #1B2E21, 0 8px 16px rgba(43, 70, 52, 0.22) !important;
 }
 
 /* Primary 3D Action Buttons (Deep Rosewood-Berry for Active/Primary State) */
@@ -4586,9 +4611,12 @@ if page == "Home" and user_role == "admin":
             _cols = st.columns(_num_cols, gap="small")
             for _c_idx, (_target_page, _icon, _title, _extra_state) in enumerate(_sec_cards):
                 with _cols[_c_idx]:
+                    if _c_idx == 0:
+                        st.markdown(f'<span class="kulfi-clickable-card-grid {_set_cls}"></span>', unsafe_allow_html=True)
+                    _safe_set_key = _set_cls.replace("-", "_")
                     if st.button(
                         f"{_icon}  **{_title}**",
-                        key=f"launchpad_card_{_set_cls}_{_target_page}_{_c_idx}",
+                        key=f"launchpad_card_{_safe_set_key}_{_c_idx}",
                         use_container_width=True,
                     ):
                         for _k, _v in _extra_state.items():
@@ -12797,8 +12825,8 @@ elif page == "Dashboard" and user_role == "admin":
                 st.caption("No revenue data available for this range to plot.")
 
             st.markdown("<div style='height:6px;'></div>", unsafe_allow_html=True)
-            # 3 Navigation Buttons below the "Daily Revenue Trend" graph
-            btn_col1, btn_col2, btn_col3 = st.columns(3, gap="small")
+            # 4 Navigation Buttons below the "Daily Revenue Trend" graph
+            btn_col1, btn_col2, btn_col3, btn_col4 = st.columns(4, gap="small")
             with btn_col1:
                 st.button(
                     "📋 Date-wise Sales Log",
@@ -12823,13 +12851,21 @@ elif page == "Dashboard" and user_role == "admin":
                     on_click=_open_dash_sub_page,
                     args=("month_comp",),
                 )
+            with btn_col4:
+                st.button(
+                    "📆 Day-Wise & Timing Patterns",
+                    key="dash_open_page_dow_patterns",
+                    use_container_width=True,
+                    on_click=_open_dash_sub_page,
+                    args=("dow_patterns",),
+                )
 
     # ==================================================================
     # SEPARATE SUB-PAGES OPENED FROM THE 3 DASHBOARD BUTTONS
     # ==================================================================
     else:
-        # Top Navigation Bar to return to Main Dashboard or switch between the 3 sub-pages
-        nav_b1, nav_b2, nav_b3, nav_b4 = st.columns([1.25, 1.25, 1.15, 1.55], gap="small")
+        # Top Navigation Bar to return to Main Dashboard or switch between the 4 sub-pages
+        nav_b1, nav_b2, nav_b3, nav_b4, nav_b5 = st.columns([1.15, 1.15, 0.95, 1.25, 1.30], gap="small")
         with nav_b1:
             st.button(
                 "⬅ Back to Dashboard",
@@ -12865,6 +12901,15 @@ elif page == "Dashboard" and user_role == "admin":
                 use_container_width=True,
                 on_click=_open_dash_sub_page,
                 args=("month_comp",),
+            )
+        with nav_b5:
+            st.button(
+                "📆 Day-Wise & Timing Patterns",
+                key="dash_sub_switch_dow_patterns",
+                type="primary" if active_dash_sub == "dow_patterns" else "secondary",
+                use_container_width=True,
+                on_click=_open_dash_sub_page,
+                args=("dow_patterns",),
             )
         st.markdown("---")
 
@@ -13641,72 +13686,6 @@ elif page == "Dashboard" and user_role == "admin":
                 st.caption("No cart sales in this date range.")
 
             st.markdown("---")
-            st.markdown("### 3. Day-Wise & Timing Patterns")
-            if not range_df.empty:
-                day_order = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-                dow_df = range_df[~range_df["Cart"].astype(str).str.strip().str.upper().isin(["FREEZER", "HOSUR FREEZER"])].copy()
-                dow_df["Day"] = dow_df["Date"].dt.day_name().str[:3]
-            
-                if not dow_df.empty:
-                    def show_compact_average_table(pivot):
-                        headers = "".join(f"<th>{escape(str(day))}</th>" for day in pivot.columns)
-                        rows = []
-                        for cart, values in pivot.iterrows():
-                            cells = "".join(f"<td>{int(round(value)):,}</td>" for value in values)
-                            rows.append(f"<tr><th scope='row'>{escape(str(cart))}</th>{cells}</tr>")
-                        st.html(
-                            "<style>"
-                            ".compact-dow-table{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:clamp(9px,.78vw,11.5px);line-height:1.35;background:#FFFEFA;border:1.5px solid #B8882D;border-radius:9px;overflow:hidden;box-shadow:0 3px 10px rgba(45,21,11,0.06)}"
-                            ".compact-dow-table th,.compact-dow-table td{padding:6px 5px;border-bottom:1px solid #E5D2B0;border-right:1px solid #EFE2CA;text-align:right;overflow-wrap:anywhere;color:#2A160C;font-weight:700}"
-                            ".compact-dow-table thead th{font-weight:800;background:linear-gradient(180deg,#98535C 0%,#7B3A41 100%);color:#FCE8B2;border-bottom:2px solid #D4AF37;text-align:center}"
-                            ".compact-dow-table th:first-child{width:29%;text-align:left;padding-left:8px}"
-                            ".compact-dow-table tbody tr:nth-child(even) td,.compact-dow-table tbody tr:nth-child(even) th{background:#FAF2E1}"
-                            ".compact-dow-table tbody tr:first-child td,.compact-dow-table tbody tr:first-child th{font-weight:900;background:linear-gradient(90deg,#FBF0D9 0%,#F2DEC0 100%);color:#2D150B;border-bottom:1.5px solid #C89B3C}"
-                            "</style>"
-                            f"<table class='compact-dow-table'><thead><tr><th scope='col'>Cart</th>{headers}</tr></thead>"
-                            f"<tbody>{''.join(rows)}</tbody></table>"
-                        )
-
-                    dw1, dw2 = st.columns(2)
-                    with dw1: 
-                        st.write("**Average Units Sold per Day of Week**")
-                        units_df = dow_df[dow_df["Sold_Total"] > 0]
-                        if not units_df.empty:
-                            units_pivot = units_df.pivot_table(index="Cart", columns="Day", values="Sold_Total", aggfunc="mean", fill_value=0)
-                            day_cols = [d for d in day_order if d in units_pivot.columns]
-                            units_pivot = units_pivot.reindex(columns=day_cols)
-                            overall_units = units_df.groupby("Day")["Sold_Total"].mean().reindex(day_cols)
-                            units_pivot.loc["Overall Average (per cart)"] = overall_units
-                            units_pivot = units_pivot.reindex(["Overall Average (per cart)"] + [cart for cart in units_pivot.index if cart != "Overall Average (per cart)"])
-                            show_compact_average_table(units_pivot)
-                        else:
-                            st.caption("No units sold in this range.")
-                    with dw2: 
-                        st.write("**Average Revenue (₹) per Day of Week**")
-                        rev_pivot = dow_df.pivot_table(index="Cart", columns="Day", values="Total_Collection", aggfunc="mean", fill_value=0)
-                        rev_day_cols = [d for d in day_order if d in rev_pivot.columns]
-                        rev_pivot = rev_pivot.reindex(columns=rev_day_cols)
-                        overall_rev = dow_df.groupby("Day")["Total_Collection"].mean().reindex(rev_day_cols)
-                        rev_pivot.loc["Overall Average (per cart)"] = overall_rev
-                        rev_pivot = rev_pivot.reindex(["Overall Average (per cart)"] + [cart for cart in rev_pivot.index if cart != "Overall Average (per cart)"])
-                        show_compact_average_table(rev_pivot)
-
-                    max1, max2 = st.columns(2)
-                    with max1:
-                        st.write("**Maximum Units Sold per Day of Week**")
-                        if not dow_df.empty:
-                            max_units = dow_df.pivot_table(index="Cart", columns="Day", values="Sold_Total", aggfunc="max", fill_value=0)
-                            max_units = max_units.reindex(columns=[d for d in day_order if d in max_units.columns])
-                            st.dataframe(max_units.round(0).astype(int), use_container_width=True)
-                    with max2:
-                        st.write("**Maximum Revenue (₹) per Day of Week**")
-                        max_rev = dow_df.pivot_table(index="Cart", columns="Day", values="Total_Collection", aggfunc="max", fill_value=0)
-                        max_rev = max_rev.reindex(columns=[d for d in day_order if d in max_rev.columns])
-                        st.dataframe(max_rev.round(0).astype(int), use_container_width=True)
-                else: 
-                    st.caption("No cart entries found in this range.")
-
-            st.markdown("---")
             b_back2, _ = st.columns([1.5, 3.5])
             with b_back2:
                 st.button(
@@ -13870,6 +13849,97 @@ elif page == "Dashboard" and user_role == "admin":
                 st.button(
                     "⬅ Back to Dashboard",
                     key="dash_sub_back_bot_mc",
+                    type="primary",
+                    use_container_width=True,
+                    on_click=_open_dash_sub_page,
+                    args=(None,),
+                )
+
+        # ------------------------------------------------------------------
+        # SUB-PAGE 4: DAY-WISE & TIMING PATTERNS
+        # ------------------------------------------------------------------
+        elif active_dash_sub == "dow_patterns":
+            st.subheader("📆 Day-Wise & Timing Patterns")
+            (
+                dashboard_filter_mode, dash_year, dash_month_num,
+                range_start, range_end, range_df, range_exp,
+                total_rev, total_units, exact_cogs_sold, capex_total,
+                staff_pay_breakdown, unassigned_labour_df, non_labour_opex_df,
+                tot_labour_incurred, other_opex_total, total_incurred_opex,
+                gross_profit, cogs_margin, gross_margin, net_profit, net_margin, opex_margin,
+                avg_divisor_days, avg_rev_per_day, avg_units_per_day
+            ) = _render_dash_date_filter_and_compute(key_suffix="sub_dow_patterns")
+            if not range_df.empty:
+                day_order = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+                dow_df = range_df[~range_df["Cart"].astype(str).str.strip().str.upper().isin(["FREEZER", "HOSUR FREEZER"])].copy()
+                dow_df["Day"] = dow_df["Date"].dt.day_name().str[:3]
+            
+                if not dow_df.empty:
+                    def show_compact_average_table(pivot):
+                        headers = "".join(f"<th>{escape(str(day))}</th>" for day in pivot.columns)
+                        rows = []
+                        for cart, values in pivot.iterrows():
+                            cells = "".join(f"<td>{int(round(value)):,}</td>" for value in values)
+                            rows.append(f"<tr><th scope='row'>{escape(str(cart))}</th>{cells}</tr>")
+                        st.html(
+                            "<style>"
+                            ".compact-dow-table{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:clamp(9px,.78vw,11.5px);line-height:1.35;background:#FFFEFA;border:1.5px solid #B8882D;border-radius:9px;overflow:hidden;box-shadow:0 3px 10px rgba(45,21,11,0.06)}"
+                            ".compact-dow-table th,.compact-dow-table td{padding:6px 5px;border-bottom:1px solid #E5D2B0;border-right:1px solid #EFE2CA;text-align:right;overflow-wrap:anywhere;color:#2A160C;font-weight:700}"
+                            ".compact-dow-table thead th{font-weight:800;background:linear-gradient(180deg,#98535C 0%,#7B3A41 100%);color:#FCE8B2;border-bottom:2px solid #D4AF37;text-align:center}"
+                            ".compact-dow-table th:first-child{width:29%;text-align:left;padding-left:8px}"
+                            ".compact-dow-table tbody tr:nth-child(even) td,.compact-dow-table tbody tr:nth-child(even) th{background:#FAF2E1}"
+                            ".compact-dow-table tbody tr:first-child td,.compact-dow-table tbody tr:first-child th{font-weight:900;background:linear-gradient(90deg,#FBF0D9 0%,#F2DEC0 100%);color:#2D150B;border-bottom:1.5px solid #C89B3C}"
+                            "</style>"
+                            f"<table class='compact-dow-table'><thead><tr><th scope='col'>Cart</th>{headers}</tr></thead>"
+                            f"<tbody>{''.join(rows)}</tbody></table>"
+                        )
+
+                    dw1, dw2 = st.columns(2)
+                    with dw1: 
+                        st.write("**Average Units Sold per Day of Week**")
+                        units_df = dow_df[dow_df["Sold_Total"] > 0]
+                        if not units_df.empty:
+                            units_pivot = units_df.pivot_table(index="Cart", columns="Day", values="Sold_Total", aggfunc="mean", fill_value=0)
+                            day_cols = [d for d in day_order if d in units_pivot.columns]
+                            units_pivot = units_pivot.reindex(columns=day_cols)
+                            overall_units = units_df.groupby("Day")["Sold_Total"].mean().reindex(day_cols)
+                            units_pivot.loc["Overall Average (per cart)"] = overall_units
+                            units_pivot = units_pivot.reindex(["Overall Average (per cart)"] + [cart for cart in units_pivot.index if cart != "Overall Average (per cart)"])
+                            show_compact_average_table(units_pivot)
+                        else:
+                            st.caption("No units sold in this range.")
+                    with dw2: 
+                        st.write("**Average Revenue (₹) per Day of Week**")
+                        rev_pivot = dow_df.pivot_table(index="Cart", columns="Day", values="Total_Collection", aggfunc="mean", fill_value=0)
+                        rev_day_cols = [d for d in day_order if d in rev_pivot.columns]
+                        rev_pivot = rev_pivot.reindex(columns=rev_day_cols)
+                        overall_rev = dow_df.groupby("Day")["Total_Collection"].mean().reindex(rev_day_cols)
+                        rev_pivot.loc["Overall Average (per cart)"] = overall_rev
+                        rev_pivot = rev_pivot.reindex(["Overall Average (per cart)"] + [cart for cart in rev_pivot.index if cart != "Overall Average (per cart)"])
+                        show_compact_average_table(rev_pivot)
+
+                    max1, max2 = st.columns(2)
+                    with max1:
+                        st.write("**Maximum Units Sold per Day of Week**")
+                        if not dow_df.empty:
+                            max_units = dow_df.pivot_table(index="Cart", columns="Day", values="Sold_Total", aggfunc="max", fill_value=0)
+                            max_units = max_units.reindex(columns=[d for d in day_order if d in max_units.columns])
+                            st.dataframe(max_units.round(0).astype(int), use_container_width=True)
+                    with max2:
+                        st.write("**Maximum Revenue (₹) per Day of Week**")
+                        max_rev = dow_df.pivot_table(index="Cart", columns="Day", values="Total_Collection", aggfunc="max", fill_value=0)
+                        max_rev = max_rev.reindex(columns=[d for d in day_order if d in max_rev.columns])
+                        st.dataframe(max_rev.round(0).astype(int), use_container_width=True)
+                else: 
+                    st.caption("No cart entries found in this range.")
+
+
+            st.markdown("---")
+            b_back4, _ = st.columns([1.5, 3.5])
+            with b_back4:
+                st.button(
+                    "⬅ Back to Dashboard",
+                    key="dash_sub_back_bot_dow",
                     type="primary",
                     use_container_width=True,
                     on_click=_open_dash_sub_page,
