@@ -42,16 +42,16 @@ except ImportError:
 st.set_page_config(page_title="Kulfi Ops", page_icon="🍦", layout="wide", initial_sidebar_state="collapsed")
 
 # ----------------------------------------------------------------------
-# GLOBAL UI STYLES — ROYAL OBSIDIAN, BURNISHED GOLD & PEARL IVORY (3D SUITE)
+# GLOBAL UI STYLES — ROYAL VELVET MAROON, ROASTED MAHOGANY & BURNISHED GOLD (3D SUITE)
 # ----------------------------------------------------------------------
 st.html("""
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&family=Manrope:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-/* Luminous Warm Pearl-Alabaster Canvas for Maximum Contrast */
+/* Luminous Warm Pearl-Almond Canvas for Maximum Contrast against Royal Maroon */
 .stApp, [data-testid="stAppViewContainer"], .main {
-    background: linear-gradient(135deg, #F8F7F4 0%, #F1EFEA 50%, #EAE6DD 100%) !important;
-    color: #0F172A !important;
+    background: linear-gradient(135deg, #FCF9F5 0%, #F6EFE6 50%, #EFE5D8 100%) !important;
+    color: #3B1219 !important;
 }
 
 /* Completely hide the left sidebar and sidebar toggle button */
@@ -82,13 +82,13 @@ html, body, [class*="css"] {
 }
 h1, h2, h3, h4 {
     font-family: 'Fraunces', serif !important;
-    color: #0F172A !important;
+    color: #4A121E !important;
     letter-spacing: -0.01em;
 }
 h1 { font-size: 1.4rem !important; margin-top: 0 !important; }
 h2 { font-size: 1.18rem !important; }
 h3 { font-size: 1.04rem !important; }
-p, span, label, .stMarkdown { color: #0F172A; }
+p, span, label, .stMarkdown { color: #3B1219; }
 
 /* Hide stepper buttons on number inputs */
 input[type=number]::-webkit-inner-spin-button, 
@@ -102,21 +102,21 @@ div[data-testid="stNumberInput"] button { display: none !important; }
 /* Crisp White & Gold Layered Containers, Expanders & Tabs */
 div[data-testid="stVerticalBlockBorderWrapper"] {
     background: #FFFFFF !important;
-    border: 1.5px solid #CBD5E1 !important;
+    border: 1.5px solid #DECBB4 !important;
     border-top: 3px solid #D4AF37 !important;
     border-radius: 12px !important;
-    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06) !important;
+    box-shadow: 0 4px 14px rgba(74, 18, 30, 0.07) !important;
     padding: 12px 14px !important;
 }
 div[data-testid="stExpander"] {
     background: #FFFFFF !important;
-    border: 1.5px solid #CBD5E1 !important;
+    border: 1.5px solid #DECBB4 !important;
     border-radius: 10px !important;
-    box-shadow: 0 3px 10px rgba(15, 23, 42, 0.05) !important;
+    box-shadow: 0 3px 10px rgba(74, 18, 30, 0.06) !important;
     overflow: hidden;
 }
 div[data-testid="stExpander"] summary {
-    background: linear-gradient(90deg, #0F172A 0%, #1E293B 100%) !important;
+    background: linear-gradient(90deg, #5C1624 0%, #731C2E 100%) !important;
     padding: 8px 14px !important;
     font-weight: 800 !important;
     color: #FFFFFF !important;
@@ -129,49 +129,49 @@ div[data-testid="stExpander"] summary svg {
 }
 div[data-testid="stTabs"] [data-baseweb="tab-list"] {
     gap: 8px !important;
-    background: #E2E8F0 !important;
+    background: #EFE4D6 !important;
     padding: 5px 6px !important;
     border-radius: 10px !important;
-    border: 1px solid #CBD5E1 !important;
+    border: 1px solid #DECBB4 !important;
 }
 div[data-testid="stTabs"] button[data-baseweb="tab"] {
     background: #FFFFFF !important;
-    border: 1.5px solid #94A3B8 !important;
+    border: 1.5px solid #C4A484 !important;
     border-radius: 8px !important;
     padding: 6px 14px !important;
     font-weight: 800 !important;
-    color: #0F172A !important;
-    box-shadow: 0 2px 0 #64748B !important;
+    color: #4A121E !important;
+    box-shadow: 0 2px 0 #9E7B5C !important;
     transition: all 0.14s ease !important;
 }
 div[data-testid="stTabs"] button[data-baseweb="tab"] p {
-    color: #0F172A !important;
+    color: #4A121E !important;
     font-weight: 800 !important;
 }
 div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] {
-    background: linear-gradient(180deg, #0F172A 0%, #1E293B 100%) !important;
+    background: linear-gradient(180deg, #6E1B2D 0%, #4E1220 100%) !important;
     color: #FDE68A !important;
     border-color: #D4AF37 !important;
-    box-shadow: 0 2px 0 #020617, 0 4px 10px rgba(15, 23, 42, 0.22) !important;
+    box-shadow: 0 2px 0 #2E0911, 0 4px 10px rgba(78, 18, 32, 0.24) !important;
 }
 div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] p {
     color: #FDE68A !important;
 }
 
 /* ======================================================================
-   UNIFIED TOP COMMAND BAR — TARGETING stHorizontalBlock DIRECTLY
+   UNIFIED TOP COMMAND BAR — ROYAL VELVET MAROON & BURNISHED GOLD
    ====================================================================== */
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) {
-    background: linear-gradient(135deg, #0B132B 0%, #1C2541 55%, #0F172A 100%) !important;
-    border: 2px solid #D4AF37 !important;
+    background: linear-gradient(135deg, #521320 0%, #6E1B2D 52%, #430F1A 100%) !important;
+    border: 2px solid #E5B84B !important;
     border-radius: 13px !important;
     padding: 8px 14px !important;
     margin-bottom: 6px !important;
     align-items: center !important;
     box-shadow:
-        inset 0 1px 0 rgba(253, 230, 138, 0.30),
-        0 4px 0 #050814,
-        0 10px 22px rgba(11, 19, 43, 0.18) !important;
+        inset 0 1px 0 rgba(253, 230, 138, 0.35),
+        0 4px 0 #2A0810,
+        0 10px 22px rgba(67, 15, 26, 0.20) !important;
 }
 .kulfi-cmd-left {
     display: flex;
@@ -186,7 +186,7 @@ div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) {
     border-radius: 9px;
     background: linear-gradient(145deg, #F59E0B 0%, #B45309 100%);
     border: 1.5px solid #FDE68A;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.40);
+    box-shadow: 0 2px 6px rgba(42, 8, 16, 0.45);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -200,18 +200,18 @@ div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) {
     color: #FFFFFF !important;
     letter-spacing: 0.01em;
     line-height: 1.15;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.65);
+    text-shadow: 0 1px 3px rgba(42, 8, 16, 0.65);
     white-space: nowrap;
 }
 .kulfi-cmd-sub {
     font-size: 11px !important;
     font-weight: 800 !important;
-    color: #FBBF24 !important;
+    color: #FDE68A !important;
     letter-spacing: 0.03em;
     margin-top: 1px;
 }
 
-/* Top Command Bar 3D Buttons — Strictly 38px Tall, High-Contrast Gold & Slate */
+/* Top Command Bar 3D Buttons — Strictly 38px Tall, High-Contrast Gold & Maroon */
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton > button,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button {
     min-height: 38px !important;
@@ -220,13 +220,13 @@ div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid=
     font-size: 12.5px !important;
     font-weight: 800 !important;
     border-radius: 9px !important;
-    border: 1.5px solid #D4AF37 !important;
-    background: linear-gradient(180deg, #334155 0%, #1E293B 100%) !important;
+    border: 1.5px solid #E5B84B !important;
+    background: linear-gradient(180deg, #7D2237 0%, #581524 100%) !important;
     color: #FFFFFF !important;
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.25),
-        0 3px 0 #090D16,
-        0 4px 10px rgba(0, 0, 0, 0.35) !important;
+        0 3px 0 #2A0810,
+        0 4px 10px rgba(42, 8, 16, 0.35) !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -245,40 +245,40 @@ div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid=
 }
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton > button:hover,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button:hover {
-    background: linear-gradient(180deg, #D97706 0%, #92400E 100%) !important;
+    background: linear-gradient(180deg, #B45309 0%, #78350F 100%) !important;
     border-color: #FDE68A !important;
     color: #FFFFFF !important;
     transform: translateY(-1px) !important;
 }
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton > button[kind="primary"] {
-    background: linear-gradient(180deg, #F59E0B 0%, #B45309 100%) !important;
+    background: linear-gradient(180deg, #D97706 0%, #92400E 100%) !important;
     border: 1.5px solid #FDE68A !important;
     color: #FFFFFF !important;
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.45),
-        0 3px 0 #78350F,
-        0 5px 12px rgba(245, 158, 11, 0.35) !important;
+        0 3px 0 #451A03,
+        0 5px 12px rgba(217, 119, 6, 0.35) !important;
 }
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton > button[kind="primary"] p {
     color: #FFFFFF !important;
     font-weight: 900 !important;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45) !important;
+    text-shadow: 0 1px 2px rgba(42, 8, 16, 0.45) !important;
 }
 
 /* ======================================================================
-   LAUNCHPAD SECTION HEADERS & 4-COLUMN HIGH-CONTRAST 3D CARDS
+   LAUNCHPAD SECTION HEADERS & 4-COLUMN HIGH-CONTRAST 3D MAROON CARDS
    ====================================================================== */
 .launchpad-section-hdr {
     font-family: 'Fraunces', serif !important;
     font-size: 13.5px !important;
     font-weight: 800 !important;
-    color: #0F172A !important;
+    color: #4A121E !important;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     margin: 6px 0 6px 2px;
     padding: 5px 12px;
-    background: linear-gradient(90deg, #E2E8F0 0%, rgba(226, 232, 240, 0) 100%);
-    border-left: 4px solid #D97706;
+    background: linear-gradient(90deg, #F3E5D3 0%, rgba(243, 229, 211, 0) 100%);
+    border-left: 4px solid #6E1B2D;
     border-radius: 4px;
     display: flex;
     align-items: center;
@@ -295,8 +295,8 @@ div[data-testid="stElementContainer"]:has(.kulfi-clickable-card-grid) {
 
 /* Directly Clickable 3D Luxury Cards — Strictly Scoped (Never Matches Top Bar!) */
 div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button {
-    background: linear-gradient(145deg, #1E293B 0%, #0F172A 100%) !important;
-    border: 1.5px solid #D4AF37 !important;
+    background: linear-gradient(145deg, #6E1B2D 0%, #4E1220 100%) !important;
+    border: 1.5px solid #E5B84B !important;
     border-left: 5px solid #F59E0B !important;
     border-radius: 12px !important;
     padding: 14px 16px !important;
@@ -309,26 +309,26 @@ div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kul
     text-align: left !important;
     white-space: nowrap !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.14),
-        0 4px 0 #020617,
-        0 8px 16px rgba(15, 23, 42, 0.16) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+        0 4px 0 #2A0810,
+        0 8px 16px rgba(78, 18, 32, 0.18) !important;
     transition: all 0.15s ease !important;
     margin-bottom: 4px !important;
     cursor: pointer !important;
 }
 div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button:hover {
-    background: linear-gradient(145deg, #B45309 0%, #78350F 100%) !important;
+    background: linear-gradient(145deg, #9A3412 0%, #7C2D12 100%) !important;
     border-color: #FDE68A !important;
     border-left: 5px solid #FDE68A !important;
     transform: translateY(-2px) !important;
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.30),
-        0 5px 0 #451A03,
-        0 12px 22px rgba(180, 83, 9, 0.28) !important;
+        0 5px 0 #431407,
+        0 12px 22px rgba(154, 52, 18, 0.28) !important;
 }
 div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button:active {
     transform: translateY(2px) !important;
-    box-shadow: 0 1px 0 #020617 !important;
+    box-shadow: 0 1px 0 #2A0810 !important;
 }
 div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button > div[data-testid="stMarkdownContainer"] {
     width: 100% !important;
@@ -343,20 +343,20 @@ div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kul
     line-height: 1.25 !important;
     margin: 0 !important;
     letter-spacing: 0.01em !important;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45) !important;
+    text-shadow: 0 1px 2px rgba(42, 8, 16, 0.50) !important;
 }
 
 /* ======================================================================
-   ALL STANDARD 3D BUTTONS ACROSS INDIVIDUAL SCREENS — HIGH CONTRAST
+   ALL STANDARD 3D BUTTONS ACROSS INDIVIDUAL SCREENS — ROYAL MAROON
    ====================================================================== */
 .stButton > button,
 [data-testid="stFormSubmitButton"] > button,
 .stDownloadButton > button,
 [data-testid="stLinkButton"] > a,
 [data-testid="stPopover"] > div > button {
-    background: linear-gradient(180deg, #1E293B 0%, #0F172A 100%) !important;
+    background: linear-gradient(180deg, #6E1B2D 0%, #4E1220 100%) !important;
     color: #FFFFFF !important;
-    border: 1.5px solid #D4AF37 !important;
+    border: 1.5px solid #E5B84B !important;
     border-radius: 9px !important;
     font-weight: 800 !important;
     font-size: 12.5px !important;
@@ -370,9 +370,9 @@ div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kul
     margin: 0 !important;
     text-decoration: none !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.20),
-        0 3px 0 #020617,
-        0 5px 10px rgba(15, 23, 42, 0.16) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.22),
+        0 3px 0 #2A0810,
+        0 5px 10px rgba(78, 18, 32, 0.18) !important;
     transition: all 0.12s ease !important;
     letter-spacing: 0.01em !important;
 }
@@ -394,14 +394,14 @@ div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kul
 .stDownloadButton > button:hover,
 [data-testid="stLinkButton"] > a:hover,
 [data-testid="stPopover"] > div > button:hover {
-    background: linear-gradient(180deg, #334155 0%, #1E293B 100%) !important;
-    border-color: #FBBF24 !important;
+    background: linear-gradient(180deg, #882339 0%, #631728 100%) !important;
+    border-color: #FDE68A !important;
     color: #FFFFFF !important;
     transform: translateY(-1px) !important;
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.30),
-        0 4px 0 #020617,
-        0 7px 14px rgba(15, 23, 42, 0.22) !important;
+        0 4px 0 #2A0810,
+        0 7px 14px rgba(78, 18, 32, 0.24) !important;
 }
 .stButton > button:active,
 [data-testid="stFormSubmitButton"] > button:active,
@@ -409,27 +409,27 @@ div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kul
 [data-testid="stLinkButton"] > a:active,
 [data-testid="stPopover"] > div > button:active {
     transform: translateY(2px) !important;
-    box-shadow: 0 1px 0 #020617 !important;
+    box-shadow: 0 1px 0 #2A0810 !important;
 }
 
-/* Primary 3D Action Buttons (Rich Burnished Copper-Amber) */
+/* Primary 3D Action Buttons (Rich Warm Copper-Saffron) */
 .stButton > button[kind="primary"],
 [data-testid="stFormSubmitButton"] > button[kind="primary"],
 .stDownloadButton > button[kind="primary"],
 [data-testid="baseButton-primary"] {
-    background: linear-gradient(180deg, #D97706 0%, #B45309 55%, #92400E 100%) !important;
+    background: linear-gradient(180deg, #C2410C 0%, #9A3412 55%, #7C2D12 100%) !important;
     color: #FFFFFF !important;
     border: 1.5px solid #FDE68A !important;
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.40),
-        0 3px 0 #451A03,
-        0 6px 14px rgba(180, 83, 9, 0.28) !important;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.40) !important;
+        0 3px 0 #431407,
+        0 6px 14px rgba(154, 52, 18, 0.28) !important;
+    text-shadow: 0 1px 2px rgba(42, 8, 16, 0.40) !important;
 }
 .stButton > button[kind="primary"]:hover,
 [data-testid="stFormSubmitButton"] > button[kind="primary"]:hover,
 .stDownloadButton > button[kind="primary"]:hover {
-    background: linear-gradient(180deg, #F59E0B 0%, #D97706 55%, #B45309 100%) !important;
+    background: linear-gradient(180deg, #D97706 0%, #B45309 55%, #92400E 100%) !important;
     border-color: #FEF3C7 !important;
     color: #FFFFFF !important;
     transform: translateY(-1px) !important;
@@ -442,16 +442,16 @@ div[data-testid="stHorizontalBlock"]:has(.ledger-cell) .stButton > button {
     height: 30px !important;
     font-size: 11.5px !important;
     line-height: 1 !important;
-    border: 1px solid #D4AF37 !important;
-    background: linear-gradient(180deg, #1E293B 0%, #0F172A 100%) !important;
+    border: 1px solid #E5B84B !important;
+    background: linear-gradient(180deg, #6E1B2D 0%, #4E1220 100%) !important;
     color: #FFFFFF !important;
-    box-shadow: 0 2px 0 #020617 !important;
+    box-shadow: 0 2px 0 #2A0810 !important;
 }
 
 /* High-Contrast Section Headers */
 .header-box-sales {
     background: linear-gradient(90deg, #FEF3C7 0%, #FDE68A 100%);
-    color: #0F172A !important;
+    color: #4A121E !important;
     border: 1.5px solid #D97706;
     border-radius: 9px;
     padding: 8px 13px;
@@ -461,7 +461,7 @@ div[data-testid="stHorizontalBlock"]:has(.ledger-cell) .stButton > button {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 2px 5px rgba(15, 23, 42, 0.06);
+    box-shadow: 0 2px 5px rgba(74, 18, 30, 0.06);
 }
 .header-box-restock {
     background: linear-gradient(90deg, #DCFCE7 0%, #BBF7D0 100%);
@@ -481,11 +481,11 @@ div[data-testid="stHorizontalBlock"]:has(.ledger-cell) .stButton > button {
 /* Compact Flavor Card Grid */
 .flavor-entry-row {
     background: #FFFFFF;
-    border: 1.2px solid #CBD5E1;
+    border: 1.2px solid #DECBB4;
     border-radius: 8px;
     padding: 5px 8px;
     margin-bottom: 5px;
-    box-shadow: 0 2px 4px rgba(15, 23, 42, 0.04);
+    box-shadow: 0 2px 4px rgba(74, 18, 30, 0.04);
 }
 .flavor-title-bar {
     display: flex;
@@ -496,7 +496,7 @@ div[data-testid="stHorizontalBlock"]:has(.ledger-cell) .stButton > button {
 .flavor-name {
     font-weight: 800;
     font-size: 12.5px;
-    color: #0F172A;
+    color: #3B1219;
 }
 .badge-open {
     background: #FEF3C7;
@@ -534,7 +534,7 @@ div[data-testid="stHorizontalBlock"]:has(.ledger-cell) .stButton > button {
     height: 36px !important;
     border-radius: 7px !important;
     background-color: #FFFFFF !important;
-    border: 1.5px solid #94A3B8 !important;
+    border: 1.5px solid #B89778 !important;
 }
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) .stNumberInput div[data-baseweb="input"] {
     min-height: 28px !important;
@@ -546,24 +546,24 @@ div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) .stNumberInpu
     font-size: 12.5px !important;
     text-align: left !important;
     font-weight: 700 !important;
-    color: #0F172A !important;
+    color: #3B1219 !important;
 }
 .stNumberInput label, .stTextInput label, .stSelectbox label, .stDateInput label {
     font-size: 11px !important;
     font-weight: 800 !important;
     margin-bottom: 2px !important;
     text-align: left !important;
-    color: #0F172A !important;
+    color: #4A121E !important;
 }
 
-/* Metric Cards — Crisp White with Royal Obsidian & Gold Top Bar */
+/* Metric Cards — Crisp White with Royal Maroon & Gold Top Bar */
 div[data-testid="stMetric"] {
     background: #FFFFFF !important;
-    border: 1.5px solid #CBD5E1 !important;
-    border-top: 3.5px solid #0F172A !important;
+    border: 1.5px solid #DECBB4 !important;
+    border-top: 3.5px solid #6E1B2D !important;
     border-radius: 10px !important;
     padding: 9px 12px !important;
-    box-shadow: 0 3px 10px rgba(15, 23, 42, 0.06) !important;
+    box-shadow: 0 3px 10px rgba(74, 18, 30, 0.06) !important;
     height: 100%;
 }
 div[data-testid="stMetricLabel"], 
@@ -573,7 +573,7 @@ div[data-testid="stMetricLabel"] p,
 div[data-testid="stMetricLabel"] span { 
     font-weight: 800 !important; 
     font-size: 11px !important; 
-    color: #475569 !important; 
+    color: #6B342A !important; 
     white-space: normal !important; 
     word-wrap: break-word !important; 
     overflow: visible !important; 
@@ -588,22 +588,22 @@ div[data-testid="stMetricValue"] {
     font-family: 'Fraunces', serif; 
     font-size: 1.15rem !important; 
     font-weight: 800 !important;
-    color: #0F172A !important; 
+    color: #4A121E !important; 
     margin-top: 4px;
 }
 
 /* Luxury Data Grids & Tables Across the Entire App */
 div[data-testid="stDataFrame"], div[data-testid="stDataEditor"] {
     border-radius: 10px !important;
-    border: 2px solid #0F172A !important;
+    border: 2px solid #5C1624 !important;
     background: #FFFFFF !important;
-    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08) !important;
+    box-shadow: 0 4px 14px rgba(74, 18, 30, 0.08) !important;
     overflow: hidden;
 }
 div[data-testid="stDataFrame"] th, div[data-testid="stDataEditor"] th {
     font-weight: 900 !important;
     color: #FDE68A !important;
-    background: linear-gradient(180deg, #1E293B 0%, #0F172A 100%) !important;
+    background: linear-gradient(180deg, #6E1B2D 0%, #4E1220 100%) !important;
     border-bottom: 2px solid #D4AF37 !important;
     text-align: center !important;
     font-size: 12px !important;
@@ -612,21 +612,21 @@ div[data-testid="stDataFrame"] td, div[data-testid="stDataEditor"] td {
     text-align: center !important;
     font-size: 11.5px !important;
     font-weight: 700 !important;
-    color: #0F172A !important;
+    color: #3B1219 !important;
 }
 .stMarkdown table {
     width: 100%;
     border-collapse: separate !important;
     border-spacing: 0 !important;
     background: #FFFFFF;
-    border: 1.5px solid #0F172A;
+    border: 1.5px solid #5C1624;
     border-radius: 10px;
     overflow: hidden;
-    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.07);
+    box-shadow: 0 4px 12px rgba(74, 18, 30, 0.07);
     margin: 6px 0 12px 0;
 }
 .stMarkdown table th {
-    background: linear-gradient(180deg, #1E293B 0%, #0F172A 100%) !important;
+    background: linear-gradient(180deg, #6E1B2D 0%, #4E1220 100%) !important;
     color: #FDE68A !important;
     font-weight: 800 !important;
     padding: 8px 10px !important;
@@ -636,20 +636,20 @@ div[data-testid="stDataFrame"] td, div[data-testid="stDataEditor"] td {
 }
 .stMarkdown table td {
     padding: 7px 10px !important;
-    border-bottom: 1px solid #E2E8F0 !important;
-    border-right: 1px solid #F1F5F9 !important;
+    border-bottom: 1px solid #EFE4D6 !important;
+    border-right: 1px solid #F7EFE5 !important;
     font-size: 12px !important;
     font-weight: 700 !important;
-    color: #0F172A !important;
+    color: #3B1219 !important;
 }
 .stMarkdown table tr:nth-child(even) td {
-    background: #F8FAFC !important;
+    background: #FDF9F3 !important;
 }
 .stMarkdown table tr:hover td {
     background: #FEF3C7 !important;
 }
 
-hr { border-color: #CBD5E1 !important; margin: 0.4rem 0 !important; }
+hr { border-color: #DECBB4 !important; margin: 0.4rem 0 !important; }
 
 /* Distinct Editable Table Input Borders */
 div[data-testid="stNumberInput"] div[data-baseweb="input"] {
@@ -664,13 +664,13 @@ div[data-testid="stNumberInput"] div[data-baseweb="input"]:focus-within {
 div[data-testid="stNumberInput"] input {
     text-align: left !important;
     font-weight: 800 !important;
-    color: #0F172A !important;
+    color: #3B1219 !important;
     padding-left: 8px !important;
 }
 
 /* Luxury Daily Entry & Stock Grid Cells */
 .entry-grid-header {
-    background: linear-gradient(180deg, #1E293B 0%, #0F172A 100%);
+    background: linear-gradient(180deg, #6E1B2D 0%, #4E1220 100%);
     color: #FDE68A !important;
     border: 1px solid #D4AF37;
     border-bottom: 2px solid #D4AF37;
@@ -683,7 +683,7 @@ div[data-testid="stNumberInput"] input {
 }
 .entry-grid-cell {
     background: #FFFFFF;
-    border: 1px solid #CBD5E1;
+    border: 1px solid #DECBB4;
     border-radius: 6px;
     height: 28px;
     display: flex;
@@ -691,11 +691,11 @@ div[data-testid="stNumberInput"] input {
     justify-content: center;
     font-size: 12px;
     font-weight: 800;
-    color: #0F172A;
+    color: #3B1219;
 }
 .entry-grid-cell-flavour {
     background: #FFFFFF;
-    border: 1px solid #CBD5E1;
+    border: 1px solid #DECBB4;
     border-left: 3.5px solid #D97706;
     border-radius: 6px;
     height: 28px;
@@ -705,7 +705,7 @@ div[data-testid="stNumberInput"] input {
     padding: 0 8px;
     font-size: 12px;
     font-weight: 800;
-    color: #0F172A;
+    color: #3B1219;
 }
 .entry-grid-cell-sold {
     background: #FEE2E2;
@@ -740,12 +740,12 @@ div[data-testid="stNumberInput"] input {
     margin-top: 6px;
     font-size: 12px;
     font-weight: 900;
-    color: #0F172A;
+    color: #4A121E;
 }
 
 /* Compact No-Scroll Ledger Rows for Expenses & Payments */
 .ledger-tbl-header {
-    background: linear-gradient(180deg, #1E293B 0%, #0F172A 100%);
+    background: linear-gradient(180deg, #6E1B2D 0%, #4E1220 100%);
     color: #FDE68A !important;
     border: 1px solid #D4AF37;
     border-bottom: 2px solid #D4AF37;
@@ -765,7 +765,7 @@ div[data-testid="stNumberInput"] input {
 }
 .ledger-cell {
     background: #FFFFFF;
-    border: 1px solid #CBD5E1;
+    border: 1px solid #DECBB4;
     border-radius: 5px;
     min-height: 30px;
     height: 30px;
@@ -774,7 +774,7 @@ div[data-testid="stNumberInput"] input {
     align-items: center;
     font-size: 10.5px;
     font-weight: 700;
-    color: #0F172A;
+    color: #3B1219;
     line-height: 1.15;
     white-space: nowrap !important;
     overflow: hidden;
@@ -782,7 +782,7 @@ div[data-testid="stNumberInput"] input {
 }
 .ledger-cell-desc {
     background: #FFFFFF;
-    border: 1px solid #CBD5E1;
+    border: 1px solid #DECBB4;
     border-left: 3px solid #D97706;
     border-radius: 5px;
     min-height: 30px;
@@ -793,7 +793,7 @@ div[data-testid="stNumberInput"] input {
     justify-content: center;
     font-size: 10.5px;
     font-weight: 700;
-    color: #0F172A;
+    color: #3B1219;
     line-height: 1.12;
     overflow: hidden;
 }
@@ -869,9 +869,9 @@ div[data-testid="stNumberInput"] input {
 .status-paid { background: #DCFCE7; color: #166534; border: 1px solid #86EFAC; }
 .status-partial { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
 .status-pending { background: #FEE2E2; color: #991B1B; border: 1px solid #FCA5A5; }
-.status-other { background: #F1F5F9; color: #334155; border: 1px solid #CBD5E1; }
+.status-other { background: #FDF8F3; color: #5C1624; border: 1px solid #DECBB4; }
 
-/* Freezer Analysis Boxed Table Styling — Royal Obsidian & Gold Grid */
+/* Freezer Analysis Boxed Table Styling — Royal Maroon & Gold Grid */
 .fa-boxed-table-wrap {
     width: 100%;
     overflow-x: auto;
@@ -882,14 +882,14 @@ div[data-testid="stNumberInput"] input {
     border-collapse: separate;
     border-spacing: 0;
     background: #FFFFFF;
-    border: 2px solid #0F172A;
+    border: 2px solid #5C1624;
     border-radius: 11px;
     overflow: hidden;
     font-size: 12.5px;
-    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+    box-shadow: 0 4px 14px rgba(74, 18, 30, 0.08);
 }
 .fa-boxed-table th {
-    background: linear-gradient(180deg, #1E293B 0%, #0F172A 100%);
+    background: linear-gradient(180deg, #6E1B2D 0%, #4E1220 100%);
     color: #FDE68A;
     font-weight: 800;
     padding: 9px 10px;
@@ -901,14 +901,14 @@ div[data-testid="stNumberInput"] input {
 }
 .fa-boxed-table td {
     padding: 7px 10px;
-    border-bottom: 1px solid #E2E8F0;
-    border-right: 1px solid #F1F5F9;
+    border-bottom: 1px solid #EFE4D6;
+    border-right: 1px solid #F7EFE5;
     text-align: center;
     font-weight: 700;
-    color: #0F172A;
+    color: #3B1219;
 }
 .fa-boxed-table tr:nth-child(even) td {
-    background: #F8FAFC;
+    background: #FDF9F3;
 }
 .fa-boxed-table tr:hover td {
     background: #FEF3C7;
@@ -918,7 +918,7 @@ div[data-testid="stNumberInput"] input {
     border-top: 2px solid #D97706 !important;
     border-bottom: none !important;
     font-weight: 900 !important;
-    color: #0F172A !important;
+    color: #4A121E !important;
     font-size: 13px;
 }
 /* Group Box 1: Audit */
@@ -947,14 +947,14 @@ div[data-testid="stNumberInput"] input {
 
 /* Group Box 4: Current */
 .fa-boxed-table th, .fa-boxed-table td { padding: 9px 14px !important; }
-.fa-box-cur-only-th { border-left: 2.5px solid #1D4ED8 !important; border-right: 2.5px solid #1D4ED8 !important; border-top: 2.5px solid #1D4ED8 !important; background: #1E3A8A !important; }
-.fa-box-cur-only-td { border-left: 2px solid #1D4ED8 !important; border-right: 2px solid #1D4ED8 !important; background: #EFF6FF !important; color: #124A1D !important; font-weight: 900 !important; font-size: 13.5px !important; }
-.fa-box-cur-only-tot { border-left: 2.5px solid #1D4ED8 !important; border-right: 2.5px solid #1D4ED8 !important; border-bottom: 2.5px solid #1D4ED8 !important; color: #124A1D !important; font-size: 14px !important; }
+.fa-box-cur-only-th { border-left: 2.5px solid #B45309 !important; border-right: 2.5px solid #B45309 !important; border-top: 2.5px solid #B45309 !important; background: #5C1624 !important; }
+.fa-box-cur-only-td { border-left: 2px solid #B45309 !important; border-right: 2px solid #B45309 !important; background: #FFFBEB !important; color: #4A121E !important; font-weight: 900 !important; font-size: 13.5px !important; }
+.fa-box-cur-only-tot { border-left: 2.5px solid #B45309 !important; border-right: 2.5px solid #B45309 !important; border-bottom: 2.5px solid #B45309 !important; color: #4A121E !important; font-size: 14px !important; }
 
 /* Read-only Live Sold cell in Sales Entry */
 .entry-grid-cell-livesold {
-    background: #EFF6FF;
-    border: 1px solid #93C5FD;
+    background: #FDF2F4;
+    border: 1px solid #E5B84B;
     border-radius: 6px;
     height: 28px;
     display: flex;
@@ -962,7 +962,7 @@ div[data-testid="stNumberInput"] input {
     justify-content: center;
     font-size: 12px;
     font-weight: 900;
-    color: #1E3A8A;
+    color: #5C1624;
 }
 
 /* Bulk Order Planner Cards */
@@ -974,25 +974,25 @@ div[data-testid="stNumberInput"] input {
 }
 .bulk-kpi-card {
     background: #FFFFFF;
-    border: 1.5px solid #CBD5E1;
-    border-top: 3.5px solid #0F172A;
+    border: 1.5px solid #DECBB4;
+    border-top: 3.5px solid #6E1B2D;
     border-radius: 10px;
     padding: 10px 12px;
     text-align: center;
-    box-shadow: 0 3px 8px rgba(15, 23, 42, 0.06);
+    box-shadow: 0 3px 8px rgba(74, 18, 30, 0.06);
 }
 .bulk-kpi-label {
     font-size: 10.5px;
     font-weight: 800;
     text-transform: uppercase;
-    color: #475569;
+    color: #6B342A;
     letter-spacing: 0.03em;
 }
 .bulk-kpi-val {
     font-family: 'Fraunces', serif;
     font-size: 17px;
     font-weight: 800;
-    color: #0F172A;
+    color: #4A121E;
     margin-top: 3px;
 }
 .bulk-kpi-sub {
@@ -4375,7 +4375,7 @@ else:
     with cmd_c2:
         with st.popover("⇄ Switch Screen", use_container_width=True):
             st.markdown(
-                "<div style='font-family:Fraunces,serif;font-size:13.5px;font-weight:800;color:#0F172A;"
+                "<div style='font-family:Fraunces,serif;font-size:13.5px;font-weight:800;color:#4A121E;"
                 "margin-bottom:6px;border-bottom:1.5px solid #D97706;padding-bottom:4px;'>"
                 "✨ Select Screen</div>",
                 unsafe_allow_html=True,
@@ -4394,7 +4394,7 @@ else:
     with cmd_c3:
         with st.popover(f"📍 {loc_badge}", use_container_width=True):
             st.markdown(
-                "<div style='font-family:Fraunces,serif;font-size:13.5px;font-weight:800;color:#0F172A;"
+                "<div style='font-family:Fraunces,serif;font-size:13.5px;font-weight:800;color:#4A121E;"
                 "margin-bottom:6px;border-bottom:1.5px solid #D97706;padding-bottom:4px;'>"
                 "🌐 Operating Location</div>",
                 unsafe_allow_html=True,
@@ -12465,624 +12465,289 @@ elif page == "Dashboard" and user_role == "admin":
     if not daily_df.empty or not exp_df.empty:
         st.markdown("---")
         st.markdown('<div id="reports"></div>', unsafe_allow_html=True)
-        st.markdown("## Reports & Performance Analytics")
-        today_cur = date.today()
-        month_start_cur = today_cur.replace(day=1)
-        default_end_cur = today_cur - timedelta(days=1)
-        if default_end_cur < month_start_cur:
-            default_end_cur = month_start_cur
 
-        all_dates = [today_cur, month_start_cur]
-        if not daily_df.empty: all_dates += [daily_df["Date"].min().date(), daily_df["Date"].max().date()]
-        if not exp_df.empty and exp_df["Date"].notna().any(): all_dates += [exp_df["Date"].min().date(), exp_df["Date"].max().date()]
-        min_d, max_d = min(all_dates), max(today_cur, max(all_dates))
+        # Initialize toggle states for the 3 Dashboard analytical views
+        if "show_dash_date_sales_log" not in st.session_state:
+            st.session_state["show_dash_date_sales_log"] = False
+        if "show_dash_rcm" not in st.session_state:
+            st.session_state["show_dash_rcm"] = False
+        if "show_dash_month_comp" not in st.session_state:
+            st.session_state["show_dash_month_comp"] = False
 
-        if "applied_start" not in st.session_state: st.session_state["applied_start"] = month_start_cur
-        if "applied_end" not in st.session_state: st.session_state["applied_end"] = default_end_cur
-        st.session_state["applied_start"] = min(max(st.session_state["applied_start"], min_d), max_d)
-        st.session_state["applied_end"] = min(max(st.session_state["applied_end"], min_d), max_d)
+        def _toggle_dash_section(sec_key):
+            st.cache_data.clear()
+            st.session_state[sec_key] = not bool(st.session_state.get(sec_key, False))
 
-        dashboard_filter_mode = st.radio(
-            "Filter By",
-            ["Month", "Custom Date Range"],
-            horizontal=True,
-            key="dashboard_report_filter_mode"
-        )
-
-        with st.form("date_range_form"):
-            if dashboard_filter_mode == "Month":
-                rc1, rc2, rc3 = st.columns([2, 2, 1], gap="small", vertical_alignment="bottom")
-                dash_month_names = list(calendar.month_name)[1:]
-                default_dash_month = st.session_state["applied_start"].month
-                default_dash_year = st.session_state["applied_start"].year
-                with rc1:
-                    dash_month_name = st.selectbox(
-                        "Month",
-                        dash_month_names,
-                        index=default_dash_month - 1,
-                        key="dashboard_report_month"
-                    )
-                    dash_month_num = dash_month_names.index(dash_month_name) + 1
-                with rc2:
-                    dash_year = st.number_input(
-                        "Year",
-                        min_value=min_d.year,
-                        max_value=max_d.year,
-                        value=default_dash_year,
-                        step=1,
-                        key="dashboard_report_year"
-                    )
-                pending_start = date(int(dash_year), int(dash_month_num), 1)
-                pending_end = date(int(dash_year), int(dash_month_num), calendar.monthrange(int(dash_year), int(dash_month_num))[1])
-                pending_start = max(pending_start, min_d)
-                pending_end = min(pending_end, max_d)
-            else:
-                rc1, rc2, rc3 = st.columns([2, 2, 1], gap="small", vertical_alignment="bottom")
-                with rc1:
-                    pending_start = st.date_input(
-                        "Start Date",
-                        value=st.session_state["applied_start"],
-                        min_value=min_d,
-                        max_value=max_d,
-                        format="DD-MM-YYYY",
-                        key="dashboard_report_start"
-                    )
-                with rc2:
-                    pending_end = st.date_input(
-                        "End Date",
-                        value=st.session_state["applied_end"],
-                        min_value=min_d,
-                        max_value=max_d,
-                        format="DD-MM-YYYY",
-                        key="dashboard_report_end"
-                    )
-            with rc3:
-                apply_clicked = st.form_submit_button("Apply", type="primary", use_container_width=True)
-
-        if apply_clicked:
-            st.session_state["applied_start"] = pending_start
-            st.session_state["applied_end"] = pending_end
-        range_start, range_end = st.session_state["applied_start"], st.session_state["applied_end"]
-        
-        if range_start > range_end: 
-            st.error("'From' date is after 'To' date - swap them and click Apply again.")
-            range_start, range_end = range_end, range_start
-            
-        pass
-
-        range_df = daily_df[(daily_df["Date"].dt.date >= range_start) & (daily_df["Date"].dt.date <= range_end)] if not daily_df.empty else daily_df
-        range_exp = exp_df[(exp_df["Date"].dt.date >= range_start) & (exp_df["Date"].dt.date <= range_end)] if not exp_df.empty else exp_df
-
-        total_rev = range_df["Total_Collection"].sum() if not range_df.empty else 0.0
-        total_units = int(round(range_df["Sold_Total"].sum())) if not range_df.empty else 0
-
-        # COGS uses sold units in the selected range at each flavour's cost_price.
-        flavor_range_df = load_db_flavor_sales(start_date=range_start, end_date=range_end)
-        exact_cogs_sold = float(flavor_range_df["COGS (₹)"].sum()) if not flavor_range_df.empty else 0.0
-
-        # Expense buckets use expense_date within the selected range.
-        expense_types = range_exp["Expense_Type"].fillna("").astype(str).str.strip().str.upper() if not range_exp.empty else pd.Series(dtype=str)
-        expense_categories = range_exp["Category"].fillna("").astype(str).str.strip().str.casefold() if not range_exp.empty else pd.Series(dtype=str)
-        capex_total = float(range_exp.loc[expense_types == "CAPEX", "Amount"].sum()) if not range_exp.empty else 0.0
-        # Use the same gross payable salary/commission/allowance calculation as payslips.
-        # The Dashboard counts only the part of each employment period in the date range.
-        _, _, _, staff_pay_breakdown = calculate_incurred_labour_for_range(
-            range_start, range_end, limit_to_employment=True
-        )
-        staff_salary_total = sum(float(staff["incurred"]) for staff in staff_pay_breakdown.values())
-        unassigned_labour_df = range_exp[
-            (expense_types == "OPEX") & (expense_categories == "labour charges") & range_exp["Staff_Name"].isna()
-        ] if not range_exp.empty else pd.DataFrame()
-        unassigned_labour_total = float(unassigned_labour_df["Amount"].sum()) if not unassigned_labour_df.empty else 0.0
-        tot_labour_incurred = staff_salary_total + unassigned_labour_total
-        non_labour_opex_df = range_exp[(expense_types == "OPEX") & (~expense_categories.isin(["labour charges", "cost of goods"]))] if not range_exp.empty else pd.DataFrame()
-        other_opex_total = float(non_labour_opex_df["Amount"].sum()) if not non_labour_opex_df.empty else 0.0
-
-        total_incurred_opex = tot_labour_incurred + other_opex_total
-
-        gross_profit = total_rev - exact_cogs_sold
-        cogs_margin = (exact_cogs_sold / total_rev * 100) if total_rev > 0 else 0.0
-        gross_margin = (gross_profit / total_rev * 100) if total_rev > 0 else 0.0
-        net_profit = gross_profit - total_incurred_opex
-        net_margin = (net_profit / total_rev * 100) if total_rev > 0 else 0.0
-        opex_margin = (total_incurred_opex / total_rev * 100) if total_rev > 0 else 0.0
-
-        st.markdown("### 1. Revenue Cycle Management & Financial Performance")
-
-        # Calculate average days for the selected range:
-        # - Month filter: if current month, use 1st until yesterday (today - 1); else use month days count
-        # - Custom range: exact number of days in the selected date range
-        today_ref = date.today()
-        if dashboard_filter_mode == "Month":
-            if int(dash_year) == today_ref.year and int(dash_month_num) == today_ref.month:
-                elapsed_days = max(1, (today_ref - date(today_ref.year, today_ref.month, 1)).days)
-                avg_divisor_days = elapsed_days
-            else:
-                avg_divisor_days = max(1, calendar.monthrange(int(dash_year), int(dash_month_num))[1])
-        else:
-            avg_divisor_days = max(1, (range_end - range_start).days + 1)
-
-        avg_rev_per_day = (total_rev / float(avg_divisor_days)) if avg_divisor_days > 0 else 0.0
-
-        st.markdown('<div class="dashboard-kpi-row">', unsafe_allow_html=True)
-        mc1, mc2, mc3, mc4, mc5, mc6, mc7 = st.columns(7)
-        mc1.metric("Revenue", f"₹{total_rev:,.0f}")
-        mc2.metric("Avg Rev / Day", f"₹{avg_rev_per_day:,.0f}")
-        mc3.metric("Units Sold", f"{total_units:,}")
-        mc4.metric(f"COGS ({cogs_margin:.1f}%)", f"₹{exact_cogs_sold:,.0f}")
-        mc5.metric(f"Gr. Profit ({gross_margin:.1f}%)", f"₹{gross_profit:,.0f}")
-        mc6.metric(f"OPEX ({opex_margin:.1f}%)", f"₹{total_incurred_opex:,.0f}")
-        mc7.metric(f"Net Profit ({net_margin:.1f}%)", f"₹{net_profit:,.0f}")
-        st.markdown('</div>', unsafe_allow_html=True)
-
-        # ------------------------------------------------------------------
-        # INTERACTIVE OPEX BREAKDOWN & INSIGHTS BUTTON + PANEL
-        # ------------------------------------------------------------------
-        if "show_dash_opex_breakdown" not in st.session_state:
-            st.session_state["show_dash_opex_breakdown"] = False
-
-        def _toggle_dash_opex_breakdown():
-            st.session_state["show_dash_opex_breakdown"] = not bool(st.session_state.get("show_dash_opex_breakdown", False))
-
-        opex_btn_c1, opex_btn_c2 = st.columns([1.5, 2.5], gap="small", vertical_alignment="center")
-        with opex_btn_c1:
-            opex_btn_lbl = (
-                "🔼 Hide OPEX Breakdown & Insights"
-                if st.session_state["show_dash_opex_breakdown"]
-                else f"🧾 View OPEX Breakdown & Insights (₹{total_incurred_opex:,.0f} • {opex_margin:.1f}%)"
-            )
+        # 3 Toggle Buttons right below "Revenue, last 14 days" graph
+        btn_col1, btn_col2, btn_col3 = st.columns(3, gap="small")
+        with btn_col1:
+            _lbl_s1 = "🔼 Hide Date-wise Sales Log" if st.session_state["show_dash_date_sales_log"] else "📋 Date-wise Sales Log"
             st.button(
-                opex_btn_lbl,
-                key="btn_toggle_dash_opex_breakdown",
-                type="primary" if not st.session_state["show_dash_opex_breakdown"] else "secondary",
+                _lbl_s1,
+                key="dash_toggle_btn_sales_log",
+                type="primary" if st.session_state["show_dash_date_sales_log"] else "secondary",
                 use_container_width=True,
-                on_click=_toggle_dash_opex_breakdown,
+                on_click=_toggle_dash_section,
+                args=("show_dash_date_sales_log",),
             )
-        with opex_btn_c2:
-            st.markdown(
-                "<div style='font-size:12px;font-weight:700;color:#5C3D24;'>"
-                "Category & sub-category split, labour & burn rate"
-                "</div>",
-                unsafe_allow_html=True,
+        with btn_col2:
+            _lbl_s2 = "🔼 Hide Revenue Cycle Management" if st.session_state["show_dash_rcm"] else "💰 Revenue Cycle Management"
+            st.button(
+                _lbl_s2,
+                key="dash_toggle_btn_rcm",
+                type="primary" if st.session_state["show_dash_rcm"] else "secondary",
+                use_container_width=True,
+                on_click=_toggle_dash_section,
+                args=("show_dash_rcm",),
+            )
+        with btn_col3:
+            _lbl_s3 = "🔼 Hide Month-Wise Performance Comparison" if st.session_state["show_dash_month_comp"] else "📅 Month-Wise Performance Comparison"
+            st.button(
+                _lbl_s3,
+                key="dash_toggle_btn_month_comp",
+                type="primary" if st.session_state["show_dash_month_comp"] else "secondary",
+                use_container_width=True,
+                on_click=_toggle_dash_section,
+                args=("show_dash_month_comp",),
             )
 
-        if st.session_state.get("show_dash_opex_breakdown", False):
-            with st.container(border=True):
-                st.markdown(
-                    f"""
-                    <div style="background:linear-gradient(135deg, #4A2418 0%, #70440E 100%);padding:14px 18px;border-radius:10px;color:#FFFFFF;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-                        <div>
-                            <div style="font-size:11px;font-weight:800;color:#F6E7CC;letter-spacing:0.6px;text-transform:uppercase;">OPERATING EXPENSE (OPEX) DEEP-DIVE & INSIGHTS</div>
-                            <div style="font-size:18px;font-weight:900;color:#FFFFFF;margin-top:2px;">Period: {range_start.strftime('%d %b %Y')} — {range_end.strftime('%d %b %Y')} ({avg_divisor_days} active days)</div>
-                        </div>
-                        <div style="text-align:right;">
-                            <div style="font-size:11px;color:#F6E7CC;font-weight:700;">Total Incurred OPEX</div>
-                            <div style="font-size:22px;font-weight:900;color:#FFD166;">₹{total_incurred_opex:,.0f} <span style="font-size:13px;color:#FFF2DC;">({opex_margin:.1f}% of Rev)</span></div>
-                        </div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
+        if st.session_state["show_dash_date_sales_log"] or st.session_state["show_dash_rcm"]:
+            st.markdown("## Reports & Performance Analytics")
 
-                # Build granular Category & Sub-Category rows
-                opex_detail_rows = []
-                opex_cat_totals = {}
+            today_cur = date.today()
+            month_start_cur = today_cur.replace(day=1)
+            default_end_cur = today_cur - timedelta(days=1)
+            if default_end_cur < month_start_cur:
+                default_end_cur = month_start_cur
 
-                # 1. Incurred Staff Labour broken down by Fixed Salary, Commission, Allowances + Staff names
-                tot_fixed_sal_inc = sum(float(v.get("salary", 0.0)) for v in staff_pay_breakdown.values())
-                tot_comm_inc = sum(float(v.get("commission", 0.0)) for v in staff_pay_breakdown.values())
-                tot_allow_inc = sum(float(v.get("allowance", 0.0)) for v in staff_pay_breakdown.values())
+            all_dates = [today_cur, month_start_cur]
+            if not daily_df.empty: all_dates += [daily_df["Date"].min().date(), daily_df["Date"].max().date()]
+            if not exp_df.empty and exp_df["Date"].notna().any(): all_dates += [exp_df["Date"].min().date(), exp_df["Date"].max().date()]
+            min_d, max_d = min(all_dates), max(today_cur, max(all_dates))
 
-                if tot_fixed_sal_inc > 0:
-                    staff_sal_notes = ", ".join(
-                        f"{sn}: ₹{float(sv['salary']):,.0f} ({int(sv.get('days', 0))}d)"
-                        for sn, sv in sorted(staff_pay_breakdown.items(), key=lambda x: -float(x[1].get("salary", 0)))
-                        if float(sv.get("salary", 0)) > 0
-                    )
-                    opex_detail_rows.append({
-                        "Category": "Labour Charges",
-                        "Sub-Category": "Pro-Rata Fixed Salaries (Incurred)",
-                        "Entries": sum(1 for sv in staff_pay_breakdown.values() if float(sv.get("salary", 0)) > 0),
-                        "Amount": tot_fixed_sal_inc,
-                        "Details": staff_sal_notes or "Active staff pro-rata salary",
-                    })
-                if tot_comm_inc > 0:
-                    staff_comm_notes = ", ".join(
-                        f"{sn}: ₹{float(sv['commission']):,.0f}"
-                        for sn, sv in sorted(staff_pay_breakdown.items(), key=lambda x: -float(x[1].get("commission", 0)))
-                        if float(sv.get("commission", 0)) > 0
-                    )
-                    opex_detail_rows.append({
-                        "Category": "Labour Charges",
-                        "Sub-Category": "Sales Incentives & Commissions",
-                        "Entries": sum(1 for sv in staff_pay_breakdown.values() if float(sv.get("commission", 0)) > 0),
-                        "Amount": tot_comm_inc,
-                        "Details": staff_comm_notes or "Cart shift target commissions",
-                    })
-                if tot_allow_inc > 0:
-                    staff_allow_notes = ", ".join(
-                        f"{sn}: ₹{float(sv['allowance']):,.0f}"
-                        for sn, sv in sorted(staff_pay_breakdown.items(), key=lambda x: -float(x[1].get("allowance", 0)))
-                        if float(sv.get("allowance", 0)) > 0
-                    )
-                    opex_detail_rows.append({
-                        "Category": "Labour Charges",
-                        "Sub-Category": "Daily Food, Tea & Fuel Allowances",
-                        "Entries": sum(1 for sv in staff_pay_breakdown.values() if float(sv.get("allowance", 0)) > 0),
-                        "Amount": tot_allow_inc,
-                        "Details": staff_allow_notes or "Daily shift food/tea & fuel allowances",
-                    })
-                if not unassigned_labour_df.empty:
-                    for sub_c, grp_u in unassigned_labour_df.groupby(unassigned_labour_df["Sub_Category"].fillna("Monthly Food / General Labour")):
-                        amt_u = float(grp_u["Amount"].sum())
-                        if amt_u > 0:
-                            descs = [str(d).strip() for d in grp_u["Description"].dropna().unique().tolist() if str(d).strip()]
-                            opex_detail_rows.append({
-                                "Category": "Labour Charges",
-                                "Sub-Category": str(sub_c or "Monthly Food / General Labour"),
-                                "Entries": int(len(grp_u)),
-                                "Amount": amt_u,
-                                "Details": "; ".join(descs[:3]) if descs else "Unassigned labour expense",
-                            })
+            if "applied_start" not in st.session_state: st.session_state["applied_start"] = month_start_cur
+            if "applied_end" not in st.session_state: st.session_state["applied_end"] = default_end_cur
+            st.session_state["applied_start"] = min(max(st.session_state["applied_start"], min_d), max_d)
+            st.session_state["applied_end"] = min(max(st.session_state["applied_end"], min_d), max_d)
 
-                # 2. Non-Labour OPEX broken down by Category -> Sub-Category
-                if not non_labour_opex_df.empty:
-                    nl_clean = non_labour_opex_df.copy()
-                    nl_clean["Cat_Clean"] = nl_clean["Category"].fillna("Miscellaneous Expense").astype(str).str.strip()
-                    nl_clean["Sub_Clean"] = nl_clean["Sub_Category"].fillna("General").astype(str).str.strip()
-                    nl_clean.loc[nl_clean["Sub_Clean"] == "", "Sub_Clean"] = "General"
-                    for (cat_n, sub_n), grp_nl in nl_clean.groupby(["Cat_Clean", "Sub_Clean"]):
-                        amt_nl = float(grp_nl["Amount"].sum())
-                        if amt_nl <= 0:
-                            continue
-                        descs = [str(d).strip() for d in grp_nl["Description"].dropna().unique().tolist() if str(d).strip()]
-                        attrs = [str(a).strip() for a in grp_nl["Attributed_To"].dropna().unique().tolist() if str(a).strip()]
-                        detail_str = "; ".join(descs[:2]) if descs else (", ".join(attrs[:2]) if attrs else "Recorded OPEX")
-                        opex_detail_rows.append({
-                            "Category": cat_n,
-                            "Sub-Category": sub_n,
-                            "Entries": int(len(grp_nl)),
-                            "Amount": amt_nl,
-                            "Details": detail_str,
-                        })
+            dashboard_filter_mode = st.radio(
+                "Filter By",
+                ["Month", "Custom Date Range"],
+                horizontal=True,
+                key="dashboard_report_filter_mode"
+            )
 
-                for r_item in opex_detail_rows:
-                    c_key = r_item["Category"]
-                    opex_cat_totals[c_key] = opex_cat_totals.get(c_key, 0.0) + float(r_item["Amount"])
-
-                sorted_cats = sorted(opex_cat_totals.items(), key=lambda x: -x[1])
-                top_cat_name = sorted_cats[0][0] if sorted_cats else "None"
-                top_cat_amt = sorted_cats[0][1] if sorted_cats else 0.0
-                top_cat_share = (top_cat_amt / total_incurred_opex * 100.0) if total_incurred_opex > 0 else 0.0
-
-                labour_share_opex = (tot_labour_incurred / total_incurred_opex * 100.0) if total_incurred_opex > 0 else 0.0
-                other_share_opex = (other_opex_total / total_incurred_opex * 100.0) if total_incurred_opex > 0 else 0.0
-                opex_per_unit = (total_incurred_opex / float(total_units)) if total_units > 0 else 0.0
-                gp_per_unit = (gross_profit / float(total_units)) if total_units > 0 else 0.0
-                daily_opex_burn = (total_incurred_opex / float(avg_divisor_days)) if avg_divisor_days > 0 else 0.0
-                daily_gp_gen = (gross_profit / float(avg_divisor_days)) if avg_divisor_days > 0 else 0.0
-
-                # Key Executive Insights Strip
-                ins1, ins2, ins3, ins4 = st.columns(4, gap="small")
-                with ins1:
-                    st.markdown(
-                        f"""
-                        <div style="background:#FFF8EE;border:1.5px solid #E3C391;border-radius:10px;padding:10px 12px;height:100%;">
-                            <div style="font-size:10.5px;font-weight:800;color:#8A5E17;text-transform:uppercase;">🔥 #1 Cost Driver</div>
-                            <div style="font-size:15px;font-weight:900;color:#4A2418;margin-top:2px;">{escape(str(top_cat_name))}</div>
-                            <div style="font-size:14px;font-weight:900;color:#C43D17;margin-top:2px;">₹{top_cat_amt:,.0f} <span style="font-size:11px;color:#6B5138;">({top_cat_share:.1f}% of OPEX)</span></div>
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
-                with ins2:
-                    st.markdown(
-                        f"""
-                        <div style="background:#F4F9FD;border:1.5px solid #B5D3EB;border-radius:10px;padding:10px 12px;height:100%;">
-                            <div style="font-size:10.5px;font-weight:800;color:#1B5E91;text-transform:uppercase;">👥 Labour vs Overhead</div>
-                            <div style="font-size:13px;font-weight:900;color:#1B5E91;margin-top:3px;">Labour: ₹{tot_labour_incurred:,.0f} ({labour_share_opex:.1f}%)</div>
-                            <div style="font-size:12.5px;font-weight:800;color:#4A2418;margin-top:2px;">Other OPEX: ₹{other_opex_total:,.0f} ({other_share_opex:.1f}%)</div>
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
-                with ins3:
-                    st.markdown(
-                        f"""
-                        <div style="background:#F3FAF5;border:1.5px solid #B5DFC0;border-radius:10px;padding:10px 12px;height:100%;">
-                            <div style="font-size:10.5px;font-weight:800;color:#124A1D;text-transform:uppercase;">🍦 OPEX Per Kulfi Sold</div>
-                            <div style="font-size:16px;font-weight:900;color:#124A1D;margin-top:2px;">₹{opex_per_unit:,.2f} / pc</div>
-                            <div style="font-size:11.5px;font-weight:700;color:#4A2418;margin-top:2px;">vs Gr. Margin ₹{gp_per_unit:,.2f} / pc</div>
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
-                with ins4:
-                    st.markdown(
-                        f"""
-                        <div style="background:#FDF6F6;border:1.5px solid #EAB6B6;border-radius:10px;padding:10px 12px;height:100%;">
-                            <div style="font-size:10.5px;font-weight:800;color:#9E2A2B;text-transform:uppercase;">📆 Daily OPEX Burn Rate</div>
-                            <div style="font-size:16px;font-weight:900;color:#9E2A2B;margin-top:2px;">₹{daily_opex_burn:,.0f} / day</div>
-                            <div style="font-size:11.5px;font-weight:700;color:#4A2418;margin-top:2px;">vs Daily Gr. Profit ₹{daily_gp_gen:,.0f}/d</div>
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
-
-                st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
-
-                if opex_detail_rows:
-                    # Category Progress Bars + Granular Category -> Sub-Category Table
-                    cat_col_left, sub_col_right = st.columns([1.05, 1.55], gap="medium")
-                    with cat_col_left:
-                        st.markdown("##### 📊 Category Share of OPEX & Revenue")
-                        palette_bars = ["#E8542A", "#2A9D8F", "#8A5E17", "#1B5E91", "#6A4C93", "#C43D17", "#124A1D", "#D97706"]
-                        for idx_c, (c_name, c_amt) in enumerate(sorted_cats):
-                            pct_opex = (c_amt / total_incurred_opex * 100.0) if total_incurred_opex > 0 else 0.0
-                            pct_rev = (c_amt / total_rev * 100.0) if total_rev > 0 else 0.0
-                            bar_w = min(100.0, max(3.0, pct_opex))
-                            b_col = palette_bars[idx_c % len(palette_bars)]
-                            st.markdown(
-                                f"""
-                                <div style="background:#FFFDF9;border:1px solid #E6D5B8;border-radius:8px;padding:8px 10px;margin-bottom:7px;">
-                                    <div style="display:flex;justify-content:space-between;align-items:center;font-size:12.5px;font-weight:800;color:#2A1B10;">
-                                        <span>{escape(str(c_name))}</span>
-                                        <span style="color:{b_col};font-weight:900;">₹{c_amt:,.0f}</span>
-                                    </div>
-                                    <div style="display:flex;justify-content:space-between;font-size:11px;color:#6B5138;margin-top:2px;margin-bottom:4px;">
-                                        <span><b>{pct_opex:.1f}%</b> of OPEX</span>
-                                        <span><b>{pct_rev:.1f}%</b> of Revenue</span>
-                                    </div>
-                                    <div style="width:100%;background:#EFE4D2;height:7px;border-radius:4px;overflow:hidden;">
-                                        <div style="width:{bar_w:.1f}%;background:{b_col};height:7px;border-radius:4px;"></div>
-                                    </div>
-                                </div>
-                                """,
-                                unsafe_allow_html=True,
-                            )
-
-                    with sub_col_right:
-                        st.markdown("##### 🧾 Granular Category & Sub-Category OPEX Table")
-                        opex_sub_df = pd.DataFrame(opex_detail_rows).sort_values(["Amount"], ascending=False).reset_index(drop=True)
-                        opex_sub_df["% of OPEX"] = opex_sub_df["Amount"].apply(
-                            lambda v: f"{(float(v) / total_incurred_opex * 100.0):.1f}%" if total_incurred_opex > 0 else "0.0%"
+            with st.form("date_range_form"):
+                if dashboard_filter_mode == "Month":
+                    rc1, rc2, rc3 = st.columns([2, 2, 1], gap="small", vertical_alignment="bottom")
+                    dash_month_names = list(calendar.month_name)[1:]
+                    default_dash_month = st.session_state["applied_start"].month
+                    default_dash_year = st.session_state["applied_start"].year
+                    with rc1:
+                        dash_month_name = st.selectbox(
+                            "Month",
+                            dash_month_names,
+                            index=default_dash_month - 1,
+                            key="dashboard_report_month"
                         )
-                        opex_sub_df["% of Rev"] = opex_sub_df["Amount"].apply(
-                            lambda v: f"{(float(v) / total_rev * 100.0):.1f}%" if total_rev > 0 else "0.0%"
+                        dash_month_num = dash_month_names.index(dash_month_name) + 1
+                    with rc2:
+                        dash_year = st.number_input(
+                            "Year",
+                            min_value=min_d.year,
+                            max_value=max_d.year,
+                            value=default_dash_year,
+                            step=1,
+                            key="dashboard_report_year"
                         )
-                        opex_sub_df["Amount (₹)"] = opex_sub_df["Amount"].apply(lambda v: f"₹{float(v):,.0f}")
-
-                        total_row_opex = pd.DataFrame([{
-                            "Category": "TOTAL INCURRED OPEX",
-                            "Sub-Category": f"{len(opex_detail_rows)} Sub-Components",
-                            "Entries": int(opex_sub_df["Entries"].sum()),
-                            "Amount (₹)": f"₹{total_incurred_opex:,.0f}",
-                            "% of OPEX": "100.0%",
-                            "% of Rev": f"{opex_margin:.1f}%",
-                            "Details": f"Net Margin after OPEX: ₹{net_profit:,.0f} ({net_margin:.1f}%)",
-                        }])
-                        disp_opex_df = pd.concat(
-                            [opex_sub_df[["Category", "Sub-Category", "Entries", "Amount (₹)", "% of OPEX", "% of Rev", "Details"]], total_row_opex],
-                            ignore_index=True,
-                        )
-                        st.dataframe(
-                            disp_opex_df.style.apply(
-                                lambda r: ["background-color:#FFF2DC;font-weight:900;color:#4A2418;" if r.get("Category") == "TOTAL INCURRED OPEX" else "" for _ in r],
-                                axis=1,
-                            ),
-                            hide_index=True,
-                            use_container_width=True,
-                            height=min(420, 42 + len(disp_opex_df) * 35),
-                        )
+                    pending_start = date(int(dash_year), int(dash_month_num), 1)
+                    pending_end = date(int(dash_year), int(dash_month_num), calendar.monthrange(int(dash_year), int(dash_month_num))[1])
+                    pending_start = max(pending_start, min_d)
+                    pending_end = min(pending_end, max_d)
                 else:
-                    st.info("No operating expenses incurred in the selected period.")
+                    rc1, rc2, rc3 = st.columns([2, 2, 1], gap="small", vertical_alignment="bottom")
+                    with rc1:
+                        pending_start = st.date_input(
+                            "Start Date",
+                            value=st.session_state["applied_start"],
+                            min_value=min_d,
+                            max_value=max_d,
+                            format="DD-MM-YYYY",
+                            key="dashboard_report_start"
+                        )
+                    with rc2:
+                        pending_end = st.date_input(
+                            "End Date",
+                            value=st.session_state["applied_end"],
+                            min_value=min_d,
+                            max_value=max_d,
+                            format="DD-MM-YYYY",
+                            key="dashboard_report_end"
+                        )
+                with rc3:
+                    apply_clicked = st.form_submit_button("Apply", type="primary", use_container_width=True)
 
-        st.markdown("#### Daily Revenue Trend")
-        if not range_df.empty:
-            line_chart = alt.Chart(range_df.groupby("Date", as_index=False)["Total_Collection"].sum()).mark_line(point=True, color="#E8542A").encode(
-                x=alt.X("Date:T", title="Date", axis=alt.Axis(format="%d-%b")),
-                y=alt.Y("Total_Collection:Q", title="Revenue (₹)"),
-                tooltip=[alt.Tooltip("Date:T", format="%d-%b-%y", title="Date"), alt.Tooltip("Total_Collection:Q", format=",.2f", title="Revenue (₹)")]
-            ).properties(height=300)
-            st.altair_chart(line_chart, use_container_width=True)
-        else:
-            st.caption("No revenue data available for this range to plot.")
+            if apply_clicked:
+                st.session_state["applied_start"] = pending_start
+                st.session_state["applied_end"] = pending_end
+            range_start, range_end = st.session_state["applied_start"], st.session_state["applied_end"]
+        
+            if range_start > range_end: 
+                st.error("'From' date is after 'To' date - swap them and click Apply again.")
+                range_start, range_end = range_end, range_start
+            
+            pass
 
-        # Sales report tables show completed cart sales dates (<= yesterday) PLUS any direct Freezer sales in the range (including today).
-        latest_completed_sales_date = date.today() - timedelta(days=1)
-        if not range_df.empty:
-            is_fzr_mask = range_df["Cart"].astype(str).str.strip().str.upper().str.contains("FREEZER")
-            report_sales_df = range_df[
-                (pd.to_datetime(range_df["Date"]).dt.date <= latest_completed_sales_date) | is_fzr_mask
-            ].copy()
-        else:
-            report_sales_df = pd.DataFrame()
+            range_df = daily_df[(daily_df["Date"].dt.date >= range_start) & (daily_df["Date"].dt.date <= range_end)] if not daily_df.empty else daily_df
+            range_exp = exp_df[(exp_df["Date"].dt.date >= range_start) & (exp_df["Date"].dt.date <= range_end)] if not exp_df.empty else exp_df
 
-        st.markdown("#### Date-Wise Daily Sales Log")
-        if not report_sales_df.empty:
-            date_wise_agg = report_sales_df.groupby("Date").agg({
-                            "Sold_Total": "sum",
-                            "Total_Collection": "sum",
-                            "PhonePe": "sum",
-                            "Cash": "sum",
-                            "Staff_Advance": "sum",
-                            "Food_Tea_Cash": "sum",
-                            "Cash_Leakage_Explained": "sum",
-                            "Cash_Leakage_Unexplained": "sum"
-                        }).reset_index()
+            total_rev = range_df["Total_Collection"].sum() if not range_df.empty else 0.0
+            total_units = int(round(range_df["Sold_Total"].sum())) if not range_df.empty else 0
 
-            date_wise_table = date_wise_agg.rename(columns={
-                            "Sold_Total": "Units Sold",
-                            "Total_Collection": "Revenue (₹)",
-                            "PhonePe": "PhonePe (₹)",
-                            "Cash": "Cash (₹)",
-                            "Staff_Advance": "Staff Advance (₹)",
-                            "Food_Tea_Cash": "Food / Tea (₹)",
-                            "Cash_Leakage_Explained": "Leakage Expl (₹)",
-                            "Cash_Leakage_Unexplained": "Leakage Unexpl (₹)"
-                        })
-            date_wise_table["Units Sold"] = date_wise_table["Units Sold"].apply(lambda x: int(round(x)))
-            date_wise_table["Date"] = pd.to_datetime(date_wise_table["Date"]).dt.date
+            # COGS uses sold units in the selected range at each flavour's cost_price.
+            flavor_range_df = load_db_flavor_sales(start_date=range_start, end_date=range_end)
+            exact_cogs_sold = float(flavor_range_df["COGS (₹)"].sum()) if not flavor_range_df.empty else 0.0
 
-            date_wise_table = date_wise_table.sort_values("Date", ascending=False).reset_index(drop=True)
-
-            def _highlight_latest_completed_sales_row(row):
-                if row.get("Date") == latest_completed_sales_date:
-                    return [
-                        "background-color:#DDF3E2;color:#124A1D;font-weight:900;"
-                        for _ in row
-                    ]
-                return ["" for _ in row]
-
-            date_wise_total = {
-                "Units Sold": int(date_wise_table["Units Sold"].sum()),
-                "Revenue (₹)": float(date_wise_table["Revenue (₹)"].sum()),
-                "PhonePe (₹)": float(date_wise_table["PhonePe (₹)"].sum()),
-                "Cash (₹)": float(date_wise_table["Cash (₹)"].sum()),
-                "Staff Advance (₹)": float(date_wise_table["Staff Advance (₹)"].sum()),
-                "Food / Tea (₹)": float(date_wise_table["Food / Tea (₹)"].sum()),
-                "Leakage Expl (₹)": float(date_wise_table["Leakage Expl (₹)"].sum()),
-                "Leakage Unexpl (₹)": float(date_wise_table["Leakage Unexpl (₹)"].sum()),
-            }
-
-            def _render_report_total_row(total_values):
-                total_cells = [
-                    "TOTAL",
-                    f"{int(total_values['Units Sold']):,}",
-                    f"₹{float(total_values['Revenue (₹)']):,.0f}",
-                    f"₹{float(total_values['PhonePe (₹)']):,.0f}",
-                    f"₹{float(total_values['Cash (₹)']):,.0f}",
-                    f"₹{float(total_values['Staff Advance (₹)']):,.0f}",
-                    f"₹{float(total_values['Food / Tea (₹)']):,.0f}",
-                    f"₹{float(total_values['Leakage Expl (₹)']):,.0f}",
-                    f"₹{float(total_values['Leakage Unexpl (₹)']):,.0f}",
-                ]
-                alignments = ["left"] + ["right"] * 8
-                cell_html = "".join(
-                    f"<div style='padding:9px 6px;text-align:{alignments[i]};"
-                    f"font-weight:900;color:#FFFFFF;font-size:13.5px;line-height:1.25;"
-                    f"white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'>{escape(str(value))}</div>"
-                    for i, value in enumerate(total_cells)
-                )
-                st.markdown(
-                    f"""
-                    <div style="
-                        display:grid;
-                        grid-template-columns:0.72fr 0.62fr 1.02fr 0.92fr 0.82fr 1.08fr 0.92fr 1.18fr 1.28fr;
-                        background:#70440E;
-                        border:1px solid #5F3508;
-                        border-radius:0 0 7px 7px;
-                        margin-top:-13px;
-                        margin-bottom:8px;
-                        font-size:13.5px;
-                        align-items:center;">
-                        {cell_html}
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-
-            date_wise_styled = (
-                date_wise_table.style
-                .set_properties(
-                    subset=["Date", "Units Sold", "Revenue (₹)"],
-                    **{
-                        "background-color": "#FFF2DC",
-                        "color": "#4A2418",
-                        "font-weight": "700",
-                    }
-                )
-                .apply(_highlight_latest_completed_sales_row, axis=1)
+            # Expense buckets use expense_date within the selected range.
+            expense_types = range_exp["Expense_Type"].fillna("").astype(str).str.strip().str.upper() if not range_exp.empty else pd.Series(dtype=str)
+            expense_categories = range_exp["Category"].fillna("").astype(str).str.strip().str.casefold() if not range_exp.empty else pd.Series(dtype=str)
+            capex_total = float(range_exp.loc[expense_types == "CAPEX", "Amount"].sum()) if not range_exp.empty else 0.0
+            # Use the same gross payable salary/commission/allowance calculation as payslips.
+            # The Dashboard counts only the part of each employment period in the date range.
+            _, _, _, staff_pay_breakdown = calculate_incurred_labour_for_range(
+                range_start, range_end, limit_to_employment=True
             )
+            staff_salary_total = sum(float(staff["incurred"]) for staff in staff_pay_breakdown.values())
+            unassigned_labour_df = range_exp[
+                (expense_types == "OPEX") & (expense_categories == "labour charges") & range_exp["Staff_Name"].isna()
+            ] if not range_exp.empty else pd.DataFrame()
+            unassigned_labour_total = float(unassigned_labour_df["Amount"].sum()) if not unassigned_labour_df.empty else 0.0
+            tot_labour_incurred = staff_salary_total + unassigned_labour_total
+            non_labour_opex_df = range_exp[(expense_types == "OPEX") & (~expense_categories.isin(["labour charges", "cost of goods"]))] if not range_exp.empty else pd.DataFrame()
+            other_opex_total = float(non_labour_opex_df["Amount"].sum()) if not non_labour_opex_df.empty else 0.0
 
-            st.dataframe(
-                date_wise_styled,
-                hide_index=True,
-                use_container_width=True,
-                column_config={
-                    "Date": st.column_config.DateColumn(format="DD-MMM-YY", width=72),
-                    "Units Sold": st.column_config.NumberColumn(width=62),
-                    "Revenue (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=102),
-                    "PhonePe (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=92),
-                    "Cash (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=82),
-                    "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=108),
-                    "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=92),
-                    "Leakage Expl (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=118),
-                    "Leakage Unexpl (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=126),
-                },
-                row_height=25
-            )
-            _render_report_total_row(date_wise_total)
+            total_incurred_opex = tot_labour_incurred + other_opex_total
 
-            st.markdown("#### Itemized Daily Cart Sales Log")
-            display_cols = [
-                "Date", "Cart", "Sold_Total", "Total_Collection", "PhonePe", "Cash",
-                "Staff_Advance", "Food_Tea_Cash",
-                "Cash_Leakage_Explained", "Cash_Leakage_Unexplained"
-            ]
-            sales_table = report_sales_df[display_cols].rename(columns={
-                            "Sold_Total": "Units Sold",
-                            "Total_Collection": "Revenue (₹)",
-                            "PhonePe": "PhonePe (₹)",
-                            "Cash": "Cash (₹)",
-                            "Staff_Advance": "Staff Advance (₹)",
-                            "Food_Tea_Cash": "Food / Tea (₹)",
-                            "Cash_Leakage_Explained": "Leakage Expl (₹)",
-                            "Cash_Leakage_Unexplained": "Leakage Unexpl (₹)"
-                        })
-            sales_table["Units Sold"] = sales_table["Units Sold"].apply(lambda x: int(round(x)))
-            sales_table["Date"] = pd.to_datetime(sales_table["Date"]).dt.date
+            gross_profit = total_rev - exact_cogs_sold
+            cogs_margin = (exact_cogs_sold / total_rev * 100) if total_rev > 0 else 0.0
+            gross_margin = (gross_profit / total_rev * 100) if total_rev > 0 else 0.0
+            net_profit = gross_profit - total_incurred_opex
+            net_margin = (net_profit / total_rev * 100) if total_rev > 0 else 0.0
+            opex_margin = (total_incurred_opex / total_rev * 100) if total_rev > 0 else 0.0
 
-            all_carts_and_freezers = get_carts_for_active_location(include_freezer=True)
-            extra_logged_entities = [c for c in sales_table["Cart"].dropna().unique().tolist() if c not in all_carts_and_freezers]
-            for cart_name in (all_carts_and_freezers + extra_logged_entities):
-                cart_table = sales_table[sales_table["Cart"] == cart_name].copy()
-                if cart_table.empty and "FREEZER" in str(cart_name).upper():
-                    continue
-                cart_table = cart_table.sort_values("Date", ascending=False).reset_index(drop=True)
-                cart_units = int(cart_table["Units Sold"].sum()) if not cart_table.empty else 0
-                cart_revenue = float(cart_table["Revenue (₹)"].sum()) if not cart_table.empty else 0.0
 
-                st.markdown(
-                    f"""
-                    <div style="
-                        margin-top:10px;
-                        margin-bottom:6px;
-                        padding:9px 12px;
-                        border:1px solid #DEB887;
-                        border-radius:8px;
-                        background:#FFF2DC;
-                        display:flex;
-                        justify-content:space-between;
-                        align-items:center;">
-                        <span style="font-weight:900;color:#70440E;font-size:14px;">🛒 {escape(cart_name)}</span>
-                        <span style="font-weight:900;color:#124A1D;font-size:14px;">
-                            {cart_units:,} units &nbsp;•&nbsp; ₹{cart_revenue:,.0f}
-                        </span>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
+        # ------------------------------------------------------------------
+        # TOGGLE SECTION 1: DATE-WISE SALES LOG
+        # ------------------------------------------------------------------
+        if st.session_state["show_dash_date_sales_log"]:
+            st.markdown("---")
+            _sl_hdr_c1, _sl_hdr_c2 = st.columns([3.2, 1.0], vertical_alignment="center")
+            with _sl_hdr_c1:
+                st.markdown("### 📋 Date-wise Sales Log")
+            with _sl_hdr_c2:
+                st.button(
+                    "🔼 Hide Date-wise Sales Log",
+                    key="dash_inline_hide_sales_log",
+                    use_container_width=True,
+                    on_click=_toggle_dash_section,
+                    args=("show_dash_date_sales_log",),
                 )
+            # Sales report tables show completed cart sales dates (<= yesterday) PLUS any direct Freezer sales in the range (including today).
+            latest_completed_sales_date = date.today() - timedelta(days=1)
+            if not range_df.empty:
+                is_fzr_mask = range_df["Cart"].astype(str).str.strip().str.upper().str.contains("FREEZER")
+                report_sales_df = range_df[
+                    (pd.to_datetime(range_df["Date"]).dt.date <= latest_completed_sales_date) | is_fzr_mask
+                ].copy()
+            else:
+                report_sales_df = pd.DataFrame()
 
-                if cart_table.empty:
-                    st.caption("No sales entries for this cart in the selected period.")
-                    continue
+            st.markdown("#### Date-Wise Daily Sales Log")
+            if not report_sales_df.empty:
+                date_wise_agg = report_sales_df.groupby("Date").agg({
+                                "Sold_Total": "sum",
+                                "Total_Collection": "sum",
+                                "PhonePe": "sum",
+                                "Cash": "sum",
+                                "Staff_Advance": "sum",
+                                "Food_Tea_Cash": "sum",
+                                "Cash_Leakage_Explained": "sum",
+                                "Cash_Leakage_Unexplained": "sum"
+                            }).reset_index()
 
-                cart_table = cart_table.drop(columns=["Cart"])
+                date_wise_table = date_wise_agg.rename(columns={
+                                "Sold_Total": "Units Sold",
+                                "Total_Collection": "Revenue (₹)",
+                                "PhonePe": "PhonePe (₹)",
+                                "Cash": "Cash (₹)",
+                                "Staff_Advance": "Staff Advance (₹)",
+                                "Food_Tea_Cash": "Food / Tea (₹)",
+                                "Cash_Leakage_Explained": "Leakage Expl (₹)",
+                                "Cash_Leakage_Unexplained": "Leakage Unexpl (₹)"
+                            })
+                date_wise_table["Units Sold"] = date_wise_table["Units Sold"].apply(lambda x: int(round(x)))
+                date_wise_table["Date"] = pd.to_datetime(date_wise_table["Date"]).dt.date
 
-                cart_total = {
-                    "Units Sold": int(cart_table["Units Sold"].sum()),
-                    "Revenue (₹)": float(cart_table["Revenue (₹)"].sum()),
-                    "PhonePe (₹)": float(cart_table["PhonePe (₹)"].sum()),
-                    "Cash (₹)": float(cart_table["Cash (₹)"].sum()),
-                    "Staff Advance (₹)": float(cart_table["Staff Advance (₹)"].sum()),
-                    "Food / Tea (₹)": float(cart_table["Food / Tea (₹)"].sum()),
-                    "Leakage Expl (₹)": float(cart_table["Leakage Expl (₹)"].sum()),
-                    "Leakage Unexpl (₹)": float(cart_table["Leakage Unexpl (₹)"].sum()),
+                date_wise_table = date_wise_table.sort_values("Date", ascending=False).reset_index(drop=True)
+
+                def _highlight_latest_completed_sales_row(row):
+                    if row.get("Date") == latest_completed_sales_date:
+                        return [
+                            "background-color:#DDF3E2;color:#124A1D;font-weight:900;"
+                            for _ in row
+                        ]
+                    return ["" for _ in row]
+
+                date_wise_total = {
+                    "Units Sold": int(date_wise_table["Units Sold"].sum()),
+                    "Revenue (₹)": float(date_wise_table["Revenue (₹)"].sum()),
+                    "PhonePe (₹)": float(date_wise_table["PhonePe (₹)"].sum()),
+                    "Cash (₹)": float(date_wise_table["Cash (₹)"].sum()),
+                    "Staff Advance (₹)": float(date_wise_table["Staff Advance (₹)"].sum()),
+                    "Food / Tea (₹)": float(date_wise_table["Food / Tea (₹)"].sum()),
+                    "Leakage Expl (₹)": float(date_wise_table["Leakage Expl (₹)"].sum()),
+                    "Leakage Unexpl (₹)": float(date_wise_table["Leakage Unexpl (₹)"].sum()),
                 }
 
-                cart_table_styled = (
-                    cart_table.style
+                def _render_report_total_row(total_values):
+                    total_cells = [
+                        "TOTAL",
+                        f"{int(total_values['Units Sold']):,}",
+                        f"₹{float(total_values['Revenue (₹)']):,.0f}",
+                        f"₹{float(total_values['PhonePe (₹)']):,.0f}",
+                        f"₹{float(total_values['Cash (₹)']):,.0f}",
+                        f"₹{float(total_values['Staff Advance (₹)']):,.0f}",
+                        f"₹{float(total_values['Food / Tea (₹)']):,.0f}",
+                        f"₹{float(total_values['Leakage Expl (₹)']):,.0f}",
+                        f"₹{float(total_values['Leakage Unexpl (₹)']):,.0f}",
+                    ]
+                    alignments = ["left"] + ["right"] * 8
+                    cell_html = "".join(
+                        f"<div style='padding:9px 6px;text-align:{alignments[i]};"
+                        f"font-weight:900;color:#FFFFFF;font-size:13.5px;line-height:1.25;"
+                        f"white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'>{escape(str(value))}</div>"
+                        for i, value in enumerate(total_cells)
+                    )
+                    st.markdown(
+                        f"""
+                        <div style="
+                            display:grid;
+                            grid-template-columns:0.72fr 0.62fr 1.02fr 0.92fr 0.82fr 1.08fr 0.92fr 1.18fr 1.28fr;
+                            background:#70440E;
+                            border:1px solid #5F3508;
+                            border-radius:0 0 7px 7px;
+                            margin-top:-13px;
+                            margin-bottom:8px;
+                            font-size:13.5px;
+                            align-items:center;">
+                            {cell_html}
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+
+                date_wise_styled = (
+                    date_wise_table.style
                     .set_properties(
                         subset=["Date", "Units Sold", "Revenue (₹)"],
                         **{
@@ -13095,469 +12760,899 @@ elif page == "Dashboard" and user_role == "admin":
                 )
 
                 st.dataframe(
-                    cart_table_styled,
+                    date_wise_styled,
                     hide_index=True,
                     use_container_width=True,
                     column_config={
                         "Date": st.column_config.DateColumn(format="DD-MMM-YY", width=72),
                         "Units Sold": st.column_config.NumberColumn(width=62),
-                        "Revenue (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=104),
-                        "PhonePe (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=94),
-                        "Cash (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=88),
+                        "Revenue (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=102),
+                        "PhonePe (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=92),
+                        "Cash (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=82),
                         "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=108),
-                        "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=94),
-                        "Leakage Expl (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=116),
-                        "Leakage Unexpl (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=124),
+                        "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=92),
+                        "Leakage Expl (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=118),
+                        "Leakage Unexpl (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=126),
                     },
                     row_height=25
                 )
-                _render_report_total_row(cart_total)
-        else:
-            st.caption("No sales data recorded in this period.")
+                _render_report_total_row(date_wise_total)
 
-        # ------------------------------------------------------------------
-        # FREEZER SALE TRANSACTIONS & SUMMARY (Filtered by Dashboard Month / Custom Date Range)
-        # ------------------------------------------------------------------
-        st.markdown("---")
-        with st.expander(f"❄️ View Freezer Sale Transactions & Summary ({range_start.strftime('%d-%b-%y')} – {range_end.strftime('%d-%b-%y')})", expanded=True):
-            fzr_txns_df = load_freezer_sale_transactions_df(start_date=range_start, end_date=range_end)
-            if fzr_txns_df.empty:
-                st.caption("No direct Freezer sale transactions recorded in this period.")
-            else:
-                # 1. Date-wise Summary of Freezer Sales
-                st.markdown("##### 📊 Freezer Sales Summary (By Date)")
-                fzr_date_grp = (
-                    fzr_txns_df.groupby(["sale_date", "freezer_name"], as_index=False)
-                    .agg(
-                        txns_count=("id", "count"),
-                        total_units=("total_units", "sum"),
-                        total_value=("total_value", "sum"),
-                        phonepe=("phonepe", "sum"),
-                        cash=("cash", "sum"),
-                        leakage=("leakage", "sum"),
+                st.markdown("#### Itemized Daily Cart Sales Log")
+                display_cols = [
+                    "Date", "Cart", "Sold_Total", "Total_Collection", "PhonePe", "Cash",
+                    "Staff_Advance", "Food_Tea_Cash",
+                    "Cash_Leakage_Explained", "Cash_Leakage_Unexplained"
+                ]
+                sales_table = report_sales_df[display_cols].rename(columns={
+                                "Sold_Total": "Units Sold",
+                                "Total_Collection": "Revenue (₹)",
+                                "PhonePe": "PhonePe (₹)",
+                                "Cash": "Cash (₹)",
+                                "Staff_Advance": "Staff Advance (₹)",
+                                "Food_Tea_Cash": "Food / Tea (₹)",
+                                "Cash_Leakage_Explained": "Leakage Expl (₹)",
+                                "Cash_Leakage_Unexplained": "Leakage Unexpl (₹)"
+                            })
+                sales_table["Units Sold"] = sales_table["Units Sold"].apply(lambda x: int(round(x)))
+                sales_table["Date"] = pd.to_datetime(sales_table["Date"]).dt.date
+
+                all_carts_and_freezers = get_carts_for_active_location(include_freezer=True)
+                extra_logged_entities = [c for c in sales_table["Cart"].dropna().unique().tolist() if c not in all_carts_and_freezers]
+                for cart_name in (all_carts_and_freezers + extra_logged_entities):
+                    cart_table = sales_table[sales_table["Cart"] == cart_name].copy()
+                    if cart_table.empty and "FREEZER" in str(cart_name).upper():
+                        continue
+                    cart_table = cart_table.sort_values("Date", ascending=False).reset_index(drop=True)
+                    cart_units = int(cart_table["Units Sold"].sum()) if not cart_table.empty else 0
+                    cart_revenue = float(cart_table["Revenue (₹)"].sum()) if not cart_table.empty else 0.0
+
+                    st.markdown(
+                        f"""
+                        <div style="
+                            margin-top:10px;
+                            margin-bottom:6px;
+                            padding:9px 12px;
+                            border:1px solid #DEB887;
+                            border-radius:8px;
+                            background:#FFF2DC;
+                            display:flex;
+                            justify-content:space-between;
+                            align-items:center;">
+                            <span style="font-weight:900;color:#70440E;font-size:14px;">🛒 {escape(cart_name)}</span>
+                            <span style="font-weight:900;color:#124A1D;font-size:14px;">
+                                {cart_units:,} units &nbsp;•&nbsp; ₹{cart_revenue:,.0f}
+                            </span>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
                     )
-                    .sort_values("sale_date", ascending=False)
-                )
-                sum_rows = []
-                for _, sr in fzr_date_grp.iterrows():
-                    sum_rows.append({
-                        "Date": pd.to_datetime(sr["sale_date"]).strftime("%d-%b-%y"),
-                        "Freezer": sr["freezer_name"],
-                        "Txns": int(sr["txns_count"]),
-                        "Units Sold": int(sr["total_units"]),
-                        "Total Value (₹)": f"₹{float(sr['total_value']):,.0f}",
-                        "PhonePe (₹)": f"₹{float(sr['phonepe']):,.0f}",
-                        "Cash (₹)": f"₹{float(sr['cash']):,.0f}",
-                        "Leakage (₹)": f"₹{float(sr['leakage']):,.0f}",
-                    })
-                sum_rows.append({
-                    "Date": "SUMMARY TOTAL",
-                    "Freezer": "—",
-                    "Txns": int(fzr_date_grp["txns_count"].sum()),
-                    "Units Sold": int(fzr_date_grp["total_units"].sum()),
-                    "Total Value (₹)": f"₹{float(fzr_date_grp['total_value'].sum()):,.0f}",
-                    "PhonePe (₹)": f"₹{float(fzr_date_grp['phonepe'].sum()):,.0f}",
-                    "Cash (₹)": f"₹{float(fzr_date_grp['cash'].sum()):,.0f}",
-                    "Leakage (₹)": f"₹{float(fzr_date_grp['leakage'].sum()):,.0f}",
-                })
-                sum_table_df = pd.DataFrame(sum_rows)
-                st.dataframe(
-                    sum_table_df.style.apply(
-                        lambda r: ["background-color:#FFF2DC;font-weight:900;color:#4A2418;" if r.get("Date") == "SUMMARY TOTAL" else "" for _ in r],
-                        axis=1
-                    ),
-                    hide_index=True,
-                    use_container_width=True
-                )
 
-                # 2. Individual Freezer Sale Transactions Table
-                st.markdown("##### 🧾 Individual Freezer Sale Transactions")
-                txn_rows = []
-                for _, tr in fzr_txns_df.iterrows():
-                    flv_parts = [
-                        f"{code}:{int(tr.get(FLAVOR_MAP[code]['audit_col'], 0))}"
-                        for code in FLAVOR_CODES
-                        if int(tr.get(FLAVOR_MAP[code]["audit_col"], 0)) > 0
-                    ]
-                    txn_rows.append({
-                        "Txn #": f"#{int(tr['id'])}",
-                        "Date": pd.to_datetime(tr["sale_date"]).strftime("%d-%b-%y"),
-                        "Time": pd.to_datetime(tr["created_at"]).strftime("%I:%M %p") if pd.notna(tr.get("created_at")) else "—",
-                        "Freezer": tr["freezer_name"],
-                        "Sold By": tr.get("sold_by") or "—",
-                        "Units": int(tr.get("total_units") or 0),
-                        "Total Value (₹)": f"₹{float(tr.get('total_value') or 0):,.0f}",
-                        "PhonePe (₹)": f"₹{float(tr.get('phonepe') or 0):,.0f}",
-                        "Cash (₹)": f"₹{float(tr.get('cash') or 0):,.0f}",
-                        "Leakage (₹)": f"₹{float(tr.get('leakage') or 0):,.0f}",
-                        "Flavours": " • ".join(flv_parts) if flv_parts else "—",
-                        "Reason": tr.get("reason") or "—",
-                    })
-                txn_rows.append({
-                    "Txn #": "SUMMARY TOTAL",
-                    "Date": f"{len(fzr_txns_df)} txn(s)",
-                    "Time": "—",
-                    "Freezer": "—",
-                    "Sold By": "—",
-                    "Units": int(fzr_txns_df["total_units"].sum()),
-                    "Total Value (₹)": f"₹{float(fzr_txns_df['total_value'].sum()):,.0f}",
-                    "PhonePe (₹)": f"₹{float(fzr_txns_df['phonepe'].sum()):,.0f}",
-                    "Cash (₹)": f"₹{float(fzr_txns_df['cash'].sum()):,.0f}",
-                    "Leakage (₹)": f"₹{float(fzr_txns_df['leakage'].sum()):,.0f}",
-                    "Flavours": "—",
-                    "Reason": "—",
-                })
-                txn_table_df = pd.DataFrame(txn_rows)
-                st.dataframe(
-                    txn_table_df.style.apply(
-                        lambda r: ["background-color:#FFF2DC;font-weight:900;color:#4A2418;" if r.get("Txn #") == "SUMMARY TOTAL" else "" for _ in r],
-                        axis=1
-                    ),
-                    hide_index=True,
-                    use_container_width=True
-                )
+                    if cart_table.empty:
+                        st.caption("No sales entries for this cart in the selected period.")
+                        continue
 
-        # ------------------------------------------------------------------
-        # MONTH-WISE FULL-DATA COMPARISON TABLE & GRAPHIC VIEW
-        # ------------------------------------------------------------------
-        st.markdown("---")
-        st.markdown("#### 📅 Month-Wise Performance Comparison (Full-Data Months Only)")
-        st.caption("Includes only completed calendar months where full month data is available from the 1st through the end of the month (partial months are excluded).")
+                    cart_table = cart_table.drop(columns=["Cart"])
 
-        if not daily_df.empty:
-            m_daily = daily_df.copy()
-            m_daily["EntryDate"] = pd.to_datetime(m_daily["Date"]).dt.date
-            m_daily["YM"] = pd.to_datetime(m_daily["Date"]).dt.to_period("M")
-
-            today_d = date.today()
-            current_ym = pd.Period(today_d, freq="M")
-
-            # Pre-fetch monthly COGS from daily_cart_items joined with flavors
-            monthly_cogs_df = db_conn.query(
-                """
-                SELECT
-                    DATE_TRUNC('month', e.entry_date)::date AS month_start,
-                    COALESCE(SUM(i.sold_units * f.cost_price), 0) AS cogs_amount
-                FROM daily_cart_entries e
-                JOIN daily_cart_items i ON i.daily_entry_id = e.id
-                JOIN flavors f ON f.code = i.flavor_code
-                WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(e.city, 'HOSUR'))) = :active_loc)
-                GROUP BY DATE_TRUNC('month', e.entry_date)::date;
-                """,
-                params={"active_loc": get_active_location_filter()},
-                ttl="0s"
-            )
-            cogs_by_month_start = {}
-            if not monthly_cogs_df.empty:
-                for _, cr in monthly_cogs_df.iterrows():
-                    m_dt = pd.to_datetime(cr["month_start"]).date()
-                    cogs_by_month_start[(m_dt.year, m_dt.month)] = float(cr["cogs_amount"] or 0.0)
-
-            full_month_rows = []
-            for ym in sorted(m_daily["YM"].unique()):
-                # Never include current ongoing or future months
-                if ym >= current_ym:
-                    continue
-                yr, mo = int(ym.year), int(ym.month)
-                days_in_mo = calendar.monthrange(yr, mo)[1]
-                mo_start = date(yr, mo, 1)
-                mo_end = date(yr, mo, days_in_mo)
-
-                sub_d = m_daily[(m_daily["EntryDate"] >= mo_start) & (m_daily["EntryDate"] <= mo_end)]
-                if sub_d.empty:
-                    continue
-
-                min_logged = sub_d["EntryDate"].min()
-                max_logged = sub_d["EntryDate"].max()
-                distinct_days = sub_d["EntryDate"].nunique()
-
-                # Strict full-month check: data must start on day 1 and reach the final day of the month (or have all calendar days logged)
-                if not (min_logged == mo_start and max_logged == mo_end and distinct_days >= days_in_mo):
-                    continue
-
-                m_rev = float(sub_d["Total_Collection"].sum())
-                m_avg_rev = m_rev / float(days_in_mo)
-                m_units = int(round(sub_d["Sold_Total"].sum()))
-                m_cogs = float(cogs_by_month_start.get((yr, mo), 0.0))
-                m_gp = m_rev - m_cogs
-                m_gp_pct = (m_gp / m_rev * 100.0) if m_rev > 0 else 0.0
-
-                # OPEX for this full month (using exact same P&L methodology: incurred staff labour + unassigned labour + non-labour OPEX)
-                m_exp = exp_df[(exp_df["Date"].dt.date >= mo_start) & (exp_df["Date"].dt.date <= mo_end)] if not exp_df.empty else pd.DataFrame()
-                m_exp_types = m_exp["Expense_Type"].fillna("").astype(str).str.strip().str.upper() if not m_exp.empty else pd.Series(dtype=str)
-                m_exp_cats = m_exp["Category"].fillna("").astype(str).str.strip().str.casefold() if not m_exp.empty else pd.Series(dtype=str)
-
-                _, _, _, m_staff_pay = calculate_incurred_labour_for_range(mo_start, mo_end, limit_to_employment=True)
-                m_staff_sal = sum(float(st_info["incurred"]) for st_info in m_staff_pay.values())
-                m_unassigned_lab = float(
-                    m_exp[(m_exp_types == "OPEX") & (m_exp_cats == "labour charges") & m_exp["Staff_Name"].isna()]["Amount"].sum()
-                ) if not m_exp.empty else 0.0
-                m_other_opex = float(
-                    m_exp[(m_exp_types == "OPEX") & (~m_exp_cats.isin(["labour charges", "cost of goods"]))]["Amount"].sum()
-                ) if not m_exp.empty else 0.0
-                m_opex = m_staff_sal + m_unassigned_lab + m_other_opex
-                m_opex_pct = (m_opex / m_rev * 100.0) if m_rev > 0 else 0.0
-
-                m_np = m_gp - m_opex
-                m_np_pct = (m_np / m_rev * 100.0) if m_rev > 0 else 0.0
-
-                full_month_rows.append({
-                    "Month_Order": mo_start,
-                    "Month": mo_start.strftime("%b %Y"),
-                    "Revenue_Num": round(m_rev, 2),
-                    "Avg_Rev_Day_Num": round(m_avg_rev, 2),
-                    "Units_Sold_Num": m_units,
-                    "COGS_Num": round(m_cogs, 2),
-                    "Gross_Profit_Num": round(m_gp, 2),
-                    "Gross_Margin_Pct": round(m_gp_pct, 1),
-                    "OPEX_Num": round(m_opex, 2),
-                    "OPEX_Pct": round(m_opex_pct, 1),
-                    "Net_Profit_Num": round(m_np, 2),
-                    "Net_Profit_Pct": round(m_np_pct, 1),
-                    "Revenue": f"₹{m_rev:,.0f}",
-                    "Avg Rev / Day": f"₹{m_avg_rev:,.0f}",
-                    "Units Sold": f"{m_units:,}",
-                    "COGS": f"₹{m_cogs:,.0f}",
-                    "Gr. Profit": f"₹{m_gp:,.0f} ({m_gp_pct:.1f}%)",
-                    "OPEX": f"₹{m_opex:,.0f} ({m_opex_pct:.1f}%)",
-                    "Net Profit": f"₹{m_np:,.0f} ({m_np_pct:.1f}%)",
-                })
-
-            if not full_month_rows:
-                st.info("No completed calendar months with full-month data (from 1st to last day of the month) are available yet.")
-            else:
-                full_m_df = pd.DataFrame(full_month_rows).sort_values("Month_Order")
-                display_m_cols = ["Month", "Revenue", "Avg Rev / Day", "Units Sold", "COGS", "Gr. Profit", "OPEX", "Net Profit"]
-                st.dataframe(full_m_df[display_m_cols], hide_index=True, use_container_width=True)
-
-                st.markdown("##### 📈 Graphic View — Full-Data Months Comparison")
-                month_sort_order = full_m_df["Month"].tolist()
-
-                def _build_month_bar_chart(val_col, title_text, bar_color, val_format=",.0f", suffix=""):
-                    base_c = alt.Chart(full_m_df).encode(
-                        x=alt.X("Month:N", sort=month_sort_order, title="", axis=alt.Axis(labelAngle=0, labelFontWeight="bold"))
-                    )
-                    bars_c = base_c.mark_bar(color=bar_color, cornerRadiusTopLeft=5, cornerRadiusTopRight=5, size=42).encode(
-                        y=alt.Y(f"{val_col}:Q", title=title_text),
-                        tooltip=[
-                            alt.Tooltip("Month:N", title="Month"),
-                            alt.Tooltip(f"{val_col}:Q", title=title_text, format=val_format)
-                        ]
-                    )
-                    txt_c = base_c.mark_text(dy=-8, fontWeight="bold", fontSize=11.5, color="#2A1B10").encode(
-                        y=alt.Y(f"{val_col}:Q"),
-                        text=alt.Text(f"{val_col}:Q", format=val_format)
-                    )
-                    return (bars_c + txt_c).properties(title=title_text, height=235)
-
-                gc1, gc2 = st.columns(2)
-                with gc1:
-                    st.altair_chart(_build_month_bar_chart("Revenue_Num", "Revenue (₹)", "#E8542A", ",.0f"), use_container_width=True)
-                with gc2:
-                    st.altair_chart(_build_month_bar_chart("Avg_Rev_Day_Num", "Average Rev / Day (₹)", "#2A9D8F", ",.0f"), use_container_width=True)
-
-                gc3, gc4 = st.columns(2)
-                with gc3:
-                    st.altair_chart(_build_month_bar_chart("Units_Sold_Num", "Units Sold", "#70440E", ",.0f"), use_container_width=True)
-                with gc4:
-                    st.altair_chart(_build_month_bar_chart("Net_Profit_Pct", "Net Profit %", "#124A1D", ".1f"), use_container_width=True)
-        else:
-            st.info("No sales data available for month-wise comparison.")
-
-        st.markdown("---")
-        pl_c1, pl_c2 = st.columns([1.1, 1.2])
-        with pl_c1:
-            st.markdown("#### Profit & Loss Statement (P&L)")
-            pnl_df = pd.DataFrame({
-                "Financial Line Item": ["1. Total Revenue in Period", "2. Cost of Goods Sold", "3. Gross Profit (1 - 2)", "4. Labour Charges (OPEX)", "5. Other Operating Costs (OPEX)", "6. Total Operating Costs (4 + 5)", "7. Net Profit (3 - 6)"],
-                "Amount (₹)": [total_rev, -exact_cogs_sold, gross_profit, -tot_labour_incurred, -other_opex_total, -total_incurred_opex, net_profit]
-            })
-            st.dataframe(pnl_df, hide_index=True, use_container_width=True, column_config={"Amount (₹)": st.column_config.NumberColumn(format="₹%,.2f")})
-
-        with pl_c2:
-            st.markdown("#### Cost Distribution: COGS, OPEX & CAPEX")
-            cost_dist_df = pd.DataFrame({"Cost Bucket": ["Cost of Goods Sold", "Operating Expenses (OPEX)", "Capital Expenditure (CAPEX)"], "Amount (₹)": [exact_cogs_sold, total_incurred_opex, capex_total]})
-            cost_chart = alt.Chart(cost_dist_df).mark_bar(width=28).encode(x=alt.X("Cost Bucket:N", title="", sort=None, axis=alt.Axis(labelAngle=-15)), y=alt.Y("Amount (₹):Q", title="Amount (₹)"), color=alt.Color("Cost Bucket:N", scale=alt.Scale(domain=["Cost of Goods Sold", "Operating Expenses (OPEX)", "Capital Expenditure (CAPEX)"], range=["#C43D17", "#8A5E17", "#4A2418"]), legend=None), tooltip=[alt.Tooltip("Cost Bucket:N", title="Type"), alt.Tooltip("Amount (₹):Q", format=",.2f", title="Amount")]).properties(height=200)
-            st.altair_chart(cost_chart, use_container_width=True)
-
-        st.markdown("#### Revenue in Range - Breakdown")
-        if not range_df.empty:
-            total_phonepe = float(range_df["PhonePe"].sum())
-            gross_cash = max(0.0, float(total_rev - total_phonepe))
-            
-            adv_paid = 0.0
-            food_paid = 0.0
-            leakage_recorded = float(range_df["Cash_Leakage"].sum()) if "Cash_Leakage" in range_df.columns else 0.0
-            
-            if not range_exp.empty and "Status" in range_exp.columns and "Sub_Category" in range_exp.columns:
-                paid_exp = range_exp[range_exp["Status"].astype(str).str.strip().str.lower() == "paid"]
-                if not paid_exp.empty:
-                    adv_mask = paid_exp["Sub_Category"].astype(str).str.contains("Advance", case=False, na=False)
-                    food_mask = paid_exp["Sub_Category"].astype(str).str.contains("Food|Tea", case=False, na=False)
-                    adv_paid = float(paid_exp[adv_mask]["Amount"].sum())
-                    food_paid = float(paid_exp[food_mask]["Amount"].sum())
-
-            net_cash = max(0.0, float(gross_cash - adv_paid - food_paid - leakage_recorded))
-
-            pie1_df = pd.DataFrame({"Category": ["Gross Cash", "PhonePe"], "Amount": [gross_cash, total_phonepe]})
-            pie1_df = pie1_df[pie1_df["Amount"] > 0] 
-            
-            pie1 = alt.Chart(pie1_df).mark_arc(innerRadius=40).encode(
-                theta=alt.Theta("Amount:Q"),
-                color=alt.Color("Category:N", scale=alt.Scale(domain=["Gross Cash", "PhonePe"], range=["#2A9D8F", "#E76F51"])),
-                tooltip=[alt.Tooltip("Category:N", title="Category"), alt.Tooltip("Amount:Q", format=",.2f", title="Amount (₹)")]
-            ).properties(height=250)
-
-            pie2_df = pd.DataFrame({
-                "Category": ["PhonePe", "Net Cash (In Hand)", "Staff Advance", "Food / Tea"], 
-                "Amount": [total_phonepe, net_cash, adv_paid, food_paid]
-            })
-            pie2_df = pie2_df[pie2_df["Amount"] > 0] 
-            
-            pie2 = alt.Chart(pie2_df).mark_arc(innerRadius=40).encode(
-                theta=alt.Theta("Amount:Q"),
-                color=alt.Color("Category:N", scale=alt.Scale(domain=["PhonePe", "Net Cash (In Hand)", "Staff Advance", "Food / Tea"], range=["#E76F51", "#2A9D8F", "#E9C46A", "#F4A261"])),
-                tooltip=[alt.Tooltip("Category:N", title="Category"), alt.Tooltip("Amount:Q", format=",.2f", title="Amount (₹)")]
-            ).properties(height=250)
-            
-            c_p1, c_p2 = st.columns(2)
-            with c_p1:
-                st.write("**Gross Collection Split**")
-                st.altair_chart(pie1, use_container_width=True)
-            with c_p2:
-                st.write("**Net Cash & Paid Allowances Breakdown**")
-                st.altair_chart(pie2, use_container_width=True)
-        else: 
-            st.caption("No collection data in this period.")
-
-        st.markdown("#### Incurred Operating Expense Breakdown by Category")
-        exp_cat_list = []
-        if tot_labour_incurred > 0:
-            exp_cat_list.append({"Category": "Labour Charges (OPEX)", "Amount": float(tot_labour_incurred)})
-        if not non_labour_opex_df.empty:
-            for cat, amt in non_labour_opex_df.groupby("Category")["Amount"].sum().items(): 
-                exp_cat_list.append({"Category": cat, "Amount": max(0.0, float(amt))})
-
-        if exp_cat_list:
-            exp_cat_df = pd.DataFrame(exp_cat_list)
-            exp_cat_df = exp_cat_df[exp_cat_df["Amount"] > 0]
-            
-            exp_pie = alt.Chart(exp_cat_df).mark_arc(innerRadius=40).encode(
-                theta=alt.Theta("Amount:Q"),
-                color=alt.Color("Category:N", scale=alt.Scale(scheme="tableau10")),
-                tooltip=[alt.Tooltip("Category:N", title="Category"), alt.Tooltip("Amount:Q", format=",.2f", title="Amount (₹)")]
-            ).properties(height=300)
-
-            exp_chart_col, exp_table_col = st.columns([1.15, 1])
-            with exp_chart_col:
-                st.altair_chart(exp_pie, use_container_width=True)
-            with exp_table_col:
-                exp_breakdown_table = exp_cat_df.copy()
-                exp_breakdown_table["Amount (₹)"] = exp_breakdown_table["Amount"].astype(float)
-                exp_breakdown_table = exp_breakdown_table[["Category", "Amount (₹)"]]
-                exp_total_row = pd.DataFrame([{
-                    "Category": "TOTAL",
-                    "Amount (₹)": float(exp_breakdown_table["Amount (₹)"].sum())
-                }])
-                exp_breakdown_table = pd.concat([exp_breakdown_table, exp_total_row], ignore_index=True)
-                st.dataframe(
-                    exp_breakdown_table,
-                    hide_index=True,
-                    use_container_width=True,
-                    height=min(340, 38 + (len(exp_breakdown_table) * 36)),
-                    column_config={
-                        "Category": st.column_config.TextColumn("Expense Component"),
-                        "Amount (₹)": st.column_config.NumberColumn("Amount (₹)", format="₹%,.2f"),
+                    cart_total = {
+                        "Units Sold": int(cart_table["Units Sold"].sum()),
+                        "Revenue (₹)": float(cart_table["Revenue (₹)"].sum()),
+                        "PhonePe (₹)": float(cart_table["PhonePe (₹)"].sum()),
+                        "Cash (₹)": float(cart_table["Cash (₹)"].sum()),
+                        "Staff Advance (₹)": float(cart_table["Staff Advance (₹)"].sum()),
+                        "Food / Tea (₹)": float(cart_table["Food / Tea (₹)"].sum()),
+                        "Leakage Expl (₹)": float(cart_table["Leakage Expl (₹)"].sum()),
+                        "Leakage Unexpl (₹)": float(cart_table["Leakage Unexpl (₹)"].sum()),
                     }
-                )
-        else: 
-            st.caption("No operating expenses incurred in this date range.")
 
-        st.markdown("---")
-        st.markdown("### 2. Comparative Cart Revenue")
-        if not range_df.empty:
-            cart_grp = range_df.groupby("Cart")["Total_Collection"].sum().reset_index().rename(columns={"Total_Collection": "Revenue (₹)"}).sort_values("Revenue (₹)", ascending=False)
-            
-            base = alt.Chart(cart_grp).encode(
-                x=alt.X("Cart:N", title="", sort="-y", axis=alt.Axis(labelAngle=0, labelFontSize=13, labelPadding=10))
-            )
-            
-            bars = base.mark_bar(color="#E8542A", cornerRadiusTopLeft=4, cornerRadiusTopRight=4, size=60).encode(
-                y=alt.Y("Revenue (₹):Q", title="Total Revenue (₹)", axis=alt.Axis(grid=True, gridColor="#F0E5D1")),
-                tooltip=["Cart", alt.Tooltip("Revenue (₹):Q", format=",.2f")]
-            )
-            
-            text_labels = base.mark_text(align='center', baseline='bottom', dy=-5, color="#4A2418", fontWeight=700, fontSize=14).encode(
-                y=alt.Y("Revenue (₹):Q"),
-                text=alt.Text("Revenue (₹):Q", format=",.0f")
-            )
-            
-            st.altair_chart((bars + text_labels).properties(height=300), use_container_width=True)
-        else: 
-            st.caption("No cart sales in this date range.")
-
-        st.markdown("---")
-        st.markdown("### 3. Day-Wise & Timing Patterns")
-        if not range_df.empty:
-            day_order = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-            dow_df = range_df[~range_df["Cart"].astype(str).str.strip().str.upper().isin(["FREEZER", "HOSUR FREEZER"])].copy()
-            dow_df["Day"] = dow_df["Date"].dt.day_name().str[:3]
-            
-            if not dow_df.empty:
-                def show_compact_average_table(pivot):
-                    headers = "".join(f"<th>{escape(str(day))}</th>" for day in pivot.columns)
-                    rows = []
-                    for cart, values in pivot.iterrows():
-                        cells = "".join(f"<td>{int(round(value)):,}</td>" for value in values)
-                        rows.append(f"<tr><th scope='row'>{escape(str(cart))}</th>{cells}</tr>")
-                    st.html(
-                        "<style>"
-                        ".compact-dow-table{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:clamp(9px,.78vw,11.5px);line-height:1.35;background:#FFFEFA;border:1.5px solid #B8882D;border-radius:9px;overflow:hidden;box-shadow:0 3px 10px rgba(45,21,11,0.06)}"
-                        ".compact-dow-table th,.compact-dow-table td{padding:6px 5px;border-bottom:1px solid #E5D2B0;border-right:1px solid #EFE2CA;text-align:right;overflow-wrap:anywhere;color:#2A160C;font-weight:700}"
-                        ".compact-dow-table thead th{font-weight:800;background:linear-gradient(180deg,#3A1B0E 0%,#241008 100%);color:#FCE8B2;border-bottom:2px solid #D4AF37;text-align:center}"
-                        ".compact-dow-table th:first-child{width:29%;text-align:left;padding-left:8px}"
-                        ".compact-dow-table tbody tr:nth-child(even) td,.compact-dow-table tbody tr:nth-child(even) th{background:#FAF2E1}"
-                        ".compact-dow-table tbody tr:first-child td,.compact-dow-table tbody tr:first-child th{font-weight:900;background:linear-gradient(90deg,#FBF0D9 0%,#F2DEC0 100%);color:#2D150B;border-bottom:1.5px solid #C89B3C}"
-                        "</style>"
-                        f"<table class='compact-dow-table'><thead><tr><th scope='col'>Cart</th>{headers}</tr></thead>"
-                        f"<tbody>{''.join(rows)}</tbody></table>"
+                    cart_table_styled = (
+                        cart_table.style
+                        .set_properties(
+                            subset=["Date", "Units Sold", "Revenue (₹)"],
+                            **{
+                                "background-color": "#FFF2DC",
+                                "color": "#4A2418",
+                                "font-weight": "700",
+                            }
+                        )
+                        .apply(_highlight_latest_completed_sales_row, axis=1)
                     )
 
-                dw1, dw2 = st.columns(2)
-                with dw1: 
-                    st.write("**Average Units Sold per Day of Week**")
-                    units_df = dow_df[dow_df["Sold_Total"] > 0]
-                    if not units_df.empty:
-                        units_pivot = units_df.pivot_table(index="Cart", columns="Day", values="Sold_Total", aggfunc="mean", fill_value=0)
-                        day_cols = [d for d in day_order if d in units_pivot.columns]
-                        units_pivot = units_pivot.reindex(columns=day_cols)
-                        overall_units = units_df.groupby("Day")["Sold_Total"].mean().reindex(day_cols)
-                        units_pivot.loc["Overall Average (per cart)"] = overall_units
-                        units_pivot = units_pivot.reindex(["Overall Average (per cart)"] + [cart for cart in units_pivot.index if cart != "Overall Average (per cart)"])
-                        show_compact_average_table(units_pivot)
-                    else:
-                        st.caption("No units sold in this range.")
-                with dw2: 
-                    st.write("**Average Revenue (₹) per Day of Week**")
-                    rev_pivot = dow_df.pivot_table(index="Cart", columns="Day", values="Total_Collection", aggfunc="mean", fill_value=0)
-                    rev_day_cols = [d for d in day_order if d in rev_pivot.columns]
-                    rev_pivot = rev_pivot.reindex(columns=rev_day_cols)
-                    overall_rev = dow_df.groupby("Day")["Total_Collection"].mean().reindex(rev_day_cols)
-                    rev_pivot.loc["Overall Average (per cart)"] = overall_rev
-                    rev_pivot = rev_pivot.reindex(["Overall Average (per cart)"] + [cart for cart in rev_pivot.index if cart != "Overall Average (per cart)"])
-                    show_compact_average_table(rev_pivot)
+                    st.dataframe(
+                        cart_table_styled,
+                        hide_index=True,
+                        use_container_width=True,
+                        column_config={
+                            "Date": st.column_config.DateColumn(format="DD-MMM-YY", width=72),
+                            "Units Sold": st.column_config.NumberColumn(width=62),
+                            "Revenue (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=104),
+                            "PhonePe (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=94),
+                            "Cash (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=88),
+                            "Staff Advance (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=108),
+                            "Food / Tea (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=94),
+                            "Leakage Expl (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=116),
+                            "Leakage Unexpl (₹)": st.column_config.NumberColumn(format="₹%,.0f", width=124),
+                        },
+                        row_height=25
+                    )
+                    _render_report_total_row(cart_total)
+            else:
+                st.caption("No sales data recorded in this period.")
 
-                max1, max2 = st.columns(2)
-                with max1:
-                    st.write("**Maximum Units Sold per Day of Week**")
-                    if not dow_df.empty:
-                        max_units = dow_df.pivot_table(index="Cart", columns="Day", values="Sold_Total", aggfunc="max", fill_value=0)
-                        max_units = max_units.reindex(columns=[d for d in day_order if d in max_units.columns])
-                        st.dataframe(max_units.round(0).astype(int), use_container_width=True)
-                with max2:
-                    st.write("**Maximum Revenue (₹) per Day of Week**")
-                    max_rev = dow_df.pivot_table(index="Cart", columns="Day", values="Total_Collection", aggfunc="max", fill_value=0)
-                    max_rev = max_rev.reindex(columns=[d for d in day_order if d in max_rev.columns])
-                    st.dataframe(max_rev.round(0).astype(int), use_container_width=True)
+            # ------------------------------------------------------------------
+            # FREEZER SALE TRANSACTIONS & SUMMARY (Filtered by Dashboard Month / Custom Date Range)
+            # ------------------------------------------------------------------
+            st.markdown("---")
+            with st.expander(f"❄️ View Freezer Sale Transactions & Summary ({range_start.strftime('%d-%b-%y')} – {range_end.strftime('%d-%b-%y')})", expanded=True):
+                fzr_txns_df = load_freezer_sale_transactions_df(start_date=range_start, end_date=range_end)
+                if fzr_txns_df.empty:
+                    st.caption("No direct Freezer sale transactions recorded in this period.")
+                else:
+                    # 1. Date-wise Summary of Freezer Sales
+                    st.markdown("##### 📊 Freezer Sales Summary (By Date)")
+                    fzr_date_grp = (
+                        fzr_txns_df.groupby(["sale_date", "freezer_name"], as_index=False)
+                        .agg(
+                            txns_count=("id", "count"),
+                            total_units=("total_units", "sum"),
+                            total_value=("total_value", "sum"),
+                            phonepe=("phonepe", "sum"),
+                            cash=("cash", "sum"),
+                            leakage=("leakage", "sum"),
+                        )
+                        .sort_values("sale_date", ascending=False)
+                    )
+                    sum_rows = []
+                    for _, sr in fzr_date_grp.iterrows():
+                        sum_rows.append({
+                            "Date": pd.to_datetime(sr["sale_date"]).strftime("%d-%b-%y"),
+                            "Freezer": sr["freezer_name"],
+                            "Txns": int(sr["txns_count"]),
+                            "Units Sold": int(sr["total_units"]),
+                            "Total Value (₹)": f"₹{float(sr['total_value']):,.0f}",
+                            "PhonePe (₹)": f"₹{float(sr['phonepe']):,.0f}",
+                            "Cash (₹)": f"₹{float(sr['cash']):,.0f}",
+                            "Leakage (₹)": f"₹{float(sr['leakage']):,.0f}",
+                        })
+                    sum_rows.append({
+                        "Date": "SUMMARY TOTAL",
+                        "Freezer": "—",
+                        "Txns": int(fzr_date_grp["txns_count"].sum()),
+                        "Units Sold": int(fzr_date_grp["total_units"].sum()),
+                        "Total Value (₹)": f"₹{float(fzr_date_grp['total_value'].sum()):,.0f}",
+                        "PhonePe (₹)": f"₹{float(fzr_date_grp['phonepe'].sum()):,.0f}",
+                        "Cash (₹)": f"₹{float(fzr_date_grp['cash'].sum()):,.0f}",
+                        "Leakage (₹)": f"₹{float(fzr_date_grp['leakage'].sum()):,.0f}",
+                    })
+                    sum_table_df = pd.DataFrame(sum_rows)
+                    st.dataframe(
+                        sum_table_df.style.apply(
+                            lambda r: ["background-color:#FFF2DC;font-weight:900;color:#4A2418;" if r.get("Date") == "SUMMARY TOTAL" else "" for _ in r],
+                            axis=1
+                        ),
+                        hide_index=True,
+                        use_container_width=True
+                    )
+
+                    # 2. Individual Freezer Sale Transactions Table
+                    st.markdown("##### 🧾 Individual Freezer Sale Transactions")
+                    txn_rows = []
+                    for _, tr in fzr_txns_df.iterrows():
+                        flv_parts = [
+                            f"{code}:{int(tr.get(FLAVOR_MAP[code]['audit_col'], 0))}"
+                            for code in FLAVOR_CODES
+                            if int(tr.get(FLAVOR_MAP[code]["audit_col"], 0)) > 0
+                        ]
+                        txn_rows.append({
+                            "Txn #": f"#{int(tr['id'])}",
+                            "Date": pd.to_datetime(tr["sale_date"]).strftime("%d-%b-%y"),
+                            "Time": pd.to_datetime(tr["created_at"]).strftime("%I:%M %p") if pd.notna(tr.get("created_at")) else "—",
+                            "Freezer": tr["freezer_name"],
+                            "Sold By": tr.get("sold_by") or "—",
+                            "Units": int(tr.get("total_units") or 0),
+                            "Total Value (₹)": f"₹{float(tr.get('total_value') or 0):,.0f}",
+                            "PhonePe (₹)": f"₹{float(tr.get('phonepe') or 0):,.0f}",
+                            "Cash (₹)": f"₹{float(tr.get('cash') or 0):,.0f}",
+                            "Leakage (₹)": f"₹{float(tr.get('leakage') or 0):,.0f}",
+                            "Flavours": " • ".join(flv_parts) if flv_parts else "—",
+                            "Reason": tr.get("reason") or "—",
+                        })
+                    txn_rows.append({
+                        "Txn #": "SUMMARY TOTAL",
+                        "Date": f"{len(fzr_txns_df)} txn(s)",
+                        "Time": "—",
+                        "Freezer": "—",
+                        "Sold By": "—",
+                        "Units": int(fzr_txns_df["total_units"].sum()),
+                        "Total Value (₹)": f"₹{float(fzr_txns_df['total_value'].sum()):,.0f}",
+                        "PhonePe (₹)": f"₹{float(fzr_txns_df['phonepe'].sum()):,.0f}",
+                        "Cash (₹)": f"₹{float(fzr_txns_df['cash'].sum()):,.0f}",
+                        "Leakage (₹)": f"₹{float(fzr_txns_df['leakage'].sum()):,.0f}",
+                        "Flavours": "—",
+                        "Reason": "—",
+                    })
+                    txn_table_df = pd.DataFrame(txn_rows)
+                    st.dataframe(
+                        txn_table_df.style.apply(
+                            lambda r: ["background-color:#FFF2DC;font-weight:900;color:#4A2418;" if r.get("Txn #") == "SUMMARY TOTAL" else "" for _ in r],
+                            axis=1
+                        ),
+                        hide_index=True,
+                        use_container_width=True
+                    )
+
+
+        # ------------------------------------------------------------------
+        # TOGGLE SECTION 2: REVENUE CYCLE MANAGEMENT
+        # ------------------------------------------------------------------
+        if st.session_state["show_dash_rcm"]:
+            st.markdown("---")
+            _rcm_hdr_c1, _rcm_hdr_c2 = st.columns([3.2, 1.0], vertical_alignment="center")
+            with _rcm_hdr_c1:
+                st.markdown("### 💰 Revenue Cycle Management")
+            with _rcm_hdr_c2:
+                st.button(
+                    "🔼 Hide Revenue Cycle Management",
+                    key="dash_inline_hide_rcm",
+                    use_container_width=True,
+                    on_click=_toggle_dash_section,
+                    args=("show_dash_rcm",),
+                )
+            st.markdown("### 1. Revenue Cycle Management & Financial Performance")
+
+            # Calculate average days for the selected range:
+            # - Month filter: if current month, use 1st until yesterday (today - 1); else use month days count
+            # - Custom range: exact number of days in the selected date range
+            today_ref = date.today()
+            if dashboard_filter_mode == "Month":
+                if int(dash_year) == today_ref.year and int(dash_month_num) == today_ref.month:
+                    elapsed_days = max(1, (today_ref - date(today_ref.year, today_ref.month, 1)).days)
+                    avg_divisor_days = elapsed_days
+                else:
+                    avg_divisor_days = max(1, calendar.monthrange(int(dash_year), int(dash_month_num))[1])
+            else:
+                avg_divisor_days = max(1, (range_end - range_start).days + 1)
+
+            avg_rev_per_day = (total_rev / float(avg_divisor_days)) if avg_divisor_days > 0 else 0.0
+
+            st.markdown('<div class="dashboard-kpi-row">', unsafe_allow_html=True)
+            mc1, mc2, mc3, mc4, mc5, mc6, mc7 = st.columns(7)
+            mc1.metric("Revenue", f"₹{total_rev:,.0f}")
+            mc2.metric("Avg Rev / Day", f"₹{avg_rev_per_day:,.0f}")
+            mc3.metric("Units Sold", f"{total_units:,}")
+            mc4.metric(f"COGS ({cogs_margin:.1f}%)", f"₹{exact_cogs_sold:,.0f}")
+            mc5.metric(f"Gr. Profit ({gross_margin:.1f}%)", f"₹{gross_profit:,.0f}")
+            mc6.metric(f"OPEX ({opex_margin:.1f}%)", f"₹{total_incurred_opex:,.0f}")
+            mc7.metric(f"Net Profit ({net_margin:.1f}%)", f"₹{net_profit:,.0f}")
+            st.markdown('</div>', unsafe_allow_html=True)
+
+            # ------------------------------------------------------------------
+            # INTERACTIVE OPEX BREAKDOWN & INSIGHTS BUTTON + PANEL
+            # ------------------------------------------------------------------
+            if "show_dash_opex_breakdown" not in st.session_state:
+                st.session_state["show_dash_opex_breakdown"] = False
+
+            def _toggle_dash_opex_breakdown():
+                st.session_state["show_dash_opex_breakdown"] = not bool(st.session_state.get("show_dash_opex_breakdown", False))
+
+            opex_btn_c1, opex_btn_c2 = st.columns([1.5, 2.5], gap="small", vertical_alignment="center")
+            with opex_btn_c1:
+                opex_btn_lbl = (
+                    "🔼 Hide OPEX Breakdown & Insights"
+                    if st.session_state["show_dash_opex_breakdown"]
+                    else f"🧾 View OPEX Breakdown & Insights (₹{total_incurred_opex:,.0f} • {opex_margin:.1f}%)"
+                )
+                st.button(
+                    opex_btn_lbl,
+                    key="btn_toggle_dash_opex_breakdown",
+                    type="primary" if not st.session_state["show_dash_opex_breakdown"] else "secondary",
+                    use_container_width=True,
+                    on_click=_toggle_dash_opex_breakdown,
+                )
+            with opex_btn_c2:
+                st.markdown(
+                    "<div style='font-size:12px;font-weight:700;color:#5C3D24;'>"
+                    "Category & sub-category split, labour & burn rate"
+                    "</div>",
+                    unsafe_allow_html=True,
+                )
+
+            if st.session_state.get("show_dash_opex_breakdown", False):
+                with st.container(border=True):
+                    st.markdown(
+                        f"""
+                        <div style="background:linear-gradient(135deg, #4A2418 0%, #70440E 100%);padding:14px 18px;border-radius:10px;color:#FFFFFF;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                            <div>
+                                <div style="font-size:11px;font-weight:800;color:#F6E7CC;letter-spacing:0.6px;text-transform:uppercase;">OPERATING EXPENSE (OPEX) DEEP-DIVE & INSIGHTS</div>
+                                <div style="font-size:18px;font-weight:900;color:#FFFFFF;margin-top:2px;">Period: {range_start.strftime('%d %b %Y')} — {range_end.strftime('%d %b %Y')} ({avg_divisor_days} active days)</div>
+                            </div>
+                            <div style="text-align:right;">
+                                <div style="font-size:11px;color:#F6E7CC;font-weight:700;">Total Incurred OPEX</div>
+                                <div style="font-size:22px;font-weight:900;color:#FFD166;">₹{total_incurred_opex:,.0f} <span style="font-size:13px;color:#FFF2DC;">({opex_margin:.1f}% of Rev)</span></div>
+                            </div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+
+                    # Build granular Category & Sub-Category rows
+                    opex_detail_rows = []
+                    opex_cat_totals = {}
+
+                    # 1. Incurred Staff Labour broken down by Fixed Salary, Commission, Allowances + Staff names
+                    tot_fixed_sal_inc = sum(float(v.get("salary", 0.0)) for v in staff_pay_breakdown.values())
+                    tot_comm_inc = sum(float(v.get("commission", 0.0)) for v in staff_pay_breakdown.values())
+                    tot_allow_inc = sum(float(v.get("allowance", 0.0)) for v in staff_pay_breakdown.values())
+
+                    if tot_fixed_sal_inc > 0:
+                        staff_sal_notes = ", ".join(
+                            f"{sn}: ₹{float(sv['salary']):,.0f} ({int(sv.get('days', 0))}d)"
+                            for sn, sv in sorted(staff_pay_breakdown.items(), key=lambda x: -float(x[1].get("salary", 0)))
+                            if float(sv.get("salary", 0)) > 0
+                        )
+                        opex_detail_rows.append({
+                            "Category": "Labour Charges",
+                            "Sub-Category": "Pro-Rata Fixed Salaries (Incurred)",
+                            "Entries": sum(1 for sv in staff_pay_breakdown.values() if float(sv.get("salary", 0)) > 0),
+                            "Amount": tot_fixed_sal_inc,
+                            "Details": staff_sal_notes or "Active staff pro-rata salary",
+                        })
+                    if tot_comm_inc > 0:
+                        staff_comm_notes = ", ".join(
+                            f"{sn}: ₹{float(sv['commission']):,.0f}"
+                            for sn, sv in sorted(staff_pay_breakdown.items(), key=lambda x: -float(x[1].get("commission", 0)))
+                            if float(sv.get("commission", 0)) > 0
+                        )
+                        opex_detail_rows.append({
+                            "Category": "Labour Charges",
+                            "Sub-Category": "Sales Incentives & Commissions",
+                            "Entries": sum(1 for sv in staff_pay_breakdown.values() if float(sv.get("commission", 0)) > 0),
+                            "Amount": tot_comm_inc,
+                            "Details": staff_comm_notes or "Cart shift target commissions",
+                        })
+                    if tot_allow_inc > 0:
+                        staff_allow_notes = ", ".join(
+                            f"{sn}: ₹{float(sv['allowance']):,.0f}"
+                            for sn, sv in sorted(staff_pay_breakdown.items(), key=lambda x: -float(x[1].get("allowance", 0)))
+                            if float(sv.get("allowance", 0)) > 0
+                        )
+                        opex_detail_rows.append({
+                            "Category": "Labour Charges",
+                            "Sub-Category": "Daily Food, Tea & Fuel Allowances",
+                            "Entries": sum(1 for sv in staff_pay_breakdown.values() if float(sv.get("allowance", 0)) > 0),
+                            "Amount": tot_allow_inc,
+                            "Details": staff_allow_notes or "Daily shift food/tea & fuel allowances",
+                        })
+                    if not unassigned_labour_df.empty:
+                        for sub_c, grp_u in unassigned_labour_df.groupby(unassigned_labour_df["Sub_Category"].fillna("Monthly Food / General Labour")):
+                            amt_u = float(grp_u["Amount"].sum())
+                            if amt_u > 0:
+                                descs = [str(d).strip() for d in grp_u["Description"].dropna().unique().tolist() if str(d).strip()]
+                                opex_detail_rows.append({
+                                    "Category": "Labour Charges",
+                                    "Sub-Category": str(sub_c or "Monthly Food / General Labour"),
+                                    "Entries": int(len(grp_u)),
+                                    "Amount": amt_u,
+                                    "Details": "; ".join(descs[:3]) if descs else "Unassigned labour expense",
+                                })
+
+                    # 2. Non-Labour OPEX broken down by Category -> Sub-Category
+                    if not non_labour_opex_df.empty:
+                        nl_clean = non_labour_opex_df.copy()
+                        nl_clean["Cat_Clean"] = nl_clean["Category"].fillna("Miscellaneous Expense").astype(str).str.strip()
+                        nl_clean["Sub_Clean"] = nl_clean["Sub_Category"].fillna("General").astype(str).str.strip()
+                        nl_clean.loc[nl_clean["Sub_Clean"] == "", "Sub_Clean"] = "General"
+                        for (cat_n, sub_n), grp_nl in nl_clean.groupby(["Cat_Clean", "Sub_Clean"]):
+                            amt_nl = float(grp_nl["Amount"].sum())
+                            if amt_nl <= 0:
+                                continue
+                            descs = [str(d).strip() for d in grp_nl["Description"].dropna().unique().tolist() if str(d).strip()]
+                            attrs = [str(a).strip() for a in grp_nl["Attributed_To"].dropna().unique().tolist() if str(a).strip()]
+                            detail_str = "; ".join(descs[:2]) if descs else (", ".join(attrs[:2]) if attrs else "Recorded OPEX")
+                            opex_detail_rows.append({
+                                "Category": cat_n,
+                                "Sub-Category": sub_n,
+                                "Entries": int(len(grp_nl)),
+                                "Amount": amt_nl,
+                                "Details": detail_str,
+                            })
+
+                    for r_item in opex_detail_rows:
+                        c_key = r_item["Category"]
+                        opex_cat_totals[c_key] = opex_cat_totals.get(c_key, 0.0) + float(r_item["Amount"])
+
+                    sorted_cats = sorted(opex_cat_totals.items(), key=lambda x: -x[1])
+                    top_cat_name = sorted_cats[0][0] if sorted_cats else "None"
+                    top_cat_amt = sorted_cats[0][1] if sorted_cats else 0.0
+                    top_cat_share = (top_cat_amt / total_incurred_opex * 100.0) if total_incurred_opex > 0 else 0.0
+
+                    labour_share_opex = (tot_labour_incurred / total_incurred_opex * 100.0) if total_incurred_opex > 0 else 0.0
+                    other_share_opex = (other_opex_total / total_incurred_opex * 100.0) if total_incurred_opex > 0 else 0.0
+                    opex_per_unit = (total_incurred_opex / float(total_units)) if total_units > 0 else 0.0
+                    gp_per_unit = (gross_profit / float(total_units)) if total_units > 0 else 0.0
+                    daily_opex_burn = (total_incurred_opex / float(avg_divisor_days)) if avg_divisor_days > 0 else 0.0
+                    daily_gp_gen = (gross_profit / float(avg_divisor_days)) if avg_divisor_days > 0 else 0.0
+
+                    # Key Executive Insights Strip
+                    ins1, ins2, ins3, ins4 = st.columns(4, gap="small")
+                    with ins1:
+                        st.markdown(
+                            f"""
+                            <div style="background:#FFF8EE;border:1.5px solid #E3C391;border-radius:10px;padding:10px 12px;height:100%;">
+                                <div style="font-size:10.5px;font-weight:800;color:#8A5E17;text-transform:uppercase;">🔥 #1 Cost Driver</div>
+                                <div style="font-size:15px;font-weight:900;color:#4A2418;margin-top:2px;">{escape(str(top_cat_name))}</div>
+                                <div style="font-size:14px;font-weight:900;color:#C43D17;margin-top:2px;">₹{top_cat_amt:,.0f} <span style="font-size:11px;color:#6B5138;">({top_cat_share:.1f}% of OPEX)</span></div>
+                            </div>
+                            """,
+                            unsafe_allow_html=True,
+                        )
+                    with ins2:
+                        st.markdown(
+                            f"""
+                            <div style="background:#F4F9FD;border:1.5px solid #B5D3EB;border-radius:10px;padding:10px 12px;height:100%;">
+                                <div style="font-size:10.5px;font-weight:800;color:#1B5E91;text-transform:uppercase;">👥 Labour vs Overhead</div>
+                                <div style="font-size:13px;font-weight:900;color:#1B5E91;margin-top:3px;">Labour: ₹{tot_labour_incurred:,.0f} ({labour_share_opex:.1f}%)</div>
+                                <div style="font-size:12.5px;font-weight:800;color:#4A2418;margin-top:2px;">Other OPEX: ₹{other_opex_total:,.0f} ({other_share_opex:.1f}%)</div>
+                            </div>
+                            """,
+                            unsafe_allow_html=True,
+                        )
+                    with ins3:
+                        st.markdown(
+                            f"""
+                            <div style="background:#F3FAF5;border:1.5px solid #B5DFC0;border-radius:10px;padding:10px 12px;height:100%;">
+                                <div style="font-size:10.5px;font-weight:800;color:#124A1D;text-transform:uppercase;">🍦 OPEX Per Kulfi Sold</div>
+                                <div style="font-size:16px;font-weight:900;color:#124A1D;margin-top:2px;">₹{opex_per_unit:,.2f} / pc</div>
+                                <div style="font-size:11.5px;font-weight:700;color:#4A2418;margin-top:2px;">vs Gr. Margin ₹{gp_per_unit:,.2f} / pc</div>
+                            </div>
+                            """,
+                            unsafe_allow_html=True,
+                        )
+                    with ins4:
+                        st.markdown(
+                            f"""
+                            <div style="background:#FDF6F6;border:1.5px solid #EAB6B6;border-radius:10px;padding:10px 12px;height:100%;">
+                                <div style="font-size:10.5px;font-weight:800;color:#9E2A2B;text-transform:uppercase;">📆 Daily OPEX Burn Rate</div>
+                                <div style="font-size:16px;font-weight:900;color:#9E2A2B;margin-top:2px;">₹{daily_opex_burn:,.0f} / day</div>
+                                <div style="font-size:11.5px;font-weight:700;color:#4A2418;margin-top:2px;">vs Daily Gr. Profit ₹{daily_gp_gen:,.0f}/d</div>
+                            </div>
+                            """,
+                            unsafe_allow_html=True,
+                        )
+
+                    st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
+
+                    if opex_detail_rows:
+                        # Category Progress Bars + Granular Category -> Sub-Category Table
+                        cat_col_left, sub_col_right = st.columns([1.05, 1.55], gap="medium")
+                        with cat_col_left:
+                            st.markdown("##### 📊 Category Share of OPEX & Revenue")
+                            palette_bars = ["#E8542A", "#2A9D8F", "#8A5E17", "#1B5E91", "#6A4C93", "#C43D17", "#124A1D", "#D97706"]
+                            for idx_c, (c_name, c_amt) in enumerate(sorted_cats):
+                                pct_opex = (c_amt / total_incurred_opex * 100.0) if total_incurred_opex > 0 else 0.0
+                                pct_rev = (c_amt / total_rev * 100.0) if total_rev > 0 else 0.0
+                                bar_w = min(100.0, max(3.0, pct_opex))
+                                b_col = palette_bars[idx_c % len(palette_bars)]
+                                st.markdown(
+                                    f"""
+                                    <div style="background:#FFFDF9;border:1px solid #E6D5B8;border-radius:8px;padding:8px 10px;margin-bottom:7px;">
+                                        <div style="display:flex;justify-content:space-between;align-items:center;font-size:12.5px;font-weight:800;color:#2A1B10;">
+                                            <span>{escape(str(c_name))}</span>
+                                            <span style="color:{b_col};font-weight:900;">₹{c_amt:,.0f}</span>
+                                        </div>
+                                        <div style="display:flex;justify-content:space-between;font-size:11px;color:#6B5138;margin-top:2px;margin-bottom:4px;">
+                                            <span><b>{pct_opex:.1f}%</b> of OPEX</span>
+                                            <span><b>{pct_rev:.1f}%</b> of Revenue</span>
+                                        </div>
+                                        <div style="width:100%;background:#EFE4D2;height:7px;border-radius:4px;overflow:hidden;">
+                                            <div style="width:{bar_w:.1f}%;background:{b_col};height:7px;border-radius:4px;"></div>
+                                        </div>
+                                    </div>
+                                    """,
+                                    unsafe_allow_html=True,
+                                )
+
+                        with sub_col_right:
+                            st.markdown("##### 🧾 Granular Category & Sub-Category OPEX Table")
+                            opex_sub_df = pd.DataFrame(opex_detail_rows).sort_values(["Amount"], ascending=False).reset_index(drop=True)
+                            opex_sub_df["% of OPEX"] = opex_sub_df["Amount"].apply(
+                                lambda v: f"{(float(v) / total_incurred_opex * 100.0):.1f}%" if total_incurred_opex > 0 else "0.0%"
+                            )
+                            opex_sub_df["% of Rev"] = opex_sub_df["Amount"].apply(
+                                lambda v: f"{(float(v) / total_rev * 100.0):.1f}%" if total_rev > 0 else "0.0%"
+                            )
+                            opex_sub_df["Amount (₹)"] = opex_sub_df["Amount"].apply(lambda v: f"₹{float(v):,.0f}")
+
+                            total_row_opex = pd.DataFrame([{
+                                "Category": "TOTAL INCURRED OPEX",
+                                "Sub-Category": f"{len(opex_detail_rows)} Sub-Components",
+                                "Entries": int(opex_sub_df["Entries"].sum()),
+                                "Amount (₹)": f"₹{total_incurred_opex:,.0f}",
+                                "% of OPEX": "100.0%",
+                                "% of Rev": f"{opex_margin:.1f}%",
+                                "Details": f"Net Margin after OPEX: ₹{net_profit:,.0f} ({net_margin:.1f}%)",
+                            }])
+                            disp_opex_df = pd.concat(
+                                [opex_sub_df[["Category", "Sub-Category", "Entries", "Amount (₹)", "% of OPEX", "% of Rev", "Details"]], total_row_opex],
+                                ignore_index=True,
+                            )
+                            st.dataframe(
+                                disp_opex_df.style.apply(
+                                    lambda r: ["background-color:#FFF2DC;font-weight:900;color:#4A2418;" if r.get("Category") == "TOTAL INCURRED OPEX" else "" for _ in r],
+                                    axis=1,
+                                ),
+                                hide_index=True,
+                                use_container_width=True,
+                                height=min(420, 42 + len(disp_opex_df) * 35),
+                            )
+                    else:
+                        st.info("No operating expenses incurred in the selected period.")
+
+            st.markdown("#### Daily Revenue Trend")
+            if not range_df.empty:
+                line_chart = alt.Chart(range_df.groupby("Date", as_index=False)["Total_Collection"].sum()).mark_line(point=True, color="#E8542A").encode(
+                    x=alt.X("Date:T", title="Date", axis=alt.Axis(format="%d-%b")),
+                    y=alt.Y("Total_Collection:Q", title="Revenue (₹)"),
+                    tooltip=[alt.Tooltip("Date:T", format="%d-%b-%y", title="Date"), alt.Tooltip("Total_Collection:Q", format=",.2f", title="Revenue (₹)")]
+                ).properties(height=300)
+                st.altair_chart(line_chart, use_container_width=True)
+            else:
+                st.caption("No revenue data available for this range to plot.")
+
+            st.markdown("---")
+            pl_c1, pl_c2 = st.columns([1.1, 1.2])
+            with pl_c1:
+                st.markdown("#### Profit & Loss Statement (P&L)")
+                pnl_df = pd.DataFrame({
+                    "Financial Line Item": ["1. Total Revenue in Period", "2. Cost of Goods Sold", "3. Gross Profit (1 - 2)", "4. Labour Charges (OPEX)", "5. Other Operating Costs (OPEX)", "6. Total Operating Costs (4 + 5)", "7. Net Profit (3 - 6)"],
+                    "Amount (₹)": [total_rev, -exact_cogs_sold, gross_profit, -tot_labour_incurred, -other_opex_total, -total_incurred_opex, net_profit]
+                })
+                st.dataframe(pnl_df, hide_index=True, use_container_width=True, column_config={"Amount (₹)": st.column_config.NumberColumn(format="₹%,.2f")})
+
+            with pl_c2:
+                st.markdown("#### Cost Distribution: COGS, OPEX & CAPEX")
+                cost_dist_df = pd.DataFrame({"Cost Bucket": ["Cost of Goods Sold", "Operating Expenses (OPEX)", "Capital Expenditure (CAPEX)"], "Amount (₹)": [exact_cogs_sold, total_incurred_opex, capex_total]})
+                cost_chart = alt.Chart(cost_dist_df).mark_bar(width=28).encode(x=alt.X("Cost Bucket:N", title="", sort=None, axis=alt.Axis(labelAngle=-15)), y=alt.Y("Amount (₹):Q", title="Amount (₹)"), color=alt.Color("Cost Bucket:N", scale=alt.Scale(domain=["Cost of Goods Sold", "Operating Expenses (OPEX)", "Capital Expenditure (CAPEX)"], range=["#C43D17", "#8A5E17", "#4A2418"]), legend=None), tooltip=[alt.Tooltip("Cost Bucket:N", title="Type"), alt.Tooltip("Amount (₹):Q", format=",.2f", title="Amount")]).properties(height=200)
+                st.altair_chart(cost_chart, use_container_width=True)
+
+            st.markdown("#### Revenue in Range - Breakdown")
+            if not range_df.empty:
+                total_phonepe = float(range_df["PhonePe"].sum())
+                gross_cash = max(0.0, float(total_rev - total_phonepe))
+            
+                adv_paid = 0.0
+                food_paid = 0.0
+                leakage_recorded = float(range_df["Cash_Leakage"].sum()) if "Cash_Leakage" in range_df.columns else 0.0
+            
+                if not range_exp.empty and "Status" in range_exp.columns and "Sub_Category" in range_exp.columns:
+                    paid_exp = range_exp[range_exp["Status"].astype(str).str.strip().str.lower() == "paid"]
+                    if not paid_exp.empty:
+                        adv_mask = paid_exp["Sub_Category"].astype(str).str.contains("Advance", case=False, na=False)
+                        food_mask = paid_exp["Sub_Category"].astype(str).str.contains("Food|Tea", case=False, na=False)
+                        adv_paid = float(paid_exp[adv_mask]["Amount"].sum())
+                        food_paid = float(paid_exp[food_mask]["Amount"].sum())
+
+                net_cash = max(0.0, float(gross_cash - adv_paid - food_paid - leakage_recorded))
+
+                pie1_df = pd.DataFrame({"Category": ["Gross Cash", "PhonePe"], "Amount": [gross_cash, total_phonepe]})
+                pie1_df = pie1_df[pie1_df["Amount"] > 0] 
+            
+                pie1 = alt.Chart(pie1_df).mark_arc(innerRadius=40).encode(
+                    theta=alt.Theta("Amount:Q"),
+                    color=alt.Color("Category:N", scale=alt.Scale(domain=["Gross Cash", "PhonePe"], range=["#2A9D8F", "#E76F51"])),
+                    tooltip=[alt.Tooltip("Category:N", title="Category"), alt.Tooltip("Amount:Q", format=",.2f", title="Amount (₹)")]
+                ).properties(height=250)
+
+                pie2_df = pd.DataFrame({
+                    "Category": ["PhonePe", "Net Cash (In Hand)", "Staff Advance", "Food / Tea"], 
+                    "Amount": [total_phonepe, net_cash, adv_paid, food_paid]
+                })
+                pie2_df = pie2_df[pie2_df["Amount"] > 0] 
+            
+                pie2 = alt.Chart(pie2_df).mark_arc(innerRadius=40).encode(
+                    theta=alt.Theta("Amount:Q"),
+                    color=alt.Color("Category:N", scale=alt.Scale(domain=["PhonePe", "Net Cash (In Hand)", "Staff Advance", "Food / Tea"], range=["#E76F51", "#2A9D8F", "#E9C46A", "#F4A261"])),
+                    tooltip=[alt.Tooltip("Category:N", title="Category"), alt.Tooltip("Amount:Q", format=",.2f", title="Amount (₹)")]
+                ).properties(height=250)
+            
+                c_p1, c_p2 = st.columns(2)
+                with c_p1:
+                    st.write("**Gross Collection Split**")
+                    st.altair_chart(pie1, use_container_width=True)
+                with c_p2:
+                    st.write("**Net Cash & Paid Allowances Breakdown**")
+                    st.altair_chart(pie2, use_container_width=True)
             else: 
-                st.caption("No cart entries found in this range.")
+                st.caption("No collection data in this period.")
+
+            st.markdown("#### Incurred Operating Expense Breakdown by Category")
+            exp_cat_list = []
+            if tot_labour_incurred > 0:
+                exp_cat_list.append({"Category": "Labour Charges (OPEX)", "Amount": float(tot_labour_incurred)})
+            if not non_labour_opex_df.empty:
+                for cat, amt in non_labour_opex_df.groupby("Category")["Amount"].sum().items(): 
+                    exp_cat_list.append({"Category": cat, "Amount": max(0.0, float(amt))})
+
+            if exp_cat_list:
+                exp_cat_df = pd.DataFrame(exp_cat_list)
+                exp_cat_df = exp_cat_df[exp_cat_df["Amount"] > 0]
+            
+                exp_pie = alt.Chart(exp_cat_df).mark_arc(innerRadius=40).encode(
+                    theta=alt.Theta("Amount:Q"),
+                    color=alt.Color("Category:N", scale=alt.Scale(scheme="tableau10")),
+                    tooltip=[alt.Tooltip("Category:N", title="Category"), alt.Tooltip("Amount:Q", format=",.2f", title="Amount (₹)")]
+                ).properties(height=300)
+
+                exp_chart_col, exp_table_col = st.columns([1.15, 1])
+                with exp_chart_col:
+                    st.altair_chart(exp_pie, use_container_width=True)
+                with exp_table_col:
+                    exp_breakdown_table = exp_cat_df.copy()
+                    exp_breakdown_table["Amount (₹)"] = exp_breakdown_table["Amount"].astype(float)
+                    exp_breakdown_table = exp_breakdown_table[["Category", "Amount (₹)"]]
+                    exp_total_row = pd.DataFrame([{
+                        "Category": "TOTAL",
+                        "Amount (₹)": float(exp_breakdown_table["Amount (₹)"].sum())
+                    }])
+                    exp_breakdown_table = pd.concat([exp_breakdown_table, exp_total_row], ignore_index=True)
+                    st.dataframe(
+                        exp_breakdown_table,
+                        hide_index=True,
+                        use_container_width=True,
+                        height=min(340, 38 + (len(exp_breakdown_table) * 36)),
+                        column_config={
+                            "Category": st.column_config.TextColumn("Expense Component"),
+                            "Amount (₹)": st.column_config.NumberColumn("Amount (₹)", format="₹%,.2f"),
+                        }
+                    )
+            else: 
+                st.caption("No operating expenses incurred in this date range.")
+
+            st.markdown("---")
+            st.markdown("### 2. Comparative Cart Revenue")
+            if not range_df.empty:
+                cart_grp = range_df.groupby("Cart")["Total_Collection"].sum().reset_index().rename(columns={"Total_Collection": "Revenue (₹)"}).sort_values("Revenue (₹)", ascending=False)
+            
+                base = alt.Chart(cart_grp).encode(
+                    x=alt.X("Cart:N", title="", sort="-y", axis=alt.Axis(labelAngle=0, labelFontSize=13, labelPadding=10))
+                )
+            
+                bars = base.mark_bar(color="#E8542A", cornerRadiusTopLeft=4, cornerRadiusTopRight=4, size=60).encode(
+                    y=alt.Y("Revenue (₹):Q", title="Total Revenue (₹)", axis=alt.Axis(grid=True, gridColor="#F0E5D1")),
+                    tooltip=["Cart", alt.Tooltip("Revenue (₹):Q", format=",.2f")]
+                )
+            
+                text_labels = base.mark_text(align='center', baseline='bottom', dy=-5, color="#4A2418", fontWeight=700, fontSize=14).encode(
+                    y=alt.Y("Revenue (₹):Q"),
+                    text=alt.Text("Revenue (₹):Q", format=",.0f")
+                )
+            
+                st.altair_chart((bars + text_labels).properties(height=300), use_container_width=True)
+            else: 
+                st.caption("No cart sales in this date range.")
+
+            st.markdown("---")
+            st.markdown("### 3. Day-Wise & Timing Patterns")
+            if not range_df.empty:
+                day_order = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+                dow_df = range_df[~range_df["Cart"].astype(str).str.strip().str.upper().isin(["FREEZER", "HOSUR FREEZER"])].copy()
+                dow_df["Day"] = dow_df["Date"].dt.day_name().str[:3]
+            
+                if not dow_df.empty:
+                    def show_compact_average_table(pivot):
+                        headers = "".join(f"<th>{escape(str(day))}</th>" for day in pivot.columns)
+                        rows = []
+                        for cart, values in pivot.iterrows():
+                            cells = "".join(f"<td>{int(round(value)):,}</td>" for value in values)
+                            rows.append(f"<tr><th scope='row'>{escape(str(cart))}</th>{cells}</tr>")
+                        st.html(
+                            "<style>"
+                            ".compact-dow-table{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:clamp(9px,.78vw,11.5px);line-height:1.35;background:#FFFEFA;border:1.5px solid #B8882D;border-radius:9px;overflow:hidden;box-shadow:0 3px 10px rgba(45,21,11,0.06)}"
+                            ".compact-dow-table th,.compact-dow-table td{padding:6px 5px;border-bottom:1px solid #E5D2B0;border-right:1px solid #EFE2CA;text-align:right;overflow-wrap:anywhere;color:#2A160C;font-weight:700}"
+                            ".compact-dow-table thead th{font-weight:800;background:linear-gradient(180deg,#6E1B2D 0%,#4E1220 100%);color:#FCE8B2;border-bottom:2px solid #D4AF37;text-align:center}"
+                            ".compact-dow-table th:first-child{width:29%;text-align:left;padding-left:8px}"
+                            ".compact-dow-table tbody tr:nth-child(even) td,.compact-dow-table tbody tr:nth-child(even) th{background:#FAF2E1}"
+                            ".compact-dow-table tbody tr:first-child td,.compact-dow-table tbody tr:first-child th{font-weight:900;background:linear-gradient(90deg,#FBF0D9 0%,#F2DEC0 100%);color:#2D150B;border-bottom:1.5px solid #C89B3C}"
+                            "</style>"
+                            f"<table class='compact-dow-table'><thead><tr><th scope='col'>Cart</th>{headers}</tr></thead>"
+                            f"<tbody>{''.join(rows)}</tbody></table>"
+                        )
+
+                    dw1, dw2 = st.columns(2)
+                    with dw1: 
+                        st.write("**Average Units Sold per Day of Week**")
+                        units_df = dow_df[dow_df["Sold_Total"] > 0]
+                        if not units_df.empty:
+                            units_pivot = units_df.pivot_table(index="Cart", columns="Day", values="Sold_Total", aggfunc="mean", fill_value=0)
+                            day_cols = [d for d in day_order if d in units_pivot.columns]
+                            units_pivot = units_pivot.reindex(columns=day_cols)
+                            overall_units = units_df.groupby("Day")["Sold_Total"].mean().reindex(day_cols)
+                            units_pivot.loc["Overall Average (per cart)"] = overall_units
+                            units_pivot = units_pivot.reindex(["Overall Average (per cart)"] + [cart for cart in units_pivot.index if cart != "Overall Average (per cart)"])
+                            show_compact_average_table(units_pivot)
+                        else:
+                            st.caption("No units sold in this range.")
+                    with dw2: 
+                        st.write("**Average Revenue (₹) per Day of Week**")
+                        rev_pivot = dow_df.pivot_table(index="Cart", columns="Day", values="Total_Collection", aggfunc="mean", fill_value=0)
+                        rev_day_cols = [d for d in day_order if d in rev_pivot.columns]
+                        rev_pivot = rev_pivot.reindex(columns=rev_day_cols)
+                        overall_rev = dow_df.groupby("Day")["Total_Collection"].mean().reindex(rev_day_cols)
+                        rev_pivot.loc["Overall Average (per cart)"] = overall_rev
+                        rev_pivot = rev_pivot.reindex(["Overall Average (per cart)"] + [cart for cart in rev_pivot.index if cart != "Overall Average (per cart)"])
+                        show_compact_average_table(rev_pivot)
+
+                    max1, max2 = st.columns(2)
+                    with max1:
+                        st.write("**Maximum Units Sold per Day of Week**")
+                        if not dow_df.empty:
+                            max_units = dow_df.pivot_table(index="Cart", columns="Day", values="Sold_Total", aggfunc="max", fill_value=0)
+                            max_units = max_units.reindex(columns=[d for d in day_order if d in max_units.columns])
+                            st.dataframe(max_units.round(0).astype(int), use_container_width=True)
+                    with max2:
+                        st.write("**Maximum Revenue (₹) per Day of Week**")
+                        max_rev = dow_df.pivot_table(index="Cart", columns="Day", values="Total_Collection", aggfunc="max", fill_value=0)
+                        max_rev = max_rev.reindex(columns=[d for d in day_order if d in max_rev.columns])
+                        st.dataframe(max_rev.round(0).astype(int), use_container_width=True)
+                else: 
+                    st.caption("No cart entries found in this range.")
+        # ------------------------------------------------------------------
+        # TOGGLE SECTION 3: MONTH-WISE PERFORMANCE COMPARISON
+        # ------------------------------------------------------------------
+        if st.session_state["show_dash_month_comp"]:
+            # ------------------------------------------------------------------
+            # MONTH-WISE FULL-DATA COMPARISON TABLE & GRAPHIC VIEW
+            # ------------------------------------------------------------------
+            st.markdown("---")
+            _mc_hdr_c1, _mc_hdr_c2 = st.columns([3.2, 1.0], vertical_alignment="center")
+            with _mc_hdr_c1:
+                st.markdown("### 📅 Month-Wise Performance Comparison (Full-Data Months Only)")
+            with _mc_hdr_c2:
+                st.button(
+                    "🔼 Hide Month-Wise Performance Comparison",
+                    key="dash_inline_hide_month_comp",
+                    use_container_width=True,
+                    on_click=_toggle_dash_section,
+                    args=("show_dash_month_comp",),
+                )
+            st.caption("Includes only completed calendar months where full month data is available from the 1st through the end of the month (partial months are excluded).")
+
+            if not daily_df.empty:
+                m_daily = daily_df.copy()
+                m_daily["EntryDate"] = pd.to_datetime(m_daily["Date"]).dt.date
+                m_daily["YM"] = pd.to_datetime(m_daily["Date"]).dt.to_period("M")
+
+                today_d = date.today()
+                current_ym = pd.Period(today_d, freq="M")
+
+                # Pre-fetch monthly COGS from daily_cart_items joined with flavors
+                monthly_cogs_df = db_conn.query(
+                    """
+                    SELECT
+                        DATE_TRUNC('month', e.entry_date)::date AS month_start,
+                        COALESCE(SUM(i.sold_units * f.cost_price), 0) AS cogs_amount
+                    FROM daily_cart_entries e
+                    JOIN daily_cart_items i ON i.daily_entry_id = e.id
+                    JOIN flavors f ON f.code = i.flavor_code
+                    WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(e.city, 'HOSUR'))) = :active_loc)
+                    GROUP BY DATE_TRUNC('month', e.entry_date)::date;
+                    """,
+                    params={"active_loc": get_active_location_filter()},
+                    ttl="0s"
+                )
+                cogs_by_month_start = {}
+                if not monthly_cogs_df.empty:
+                    for _, cr in monthly_cogs_df.iterrows():
+                        m_dt = pd.to_datetime(cr["month_start"]).date()
+                        cogs_by_month_start[(m_dt.year, m_dt.month)] = float(cr["cogs_amount"] or 0.0)
+
+                full_month_rows = []
+                for ym in sorted(m_daily["YM"].unique()):
+                    # Never include current ongoing or future months
+                    if ym >= current_ym:
+                        continue
+                    yr, mo = int(ym.year), int(ym.month)
+                    days_in_mo = calendar.monthrange(yr, mo)[1]
+                    mo_start = date(yr, mo, 1)
+                    mo_end = date(yr, mo, days_in_mo)
+
+                    sub_d = m_daily[(m_daily["EntryDate"] >= mo_start) & (m_daily["EntryDate"] <= mo_end)]
+                    if sub_d.empty:
+                        continue
+
+                    min_logged = sub_d["EntryDate"].min()
+                    max_logged = sub_d["EntryDate"].max()
+                    distinct_days = sub_d["EntryDate"].nunique()
+
+                    # Strict full-month check: data must start on day 1 and reach the final day of the month (or have all calendar days logged)
+                    if not (min_logged == mo_start and max_logged == mo_end and distinct_days >= days_in_mo):
+                        continue
+
+                    m_rev = float(sub_d["Total_Collection"].sum())
+                    m_avg_rev = m_rev / float(days_in_mo)
+                    m_units = int(round(sub_d["Sold_Total"].sum()))
+                    m_cogs = float(cogs_by_month_start.get((yr, mo), 0.0))
+                    m_gp = m_rev - m_cogs
+                    m_gp_pct = (m_gp / m_rev * 100.0) if m_rev > 0 else 0.0
+
+                    # OPEX for this full month (using exact same P&L methodology: incurred staff labour + unassigned labour + non-labour OPEX)
+                    m_exp = exp_df[(exp_df["Date"].dt.date >= mo_start) & (exp_df["Date"].dt.date <= mo_end)] if not exp_df.empty else pd.DataFrame()
+                    m_exp_types = m_exp["Expense_Type"].fillna("").astype(str).str.strip().str.upper() if not m_exp.empty else pd.Series(dtype=str)
+                    m_exp_cats = m_exp["Category"].fillna("").astype(str).str.strip().str.casefold() if not m_exp.empty else pd.Series(dtype=str)
+
+                    _, _, _, m_staff_pay = calculate_incurred_labour_for_range(mo_start, mo_end, limit_to_employment=True)
+                    m_staff_sal = sum(float(st_info["incurred"]) for st_info in m_staff_pay.values())
+                    m_unassigned_lab = float(
+                        m_exp[(m_exp_types == "OPEX") & (m_exp_cats == "labour charges") & m_exp["Staff_Name"].isna()]["Amount"].sum()
+                    ) if not m_exp.empty else 0.0
+                    m_other_opex = float(
+                        m_exp[(m_exp_types == "OPEX") & (~m_exp_cats.isin(["labour charges", "cost of goods"]))]["Amount"].sum()
+                    ) if not m_exp.empty else 0.0
+                    m_opex = m_staff_sal + m_unassigned_lab + m_other_opex
+                    m_opex_pct = (m_opex / m_rev * 100.0) if m_rev > 0 else 0.0
+
+                    m_np = m_gp - m_opex
+                    m_np_pct = (m_np / m_rev * 100.0) if m_rev > 0 else 0.0
+
+                    full_month_rows.append({
+                        "Month_Order": mo_start,
+                        "Month": mo_start.strftime("%b %Y"),
+                        "Revenue_Num": round(m_rev, 2),
+                        "Avg_Rev_Day_Num": round(m_avg_rev, 2),
+                        "Units_Sold_Num": m_units,
+                        "COGS_Num": round(m_cogs, 2),
+                        "Gross_Profit_Num": round(m_gp, 2),
+                        "Gross_Margin_Pct": round(m_gp_pct, 1),
+                        "OPEX_Num": round(m_opex, 2),
+                        "OPEX_Pct": round(m_opex_pct, 1),
+                        "Net_Profit_Num": round(m_np, 2),
+                        "Net_Profit_Pct": round(m_np_pct, 1),
+                        "Revenue": f"₹{m_rev:,.0f}",
+                        "Avg Rev / Day": f"₹{m_avg_rev:,.0f}",
+                        "Units Sold": f"{m_units:,}",
+                        "COGS": f"₹{m_cogs:,.0f}",
+                        "Gr. Profit": f"₹{m_gp:,.0f} ({m_gp_pct:.1f}%)",
+                        "OPEX": f"₹{m_opex:,.0f} ({m_opex_pct:.1f}%)",
+                        "Net Profit": f"₹{m_np:,.0f} ({m_np_pct:.1f}%)",
+                    })
+
+                if not full_month_rows:
+                    st.info("No completed calendar months with full-month data (from 1st to last day of the month) are available yet.")
+                else:
+                    full_m_df = pd.DataFrame(full_month_rows).sort_values("Month_Order")
+                    display_m_cols = ["Month", "Revenue", "Avg Rev / Day", "Units Sold", "COGS", "Gr. Profit", "OPEX", "Net Profit"]
+                    st.dataframe(full_m_df[display_m_cols], hide_index=True, use_container_width=True)
+
+                    st.markdown("##### 📈 Graphic View — Full-Data Months Comparison")
+                    month_sort_order = full_m_df["Month"].tolist()
+
+                    def _build_month_bar_chart(val_col, title_text, bar_color, val_format=",.0f", suffix=""):
+                        base_c = alt.Chart(full_m_df).encode(
+                            x=alt.X("Month:N", sort=month_sort_order, title="", axis=alt.Axis(labelAngle=0, labelFontWeight="bold"))
+                        )
+                        bars_c = base_c.mark_bar(color=bar_color, cornerRadiusTopLeft=5, cornerRadiusTopRight=5, size=42).encode(
+                            y=alt.Y(f"{val_col}:Q", title=title_text),
+                            tooltip=[
+                                alt.Tooltip("Month:N", title="Month"),
+                                alt.Tooltip(f"{val_col}:Q", title=title_text, format=val_format)
+                            ]
+                        )
+                        txt_c = base_c.mark_text(dy=-8, fontWeight="bold", fontSize=11.5, color="#2A1B10").encode(
+                            y=alt.Y(f"{val_col}:Q"),
+                            text=alt.Text(f"{val_col}:Q", format=val_format)
+                        )
+                        return (bars_c + txt_c).properties(title=title_text, height=235)
+
+                    gc1, gc2 = st.columns(2)
+                    with gc1:
+                        st.altair_chart(_build_month_bar_chart("Revenue_Num", "Revenue (₹)", "#E8542A", ",.0f"), use_container_width=True)
+                    with gc2:
+                        st.altair_chart(_build_month_bar_chart("Avg_Rev_Day_Num", "Average Rev / Day (₹)", "#2A9D8F", ",.0f"), use_container_width=True)
+
+                    gc3, gc4 = st.columns(2)
+                    with gc3:
+                        st.altair_chart(_build_month_bar_chart("Units_Sold_Num", "Units Sold", "#70440E", ",.0f"), use_container_width=True)
+                    with gc4:
+                        st.altair_chart(_build_month_bar_chart("Net_Profit_Pct", "Net Profit %", "#124A1D", ".1f"), use_container_width=True)
+            else:
+                st.info("No sales data available for month-wise comparison.")
