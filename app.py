@@ -63,14 +63,25 @@ section[data-testid="stSidebar"],
     min-width: 0 !important;
 }
 
-/* Compact, Full-Width Space Usage */
-.block-container {
-    padding-top: 2.0rem !important;
-    padding-bottom: 1.2rem !important;
-    padding-left: 1.4rem !important;
-    padding-right: 1.4rem !important;
+/* Compact & Nicely Centered ~80% Page Width */
+.block-container,
+div[data-testid="stMainBlockContainer"] {
+    padding-top: 1.6rem !important;
+    padding-bottom: 1.4rem !important;
+    padding-left: 1.2rem !important;
+    padding-right: 1.2rem !important;
     margin-top: 0 !important;
-    max-width: 100% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    width: 80% !important;
+    max-width: 1160px !important;
+}
+@media (max-width: 992px) {
+    .block-container,
+    div[data-testid="stMainBlockContainer"] {
+        width: 95% !important;
+        max-width: 95% !important;
+    }
 }
 header[data-testid="stHeader"] {
     background-color: transparent !important;
@@ -314,12 +325,90 @@ div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton > b
     gap: 8px;
 }
 
-/* Zero-height marker element for Clickable 3D Card Grids */
-div[data-testid="stElementContainer"]:has(.kulfi-clickable-card-grid) {
+/* Zero-height marker elements for Clickable 3D Card Grids & Theme Sets */
+div[data-testid="stElementContainer"]:has(.kulfi-clickable-card-grid),
+div[data-testid="stElementContainer"]:has(.kulfi-card-set-1),
+div[data-testid="stElementContainer"]:has(.kulfi-card-set-2),
+div[data-testid="stElementContainer"]:has(.kulfi-card-set-3),
+div[data-testid="stElementContainer"]:has(.kulfi-card-set-4) {
     display: none !important;
     height: 0 !important;
     margin: 0 !important;
     padding: 0 !important;
+}
+
+/* Section Headers for the 4 Landing Page Sets */
+.launchpad-section-hdr.set-1 {
+    color: #633339 !important;
+    background: linear-gradient(90deg, #F2E2E0 0%, rgba(242, 226, 224, 0) 100%) !important;
+    border-left: 4px solid #8A474F !important;
+}
+.launchpad-section-hdr.set-2 {
+    color: #23474C !important;
+    background: linear-gradient(90deg, #DFECEE 0%, rgba(223, 236, 238, 0) 100%) !important;
+    border-left: 4px solid #2F5B61 !important;
+}
+.launchpad-section-hdr.set-3 {
+    color: #54341D !important;
+    background: linear-gradient(90deg, #F0E4D4 0%, rgba(240, 228, 212, 0) 100%) !important;
+    border-left: 4px solid #784E30 !important;
+}
+.launchpad-section-hdr.set-4 {
+    color: #264230 !important;
+    background: linear-gradient(90deg, #E0EDE3 0%, rgba(224, 237, 227, 0) 100%) !important;
+    border-left: 4px solid #385943 !important;
+}
+
+/* Set 1 Cards: Sales, Daily Operations & Financials — Dusty Rosewood */
+div[data-testid="stVerticalBlock"]:has(.kulfi-card-set-1):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button {
+    background: linear-gradient(135deg, #98535C 0%, #8A474F 52%, #7B3A41 100%) !important;
+    border: 1px solid #E2C2B9 !important;
+    border-left: 4px solid #F2D7C4 !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 3px 0 #562C31, 0 5px 12px rgba(142, 65, 69, 0.14) !important;
+}
+div[data-testid="stVerticalBlock"]:has(.kulfi-card-set-1):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button:hover {
+    background: linear-gradient(135deg, #A65C66 0%, #98535C 55%, #8A474F 100%) !important;
+    border-color: #F7E4D4 !important;
+    border-left: 4px solid #FFFFFF !important;
+}
+
+/* Set 2 Cards: Stock & Freezer — Muted Glacier Slate-Teal */
+div[data-testid="stVerticalBlock"]:has(.kulfi-card-set-2):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button {
+    background: linear-gradient(135deg, #3B6E75 0%, #2F5B61 52%, #25484D 100%) !important;
+    border: 1px solid #A8CFD4 !important;
+    border-left: 4px solid #D4EFF2 !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 3px 0 #173034, 0 5px 12px rgba(37, 72, 77, 0.14) !important;
+}
+div[data-testid="stVerticalBlock"]:has(.kulfi-card-set-2):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button:hover {
+    background: linear-gradient(135deg, #467E86 0%, #3B6E75 55%, #2F5B61 100%) !important;
+    border-color: #E3F6F8 !important;
+    border-left: 4px solid #FFFFFF !important;
+}
+
+/* Set 3 Cards: POs, Expenses & Cash — Warm Roasted Bronze-Walnut */
+div[data-testid="stVerticalBlock"]:has(.kulfi-card-set-3):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button {
+    background: linear-gradient(135deg, #8C5E3C 0%, #784E30 52%, #633F25 100%) !important;
+    border: 1px solid #DEC2A4 !important;
+    border-left: 4px solid #F5DFC3 !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 3px 0 #422917, 0 5px 12px rgba(99, 63, 37, 0.14) !important;
+}
+div[data-testid="stVerticalBlock"]:has(.kulfi-card-set-3):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button:hover {
+    background: linear-gradient(135deg, #9C6B46 0%, #8C5E3C 55%, #784E30 100%) !important;
+    border-color: #FAEAD6 !important;
+    border-left: 4px solid #FFFFFF !important;
+}
+
+/* Set 4 Cards: Staff Payroll & Admin Setup — Muted Sage-Forest */
+div[data-testid="stVerticalBlock"]:has(.kulfi-card-set-4):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button {
+    background: linear-gradient(135deg, #466B53 0%, #385943 52%, #2B4634 100%) !important;
+    border: 1px solid #B2D1BC !important;
+    border-left: 4px solid #D7EFE0 !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 3px 0 #1B2E21, 0 5px 12px rgba(43, 70, 52, 0.14) !important;
+}
+div[data-testid="stVerticalBlock"]:has(.kulfi-card-set-4):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button:hover {
+    background: linear-gradient(135deg, #537B61 0%, #466B53 55%, #385943 100%) !important;
+    border-color: #E6F6EC !important;
+    border-left: 4px solid #FFFFFF !important;
 }
 
 /* Directly Clickable 3D Cards — Exact Dusty Rosewood Swatch */
@@ -4391,6 +4480,7 @@ else:
             key="top_cmd_home_btn",
         ):
             st.session_state["page_nav"] = "Home"
+            st.session_state["dash_sub_page"] = None
             st.rerun()
     with cmd_c2:
         with st.popover("⇄ Switch Screen", use_container_width=True):
@@ -4410,6 +4500,7 @@ else:
                         use_container_width=True,
                     ):
                         st.session_state["page_nav"] = _opt
+                        st.session_state["dash_sub_page"] = None
                         st.rerun()
     with cmd_c3:
         with st.popover(f"📍 {loc_badge}", use_container_width=True):
@@ -4442,46 +4533,68 @@ else:
 if page == "Home" and user_role == "admin":
     _launchpad_sections = [
         (
-            "📊 Sales, Daily Operations & Finance",
+            "set-1",
+            "kulfi-card-set-1",
+            "📊 Sales, Daily Operations & Financials",
+            4,
             [
-                ("Dashboard", "📊", "Dashboard & Financials"),
-                ("Daily Entry", "🛒", "Daily Entry Hub"),
-                ("Live Cart Tracking", "📡", "Live Cart Tracking"),
-                ("Bulk Orders & Quotes", "📦", "Bulk Orders & Quotes"),
-                ("Cash Custody", "💰", "Cash Custody & Handover"),
-                ("Expenses", "💳", "Expenses & Vendor Dues"),
-                ("Staff & Payroll", "👥", "Staff, Attendance & Payroll"),
-                ("Payslip Generator", "📄", "Payslip Generator"),
+                ("Dashboard", "📊", "Dashboard & Financials", {"dash_sub_page": None}),
+                ("Daily Entry", "🛒", "Daily Entry Hub", {"daily_entry_mode": None}),
+                ("Live Cart Tracking", "📡", "Live Cart Tracking", {}),
+                ("Bulk Orders & Quotes", "📦", "Bulk Order & Quotes", {}),
             ],
         ),
         (
-            "❄️ Supply Chain, Freezer Inventory & Setup",
+            "set-2",
+            "kulfi-card-set-2",
+            "❄️ Stock & Freezer",
+            3,
             [
-                ("Purchase Orders", "🧾", "Purchase Orders & Receipts"),
-                ("Freezer Stock", "❄️", "Freezer Stock & Direct Sales"),
-                ("Freezer Analysis", "📈", "Freezer Analysis Matrix"),
-                ("Stock Removed", "🗑️", "Stock Removed & Spoilage"),
-                ("Locations & Logins", "🌐", "Locations, Carts & Logins"),
+                ("Freezer Analysis", "📈", "Current Freezer Position", {}),
+                ("Freezer Stock", "❄️", "Stock Received Entry", {"db_stock_mode": "New entry"}),
+                ("Stock Removed", "🗑️", "Stock Removed Entry", {"rem_screen_mode": "New Entry"}),
+            ],
+        ),
+        (
+            "set-3",
+            "kulfi-card-set-3",
+            "💳 POs, Expenses & Cash",
+            3,
+            [
+                ("Expenses", "💳", "Expenses", {}),
+                ("Purchase Orders", "🧾", "Purchase Order", {}),
+                ("Cash Custody", "💰", "Cash Management", {}),
+            ],
+        ),
+        (
+            "set-4",
+            "kulfi-card-set-4",
+            "👥 Staff Payroll & Admin Setup",
+            3,
+            [
+                ("Staff & Payroll", "👥", "Staff, Attendance & Payroll", {}),
+                ("Payslip Generator", "📄", "Payslip Generator", {}),
+                ("Locations & Logins", "🌐", "Locations, Logins & Carts", {}),
             ],
         ),
     ]
 
-    with st.container():
-        st.markdown('<span class="kulfi-clickable-card-grid"></span>', unsafe_allow_html=True)
-        for _sec_title, _sec_cards in _launchpad_sections:
-            st.markdown(f'<div class="launchpad-section-hdr">{_sec_title}</div>', unsafe_allow_html=True)
-            for _row_start in range(0, len(_sec_cards), 4):
-                _row_items = _sec_cards[_row_start:_row_start + 4]
-                _cols = st.columns(4, gap="small")
-                for _c_idx, (_target_page, _icon, _title) in enumerate(_row_items):
-                    with _cols[_c_idx]:
-                        if st.button(
-                            f"{_icon}  **{_title}**",
-                            key=f"launchpad_card_{_target_page}",
-                            use_container_width=True,
-                        ):
-                            st.session_state["page_nav"] = _target_page
-                            st.rerun()
+    for _hdr_cls, _set_cls, _sec_title, _num_cols, _sec_cards in _launchpad_sections:
+        st.markdown(f'<div class="launchpad-section-hdr {_hdr_cls}">{_sec_title}</div>', unsafe_allow_html=True)
+        with st.container():
+            st.markdown(f'<span class="kulfi-clickable-card-grid {_set_cls}"></span>', unsafe_allow_html=True)
+            _cols = st.columns(_num_cols, gap="small")
+            for _c_idx, (_target_page, _icon, _title, _extra_state) in enumerate(_sec_cards):
+                with _cols[_c_idx]:
+                    if st.button(
+                        f"{_icon}  **{_title}**",
+                        key=f"launchpad_card_{_set_cls}_{_target_page}_{_c_idx}",
+                        use_container_width=True,
+                    ):
+                        for _k, _v in _extra_state.items():
+                            st.session_state[_k] = _v
+                        st.session_state["page_nav"] = _target_page
+                        st.rerun()
 
 if page == "Locations & Logins" and user_role == "admin":
     st.subheader("🌐 Locations, Carts / Freezers & Logins Setup")
@@ -12427,7 +12540,13 @@ elif page == "Staff & Payroll" and user_role == "admin":
 # PAGE 8: DASHBOARD (100% Supabase PostgreSQL Powered)
 # ======================================================================
 elif page == "Dashboard" and user_role == "admin":
-    st.subheader("Quick view")
+    if "dash_sub_page" not in st.session_state:
+        st.session_state["dash_sub_page"] = None
+
+    def _open_dash_sub_page(target_sub):
+        st.cache_data.clear()
+        st.session_state["dash_sub_page"] = target_sub
+
     try:
         daily_df = load_db_daily_df()
         exp_list = load_db_expenses_list()
@@ -12436,242 +12555,333 @@ elif page == "Dashboard" and user_role == "admin":
         daily_df, exp_df = pd.DataFrame(), pd.DataFrame()
         st.warning(f"Could not load data from database ({e}).")
 
-    today = pd.Timestamp(date.today())
-    day_labels = [today - pd.Timedelta(days=3), today - pd.Timedelta(days=2), today - pd.Timedelta(days=1)]
+    # Shared Date Filter & Financial Overview Calculations
+    today_cur = date.today()
+    month_start_cur = today_cur.replace(day=1)
+    default_end_cur = today_cur - timedelta(days=1)
+    if default_end_cur < month_start_cur:
+        default_end_cur = month_start_cur
+
+    all_dates = [today_cur, month_start_cur]
     if not daily_df.empty:
-        day_rows = [daily_df[daily_df["Date"].dt.date == d.date()] for d in day_labels]
-        day_rev = [r["Total_Collection"].sum() for r in day_rows]
-        day_units = [int(round(r["Sold_Total"].sum())) for r in day_rows]
-        col_names = [d.strftime("%d-%b") for d in day_labels]
-        col_names[-1] = col_names[-1] + " (Yesterday)"
-        compare_df = pd.DataFrame({
-            "Metric": ["Revenue", "Units sold"], col_names[0]: [f"₹{day_rev[0]:,.0f}", f"{day_units[0]}"],
-            col_names[1]: [f"₹{day_rev[1]:,.0f}", f"{day_units[1]}"], col_names[2]: [f"₹{day_rev[2]:,.0f}", f"{day_units[2]}"],
-        })
-        st.markdown('<div id="last-3-days"></div>', unsafe_allow_html=True)
-        st.markdown("**Last 3 days**")
-        st.dataframe(compare_df, hide_index=True, use_container_width=True)
+        all_dates += [daily_df["Date"].min().date(), daily_df["Date"].max().date()]
+    if not exp_df.empty and exp_df["Date"].notna().any():
+        all_dates += [exp_df["Date"].min().date(), exp_df["Date"].max().date()]
+    min_d, max_d = min(all_dates), max(today_cur, max(all_dates))
 
-        st.markdown('<div id="revenue-trend"></div>', unsafe_allow_html=True)
-        st.markdown("**Revenue, last 14 days**")
-        
-        trend_agg = daily_df.assign(Day=daily_df["Date"].dt.normalize()).groupby("Day", as_index=False).agg({
-            "PhonePe": "sum", 
-            "Total_Collection": "sum"
-        }).sort_values("Day").tail(14)
-        
-        trend_agg["Gross Cash"] = trend_agg["Total_Collection"] - trend_agg["PhonePe"]
-        trend_melt = trend_agg.melt(id_vars=["Day"], value_vars=["PhonePe", "Gross Cash"], var_name="Mode", value_name="Amount")
-        
-        trend_chart = alt.Chart(trend_melt).mark_bar(width=16).encode(
-            x=alt.X("Day:T", title="", axis=alt.Axis(format="%d-%b", labelAngle=-45)),
-            y=alt.Y("Amount:Q", title="Revenue (₹)"),
-            color=alt.Color(
-                "Mode:N", 
-                scale=alt.Scale(domain=["Gross Cash", "PhonePe"], range=["#2A9D8F", "#E76F51"]),
-                legend=alt.Legend(title="", orient="bottom", direction="horizontal") 
-            ),
-            tooltip=[
-                alt.Tooltip("Day:T", title="Date", format="%d-%b-%y"), 
-                alt.Tooltip("Mode:N", title="Mode"), 
-                alt.Tooltip("Amount:Q", title="Amount (₹)", format=",.0f") 
-            ]
-        ).properties(height=260)
-        
-        st.altair_chart(trend_chart, use_container_width=True)
-    else: 
-        st.info("No sales logged in database yet.")
+    if "applied_start" not in st.session_state:
+        st.session_state["applied_start"] = month_start_cur
+    if "applied_end" not in st.session_state:
+        st.session_state["applied_end"] = default_end_cur
+    st.session_state["applied_start"] = min(max(st.session_state["applied_start"], min_d), max_d)
+    st.session_state["applied_end"] = min(max(st.session_state["applied_end"], min_d), max_d)
 
-    if not daily_df.empty or not exp_df.empty:
-        st.markdown("---")
-        st.markdown('<div id="reports"></div>', unsafe_allow_html=True)
+    def _render_dash_date_filter_and_compute(key_suffix="main"):
+        dashboard_filter_mode = st.radio(
+            "Filter By",
+            ["Month", "Custom Date Range"],
+            horizontal=True,
+            key=f"dashboard_report_filter_mode_{key_suffix}",
+        )
+        with st.form(f"date_range_form_{key_suffix}"):
+            if dashboard_filter_mode == "Month":
+                rc1, rc2, rc3 = st.columns([2, 2, 1], gap="small", vertical_alignment="bottom")
+                dash_month_names = list(calendar.month_name)[1:]
+                default_dash_month = st.session_state["applied_start"].month
+                default_dash_year = st.session_state["applied_start"].year
+                with rc1:
+                    dash_month_name = st.selectbox(
+                        "Month",
+                        dash_month_names,
+                        index=default_dash_month - 1,
+                        key=f"dashboard_report_month_{key_suffix}",
+                    )
+                    dash_month_num = dash_month_names.index(dash_month_name) + 1
+                with rc2:
+                    dash_year = st.number_input(
+                        "Year",
+                        min_value=min_d.year,
+                        max_value=max_d.year,
+                        value=default_dash_year,
+                        step=1,
+                        key=f"dashboard_report_year_{key_suffix}",
+                    )
+                pending_start = date(int(dash_year), int(dash_month_num), 1)
+                pending_end = date(int(dash_year), int(dash_month_num), calendar.monthrange(int(dash_year), int(dash_month_num))[1])
+                pending_start = max(pending_start, min_d)
+                pending_end = min(pending_end, max_d)
+            else:
+                dash_month_num = st.session_state["applied_start"].month
+                dash_year = st.session_state["applied_start"].year
+                rc1, rc2, rc3 = st.columns([2, 2, 1], gap="small", vertical_alignment="bottom")
+                with rc1:
+                    pending_start = st.date_input(
+                        "Start Date",
+                        value=st.session_state["applied_start"],
+                        min_value=min_d,
+                        max_value=max_d,
+                        format="DD-MM-YYYY",
+                        key=f"dashboard_report_start_{key_suffix}",
+                    )
+                with rc2:
+                    pending_end = st.date_input(
+                        "End Date",
+                        value=st.session_state["applied_end"],
+                        min_value=min_d,
+                        max_value=max_d,
+                        format="DD-MM-YYYY",
+                        key=f"dashboard_report_end_{key_suffix}",
+                    )
+            with rc3:
+                apply_clicked = st.form_submit_button("Apply", type="primary", use_container_width=True)
 
-        # Initialize toggle states for the 3 Dashboard analytical views
-        if "show_dash_date_sales_log" not in st.session_state:
-            st.session_state["show_dash_date_sales_log"] = False
-        if "show_dash_rcm" not in st.session_state:
-            st.session_state["show_dash_rcm"] = False
-        if "show_dash_month_comp" not in st.session_state:
-            st.session_state["show_dash_month_comp"] = False
+        if apply_clicked:
+            st.session_state["applied_start"] = pending_start
+            st.session_state["applied_end"] = pending_end
+        range_start, range_end = st.session_state["applied_start"], st.session_state["applied_end"]
 
-        def _toggle_dash_section(sec_key):
-            st.cache_data.clear()
-            st.session_state[sec_key] = not bool(st.session_state.get(sec_key, False))
+        if range_start > range_end:
+            st.error("'From' date is after 'To' date - swap them and click Apply again.")
+            range_start, range_end = range_end, range_start
 
-        # 3 Toggle Buttons right below "Revenue, last 14 days" graph
-        btn_col1, btn_col2, btn_col3 = st.columns(3, gap="small")
-        with btn_col1:
-            _lbl_s1 = "🔼 Hide Date-wise Sales Log" if st.session_state["show_dash_date_sales_log"] else "📋 Date-wise Sales Log"
-            st.button(
-                _lbl_s1,
-                key="dash_toggle_btn_sales_log",
-                type="primary" if st.session_state["show_dash_date_sales_log"] else "secondary",
-                use_container_width=True,
-                on_click=_toggle_dash_section,
-                args=("show_dash_date_sales_log",),
-            )
-        with btn_col2:
-            _lbl_s2 = "🔼 Hide Revenue Cycle Management" if st.session_state["show_dash_rcm"] else "💰 Revenue Cycle Management"
-            st.button(
-                _lbl_s2,
-                key="dash_toggle_btn_rcm",
-                type="primary" if st.session_state["show_dash_rcm"] else "secondary",
-                use_container_width=True,
-                on_click=_toggle_dash_section,
-                args=("show_dash_rcm",),
-            )
-        with btn_col3:
-            _lbl_s3 = "🔼 Hide Month-Wise Performance Comparison" if st.session_state["show_dash_month_comp"] else "📅 Month-Wise Performance Comparison"
-            st.button(
-                _lbl_s3,
-                key="dash_toggle_btn_month_comp",
-                type="primary" if st.session_state["show_dash_month_comp"] else "secondary",
-                use_container_width=True,
-                on_click=_toggle_dash_section,
-                args=("show_dash_month_comp",),
-            )
+        range_df = daily_df[(daily_df["Date"].dt.date >= range_start) & (daily_df["Date"].dt.date <= range_end)] if not daily_df.empty else daily_df
+        range_exp = exp_df[(exp_df["Date"].dt.date >= range_start) & (exp_df["Date"].dt.date <= range_end)] if not exp_df.empty else exp_df
 
-        if st.session_state["show_dash_date_sales_log"] or st.session_state["show_dash_rcm"]:
-            st.markdown("## Reports & Performance Analytics")
+        total_rev = range_df["Total_Collection"].sum() if not range_df.empty else 0.0
+        total_units = int(round(range_df["Sold_Total"].sum())) if not range_df.empty else 0
 
-            today_cur = date.today()
-            month_start_cur = today_cur.replace(day=1)
-            default_end_cur = today_cur - timedelta(days=1)
-            if default_end_cur < month_start_cur:
-                default_end_cur = month_start_cur
+        flavor_range_df = load_db_flavor_sales(start_date=range_start, end_date=range_end)
+        exact_cogs_sold = float(flavor_range_df["COGS (₹)"].sum()) if not flavor_range_df.empty else 0.0
 
-            all_dates = [today_cur, month_start_cur]
-            if not daily_df.empty: all_dates += [daily_df["Date"].min().date(), daily_df["Date"].max().date()]
-            if not exp_df.empty and exp_df["Date"].notna().any(): all_dates += [exp_df["Date"].min().date(), exp_df["Date"].max().date()]
-            min_d, max_d = min(all_dates), max(today_cur, max(all_dates))
+        expense_types = range_exp["Expense_Type"].fillna("").astype(str).str.strip().str.upper() if not range_exp.empty else pd.Series(dtype=str)
+        expense_categories = range_exp["Category"].fillna("").astype(str).str.strip().str.casefold() if not range_exp.empty else pd.Series(dtype=str)
+        capex_total = float(range_exp.loc[expense_types == "CAPEX", "Amount"].sum()) if not range_exp.empty else 0.0
 
-            if "applied_start" not in st.session_state: st.session_state["applied_start"] = month_start_cur
-            if "applied_end" not in st.session_state: st.session_state["applied_end"] = default_end_cur
-            st.session_state["applied_start"] = min(max(st.session_state["applied_start"], min_d), max_d)
-            st.session_state["applied_end"] = min(max(st.session_state["applied_end"], min_d), max_d)
+        _, _, _, staff_pay_breakdown = calculate_incurred_labour_for_range(
+            range_start, range_end, limit_to_employment=True
+        )
+        staff_salary_total = sum(float(staff["incurred"]) for staff in staff_pay_breakdown.values())
+        unassigned_labour_df = range_exp[
+            (expense_types == "OPEX") & (expense_categories == "labour charges") & range_exp["Staff_Name"].isna()
+        ] if not range_exp.empty else pd.DataFrame()
+        unassigned_labour_total = float(unassigned_labour_df["Amount"].sum()) if not unassigned_labour_df.empty else 0.0
+        tot_labour_incurred = staff_salary_total + unassigned_labour_total
+        non_labour_opex_df = range_exp[(expense_types == "OPEX") & (~expense_categories.isin(["labour charges", "cost of goods"]))] if not range_exp.empty else pd.DataFrame()
+        other_opex_total = float(non_labour_opex_df["Amount"].sum()) if not non_labour_opex_df.empty else 0.0
 
-            dashboard_filter_mode = st.radio(
-                "Filter By",
-                ["Month", "Custom Date Range"],
-                horizontal=True,
-                key="dashboard_report_filter_mode"
-            )
+        total_incurred_opex = tot_labour_incurred + other_opex_total
 
-            with st.form("date_range_form"):
-                if dashboard_filter_mode == "Month":
-                    rc1, rc2, rc3 = st.columns([2, 2, 1], gap="small", vertical_alignment="bottom")
-                    dash_month_names = list(calendar.month_name)[1:]
-                    default_dash_month = st.session_state["applied_start"].month
-                    default_dash_year = st.session_state["applied_start"].year
-                    with rc1:
-                        dash_month_name = st.selectbox(
-                            "Month",
-                            dash_month_names,
-                            index=default_dash_month - 1,
-                            key="dashboard_report_month"
-                        )
-                        dash_month_num = dash_month_names.index(dash_month_name) + 1
-                    with rc2:
-                        dash_year = st.number_input(
-                            "Year",
-                            min_value=min_d.year,
-                            max_value=max_d.year,
-                            value=default_dash_year,
-                            step=1,
-                            key="dashboard_report_year"
-                        )
-                    pending_start = date(int(dash_year), int(dash_month_num), 1)
-                    pending_end = date(int(dash_year), int(dash_month_num), calendar.monthrange(int(dash_year), int(dash_month_num))[1])
-                    pending_start = max(pending_start, min_d)
-                    pending_end = min(pending_end, max_d)
-                else:
-                    rc1, rc2, rc3 = st.columns([2, 2, 1], gap="small", vertical_alignment="bottom")
-                    with rc1:
-                        pending_start = st.date_input(
-                            "Start Date",
-                            value=st.session_state["applied_start"],
-                            min_value=min_d,
-                            max_value=max_d,
-                            format="DD-MM-YYYY",
-                            key="dashboard_report_start"
-                        )
-                    with rc2:
-                        pending_end = st.date_input(
-                            "End Date",
-                            value=st.session_state["applied_end"],
-                            min_value=min_d,
-                            max_value=max_d,
-                            format="DD-MM-YYYY",
-                            key="dashboard_report_end"
-                        )
-                with rc3:
-                    apply_clicked = st.form_submit_button("Apply", type="primary", use_container_width=True)
+        gross_profit = total_rev - exact_cogs_sold
+        cogs_margin = (exact_cogs_sold / total_rev * 100) if total_rev > 0 else 0.0
+        gross_margin = (gross_profit / total_rev * 100) if total_rev > 0 else 0.0
+        net_profit = gross_profit - total_incurred_opex
+        net_margin = (net_profit / total_rev * 100) if total_rev > 0 else 0.0
+        opex_margin = (total_incurred_opex / total_rev * 100) if total_rev > 0 else 0.0
 
-            if apply_clicked:
-                st.session_state["applied_start"] = pending_start
-                st.session_state["applied_end"] = pending_end
-            range_start, range_end = st.session_state["applied_start"], st.session_state["applied_end"]
-        
-            if range_start > range_end: 
-                st.error("'From' date is after 'To' date - swap them and click Apply again.")
-                range_start, range_end = range_end, range_start
-            
-            pass
+        today_ref = date.today()
+        if dashboard_filter_mode == "Month":
+            if int(dash_year) == today_ref.year and int(dash_month_num) == today_ref.month:
+                elapsed_days = max(1, (today_ref - date(today_ref.year, today_ref.month, 1)).days)
+                avg_divisor_days = elapsed_days
+            else:
+                avg_divisor_days = max(1, calendar.monthrange(int(dash_year), int(dash_month_num))[1])
+        else:
+            avg_divisor_days = max(1, (range_end - range_start).days + 1)
 
-            range_df = daily_df[(daily_df["Date"].dt.date >= range_start) & (daily_df["Date"].dt.date <= range_end)] if not daily_df.empty else daily_df
-            range_exp = exp_df[(exp_df["Date"].dt.date >= range_start) & (exp_df["Date"].dt.date <= range_end)] if not exp_df.empty else exp_df
+        avg_rev_per_day = (total_rev / float(avg_divisor_days)) if avg_divisor_days > 0 else 0.0
+        avg_units_per_day = int(round(total_units / float(avg_divisor_days))) if avg_divisor_days > 0 else 0
 
-            total_rev = range_df["Total_Collection"].sum() if not range_df.empty else 0.0
-            total_units = int(round(range_df["Sold_Total"].sum())) if not range_df.empty else 0
+        return (
+            dashboard_filter_mode, dash_year, dash_month_num,
+            range_start, range_end, range_df, range_exp,
+            total_rev, total_units, exact_cogs_sold, capex_total,
+            staff_pay_breakdown, unassigned_labour_df, non_labour_opex_df,
+            tot_labour_incurred, other_opex_total, total_incurred_opex,
+            gross_profit, cogs_margin, gross_margin, net_profit, net_margin, opex_margin,
+            avg_divisor_days, avg_rev_per_day, avg_units_per_day
+        )
 
-            # COGS uses sold units in the selected range at each flavour's cost_price.
-            flavor_range_df = load_db_flavor_sales(start_date=range_start, end_date=range_end)
-            exact_cogs_sold = float(flavor_range_df["COGS (₹)"].sum()) if not flavor_range_df.empty else 0.0
+    def _render_7_financial_overview_boxes(total_rev, avg_units_per_day, total_units, exact_cogs_sold, cogs_margin, gross_profit, gross_margin, total_incurred_opex, opex_margin, net_profit, net_margin):
+        st.markdown('<div class="dashboard-kpi-row">', unsafe_allow_html=True)
+        mc1, mc2, mc3, mc4, mc5, mc6, mc7 = st.columns(7)
+        mc1.metric("Revenue", f"₹{total_rev:,.0f}")
+        mc2.metric("Avg Units / Day", f"{avg_units_per_day:,}")
+        mc3.metric("Units Sold", f"{total_units:,}")
+        mc4.metric(f"COGS ({cogs_margin:.1f}%)", f"₹{exact_cogs_sold:,.0f}")
+        mc5.metric(f"Gr. Profit ({gross_margin:.1f}%)", f"₹{gross_profit:,.0f}")
+        mc6.metric(f"OPEX ({opex_margin:.1f}%)", f"₹{total_incurred_opex:,.0f}")
+        mc7.metric(f"Net Profit ({net_margin:.1f}%)", f"₹{net_profit:,.0f}")
+        st.markdown('</div>', unsafe_allow_html=True)
 
-            # Expense buckets use expense_date within the selected range.
-            expense_types = range_exp["Expense_Type"].fillna("").astype(str).str.strip().str.upper() if not range_exp.empty else pd.Series(dtype=str)
-            expense_categories = range_exp["Category"].fillna("").astype(str).str.strip().str.casefold() if not range_exp.empty else pd.Series(dtype=str)
-            capex_total = float(range_exp.loc[expense_types == "CAPEX", "Amount"].sum()) if not range_exp.empty else 0.0
-            # Use the same gross payable salary/commission/allowance calculation as payslips.
-            # The Dashboard counts only the part of each employment period in the date range.
-            _, _, _, staff_pay_breakdown = calculate_incurred_labour_for_range(
-                range_start, range_end, limit_to_employment=True
-            )
-            staff_salary_total = sum(float(staff["incurred"]) for staff in staff_pay_breakdown.values())
-            unassigned_labour_df = range_exp[
-                (expense_types == "OPEX") & (expense_categories == "labour charges") & range_exp["Staff_Name"].isna()
-            ] if not range_exp.empty else pd.DataFrame()
-            unassigned_labour_total = float(unassigned_labour_df["Amount"].sum()) if not unassigned_labour_df.empty else 0.0
-            tot_labour_incurred = staff_salary_total + unassigned_labour_total
-            non_labour_opex_df = range_exp[(expense_types == "OPEX") & (~expense_categories.isin(["labour charges", "cost of goods"]))] if not range_exp.empty else pd.DataFrame()
-            other_opex_total = float(non_labour_opex_df["Amount"].sum()) if not non_labour_opex_df.empty else 0.0
+    active_dash_sub = st.session_state.get("dash_sub_page")
 
-            total_incurred_opex = tot_labour_incurred + other_opex_total
+    # ==================================================================
+    # DEFAULT MAIN DASHBOARD PAGE (WHEN NO SUB-PAGE IS OPEN)
+    # ==================================================================
+    if active_dash_sub is None:
+        st.subheader("Quick view")
+        today = pd.Timestamp(date.today())
+        day_labels = [today - pd.Timedelta(days=3), today - pd.Timedelta(days=2), today - pd.Timedelta(days=1)]
+        if not daily_df.empty:
+            day_rows = [daily_df[daily_df["Date"].dt.date == d.date()] for d in day_labels]
+            day_rev = [r["Total_Collection"].sum() for r in day_rows]
+            day_units = [int(round(r["Sold_Total"].sum())) for r in day_rows]
+            col_names = [d.strftime("%d-%b") for d in day_labels]
+            col_names[-1] = col_names[-1] + " (Yesterday)"
+            compare_df = pd.DataFrame({
+                "Metric": ["Revenue", "Units sold"], col_names[0]: [f"₹{day_rev[0]:,.0f}", f"{day_units[0]}"],
+                col_names[1]: [f"₹{day_rev[1]:,.0f}", f"{day_units[1]}"], col_names[2]: [f"₹{day_rev[2]:,.0f}", f"{day_units[2]}"],
+            })
+            st.markdown('<div id="last-3-days"></div>', unsafe_allow_html=True)
+            st.markdown("**Last 3 days**")
+            st.dataframe(compare_df, hide_index=True, use_container_width=True)
 
-            gross_profit = total_rev - exact_cogs_sold
-            cogs_margin = (exact_cogs_sold / total_rev * 100) if total_rev > 0 else 0.0
-            gross_margin = (gross_profit / total_rev * 100) if total_rev > 0 else 0.0
-            net_profit = gross_profit - total_incurred_opex
-            net_margin = (net_profit / total_rev * 100) if total_rev > 0 else 0.0
-            opex_margin = (total_incurred_opex / total_rev * 100) if total_rev > 0 else 0.0
+            st.markdown('<div id="revenue-trend"></div>', unsafe_allow_html=True)
+            st.markdown("**Revenue, last 14 days**")
 
+            trend_agg = daily_df.assign(Day=daily_df["Date"].dt.normalize()).groupby("Day", as_index=False).agg({
+                "PhonePe": "sum",
+                "Total_Collection": "sum"
+            }).sort_values("Day").tail(14)
 
-        # ------------------------------------------------------------------
-        # TOGGLE SECTION 1: DATE-WISE SALES LOG
-        # ------------------------------------------------------------------
-        if st.session_state["show_dash_date_sales_log"]:
+            trend_agg["Gross Cash"] = trend_agg["Total_Collection"] - trend_agg["PhonePe"]
+            trend_melt = trend_agg.melt(id_vars=["Day"], value_vars=["PhonePe", "Gross Cash"], var_name="Mode", value_name="Amount")
+
+            trend_chart = alt.Chart(trend_melt).mark_bar(width=16).encode(
+                x=alt.X("Day:T", title="", axis=alt.Axis(format="%d-%b", labelAngle=-45)),
+                y=alt.Y("Amount:Q", title="Revenue (₹)"),
+                color=alt.Color(
+                    "Mode:N",
+                    scale=alt.Scale(domain=["Gross Cash", "PhonePe"], range=["#2A9D8F", "#E76F51"]),
+                    legend=alt.Legend(title="", orient="bottom", direction="horizontal")
+                ),
+                tooltip=[
+                    alt.Tooltip("Day:T", title="Date", format="%d-%b-%y"),
+                    alt.Tooltip("Mode:N", title="Mode"),
+                    alt.Tooltip("Amount:Q", title="Amount (₹)", format=",.0f")
+                ]
+            ).properties(height=250)
+
+            st.altair_chart(trend_chart, use_container_width=True)
+        else:
+            st.info("No sales logged in database yet.")
+
+        if not daily_df.empty or not exp_df.empty:
             st.markdown("---")
-            _sl_hdr_c1, _sl_hdr_c2 = st.columns([3.2, 1.0], vertical_alignment="center")
-            with _sl_hdr_c1:
-                st.markdown("### 📋 Date-wise Sales Log")
-            with _sl_hdr_c2:
+            st.markdown("### Financials Overview")
+            (
+                dashboard_filter_mode, dash_year, dash_month_num,
+                range_start, range_end, range_df, range_exp,
+                total_rev, total_units, exact_cogs_sold, capex_total,
+                staff_pay_breakdown, unassigned_labour_df, non_labour_opex_df,
+                tot_labour_incurred, other_opex_total, total_incurred_opex,
+                gross_profit, cogs_margin, gross_margin, net_profit, net_margin, opex_margin,
+                avg_divisor_days, avg_rev_per_day, avg_units_per_day
+            ) = _render_dash_date_filter_and_compute(key_suffix="main_overview")
+
+            _render_7_financial_overview_boxes(
+                total_rev, avg_units_per_day, total_units,
+                exact_cogs_sold, cogs_margin, gross_profit, gross_margin,
+                total_incurred_opex, opex_margin, net_profit, net_margin
+            )
+
+            st.markdown("#### Daily Revenue Trend")
+            if not range_df.empty:
+                line_chart = alt.Chart(range_df.groupby("Date", as_index=False)["Total_Collection"].sum()).mark_line(point=True, color="#E8542A").encode(
+                    x=alt.X("Date:T", title="Date", axis=alt.Axis(format="%d-%b")),
+                    y=alt.Y("Total_Collection:Q", title="Revenue (₹)"),
+                    tooltip=[alt.Tooltip("Date:T", format="%d-%b-%y", title="Date"), alt.Tooltip("Total_Collection:Q", format=",.2f", title="Revenue (₹)")]
+                ).properties(height=270)
+                st.altair_chart(line_chart, use_container_width=True)
+            else:
+                st.caption("No revenue data available for this range to plot.")
+
+            st.markdown("<div style='height:6px;'></div>", unsafe_allow_html=True)
+            # 3 Navigation Buttons below the "Daily Revenue Trend" graph
+            btn_col1, btn_col2, btn_col3 = st.columns(3, gap="small")
+            with btn_col1:
                 st.button(
-                    "🔼 Hide Date-wise Sales Log",
-                    key="dash_inline_hide_sales_log",
+                    "📋 Date-wise Sales Log",
+                    key="dash_open_page_sales_log",
                     use_container_width=True,
-                    on_click=_toggle_dash_section,
-                    args=("show_dash_date_sales_log",),
+                    on_click=_open_dash_sub_page,
+                    args=("sales_log",),
                 )
+            with btn_col2:
+                st.button(
+                    "💰 Financials",
+                    key="dash_open_page_financials",
+                    use_container_width=True,
+                    on_click=_open_dash_sub_page,
+                    args=("financials",),
+                )
+            with btn_col3:
+                st.button(
+                    "📅 Month-Wise Performance Comparison",
+                    key="dash_open_page_month_comp",
+                    use_container_width=True,
+                    on_click=_open_dash_sub_page,
+                    args=("month_comp",),
+                )
+
+    # ==================================================================
+    # SEPARATE SUB-PAGES OPENED FROM THE 3 DASHBOARD BUTTONS
+    # ==================================================================
+    else:
+        # Top Navigation Bar to return to Main Dashboard or switch between the 3 sub-pages
+        nav_b1, nav_b2, nav_b3, nav_b4 = st.columns([1.25, 1.25, 1.15, 1.55], gap="small")
+        with nav_b1:
+            st.button(
+                "⬅ Back to Dashboard",
+                key="dash_sub_back_top",
+                type="primary",
+                use_container_width=True,
+                on_click=_open_dash_sub_page,
+                args=(None,),
+            )
+        with nav_b2:
+            st.button(
+                "📋 Date-wise Sales Log",
+                key="dash_sub_switch_sales_log",
+                type="primary" if active_dash_sub == "sales_log" else "secondary",
+                use_container_width=True,
+                on_click=_open_dash_sub_page,
+                args=("sales_log",),
+            )
+        with nav_b3:
+            st.button(
+                "💰 Financials",
+                key="dash_sub_switch_financials",
+                type="primary" if active_dash_sub == "financials" else "secondary",
+                use_container_width=True,
+                on_click=_open_dash_sub_page,
+                args=("financials",),
+            )
+        with nav_b4:
+            st.button(
+                "📅 Month-Wise Comparison",
+                key="dash_sub_switch_month_comp",
+                type="primary" if active_dash_sub == "month_comp" else "secondary",
+                use_container_width=True,
+                on_click=_open_dash_sub_page,
+                args=("month_comp",),
+            )
+        st.markdown("---")
+
+        # ------------------------------------------------------------------
+        # SUB-PAGE 1: DATE-WISE SALES LOG
+        # ------------------------------------------------------------------
+        if active_dash_sub == "sales_log":
+            st.subheader("📋 Date-wise Sales Log")
+            (
+                dashboard_filter_mode, dash_year, dash_month_num,
+                range_start, range_end, range_df, range_exp,
+                total_rev, total_units, exact_cogs_sold, capex_total,
+                staff_pay_breakdown, unassigned_labour_df, non_labour_opex_df,
+                tot_labour_incurred, other_opex_total, total_incurred_opex,
+                gross_profit, cogs_margin, gross_margin, net_profit, net_margin, opex_margin,
+                avg_divisor_days, avg_rev_per_day, avg_units_per_day
+            ) = _render_dash_date_filter_and_compute(key_suffix="sub_sales_log")
             # Sales report tables show completed cart sales dates (<= yesterday) PLUS any direct Freezer sales in the range (including today).
             latest_completed_sales_date = date.today() - timedelta(days=1)
             if not range_df.empty:
@@ -13002,50 +13212,40 @@ elif page == "Dashboard" and user_role == "admin":
                     )
 
 
-        # ------------------------------------------------------------------
-        # TOGGLE SECTION 2: REVENUE CYCLE MANAGEMENT
-        # ------------------------------------------------------------------
-        if st.session_state["show_dash_rcm"]:
+
             st.markdown("---")
-            _rcm_hdr_c1, _rcm_hdr_c2 = st.columns([3.2, 1.0], vertical_alignment="center")
-            with _rcm_hdr_c1:
-                st.markdown("### 💰 Revenue Cycle Management")
-            with _rcm_hdr_c2:
+            b_back1, _ = st.columns([1.5, 3.5])
+            with b_back1:
                 st.button(
-                    "🔼 Hide Revenue Cycle Management",
-                    key="dash_inline_hide_rcm",
+                    "⬅ Back to Dashboard",
+                    key="dash_sub_back_bot_sales",
+                    type="primary",
                     use_container_width=True,
-                    on_click=_toggle_dash_section,
-                    args=("show_dash_rcm",),
+                    on_click=_open_dash_sub_page,
+                    args=(None,),
                 )
-            st.markdown("### 1. Revenue Cycle Management & Financial Performance")
 
-            # Calculate average days for the selected range:
-            # - Month filter: if current month, use 1st until yesterday (today - 1); else use month days count
-            # - Custom range: exact number of days in the selected date range
-            today_ref = date.today()
-            if dashboard_filter_mode == "Month":
-                if int(dash_year) == today_ref.year and int(dash_month_num) == today_ref.month:
-                    elapsed_days = max(1, (today_ref - date(today_ref.year, today_ref.month, 1)).days)
-                    avg_divisor_days = elapsed_days
-                else:
-                    avg_divisor_days = max(1, calendar.monthrange(int(dash_year), int(dash_month_num))[1])
-            else:
-                avg_divisor_days = max(1, (range_end - range_start).days + 1)
+        # ------------------------------------------------------------------
+        # SUB-PAGE 2: FINANCIALS
+        # ------------------------------------------------------------------
+        elif active_dash_sub == "financials":
+            st.subheader("💰 Financials")
+            (
+                dashboard_filter_mode, dash_year, dash_month_num,
+                range_start, range_end, range_df, range_exp,
+                total_rev, total_units, exact_cogs_sold, capex_total,
+                staff_pay_breakdown, unassigned_labour_df, non_labour_opex_df,
+                tot_labour_incurred, other_opex_total, total_incurred_opex,
+                gross_profit, cogs_margin, gross_margin, net_profit, net_margin, opex_margin,
+                avg_divisor_days, avg_rev_per_day, avg_units_per_day
+            ) = _render_dash_date_filter_and_compute(key_suffix="sub_financials")
 
-            avg_rev_per_day = (total_rev / float(avg_divisor_days)) if avg_divisor_days > 0 else 0.0
-
-            st.markdown('<div class="dashboard-kpi-row">', unsafe_allow_html=True)
-            mc1, mc2, mc3, mc4, mc5, mc6, mc7 = st.columns(7)
-            mc1.metric("Revenue", f"₹{total_rev:,.0f}")
-            mc2.metric("Avg Rev / Day", f"₹{avg_rev_per_day:,.0f}")
-            mc3.metric("Units Sold", f"{total_units:,}")
-            mc4.metric(f"COGS ({cogs_margin:.1f}%)", f"₹{exact_cogs_sold:,.0f}")
-            mc5.metric(f"Gr. Profit ({gross_margin:.1f}%)", f"₹{gross_profit:,.0f}")
-            mc6.metric(f"OPEX ({opex_margin:.1f}%)", f"₹{total_incurred_opex:,.0f}")
-            mc7.metric(f"Net Profit ({net_margin:.1f}%)", f"₹{net_profit:,.0f}")
-            st.markdown('</div>', unsafe_allow_html=True)
-
+            st.markdown("### Financials Overview")
+            _render_7_financial_overview_boxes(
+                total_rev, avg_units_per_day, total_units,
+                exact_cogs_sold, cogs_margin, gross_profit, gross_margin,
+                total_incurred_opex, opex_margin, net_profit, net_margin
+            )
             # ------------------------------------------------------------------
             # INTERACTIVE OPEX BREAKDOWN & INSIGHTS BUTTON + PANEL
             # ------------------------------------------------------------------
@@ -13308,17 +13508,6 @@ elif page == "Dashboard" and user_role == "admin":
                     else:
                         st.info("No operating expenses incurred in the selected period.")
 
-            st.markdown("#### Daily Revenue Trend")
-            if not range_df.empty:
-                line_chart = alt.Chart(range_df.groupby("Date", as_index=False)["Total_Collection"].sum()).mark_line(point=True, color="#E8542A").encode(
-                    x=alt.X("Date:T", title="Date", axis=alt.Axis(format="%d-%b")),
-                    y=alt.Y("Total_Collection:Q", title="Revenue (₹)"),
-                    tooltip=[alt.Tooltip("Date:T", format="%d-%b-%y", title="Date"), alt.Tooltip("Total_Collection:Q", format=",.2f", title="Revenue (₹)")]
-                ).properties(height=300)
-                st.altair_chart(line_chart, use_container_width=True)
-            else:
-                st.caption("No revenue data available for this range to plot.")
-
             st.markdown("---")
             pl_c1, pl_c2 = st.columns([1.1, 1.2])
             with pl_c1:
@@ -13516,25 +13705,24 @@ elif page == "Dashboard" and user_role == "admin":
                         st.dataframe(max_rev.round(0).astype(int), use_container_width=True)
                 else: 
                     st.caption("No cart entries found in this range.")
-        # ------------------------------------------------------------------
-        # TOGGLE SECTION 3: MONTH-WISE PERFORMANCE COMPARISON
-        # ------------------------------------------------------------------
-        if st.session_state["show_dash_month_comp"]:
-            # ------------------------------------------------------------------
-            # MONTH-WISE FULL-DATA COMPARISON TABLE & GRAPHIC VIEW
-            # ------------------------------------------------------------------
+
             st.markdown("---")
-            _mc_hdr_c1, _mc_hdr_c2 = st.columns([3.2, 1.0], vertical_alignment="center")
-            with _mc_hdr_c1:
-                st.markdown("### 📅 Month-Wise Performance Comparison (Full-Data Months Only)")
-            with _mc_hdr_c2:
+            b_back2, _ = st.columns([1.5, 3.5])
+            with b_back2:
                 st.button(
-                    "🔼 Hide Month-Wise Performance Comparison",
-                    key="dash_inline_hide_month_comp",
+                    "⬅ Back to Dashboard",
+                    key="dash_sub_back_bot_fin",
+                    type="primary",
                     use_container_width=True,
-                    on_click=_toggle_dash_section,
-                    args=("show_dash_month_comp",),
+                    on_click=_open_dash_sub_page,
+                    args=(None,),
                 )
+
+        # ------------------------------------------------------------------
+        # SUB-PAGE 3: MONTH-WISE PERFORMANCE COMPARISON
+        # ------------------------------------------------------------------
+        elif active_dash_sub == "month_comp":
+            st.subheader("📅 Month-Wise Performance Comparison (Full-Data Months Only)")
             st.caption("Includes only completed calendar months where full month data is available from the 1st through the end of the month (partial months are excluded).")
 
             if not daily_df.empty:
@@ -13676,3 +13864,14 @@ elif page == "Dashboard" and user_role == "admin":
                         st.altair_chart(_build_month_bar_chart("Net_Profit_Pct", "Net Profit %", "#124A1D", ".1f"), use_container_width=True)
             else:
                 st.info("No sales data available for month-wise comparison.")
+            st.markdown("---")
+            b_back3, _ = st.columns([1.5, 3.5])
+            with b_back3:
+                st.button(
+                    "⬅ Back to Dashboard",
+                    key="dash_sub_back_bot_mc",
+                    type="primary",
+                    use_container_width=True,
+                    on_click=_open_dash_sub_page,
+                    args=(None,),
+                )
