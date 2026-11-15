@@ -48,9 +48,9 @@ st.html("""
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&family=Manrope:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-/* Soft Warm Alabaster-Blush Canvas — Harmonious with Dusty Rosewood */
+/* Soft Warm Blush-Sand Outer Backdrop so the 80% Framed Screen Stands Out */
 .stApp, [data-testid="stAppViewContainer"], .main {
-    background: linear-gradient(135deg, #FCF9F8 0%, #F7F0EE 55%, #F0E6E3 100%) !important;
+    background: linear-gradient(135deg, #F2E7E4 0%, #EADBD7 50%, #E3D0CB 100%) !important;
     color: #3D1F21 !important;
 }
 
@@ -63,14 +63,22 @@ section[data-testid="stSidebar"],
     min-width: 0 !important;
 }
 
-/* Compact & Nicely Centered ~80% Page Width */
+/* Compact & Nicely Centered ~80% Page Layout with Aesthetic Double-Framed Border */
 .block-container,
 div[data-testid="stMainBlockContainer"] {
-    padding-top: 1.6rem !important;
-    padding-bottom: 1.4rem !important;
-    padding-left: 1.2rem !important;
-    padding-right: 1.2rem !important;
-    margin-top: 0 !important;
+    background: linear-gradient(180deg, #FFFDFA 0%, #FAF4F2 100%) !important;
+    border: 2px solid #8A474F !important;
+    outline: 4px solid rgba(138, 71, 79, 0.12) !important;
+    border-radius: 18px !important;
+    box-shadow:
+        inset 0 0 0 2px #F2D7C4,
+        0 12px 32px rgba(86, 44, 49, 0.14) !important;
+    padding-top: 1.35rem !important;
+    padding-bottom: 1.6rem !important;
+    padding-left: 1.6rem !important;
+    padding-right: 1.6rem !important;
+    margin-top: 1.5rem !important;
+    margin-bottom: 1.8rem !important;
     margin-left: auto !important;
     margin-right: auto !important;
     width: 80% !important;
@@ -81,6 +89,8 @@ div[data-testid="stMainBlockContainer"] {
     div[data-testid="stMainBlockContainer"] {
         width: 95% !important;
         max-width: 95% !important;
+        padding-left: 1.0rem !important;
+        padding-right: 1.0rem !important;
     }
 }
 header[data-testid="stHeader"] {
@@ -253,7 +263,7 @@ div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid=
 }
 
 /* Top Command Bar 3D Buttons — Strictly 38px Tall, Dusty Rosewood & Crisp White */
-div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton > button,
+div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton button,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button {
     min-height: 38px !important;
     height: 38px !important;
@@ -274,8 +284,8 @@ div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid=
     margin: 0 !important;
     white-space: nowrap !important;
 }
-div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton > button p,
-div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton > button span,
+div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton button p,
+div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton button span,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button p,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button span,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button svg {
@@ -284,14 +294,14 @@ div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid=
     font-weight: 700 !important;
     font-size: 12.5px !important;
 }
-div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton > button:hover,
+div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton button:hover,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button:hover {
     background: linear-gradient(180deg, #B0585C 0%, #8A474F 100%) !important;
     border-color: #FFF2E6 !important;
     color: #FFFFFF !important;
     transform: translateY(-1px) !important;
 }
-div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton > button[kind="primary"] {
+div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton button[kind="primary"] {
     background: linear-gradient(180deg, #773D44 0%, #562C31 100%) !important;
     border: 1.5px solid #F7E4D4 !important;
     color: #FFFFFF !important;
@@ -300,7 +310,7 @@ div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton > b
         0 2px 0 #3D1B1E,
         0 4px 10px rgba(88, 40, 43, 0.28) !important;
 }
-div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton > button[kind="primary"] p {
+div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton button[kind="primary"] p {
     color: #FFFFFF !important;
     font-weight: 800 !important;
 }
@@ -360,8 +370,8 @@ div[data-testid="stElementContainer"]:has(.kulfi-card-set-4) {
 }
 
 /* Directly Clickable 3D Cards — Base Geometry & Dusty Rosewood Default */
-div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button,
-div[data-testid="stHorizontalBlock"]:has(.kulfi-clickable-card-grid) .stButton > button {
+div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button,
+div[data-testid="stHorizontalBlock"]:has(.kulfi-clickable-card-grid) .stButton button {
     background: linear-gradient(135deg, #98535C 0%, #8A474F 52%, #7B3A41 100%) !important;
     border: 1px solid #E2C2B9 !important;
     border-left: 4.5px solid #F2D7C4 !important;
@@ -383,8 +393,8 @@ div[data-testid="stHorizontalBlock"]:has(.kulfi-clickable-card-grid) .stButton >
     margin-bottom: 4px !important;
     cursor: pointer !important;
 }
-div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button:hover,
-div[data-testid="stHorizontalBlock"]:has(.kulfi-clickable-card-grid) .stButton > button:hover {
+div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button:hover,
+div[data-testid="stHorizontalBlock"]:has(.kulfi-clickable-card-grid) .stButton button:hover {
     background: linear-gradient(135deg, #A45A63 0%, #98535C 55%, #8A474F 100%) !important;
     border-color: #F7E4D4 !important;
     border-left: 4.5px solid #FFFFFF !important;
@@ -394,16 +404,16 @@ div[data-testid="stHorizontalBlock"]:has(.kulfi-clickable-card-grid) .stButton >
         0 4px 0 #562C31,
         0 8px 16px rgba(142, 65, 69, 0.20) !important;
 }
-div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button:active {
+div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button:active {
     transform: translateY(1px) !important;
     box-shadow: 0 1px 0 #562C31 !important;
 }
-div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button > div[data-testid="stMarkdownContainer"] {
+div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button > div[data-testid="stMarkdownContainer"] {
     width: 100% !important;
     text-align: left !important;
 }
-div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button > div[data-testid="stMarkdownContainer"] p,
-div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button > div[data-testid="stMarkdownContainer"] p strong {
+div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button > div[data-testid="stMarkdownContainer"] p,
+div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button > div[data-testid="stMarkdownContainer"] p strong {
     font-family: 'Manrope', sans-serif !important;
     font-size: 14.5px !important;
     font-weight: 700 !important;
@@ -417,7 +427,7 @@ div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kul
 /* ======================================================================
    ALL STANDARD 3D BUTTONS ACROSS INDIVIDUAL SCREENS — DUSTY ROSEWOOD
    ====================================================================== */
-.stButton > button,
+.stButton button,
 [data-testid="stFormSubmitButton"] > button,
 .stDownloadButton > button,
 [data-testid="stLinkButton"] > a,
@@ -444,8 +454,8 @@ div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kul
     transition: all 0.12s ease !important;
     letter-spacing: 0.01em !important;
 }
-.stButton > button p,
-.stButton > button span,
+.stButton button p,
+.stButton button span,
 [data-testid="stFormSubmitButton"] > button p,
 [data-testid="stFormSubmitButton"] > button span,
 .stDownloadButton > button p,
@@ -457,7 +467,7 @@ div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kul
     color: #FFFFFF !important;
     font-weight: 700 !important;
 }
-.stButton > button:hover,
+.stButton button:hover,
 [data-testid="stFormSubmitButton"] > button:hover,
 .stDownloadButton > button:hover,
 [data-testid="stLinkButton"] > a:hover,
@@ -471,7 +481,7 @@ div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kul
         0 3px 0 #562C31,
         0 5px 10px rgba(142, 65, 69, 0.18) !important;
 }
-.stButton > button:active,
+.stButton button:active,
 [data-testid="stFormSubmitButton"] > button:active,
 .stDownloadButton > button:active,
 [data-testid="stLinkButton"] > a:active,
@@ -484,16 +494,16 @@ div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kul
    LANDING PAGE 4 CARD SET BUTTON THEMES (PLACED AFTER .stButton FOR PRIORITY)
    ====================================================================== */
 /* Set 1 Buttons: Sales, Daily Operations & Financials — Dusty Rosewood (#98535C -> #7B3A41) */
-div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-1) .stButton > button,
-div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-1):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button,
+div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-1) .stButton button,
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-1):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button,
 div[class*="st-key-launchpad_card_kulfi_card_set_1_"] button {
     background: linear-gradient(135deg, #98535C 0%, #8A474F 52%, #7B3A41 100%) !important;
     border: 1px solid #E2C2B9 !important;
     border-left: 4.5px solid #F2D7C4 !important;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.20), 0 3px 0 #562C31, 0 5px 12px rgba(142, 65, 69, 0.16) !important;
 }
-div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-1) .stButton > button:hover,
-div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-1):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button:hover,
+div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-1) .stButton button:hover,
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-1):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button:hover,
 div[class*="st-key-launchpad_card_kulfi_card_set_1_"] button:hover {
     background: linear-gradient(135deg, #A85E68 0%, #98535C 55%, #8A474F 100%) !important;
     border-color: #F7E4D4 !important;
@@ -502,16 +512,16 @@ div[class*="st-key-launchpad_card_kulfi_card_set_1_"] button:hover {
 }
 
 /* Set 2 Buttons: Stock & Freezer — Muted Glacier Slate-Teal (#3B6E75 -> #25484D) */
-div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-2) .stButton > button,
-div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-2):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button,
+div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-2) .stButton button,
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-2):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button,
 div[class*="st-key-launchpad_card_kulfi_card_set_2_"] button {
     background: linear-gradient(135deg, #3B6E75 0%, #2F5B61 52%, #25484D 100%) !important;
     border: 1px solid #9DC7CC !important;
     border-left: 4.5px solid #CFEFF2 !important;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.20), 0 3px 0 #173034, 0 5px 12px rgba(37, 72, 77, 0.16) !important;
 }
-div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-2) .stButton > button:hover,
-div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-2):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button:hover,
+div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-2) .stButton button:hover,
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-2):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button:hover,
 div[class*="st-key-launchpad_card_kulfi_card_set_2_"] button:hover {
     background: linear-gradient(135deg, #488189 0%, #3B6E75 55%, #2F5B61 100%) !important;
     border-color: #E3F6F8 !important;
@@ -520,16 +530,16 @@ div[class*="st-key-launchpad_card_kulfi_card_set_2_"] button:hover {
 }
 
 /* Set 3 Buttons: POs, Expenses & Cash — Warm Roasted Bronze-Walnut (#8C5E3C -> #633F25) */
-div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-3) .stButton > button,
-div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-3):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button,
+div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-3) .stButton button,
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-3):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button,
 div[class*="st-key-launchpad_card_kulfi_card_set_3_"] button {
     background: linear-gradient(135deg, #8C5E3C 0%, #784E30 52%, #633F25 100%) !important;
     border: 1px solid #DEC2A4 !important;
     border-left: 4.5px solid #F5DFC3 !important;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.20), 0 3px 0 #422917, 0 5px 12px rgba(99, 63, 37, 0.16) !important;
 }
-div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-3) .stButton > button:hover,
-div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-3):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button:hover,
+div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-3) .stButton button:hover,
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-3):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button:hover,
 div[class*="st-key-launchpad_card_kulfi_card_set_3_"] button:hover {
     background: linear-gradient(135deg, #9E6D48 0%, #8C5E3C 55%, #784E30 100%) !important;
     border-color: #FAEAD6 !important;
@@ -538,16 +548,16 @@ div[class*="st-key-launchpad_card_kulfi_card_set_3_"] button:hover {
 }
 
 /* Set 4 Buttons: Staff Payroll & Admin Setup — Muted Sage-Forest (#466B53 -> #2B4634) */
-div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-4) .stButton > button,
-div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-4):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button,
+div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-4) .stButton button,
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-4):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button,
 div[class*="st-key-launchpad_card_kulfi_card_set_4_"] button {
     background: linear-gradient(135deg, #466B53 0%, #385943 52%, #2B4634 100%) !important;
     border: 1px solid #B2D1BC !important;
     border-left: 4.5px solid #D7EFE0 !important;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.20), 0 3px 0 #1B2E21, 0 5px 12px rgba(43, 70, 52, 0.16) !important;
 }
-div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-4) .stButton > button:hover,
-div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-4):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button:hover,
+div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-4) .stButton button:hover,
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-4):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button:hover,
 div[class*="st-key-launchpad_card_kulfi_card_set_4_"] button:hover {
     background: linear-gradient(135deg, #558064 0%, #466B53 55%, #385943 100%) !important;
     border-color: #E6F6EC !important;
@@ -556,7 +566,7 @@ div[class*="st-key-launchpad_card_kulfi_card_set_4_"] button:hover {
 }
 
 /* Primary 3D Action Buttons (Deep Rosewood-Berry for Active/Primary State) */
-.stButton > button[kind="primary"],
+.stButton button[kind="primary"],
 [data-testid="stFormSubmitButton"] > button[kind="primary"],
 .stDownloadButton > button[kind="primary"],
 [data-testid="baseButton-primary"] {
@@ -568,7 +578,7 @@ div[class*="st-key-launchpad_card_kulfi_card_set_4_"] button:hover {
         0 2px 0 #3D1B1E,
         0 4px 10px rgba(88, 40, 43, 0.22) !important;
 }
-.stButton > button[kind="primary"]:hover,
+.stButton button[kind="primary"]:hover,
 [data-testid="stFormSubmitButton"] > button[kind="primary"]:hover,
 .stDownloadButton > button[kind="primary"]:hover {
     background: linear-gradient(180deg, #7B3A41 0%, #773D44 100%) !important;
@@ -577,17 +587,99 @@ div[class*="st-key-launchpad_card_kulfi_card_set_4_"] button:hover {
     transform: translateY(-1px) !important;
 }
 
-/* Compact 30px inline action buttons ONLY inside .ledger-cell table rows */
-div[data-testid="stHorizontalBlock"]:has(.ledger-cell) .stButton > button {
-    padding: 2px 5px !important;
+/* Aesthetic Bordered Frames Around Each Set of Landing Page Cards */
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.kulfi-card-set-1) {
+    background: linear-gradient(180deg, #FFFDFC 0%, #FAF0EE 100%) !important;
+    border: 1.5px solid #D8B0AC !important;
+    border-top: 4px solid #8A474F !important;
+    border-radius: 14px !important;
+    padding: 10px 14px 12px 14px !important;
+    margin-bottom: 10px !important;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.75), 0 4px 14px rgba(138, 71, 79, 0.08) !important;
+}
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.kulfi-card-set-2) {
+    background: linear-gradient(180deg, #FCFEFE 0%, #EEF6F7 100%) !important;
+    border: 1.5px solid #9EC4C9 !important;
+    border-top: 4px solid #2F5B61 !important;
+    border-radius: 14px !important;
+    padding: 10px 14px 12px 14px !important;
+    margin-bottom: 10px !important;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.75), 0 4px 14px rgba(47, 91, 97, 0.08) !important;
+}
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.kulfi-card-set-3) {
+    background: linear-gradient(180deg, #FFFEFC 0%, #F8F0E6 100%) !important;
+    border: 1.5px solid #D4B596 !important;
+    border-top: 4px solid #784E30 !important;
+    border-radius: 14px !important;
+    padding: 10px 14px 12px 14px !important;
+    margin-bottom: 10px !important;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.75), 0 4px 14px rgba(120, 78, 48, 0.08) !important;
+}
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.kulfi-card-set-4) {
+    background: linear-gradient(180deg, #FCFDFC 0%, #EEF5F0 100%) !important;
+    border: 1.5px solid #A6C7B0 !important;
+    border-top: 4px solid #385943 !important;
+    border-radius: 14px !important;
+    padding: 10px 14px 12px 14px !important;
+    margin-bottom: 10px !important;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.75), 0 4px 14px rgba(56, 89, 67, 0.08) !important;
+}
+.launchpad-section-hdr {
+    margin: 0 0 8px 0 !important;
+}
+
+/* Compact 30px inline action buttons (Edit, Copy, Delete) inside .ledger-cell table rows */
+div[data-testid="stHorizontalBlock"]:has(.ledger-cell) .stButton,
+div[data-testid="stHorizontalBlock"]:has(.ledger-cell) [data-testid="stTooltipHoverTarget"] {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+}
+div[data-testid="stHorizontalBlock"]:has(.ledger-cell) .stButton button,
+div[class*="st-key-row_edit_"] button,
+div[class*="st-key-row_clone_"] button,
+div[class*="st-key-row_del_"] button {
+    padding: 0 2px !important;
+    min-width: 28px !important;
+    width: 100% !important;
     min-height: 30px !important;
     height: 30px !important;
-    font-size: 11.5px !important;
+    font-size: 13px !important;
     line-height: 1 !important;
+    border-radius: 6px !important;
     border: 1px solid #E2C2B9 !important;
     background: linear-gradient(180deg, #98535C 0%, #7B3A41 100%) !important;
     color: #FFFFFF !important;
     box-shadow: 0 2px 0 #562C31 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: visible !important;
+}
+div[data-testid="stHorizontalBlock"]:has(.ledger-cell) .stButton button > div,
+div[data-testid="stHorizontalBlock"]:has(.ledger-cell) .stButton button p,
+div[data-testid="stHorizontalBlock"]:has(.ledger-cell) .stButton button span,
+div[class*="st-key-row_edit_"] button p,
+div[class*="st-key-row_clone_"] button p,
+div[class*="st-key-row_del_"] button p {
+    font-size: 13px !important;
+    line-height: 1 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    color: #FFFFFF !important;
+    overflow: visible !important;
+    white-space: nowrap !important;
+}
+/* Distinct subtle color coding for Edit (Rosewood), Copy (Slate-Teal), and Delete (Crimson) */
+div[class*="st-key-row_clone_"] button {
+    background: linear-gradient(180deg, #3B6E75 0%, #25484D 100%) !important;
+    border-color: #9DC7CC !important;
+    box-shadow: 0 2px 0 #173034 !important;
+}
+div[class*="st-key-row_del_"] button {
+    background: linear-gradient(180deg, #B91C1C 0%, #7F1D1D 100%) !important;
+    border-color: #FCA5A5 !important;
+    box-shadow: 0 2px 0 #450A0A !important;
 }
 
 /* High-Contrast Section Headers */
@@ -4605,9 +4697,9 @@ if page == "Home" and user_role == "admin":
     ]
 
     for _hdr_cls, _set_cls, _sec_title, _num_cols, _sec_cards in _launchpad_sections:
-        st.markdown(f'<div class="launchpad-section-hdr {_hdr_cls}">{_sec_title}</div>', unsafe_allow_html=True)
-        with st.container():
+        with st.container(border=True):
             st.markdown(f'<span class="kulfi-clickable-card-grid {_set_cls}"></span>', unsafe_allow_html=True)
+            st.markdown(f'<div class="launchpad-section-hdr {_hdr_cls}">{_sec_title}</div>', unsafe_allow_html=True)
             _cols = st.columns(_num_cols, gap="small")
             for _c_idx, (_target_page, _icon, _title, _extra_state) in enumerate(_sec_cards):
                 with _cols[_c_idx]:
@@ -5323,7 +5415,7 @@ elif page == "Daily Entry":
                     st.info("No previous Freezer sale transactions found.")
                 else:
                     pass
-                    col_w = [0.65, 0.85, 0.80, 1.05, 1.05, 0.65, 0.85, 0.85, 0.85, 0.85, 1.55, 1.15, 0.42, 0.42]
+                    col_w = [0.65, 0.85, 0.80, 1.00, 1.00, 0.65, 0.82, 0.82, 0.82, 0.82, 1.45, 1.10, 0.48, 0.48]
                     hdrs = [
                         ("Txn #", "Transaction ID"),
                         ("Date", "Sale Date"),
@@ -10723,7 +10815,7 @@ elif page == "Expenses" and user_role == "admin":
                     page_size = st.selectbox("Rows per page", [25, 50, 100, 500], index=0, key="exp_view_page_size", label_visibility="collapsed")
 
                 # ID and Month removed from table columns (Month filter retained above); COPY header with Clone tooltip
-                col_weights = [0.75, 1.50, 2.15, 0.82, 0.82, 0.82, 0.76, 0.76, 0.58, 0.36, 0.38, 0.36]
+                col_weights = [0.75, 1.45, 2.00, 0.80, 0.80, 0.80, 0.74, 0.74, 0.56, 0.46, 0.46, 0.46]
                 headers = [
                     ("Date", "Expense Date"),
                     ("Category", "Category & Sub-Category"),
@@ -11045,7 +11137,7 @@ elif page == "Expenses" and user_role == "admin":
                     pay_page_size = st.selectbox("Rows per page", [25, 50, 100, 500], index=0, key="pay_view_page_size", label_visibility="collapsed")
 
                 # ID and RCPT removed from table list; View Receipt section below removed completely
-                p_weights = [0.80, 2.10, 0.95, 1.25, 1.35, 1.95, 0.36, 0.38, 0.36]
+                p_weights = [0.80, 2.00, 0.92, 1.20, 1.30, 1.80, 0.46, 0.46, 0.46]
                 p_headers = [
                     ("Date", "Payment Date"),
                     ("Expense Link", "Linked Expense"),
