@@ -42,16 +42,16 @@ except ImportError:
 st.set_page_config(page_title="Kulfi Ops", page_icon="🍦", layout="wide", initial_sidebar_state="collapsed")
 
 # ----------------------------------------------------------------------
-# GLOBAL UI STYLES — CALM ROASTED ESPRESSO, MUTED TAUPE-SAND & WARM IVORY (3D SUITE)
+# GLOBAL UI STYLES — SOFT DUSTY ROSEWOOD (#98535C / #8A474F / #7B3A41) & WARM IVORY (3D SUITE)
 # ----------------------------------------------------------------------
 st.html("""
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&family=Manrope:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-/* Calm Warm Alabaster-Linen Canvas — Soft & Easy on the Eyes */
+/* Soft Warm Alabaster-Blush Canvas — Harmonious with Dusty Rosewood */
 .stApp, [data-testid="stAppViewContainer"], .main {
-    background: linear-gradient(135deg, #FAF8F5 0%, #F4EFE8 55%, #EDE6DC 100%) !important;
-    color: #2E221D !important;
+    background: linear-gradient(135deg, #FCF9F8 0%, #F7F0EE 55%, #F0E6E3 100%) !important;
+    color: #3D1F21 !important;
 }
 
 /* Completely hide the left sidebar and sidebar toggle button */
@@ -82,13 +82,13 @@ html, body, [class*="css"] {
 }
 h1, h2, h3, h4 {
     font-family: 'Fraunces', serif !important;
-    color: #382A22 !important;
+    color: #633339 !important;
     letter-spacing: -0.01em;
 }
 h1 { font-size: 1.4rem !important; margin-top: 0 !important; }
 h2 { font-size: 1.18rem !important; }
 h3 { font-size: 1.04rem !important; }
-p, span, label, .stMarkdown { color: #2E221D; }
+p, span, label, .stMarkdown { color: #3D1F21; }
 
 /* Hide stepper buttons on number inputs */
 input[type=number]::-webkit-inner-spin-button, 
@@ -99,79 +99,79 @@ input[type=number]::-webkit-outer-spin-button {
 input[type=number] { -moz-appearance: textfield !important; }
 div[data-testid="stNumberInput"] button { display: none !important; }
 
-/* Crisp White & Muted Sand Layered Containers, Expanders & Tabs */
+/* Crisp White & Rosewood Layered Containers, Expanders & Tabs */
 div[data-testid="stVerticalBlockBorderWrapper"] {
     background: #FFFFFF !important;
-    border: 1.5px solid #DDD1C2 !important;
-    border-top: 3px solid #B08968 !important;
+    border: 1.5px solid #E2CECC !important;
+    border-top: 3px solid #8A474F !important;
     border-radius: 12px !important;
-    box-shadow: 0 3px 12px rgba(46, 34, 29, 0.05) !important;
+    box-shadow: 0 3px 12px rgba(142, 65, 69, 0.07) !important;
     padding: 12px 14px !important;
 }
 div[data-testid="stExpander"] {
     background: #FFFFFF !important;
-    border: 1.5px solid #DDD1C2 !important;
+    border: 1.5px solid #E2CECC !important;
     border-radius: 10px !important;
-    box-shadow: 0 2px 8px rgba(46, 34, 29, 0.05) !important;
+    box-shadow: 0 2px 8px rgba(142, 65, 69, 0.06) !important;
     overflow: hidden;
 }
 div[data-testid="stExpander"] summary {
-    background: linear-gradient(90deg, #3E3028 0%, #4C3B32 100%) !important;
+    background: linear-gradient(90deg, #98535C 0%, #7B3A41 100%) !important;
     padding: 8px 14px !important;
     font-weight: 800 !important;
-    color: #FAF7F2 !important;
+    color: #FFFFFF !important;
 }
 div[data-testid="stExpander"] summary p,
 div[data-testid="stExpander"] summary span,
 div[data-testid="stExpander"] summary svg {
-    color: #EFE5D8 !important;
-    fill: #EFE5D8 !important;
+    color: #FFF7F5 !important;
+    fill: #FFF7F5 !important;
 }
 div[data-testid="stTabs"] [data-baseweb="tab-list"] {
     gap: 8px !important;
-    background: #EAE1D5 !important;
+    background: #F2E4E2 !important;
     padding: 5px 6px !important;
     border-radius: 10px !important;
-    border: 1px solid #D8C9B8 !important;
+    border: 1px solid #E2CECC !important;
 }
 div[data-testid="stTabs"] button[data-baseweb="tab"] {
     background: #FFFFFF !important;
-    border: 1px solid #C4B299 !important;
+    border: 1px solid #CFAFB0 !important;
     border-radius: 8px !important;
     padding: 6px 14px !important;
     font-weight: 800 !important;
-    color: #382A22 !important;
-    box-shadow: 0 2px 0 #A8947D !important;
+    color: #633339 !important;
+    box-shadow: 0 2px 0 #B89294 !important;
     transition: all 0.14s ease !important;
 }
 div[data-testid="stTabs"] button[data-baseweb="tab"] p {
-    color: #382A22 !important;
+    color: #633339 !important;
     font-weight: 800 !important;
 }
 div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] {
-    background: linear-gradient(180deg, #4A3A31 0%, #382B24 100%) !important;
-    color: #FAF7F2 !important;
-    border-color: #C4B299 !important;
-    box-shadow: 0 2px 0 #231A15, 0 4px 10px rgba(46, 34, 29, 0.16) !important;
+    background: linear-gradient(180deg, #98535C 0%, #7B3A41 100%) !important;
+    color: #FFFFFF !important;
+    border-color: #E8C5B0 !important;
+    box-shadow: 0 2px 0 #562C31, 0 4px 10px rgba(142, 65, 69, 0.18) !important;
 }
 div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] p {
-    color: #FAF7F2 !important;
+    color: #FFFFFF !important;
 }
 
 /* ======================================================================
-   UNIFIED TOP COMMAND BAR — CALM ROASTED ESPRESSO & PERFECT VERTICAL CENTERING
+   UNIFIED TOP COMMAND BAR — EXACT DUSTY ROSEWOOD SWATCH & CENTERED TEXT
    ====================================================================== */
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) {
-    background: linear-gradient(135deg, #3A2D26 0%, #483830 52%, #322620 100%) !important;
-    border: 1.5px solid #C4B299 !important;
+    background: linear-gradient(135deg, #98535C 0%, #8A474F 52%, #7B3A41 100%) !important;
+    border: 1.5px solid #E6C8B8 !important;
     border-radius: 12px !important;
     padding: 10px 16px !important;
     margin-bottom: 8px !important;
     align-items: center !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.12),
-        0 3px 0 #221915,
-        0 6px 16px rgba(46, 34, 29, 0.12) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.20),
+        0 3px 0 #562C31,
+        0 6px 16px rgba(129, 57, 61, 0.16) !important;
 }
 /* Ensure every column and wrapper inside the top bar is strictly centered with zero extra gap */
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) > div[data-testid="stColumn"],
@@ -202,9 +202,9 @@ div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid=
     width: 36px;
     height: 36px;
     border-radius: 9px;
-    background: linear-gradient(145deg, #8C5A3C 0%, #6E452C 100%);
-    border: 1px solid #D6C7B2;
-    box-shadow: 0 2px 5px rgba(24, 17, 14, 0.35);
+    background: linear-gradient(145deg, #A45A63 0%, #773D44 100%);
+    border: 1px solid #F2DEC8;
+    box-shadow: 0 2px 5px rgba(88, 40, 43, 0.30);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -223,24 +223,25 @@ div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid=
     font-family: 'Fraunces', serif !important;
     font-size: 1.12rem !important;
     font-weight: 700 !important;
-    color: #FAF7F2 !important;
+    color: #FFFFFF !important;
     letter-spacing: 0.01em;
     line-height: 1.15 !important;
     margin: 0 !important;
     padding: 0 !important;
     white-space: nowrap;
+    text-shadow: 0 1px 2px rgba(61, 31, 33, 0.30);
 }
 .kulfi-cmd-sub {
     font-size: 10.5px !important;
     font-weight: 700 !important;
-    color: #DFCBB5 !important;
+    color: #F7E4D4 !important;
     letter-spacing: 0.03em;
     line-height: 1.15 !important;
     margin: 2px 0 0 0 !important;
     padding: 0 !important;
 }
 
-/* Top Command Bar 3D Buttons — Strictly 38px Tall, Calm Espresso & Warm Ivory */
+/* Top Command Bar 3D Buttons — Strictly 38px Tall, Dusty Rosewood & Crisp White */
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton > button,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button {
     min-height: 38px !important;
@@ -249,13 +250,13 @@ div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid=
     font-size: 12.5px !important;
     font-weight: 700 !important;
     border-radius: 8px !important;
-    border: 1px solid #C4B299 !important;
-    background: linear-gradient(180deg, #524037 0%, #3E3029 100%) !important;
-    color: #FAF7F2 !important;
+    border: 1px solid #EBCBB8 !important;
+    background: linear-gradient(180deg, #A45A63 0%, #773D44 100%) !important;
+    color: #FFFFFF !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.14),
-        0 2px 0 #221915,
-        0 3px 8px rgba(24, 17, 14, 0.22) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.22),
+        0 2px 0 #562C31,
+        0 3px 8px rgba(61, 31, 33, 0.22) !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -267,46 +268,46 @@ div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton > b
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button p,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button span,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button svg {
-    color: #FAF7F2 !important;
-    fill: #DFCBB5 !important;
+    color: #FFFFFF !important;
+    fill: #F7E4D4 !important;
     font-weight: 700 !important;
     font-size: 12.5px !important;
 }
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton > button:hover,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button:hover {
-    background: linear-gradient(180deg, #634E43 0%, #4C3B32 100%) !important;
-    border-color: #E2D4C3 !important;
+    background: linear-gradient(180deg, #B0585C 0%, #8A474F 100%) !important;
+    border-color: #FFF2E6 !important;
     color: #FFFFFF !important;
     transform: translateY(-1px) !important;
 }
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton > button[kind="primary"] {
-    background: linear-gradient(180deg, #8C583A 0%, #73452B 100%) !important;
-    border: 1px solid #DFCBB5 !important;
-    color: #FAF7F2 !important;
+    background: linear-gradient(180deg, #773D44 0%, #562C31 100%) !important;
+    border: 1.5px solid #F7E4D4 !important;
+    color: #FFFFFF !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.22),
-        0 2px 0 #3D2416,
-        0 4px 10px rgba(115, 69, 43, 0.25) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.25),
+        0 2px 0 #3D1B1E,
+        0 4px 10px rgba(88, 40, 43, 0.28) !important;
 }
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton > button[kind="primary"] p {
-    color: #FAF7F2 !important;
+    color: #FFFFFF !important;
     font-weight: 800 !important;
 }
 
 /* ======================================================================
-   LAUNCHPAD SECTION HEADERS & 4-COLUMN REFINED ESPRESSO-MOCHA 3D CARDS
+   LAUNCHPAD SECTION HEADERS & 4-COLUMN DUSTY ROSEWOOD 3D CARDS
    ====================================================================== */
 .launchpad-section-hdr {
     font-family: 'Fraunces', serif !important;
     font-size: 13px !important;
     font-weight: 700 !important;
-    color: #382A22 !important;
+    color: #633339 !important;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     margin: 6px 0 6px 2px;
     padding: 5px 12px;
-    background: linear-gradient(90deg, #EAE1D5 0%, rgba(234, 225, 213, 0) 100%);
-    border-left: 3.5px solid #7C5841;
+    background: linear-gradient(90deg, #F2E2E0 0%, rgba(242, 226, 224, 0) 100%);
+    border-left: 3.5px solid #8A474F;
     border-radius: 4px;
     display: flex;
     align-items: center;
@@ -321,11 +322,11 @@ div[data-testid="stElementContainer"]:has(.kulfi-clickable-card-grid) {
     padding: 0 !important;
 }
 
-/* Directly Clickable 3D Cards — Understated Warm Espresso-Mocha */
+/* Directly Clickable 3D Cards — Exact Dusty Rosewood Swatch */
 div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button {
-    background: linear-gradient(145deg, #483830 0%, #382B24 100%) !important;
-    border: 1px solid #C4B299 !important;
-    border-left: 4px solid #B08968 !important;
+    background: linear-gradient(135deg, #98535C 0%, #8A474F 52%, #7B3A41 100%) !important;
+    border: 1px solid #E2C2B9 !important;
+    border-left: 4px solid #F2D7C4 !important;
     border-radius: 11px !important;
     padding: 14px 16px !important;
     min-height: 64px !important;
@@ -337,26 +338,26 @@ div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kul
     text-align: left !important;
     white-space: nowrap !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.10),
-        0 3px 0 #231A15,
-        0 5px 12px rgba(46, 34, 29, 0.11) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+        0 3px 0 #562C31,
+        0 5px 12px rgba(142, 65, 69, 0.14) !important;
     transition: all 0.15s ease !important;
     margin-bottom: 4px !important;
     cursor: pointer !important;
 }
 div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button:hover {
-    background: linear-gradient(145deg, #5C473D 0%, #483830 100%) !important;
-    border-color: #DFCBB5 !important;
-    border-left: 4px solid #DFCBB5 !important;
+    background: linear-gradient(135deg, #A45A63 0%, #98535C 55%, #8A474F 100%) !important;
+    border-color: #F7E4D4 !important;
+    border-left: 4px solid #FFFFFF !important;
     transform: translateY(-1px) !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.18),
-        0 4px 0 #231A15,
-        0 8px 16px rgba(46, 34, 29, 0.16) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.25),
+        0 4px 0 #562C31,
+        0 8px 16px rgba(142, 65, 69, 0.20) !important;
 }
 div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button:active {
     transform: translateY(1px) !important;
-    box-shadow: 0 1px 0 #231A15 !important;
+    box-shadow: 0 1px 0 #562C31 !important;
 }
 div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button > div[data-testid="stMarkdownContainer"] {
     width: 100% !important;
@@ -367,23 +368,24 @@ div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kul
     font-family: 'Manrope', sans-serif !important;
     font-size: 14.5px !important;
     font-weight: 700 !important;
-    color: #FAF7F2 !important;
+    color: #FFFFFF !important;
     line-height: 1.25 !important;
     margin: 0 !important;
     letter-spacing: 0.01em !important;
+    text-shadow: 0 1px 2px rgba(61, 31, 33, 0.28) !important;
 }
 
 /* ======================================================================
-   ALL STANDARD 3D BUTTONS ACROSS INDIVIDUAL SCREENS — CALM ESPRESSO
+   ALL STANDARD 3D BUTTONS ACROSS INDIVIDUAL SCREENS — DUSTY ROSEWOOD
    ====================================================================== */
 .stButton > button,
 [data-testid="stFormSubmitButton"] > button,
 .stDownloadButton > button,
 [data-testid="stLinkButton"] > a,
 [data-testid="stPopover"] > div > button {
-    background: linear-gradient(180deg, #4A3A31 0%, #382B24 100%) !important;
-    color: #FAF7F2 !important;
-    border: 1px solid #C4B299 !important;
+    background: linear-gradient(180deg, #98535C 0%, #7B3A41 100%) !important;
+    color: #FFFFFF !important;
+    border: 1px solid #E2C2B9 !important;
     border-radius: 8px !important;
     font-weight: 700 !important;
     font-size: 12.5px !important;
@@ -397,9 +399,9 @@ div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kul
     margin: 0 !important;
     text-decoration: none !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.12),
-        0 2px 0 #231A15,
-        0 4px 8px rgba(46, 34, 29, 0.12) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+        0 2px 0 #562C31,
+        0 4px 8px rgba(142, 65, 69, 0.14) !important;
     transition: all 0.12s ease !important;
     letter-spacing: 0.01em !important;
 }
@@ -413,7 +415,7 @@ div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kul
 [data-testid="stLinkButton"] > a span,
 [data-testid="stPopover"] > div > button p,
 [data-testid="stPopover"] > div > button span {
-    color: #FAF7F2 !important;
+    color: #FFFFFF !important;
     font-weight: 700 !important;
 }
 .stButton > button:hover,
@@ -421,14 +423,14 @@ div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kul
 .stDownloadButton > button:hover,
 [data-testid="stLinkButton"] > a:hover,
 [data-testid="stPopover"] > div > button:hover {
-    background: linear-gradient(180deg, #5E493E 0%, #483830 100%) !important;
-    border-color: #DFCBB5 !important;
+    background: linear-gradient(180deg, #A45A63 0%, #8A474F 100%) !important;
+    border-color: #F7E4D4 !important;
     color: #FFFFFF !important;
     transform: translateY(-1px) !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.18),
-        0 3px 0 #231A15,
-        0 5px 10px rgba(46, 34, 29, 0.16) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.24),
+        0 3px 0 #562C31,
+        0 5px 10px rgba(142, 65, 69, 0.18) !important;
 }
 .stButton > button:active,
 [data-testid="stFormSubmitButton"] > button:active,
@@ -436,27 +438,27 @@ div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kul
 [data-testid="stLinkButton"] > a:active,
 [data-testid="stPopover"] > div > button:active {
     transform: translateY(1px) !important;
-    box-shadow: 0 1px 0 #231A15 !important;
+    box-shadow: 0 1px 0 #562C31 !important;
 }
 
-/* Primary 3D Action Buttons (Muted Warm Cinnamon-Caramel) */
+/* Primary 3D Action Buttons (Deep Rosewood-Berry for Active/Primary State) */
 .stButton > button[kind="primary"],
 [data-testid="stFormSubmitButton"] > button[kind="primary"],
 .stDownloadButton > button[kind="primary"],
 [data-testid="baseButton-primary"] {
-    background: linear-gradient(180deg, #8C583A 0%, #73452B 100%) !important;
-    color: #FAF7F2 !important;
-    border: 1px solid #DFCBB5 !important;
+    background: linear-gradient(180deg, #773D44 0%, #562C31 100%) !important;
+    color: #FFFFFF !important;
+    border: 1.5px solid #F2D7C4 !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.22),
-        0 2px 0 #3D2416,
-        0 4px 10px rgba(115, 69, 43, 0.20) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.24),
+        0 2px 0 #3D1B1E,
+        0 4px 10px rgba(88, 40, 43, 0.22) !important;
 }
 .stButton > button[kind="primary"]:hover,
 [data-testid="stFormSubmitButton"] > button[kind="primary"]:hover,
 .stDownloadButton > button[kind="primary"]:hover {
-    background: linear-gradient(180deg, #9E6544 0%, #824F32 100%) !important;
-    border-color: #EFE5D8 !important;
+    background: linear-gradient(180deg, #7B3A41 0%, #773D44 100%) !important;
+    border-color: #FFF2E6 !important;
     color: #FFFFFF !important;
     transform: translateY(-1px) !important;
 }
@@ -468,17 +470,17 @@ div[data-testid="stHorizontalBlock"]:has(.ledger-cell) .stButton > button {
     height: 30px !important;
     font-size: 11.5px !important;
     line-height: 1 !important;
-    border: 1px solid #C4B299 !important;
-    background: linear-gradient(180deg, #4A3A31 0%, #382B24 100%) !important;
-    color: #FAF7F2 !important;
-    box-shadow: 0 2px 0 #231A15 !important;
+    border: 1px solid #E2C2B9 !important;
+    background: linear-gradient(180deg, #98535C 0%, #7B3A41 100%) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 2px 0 #562C31 !important;
 }
 
 /* High-Contrast Section Headers */
 .header-box-sales {
-    background: linear-gradient(90deg, #F5EBE0 0%, #EBDCCB 100%);
-    color: #382A22 !important;
-    border: 1px solid #C4B299;
+    background: linear-gradient(90deg, #F9ECEA 0%, #F2DDD9 100%);
+    color: #633339 !important;
+    border: 1px solid #D8B4B0;
     border-radius: 9px;
     padding: 8px 13px;
     font-weight: 800;
@@ -487,7 +489,7 @@ div[data-testid="stHorizontalBlock"]:has(.ledger-cell) .stButton > button {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 2px 5px rgba(46, 34, 29, 0.05);
+    box-shadow: 0 2px 5px rgba(142, 65, 69, 0.05);
 }
 .header-box-restock {
     background: linear-gradient(90deg, #DCFCE7 0%, #BBF7D0 100%);
@@ -507,11 +509,11 @@ div[data-testid="stHorizontalBlock"]:has(.ledger-cell) .stButton > button {
 /* Compact Flavor Card Grid */
 .flavor-entry-row {
     background: #FFFFFF;
-    border: 1px solid #DDD1C2;
+    border: 1px solid #E2CECC;
     border-radius: 8px;
     padding: 5px 8px;
     margin-bottom: 5px;
-    box-shadow: 0 2px 4px rgba(46, 34, 29, 0.04);
+    box-shadow: 0 2px 4px rgba(142, 65, 69, 0.04);
 }
 .flavor-title-bar {
     display: flex;
@@ -522,11 +524,11 @@ div[data-testid="stHorizontalBlock"]:has(.ledger-cell) .stButton > button {
 .flavor-name {
     font-weight: 800;
     font-size: 12.5px;
-    color: #2E221D;
+    color: #3D1F21;
 }
 .badge-open {
-    background: #F5EBE0;
-    color: #5C3D28;
+    background: #F9ECEA;
+    color: #633339;
     font-weight: 800;
     font-size: 11px;
     padding: 1px 6px;
@@ -560,7 +562,7 @@ div[data-testid="stHorizontalBlock"]:has(.ledger-cell) .stButton > button {
     height: 36px !important;
     border-radius: 7px !important;
     background-color: #FFFFFF !important;
-    border: 1.5px solid #C4B299 !important;
+    border: 1.5px solid #CFAFB0 !important;
 }
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) .stNumberInput div[data-baseweb="input"] {
     min-height: 28px !important;
@@ -572,24 +574,24 @@ div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) .stNumberInpu
     font-size: 12.5px !important;
     text-align: left !important;
     font-weight: 700 !important;
-    color: #2E221D !important;
+    color: #3D1F21 !important;
 }
 .stNumberInput label, .stTextInput label, .stSelectbox label, .stDateInput label {
     font-size: 11px !important;
     font-weight: 800 !important;
     margin-bottom: 2px !important;
     text-align: left !important;
-    color: #382A22 !important;
+    color: #633339 !important;
 }
 
-/* Metric Cards — Crisp White with Warm Espresso Top Bar */
+/* Metric Cards — Crisp White with Dusty Rosewood Top Bar */
 div[data-testid="stMetric"] {
     background: #FFFFFF !important;
-    border: 1px solid #DDD1C2 !important;
-    border-top: 3px solid #4A3A31 !important;
+    border: 1px solid #E2CECC !important;
+    border-top: 3px solid #8A474F !important;
     border-radius: 10px !important;
     padding: 9px 12px !important;
-    box-shadow: 0 2px 8px rgba(46, 34, 29, 0.05) !important;
+    box-shadow: 0 2px 8px rgba(142, 65, 69, 0.05) !important;
     height: 100%;
 }
 div[data-testid="stMetricLabel"], 
@@ -599,7 +601,7 @@ div[data-testid="stMetricLabel"] p,
 div[data-testid="stMetricLabel"] span { 
     font-weight: 700 !important; 
     font-size: 11px !important; 
-    color: #6E5A4F !important; 
+    color: #7A4B4E !important; 
     white-space: normal !important; 
     word-wrap: break-word !important; 
     overflow: visible !important; 
@@ -614,23 +616,23 @@ div[data-testid="stMetricValue"] {
     font-family: 'Fraunces', serif; 
     font-size: 1.15rem !important; 
     font-weight: 800 !important;
-    color: #2E221D !important; 
+    color: #633339 !important; 
     margin-top: 4px;
 }
 
-/* Data Grids & Tables Across the Entire App — Warm Espresso & Soft Sand */
+/* Data Grids & Tables Across the Entire App — Dusty Rosewood & Warm Ivory */
 div[data-testid="stDataFrame"], div[data-testid="stDataEditor"] {
     border-radius: 10px !important;
-    border: 1.5px solid #4A3A31 !important;
+    border: 1.5px solid #8A474F !important;
     background: #FFFFFF !important;
-    box-shadow: 0 3px 10px rgba(46, 34, 29, 0.06) !important;
+    box-shadow: 0 3px 10px rgba(142, 65, 69, 0.06) !important;
     overflow: hidden;
 }
 div[data-testid="stDataFrame"] th, div[data-testid="stDataEditor"] th {
     font-weight: 800 !important;
-    color: #EFE5D8 !important;
-    background: linear-gradient(180deg, #4A3A31 0%, #382B24 100%) !important;
-    border-bottom: 1.5px solid #B08968 !important;
+    color: #FFFFFF !important;
+    background: linear-gradient(180deg, #98535C 0%, #7B3A41 100%) !important;
+    border-bottom: 1.5px solid #E6C8B8 !important;
     text-align: center !important;
     font-size: 12px !important;
 }
@@ -638,49 +640,49 @@ div[data-testid="stDataFrame"] td, div[data-testid="stDataEditor"] td {
     text-align: center !important;
     font-size: 11.5px !important;
     font-weight: 700 !important;
-    color: #2E221D !important;
+    color: #3D1F21 !important;
 }
 .stMarkdown table {
     width: 100%;
     border-collapse: separate !important;
     border-spacing: 0 !important;
     background: #FFFFFF;
-    border: 1.5px solid #4A3A31;
+    border: 1.5px solid #8A474F;
     border-radius: 10px;
     overflow: hidden;
-    box-shadow: 0 3px 10px rgba(46, 34, 29, 0.06);
+    box-shadow: 0 3px 10px rgba(142, 65, 69, 0.06);
     margin: 6px 0 12px 0;
 }
 .stMarkdown table th {
-    background: linear-gradient(180deg, #4A3A31 0%, #382B24 100%) !important;
-    color: #EFE5D8 !important;
+    background: linear-gradient(180deg, #98535C 0%, #7B3A41 100%) !important;
+    color: #FFFFFF !important;
     font-weight: 800 !important;
     padding: 8px 10px !important;
-    border-bottom: 1.5px solid #B08968 !important;
-    border-right: 1px solid rgba(196, 178, 153, 0.25) !important;
+    border-bottom: 1.5px solid #E6C8B8 !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.18) !important;
     font-size: 11.5px !important;
 }
 .stMarkdown table td {
     padding: 7px 10px !important;
-    border-bottom: 1px solid #EAE1D5 !important;
-    border-right: 1px solid #F4EFE8 !important;
+    border-bottom: 1px solid #F0E2E0 !important;
+    border-right: 1px solid #F7EFEE !important;
     font-size: 12px !important;
     font-weight: 700 !important;
-    color: #2E221D !important;
+    color: #3D1F21 !important;
 }
 .stMarkdown table tr:nth-child(even) td {
-    background: #FAF8F5 !important;
+    background: #FCF8F7 !important;
 }
 .stMarkdown table tr:hover td {
-    background: #F5EBE0 !important;
+    background: #F9ECEA !important;
 }
 
-hr { border-color: #DDD1C2 !important; margin: 0.4rem 0 !important; }
+hr { border-color: #E2CECC !important; margin: 0.4rem 0 !important; }
 
 /* Distinct Editable Table Input Borders */
 div[data-testid="stNumberInput"] div[data-baseweb="input"] {
-    border: 1.5px solid #B08968 !important;
-    background-color: #FDFBF7 !important;
+    border: 1.5px solid #98535C !important;
+    background-color: #FFFDFC !important;
     border-radius: 6px !important;
 }
 div[data-testid="stNumberInput"] div[data-baseweb="input"]:focus-within {
@@ -690,16 +692,16 @@ div[data-testid="stNumberInput"] div[data-baseweb="input"]:focus-within {
 div[data-testid="stNumberInput"] input {
     text-align: left !important;
     font-weight: 800 !important;
-    color: #2E221D !important;
+    color: #3D1F21 !important;
     padding-left: 8px !important;
 }
 
 /* Daily Entry & Stock Grid Cells */
 .entry-grid-header {
-    background: linear-gradient(180deg, #4A3A31 0%, #382B24 100%);
-    color: #EFE5D8 !important;
-    border: 1px solid #B08968;
-    border-bottom: 1.5px solid #B08968;
+    background: linear-gradient(180deg, #98535C 0%, #7B3A41 100%);
+    color: #FFFFFF !important;
+    border: 1px solid #E6C8B8;
+    border-bottom: 1.5px solid #E6C8B8;
     padding: 6px 10px;
     border-radius: 7px;
     font-size: 11.5px;
@@ -709,7 +711,7 @@ div[data-testid="stNumberInput"] input {
 }
 .entry-grid-cell {
     background: #FFFFFF;
-    border: 1px solid #DDD1C2;
+    border: 1px solid #E2CECC;
     border-radius: 6px;
     height: 28px;
     display: flex;
@@ -717,12 +719,12 @@ div[data-testid="stNumberInput"] input {
     justify-content: center;
     font-size: 12px;
     font-weight: 800;
-    color: #2E221D;
+    color: #3D1F21;
 }
 .entry-grid-cell-flavour {
     background: #FFFFFF;
-    border: 1px solid #DDD1C2;
-    border-left: 3.5px solid #8C583A;
+    border: 1px solid #E2CECC;
+    border-left: 3.5px solid #8A474F;
     border-radius: 6px;
     height: 28px;
     display: flex;
@@ -731,7 +733,7 @@ div[data-testid="stNumberInput"] input {
     padding: 0 8px;
     font-size: 12px;
     font-weight: 800;
-    color: #2E221D;
+    color: #3D1F21;
 }
 .entry-grid-cell-sold {
     background: #FEE2E2;
@@ -759,22 +761,22 @@ div[data-testid="stNumberInput"] input {
     color: #064E3B;
 }
 .entry-grid-total-row {
-    background: linear-gradient(90deg, #F5EBE0 0%, #EBDCCB 100%);
-    border: 1.5px solid #B08968;
+    background: linear-gradient(90deg, #F9ECEA 0%, #F2DDD9 100%);
+    border: 1.5px solid #8A474F;
     border-radius: 8px;
     padding: 7px 10px;
     margin-top: 6px;
     font-size: 12px;
     font-weight: 900;
-    color: #2E221D;
+    color: #633339;
 }
 
 /* Compact No-Scroll Ledger Rows for Expenses & Payments */
 .ledger-tbl-header {
-    background: linear-gradient(180deg, #4A3A31 0%, #382B24 100%);
-    color: #EFE5D8 !important;
-    border: 1px solid #B08968;
-    border-bottom: 1.5px solid #B08968;
+    background: linear-gradient(180deg, #98535C 0%, #7B3A41 100%);
+    color: #FFFFFF !important;
+    border: 1px solid #E6C8B8;
+    border-bottom: 1.5px solid #E6C8B8;
     padding: 5px 6px;
     border-radius: 6px;
     font-size: 10px;
@@ -791,7 +793,7 @@ div[data-testid="stNumberInput"] input {
 }
 .ledger-cell {
     background: #FFFFFF;
-    border: 1px solid #DDD1C2;
+    border: 1px solid #E2CECC;
     border-radius: 5px;
     min-height: 30px;
     height: 30px;
@@ -800,7 +802,7 @@ div[data-testid="stNumberInput"] input {
     align-items: center;
     font-size: 10.5px;
     font-weight: 700;
-    color: #2E221D;
+    color: #3D1F21;
     line-height: 1.15;
     white-space: nowrap !important;
     overflow: hidden;
@@ -808,8 +810,8 @@ div[data-testid="stNumberInput"] input {
 }
 .ledger-cell-desc {
     background: #FFFFFF;
-    border: 1px solid #DDD1C2;
-    border-left: 3px solid #8C583A;
+    border: 1px solid #E2CECC;
+    border-left: 3px solid #8A474F;
     border-radius: 5px;
     min-height: 30px;
     height: 30px;
@@ -819,7 +821,7 @@ div[data-testid="stNumberInput"] input {
     justify-content: center;
     font-size: 10.5px;
     font-weight: 700;
-    color: #2E221D;
+    color: #3D1F21;
     line-height: 1.12;
     overflow: hidden;
 }
@@ -833,14 +835,14 @@ div[data-testid="stNumberInput"] input {
 .ledger-subtext {
     font-size: 9px;
     font-weight: 700;
-    color: #8C583A;
+    color: #8A474F;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
 }
 .ledger-amt-total {
-    background: #F5EBE0;
-    border: 1px solid #D5BDA2;
+    background: #F9ECEA;
+    border: 1px solid #DFBFBC;
     border-radius: 5px;
     min-height: 30px;
     height: 30px;
@@ -850,7 +852,7 @@ div[data-testid="stNumberInput"] input {
     justify-content: flex-end;
     font-size: 10.5px;
     font-weight: 800;
-    color: #4A3324;
+    color: #633339;
     white-space: nowrap !important;
 }
 .ledger-amt-paid {
@@ -895,9 +897,9 @@ div[data-testid="stNumberInput"] input {
 .status-paid { background: #DCFCE7; color: #166534; border: 1px solid #86EFAC; }
 .status-partial { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
 .status-pending { background: #FEE2E2; color: #991B1B; border: 1px solid #FCA5A5; }
-.status-other { background: #F4EFE8; color: #4A3A31; border: 1px solid #DDD1C2; }
+.status-other { background: #F9ECEA; color: #633339; border: 1px solid #E2CECC; }
 
-/* Freezer Analysis Boxed Table Styling — Calm Espresso & Sand Grid */
+/* Freezer Analysis Boxed Table Styling — Dusty Rosewood Grid */
 .fa-boxed-table-wrap {
     width: 100%;
     overflow-x: auto;
@@ -908,49 +910,49 @@ div[data-testid="stNumberInput"] input {
     border-collapse: separate;
     border-spacing: 0;
     background: #FFFFFF;
-    border: 1.5px solid #4A3A31;
+    border: 1.5px solid #8A474F;
     border-radius: 11px;
     overflow: hidden;
     font-size: 12.5px;
-    box-shadow: 0 3px 10px rgba(46, 34, 29, 0.06);
+    box-shadow: 0 3px 10px rgba(142, 65, 69, 0.06);
 }
 .fa-boxed-table th {
-    background: linear-gradient(180deg, #4A3A31 0%, #382B24 100%);
-    color: #EFE5D8;
+    background: linear-gradient(180deg, #98535C 0%, #7B3A41 100%);
+    color: #FFFFFF;
     font-weight: 800;
     padding: 9px 10px;
     text-align: center;
     font-size: 11.5px;
     letter-spacing: 0.02em;
-    border-bottom: 1.5px solid #B08968;
-    border-right: 1px solid rgba(196, 178, 153, 0.25);
+    border-bottom: 1.5px solid #E6C8B8;
+    border-right: 1px solid rgba(255, 255, 255, 0.18);
 }
 .fa-boxed-table td {
     padding: 7px 10px;
-    border-bottom: 1px solid #EAE1D5;
-    border-right: 1px solid #F4EFE8;
+    border-bottom: 1px solid #F0E2E0;
+    border-right: 1px solid #F7EFEE;
     text-align: center;
     font-weight: 700;
-    color: #2E221D;
+    color: #3D1F21;
 }
 .fa-boxed-table tr:nth-child(even) td {
-    background: #FAF8F5;
+    background: #FCF8F7;
 }
 .fa-boxed-table tr:hover td {
-    background: #F5EBE0;
+    background: #F9ECEA;
 }
 .fa-boxed-table tr.fa-total-row td {
-    background: linear-gradient(90deg, #F5EBE0 0%, #EBDCCB 100%) !important;
-    border-top: 2px solid #8C583A !important;
+    background: linear-gradient(90deg, #F9ECEA 0%, #F2DDD9 100%) !important;
+    border-top: 2px solid #8A474F !important;
     border-bottom: none !important;
     font-weight: 900 !important;
-    color: #2E221D !important;
+    color: #633339 !important;
     font-size: 13px;
 }
 /* Group Box 1: Audit */
-.fa-box-audit-th { border-left: 2px solid #B08968 !important; border-right: 2px solid #B08968 !important; border-top: 2px solid #B08968 !important; background: #5C4332 !important; }
-.fa-box-audit-td { border-left: 1.5px solid #B08968 !important; border-right: 1.5px solid #B08968 !important; background: #FDFBF7 !important; }
-.fa-box-audit-tot { border-left: 2px solid #B08968 !important; border-right: 2px solid #B08968 !important; border-bottom: 2px solid #B08968 !important; }
+.fa-box-audit-th { border-left: 2px solid #D8B4B0 !important; border-right: 2px solid #D8B4B0 !important; border-top: 2px solid #D8B4B0 !important; background: #773D44 !important; }
+.fa-box-audit-td { border-left: 1.5px solid #D8B4B0 !important; border-right: 1.5px solid #D8B4B0 !important; background: #FFFDFC !important; }
+.fa-box-audit-tot { border-left: 2px solid #D8B4B0 !important; border-right: 2px solid #D8B4B0 !important; border-bottom: 2px solid #D8B4B0 !important; }
 
 /* Group Box 2: Recv & Frm Cart */
 .fa-box-in-left-th { border-left: 2px solid #15803D !important; border-top: 2px solid #15803D !important; background: #14532D !important; }
@@ -961,26 +963,26 @@ div[data-testid="stNumberInput"] input {
 .fa-box-in-right-tot { border-right: 2px solid #15803D !important; border-bottom: 2px solid #15803D !important; color: #166534 !important; }
 
 /* Group Box 3: To Cart, FZR Sale, Rem */
-.fa-box-out-left-th { border-left: 2px solid #9A5B3E !important; border-top: 2px solid #9A5B3E !important; background: #633B28 !important; }
-.fa-box-out-mid-th { border-top: 2px solid #9A5B3E !important; background: #633B28 !important; }
-.fa-box-out-right-th { border-right: 2px solid #9A5B3E !important; border-top: 2px solid #9A5B3E !important; background: #633B28 !important; }
-.fa-box-out-left-td { border-left: 1.5px solid #9A5B3E !important; background: #FFF7ED !important; }
-.fa-box-out-mid-td { background: #FFF7ED !important; color: #8C4A27 !important; font-weight: 800 !important; }
-.fa-box-out-right-td { border-right: 1.5px solid #9A5B3E !important; background: #FFF7ED !important; }
-.fa-box-out-left-tot { border-left: 2px solid #9A5B3E !important; border-bottom: 2px solid #9A5B3E !important; }
-.fa-box-out-mid-tot { border-bottom: 2px solid #9A5B3E !important; color: #8C4A27 !important; }
-.fa-box-out-right-tot { border-right: 2px solid #9A5B3E !important; border-bottom: 2px solid #9A5B3E !important; }
+.fa-box-out-left-th { border-left: 2px solid #98535C !important; border-top: 2px solid #98535C !important; background: #7B3A41 !important; }
+.fa-box-out-mid-th { border-top: 2px solid #98535C !important; background: #7B3A41 !important; }
+.fa-box-out-right-th { border-right: 2px solid #98535C !important; border-top: 2px solid #98535C !important; background: #7B3A41 !important; }
+.fa-box-out-left-td { border-left: 1.5px solid #98535C !important; background: #FFF7F5 !important; }
+.fa-box-out-mid-td { background: #FFF7F5 !important; color: #633339 !important; font-weight: 800 !important; }
+.fa-box-out-right-td { border-right: 1.5px solid #98535C !important; background: #FFF7F5 !important; }
+.fa-box-out-left-tot { border-left: 2px solid #98535C !important; border-bottom: 2px solid #98535C !important; }
+.fa-box-out-mid-tot { border-bottom: 2px solid #98535C !important; color: #633339 !important; }
+.fa-box-out-right-tot { border-right: 2px solid #98535C !important; border-bottom: 2px solid #98535C !important; }
 
 /* Group Box 4: Current */
 .fa-boxed-table th, .fa-boxed-table td { padding: 9px 14px !important; }
-.fa-box-cur-only-th { border-left: 2px solid #8C583A !important; border-right: 2px solid #8C583A !important; border-top: 2px solid #8C583A !important; background: #3E3028 !important; }
-.fa-box-cur-only-td { border-left: 1.5px solid #8C583A !important; border-right: 1.5px solid #8C583A !important; background: #FDFBF7 !important; color: #2E221D !important; font-weight: 900 !important; font-size: 13.5px !important; }
-.fa-box-cur-only-tot { border-left: 2px solid #8C583A !important; border-right: 2px solid #8C583A !important; border-bottom: 2px solid #8C583A !important; color: #2E221D !important; font-size: 14px !important; }
+.fa-box-cur-only-th { border-left: 2px solid #8A474F !important; border-right: 2px solid #8A474F !important; border-top: 2px solid #8A474F !important; background: #562C31 !important; }
+.fa-box-cur-only-td { border-left: 1.5px solid #8A474F !important; border-right: 1.5px solid #8A474F !important; background: #FFFDFC !important; color: #633339 !important; font-weight: 900 !important; font-size: 13.5px !important; }
+.fa-box-cur-only-tot { border-left: 2px solid #8A474F !important; border-right: 2px solid #8A474F !important; border-bottom: 2px solid #8A474F !important; color: #633339 !important; font-size: 14px !important; }
 
 /* Read-only Live Sold cell in Sales Entry */
 .entry-grid-cell-livesold {
-    background: #F5EBE0;
-    border: 1px solid #C4B299;
+    background: #F9ECEA;
+    border: 1px solid #D8B4B0;
     border-radius: 6px;
     height: 28px;
     display: flex;
@@ -988,7 +990,7 @@ div[data-testid="stNumberInput"] input {
     justify-content: center;
     font-size: 12px;
     font-weight: 900;
-    color: #382A22;
+    color: #633339;
 }
 
 /* Bulk Order Planner Cards */
@@ -1000,31 +1002,31 @@ div[data-testid="stNumberInput"] input {
 }
 .bulk-kpi-card {
     background: #FFFFFF;
-    border: 1px solid #DDD1C2;
-    border-top: 3px solid #4A3A31;
+    border: 1px solid #E2CECC;
+    border-top: 3px solid #8A474F;
     border-radius: 10px;
     padding: 10px 12px;
     text-align: center;
-    box-shadow: 0 2px 8px rgba(46, 34, 29, 0.05);
+    box-shadow: 0 2px 8px rgba(142, 65, 69, 0.05);
 }
 .bulk-kpi-label {
     font-size: 10.5px;
     font-weight: 800;
     text-transform: uppercase;
-    color: #6E5A4F;
+    color: #7A4B4E;
     letter-spacing: 0.03em;
 }
 .bulk-kpi-val {
     font-family: 'Fraunces', serif;
     font-size: 17px;
     font-weight: 800;
-    color: #2E221D;
+    color: #633339;
     margin-top: 3px;
 }
 .bulk-kpi-sub {
     font-size: 10.5px;
     font-weight: 700;
-    color: #8C583A;
+    color: #8A474F;
     margin-top: 2px;
 }
 
@@ -4393,7 +4395,7 @@ else:
     with cmd_c2:
         with st.popover("⇄ Switch Screen", use_container_width=True):
             st.markdown(
-                "<div style='font-family:Fraunces,serif;font-size:13.5px;font-weight:800;color:#382A22;"
+                "<div style='font-family:Fraunces,serif;font-size:13.5px;font-weight:800;color:#633339;"
                 "margin-bottom:6px;border-bottom:1.5px solid #D97706;padding-bottom:4px;'>"
                 "✨ Select Screen</div>",
                 unsafe_allow_html=True,
@@ -4412,7 +4414,7 @@ else:
     with cmd_c3:
         with st.popover(f"📍 {loc_badge}", use_container_width=True):
             st.markdown(
-                "<div style='font-family:Fraunces,serif;font-size:13.5px;font-weight:800;color:#382A22;"
+                "<div style='font-family:Fraunces,serif;font-size:13.5px;font-weight:800;color:#633339;"
                 "margin-bottom:6px;border-bottom:1.5px solid #D97706;padding-bottom:4px;'>"
                 "🌐 Operating Location</div>",
                 unsafe_allow_html=True,
@@ -13467,7 +13469,7 @@ elif page == "Dashboard" and user_role == "admin":
                             "<style>"
                             ".compact-dow-table{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:clamp(9px,.78vw,11.5px);line-height:1.35;background:#FFFEFA;border:1.5px solid #B8882D;border-radius:9px;overflow:hidden;box-shadow:0 3px 10px rgba(45,21,11,0.06)}"
                             ".compact-dow-table th,.compact-dow-table td{padding:6px 5px;border-bottom:1px solid #E5D2B0;border-right:1px solid #EFE2CA;text-align:right;overflow-wrap:anywhere;color:#2A160C;font-weight:700}"
-                            ".compact-dow-table thead th{font-weight:800;background:linear-gradient(180deg,#4A3A31 0%,#382B24 100%);color:#FCE8B2;border-bottom:2px solid #D4AF37;text-align:center}"
+                            ".compact-dow-table thead th{font-weight:800;background:linear-gradient(180deg,#98535C 0%,#7B3A41 100%);color:#FCE8B2;border-bottom:2px solid #D4AF37;text-align:center}"
                             ".compact-dow-table th:first-child{width:29%;text-align:left;padding-left:8px}"
                             ".compact-dow-table tbody tr:nth-child(even) td,.compact-dow-table tbody tr:nth-child(even) th{background:#FAF2E1}"
                             ".compact-dow-table tbody tr:first-child td,.compact-dow-table tbody tr:first-child th{font-weight:900;background:linear-gradient(90deg,#FBF0D9 0%,#F2DEC0 100%);color:#2D150B;border-bottom:1.5px solid #C89B3C}"
