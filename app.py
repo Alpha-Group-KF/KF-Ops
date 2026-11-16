@@ -43,9 +43,7 @@ st.set_page_config(page_title="Kulfi Ops", page_icon="🍦", layout="wide", init
 
 # ----------------------------------------------------------------------
 # ----------------------------------------------------------------------
-# GLOBAL UI STYLES — DEPOSITO WAREHOUSE ADMIN DASHBOARD THEME
-# (Cool Sky-Ice Backdrop #DCEEF8, Crisp White Cards #FFFFFF, Royal Indigo #1E2252,
-#  Emerald Green #059669, Warm Amber #F59E0B, Violet #6D28D9 & Sky Blue #3B82F6)
+# GLOBAL UI STYLES — DEPOSITO WAREHOUSE ADMIN DASHBOARD THEME (SINGLE-SCREEN COMPACT FIT)
 # ----------------------------------------------------------------------
 st.html("""
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -66,39 +64,42 @@ section[data-testid="stSidebar"],
     min-width: 0 !important;
 }
 
-/* Main Dashboard Shell — Crisp Cool Slate-White Framed Container */
+/* Main Dashboard Shell — Compact Single-Viewport Fit */
 .block-container,
 div[data-testid="stMainBlockContainer"] {
     background: linear-gradient(180deg, #F4F7FB 0%, #EDF2F8 100%) !important;
     border: 1.5px solid #FFFFFF !important;
     outline: 1px solid rgba(30, 34, 82, 0.08) !important;
-    border-radius: 20px !important;
+    border-radius: 18px !important;
     box-shadow:
         inset 0 1px 0 #FFFFFF,
-        0 20px 48px rgba(23, 27, 66, 0.14) !important;
-    padding-top: 1.1rem !important;
-    padding-bottom: 1.5rem !important;
-    padding-left: 1.45rem !important;
-    padding-right: 1.45rem !important;
-    margin-top: 1.1rem !important;
-    margin-bottom: 1.5rem !important;
+        0 14px 36px rgba(23, 27, 66, 0.12) !important;
+    padding-top: 0.55rem !important;
+    padding-bottom: 0.65rem !important;
+    padding-left: 1.15rem !important;
+    padding-right: 1.15rem !important;
+    margin-top: 0.35rem !important;
+    margin-bottom: 0.45rem !important;
     margin-left: auto !important;
     margin-right: auto !important;
-    width: 90% !important;
-    max-width: 1320px !important;
+    width: 95% !important;
+    max-width: 1420px !important;
 }
 @media (max-width: 992px) {
     .block-container,
     div[data-testid="stMainBlockContainer"] {
-        width: 97% !important;
-        max-width: 97% !important;
-        padding-left: 0.9rem !important;
-        padding-right: 0.9rem !important;
+        width: 98% !important;
+        max-width: 98% !important;
+        padding-left: 0.7rem !important;
+        padding-right: 0.7rem !important;
     }
 }
 header[data-testid="stHeader"] {
     background-color: transparent !important;
-    height: 1.2rem !important;
+    height: 0.35rem !important;
+}
+div[data-testid="stVerticalBlock"] {
+    gap: 0.35rem !important;
 }
 html, body, [class*="css"] {
     font-family: 'Plus Jakarta Sans', 'Manrope', sans-serif;
@@ -111,9 +112,9 @@ h1, h2, h3, h4 {
     letter-spacing: -0.015em;
     font-weight: 800 !important;
 }
-h1 { font-size: 1.38rem !important; margin-top: 0 !important; }
-h2 { font-size: 1.16rem !important; }
-h3 { font-size: 1.02rem !important; }
+h1 { font-size: 1.28rem !important; margin-top: 0 !important; }
+h2 { font-size: 1.10rem !important; }
+h3 { font-size: 0.98rem !important; }
 p, span, label, .stMarkdown { color: #0F172A; }
 
 /* Hide stepper buttons on number inputs */
@@ -129,20 +130,20 @@ div[data-testid="stNumberInput"] button { display: none !important; }
 div[data-testid="stVerticalBlockBorderWrapper"] {
     background: #FFFFFF !important;
     border: 1px solid #E2E8F0 !important;
-    border-radius: 14px !important;
-    box-shadow: 0 4px 16px rgba(30, 34, 82, 0.05) !important;
-    padding: 12px 14px !important;
+    border-radius: 12px !important;
+    box-shadow: 0 3px 12px rgba(30, 34, 82, 0.04) !important;
+    padding: 8px 11px !important;
 }
 div[data-testid="stExpander"] {
     background: #FFFFFF !important;
     border: 1px solid #CBD5E1 !important;
-    border-radius: 12px !important;
-    box-shadow: 0 3px 10px rgba(30, 34, 82, 0.05) !important;
+    border-radius: 10px !important;
+    box-shadow: 0 2px 8px rgba(30, 34, 82, 0.04) !important;
     overflow: hidden;
 }
 div[data-testid="stExpander"] summary {
     background: linear-gradient(90deg, #EFF6FF 0%, #E0E7FF 100%) !important;
-    padding: 8px 14px !important;
+    padding: 6px 12px !important;
     font-weight: 800 !important;
     color: #1E2252 !important;
     border-bottom: 1px solid #CBD5E1 !important;
@@ -155,17 +156,17 @@ div[data-testid="stExpander"] summary svg {
     font-weight: 800 !important;
 }
 div[data-testid="stTabs"] [data-baseweb="tab-list"] {
-    gap: 8px !important;
+    gap: 6px !important;
     background: #E2E8F0 !important;
-    padding: 5px 6px !important;
-    border-radius: 10px !important;
+    padding: 4px 5px !important;
+    border-radius: 9px !important;
     border: 1px solid #CBD5E1 !important;
 }
 div[data-testid="stTabs"] button[data-baseweb="tab"] {
     background: #FFFFFF !important;
     border: 1px solid #CBD5E1 !important;
-    border-radius: 8px !important;
-    padding: 6px 14px !important;
+    border-radius: 7px !important;
+    padding: 5px 12px !important;
     font-weight: 700 !important;
     color: #334155 !important;
     transition: all 0.14s ease !important;
@@ -175,27 +176,27 @@ div[data-testid="stTabs"] button[data-baseweb="tab"] p {
     font-weight: 700 !important;
 }
 div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] {
-    background: linear-gradient(135deg, #1E2252 0%, #2D337A 100%) !important;
-    color: #FFFFFF !important;
-    border-color: #1E2252 !important;
-    box-shadow: 0 3px 10px rgba(30, 34, 82, 0.22) !important;
+    background: linear-gradient(135deg, #DBEAFE 0%, #93C5FD 100%) !important;
+    color: #111111 !important;
+    border-color: #2563EB !important;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.18) !important;
 }
 div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] p {
-    color: #FFFFFF !important;
+    color: #111111 !important;
     font-weight: 800 !important;
 }
 
 /* ======================================================================
-   UNIFIED TOP HEADER BAR — CRISP WHITE DEPOSITO UTILITY BAR WITH COMPRESSED SQUARE LOGO
+   UNIFIED TOP HEADER BAR — COMPACT CRISP WHITE BAR WITH TOP-LEFT SQUARE LOGO
    ====================================================================== */
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) {
     background: #FFFFFF !important;
     border: 1px solid #E2E8F0 !important;
-    border-radius: 14px !important;
-    padding: 8px 14px !important;
-    margin-bottom: 12px !important;
+    border-radius: 12px !important;
+    padding: 5px 12px !important;
+    margin-bottom: 4px !important;
     align-items: center !important;
-    box-shadow: 0 4px 16px rgba(30, 34, 82, 0.06) !important;
+    box-shadow: 0 3px 12px rgba(30, 34, 82, 0.05) !important;
 }
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stElementContainer"]:has(.kulfi-pop-spacer) {
     display: none !important;
@@ -222,44 +223,44 @@ div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid=
 .kulfi-cmd-left {
     display: flex !important;
     align-items: center !important;
-    gap: 12px !important;
+    gap: 10px !important;
     flex-wrap: nowrap !important;
     margin: 0 !important;
     padding: 0 2px !important;
-    min-height: 44px !important;
+    min-height: 36px !important;
 }
 .kulfi-cmd-logo-sq {
-    width: 42px;
-    height: 42px;
-    border-radius: 10px;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
     background: linear-gradient(145deg, #FFFFFF 0%, #F1F5F9 100%);
     border: 1.5px solid #CBD5E1;
-    box-shadow: 0 2px 8px rgba(30, 34, 82, 0.12);
+    box-shadow: 0 2px 6px rgba(30, 34, 82, 0.10);
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
     flex-shrink: 0;
-    padding: 2px;
+    padding: 1.5px;
 }
 .kulfi-cmd-logo-sq img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    border-radius: 7px;
+    border-radius: 6px;
     display: block;
 }
 .kulfi-cmd-crest {
-    width: 42px;
-    height: 42px;
-    border-radius: 10px;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
     background: linear-gradient(135deg, #1E2252 0%, #3B82F6 100%);
     border: 1.5px solid #1E2252;
-    box-shadow: 0 2px 8px rgba(30, 34, 82, 0.16);
+    box-shadow: 0 2px 6px rgba(30, 34, 82, 0.14);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 20px;
+    font-size: 18px;
     color: #FFFFFF;
     flex-shrink: 0;
     margin: 0 !important;
@@ -274,54 +275,54 @@ div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid=
 .kulfi-cmd-title-row {
     display: flex !important;
     align-items: center !important;
-    gap: 10px !important;
+    gap: 8px !important;
 }
 .kulfi-cmd-title {
     font-family: 'Plus Jakarta Sans', sans-serif !important;
-    font-size: 1.08rem !important;
+    font-size: 0.98rem !important;
     font-weight: 800 !important;
-    color: #1E2252 !important;
+    color: #111111 !important;
     letter-spacing: -0.01em;
-    line-height: 1.15 !important;
+    line-height: 1.1 !important;
     margin: 0 !important;
     padding: 0 !important;
     white-space: nowrap;
 }
 .kulfi-cmd-sub {
-    font-size: 11px !important;
+    font-size: 10px !important;
     font-weight: 700 !important;
-    color: #64748B !important;
-    letter-spacing: 0.02em;
-    line-height: 1.2 !important;
-    margin: 2px 0 0 0 !important;
+    color: #475569 !important;
+    letter-spacing: 0.01em;
+    line-height: 1.15 !important;
+    margin: 1px 0 0 0 !important;
     padding: 0 !important;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
 }
 .kulfi-top-pill {
     background: #EFF6FF;
-    color: #2563EB;
+    color: #1D4ED8;
     border: 1px solid #BFDBFE;
-    padding: 1px 8px;
+    padding: 0px 6px;
     border-radius: 999px;
-    font-size: 10.5px;
-    font-weight: 700;
+    font-size: 9.5px;
+    font-weight: 800;
 }
 
 /* Top Command Bar Buttons */
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton button,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button {
-    min-height: 36px !important;
-    height: 36px !important;
-    padding: 0 12px !important;
-    font-size: 12px !important;
+    min-height: 32px !important;
+    height: 32px !important;
+    padding: 0 10px !important;
+    font-size: 11.5px !important;
     font-weight: 700 !important;
-    border-radius: 9px !important;
+    border-radius: 8px !important;
     border: 1px solid #CBD5E1 !important;
     background: #F8FAFC !important;
-    color: #1E2252 !important;
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05) !important;
+    color: #111111 !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -333,23 +334,23 @@ div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton but
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button p,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button span,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button svg {
-    color: #1E2252 !important;
-    fill: #1E2252 !important;
+    color: #111111 !important;
+    fill: #111111 !important;
     font-weight: 700 !important;
-    font-size: 12px !important;
+    font-size: 11.5px !important;
 }
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton button:hover,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button:hover {
     background: #EFF6FF !important;
     border-color: #3B82F6 !important;
-    color: #1D4ED8 !important;
+    color: #111111 !important;
     transform: translateY(-1px) !important;
 }
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton button[kind="primary"] {
     background: linear-gradient(135deg, #DBEAFE 0%, #93C5FD 100%) !important;
     border: 1.5px solid #2563EB !important;
     color: #111111 !important;
-    box-shadow: 0 3px 10px rgba(37, 99, 235, 0.16) !important;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.16) !important;
 }
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton button[kind="primary"] p,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton button[kind="primary"] span {
@@ -358,14 +359,14 @@ div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton but
 }
 
 /* ======================================================================
-   DEPOSITO RIGHT-HAND NAVIGATION DOCK (CRISP BLACK TEXT #111111 FOR FULL VISIBILITY)
+   DEPOSITO RIGHT-HAND 2-COLUMN SQUARE TILE NAVIGATION DOCK (BLACK TEXT #111111)
    ====================================================================== */
 div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) {
     background: linear-gradient(180deg, #E0E7FF 0%, #DBEAFE 55%, #EFF6FF 100%) !important;
     border: 1.5px solid #93C5FD !important;
-    border-radius: 16px !important;
-    padding: 14px 12px !important;
-    box-shadow: 0 8px 24px rgba(30, 34, 82, 0.10) !important;
+    border-radius: 14px !important;
+    padding: 8px 9px !important;
+    box-shadow: 0 6px 18px rgba(30, 34, 82, 0.08) !important;
 }
 div[data-testid="stElementContainer"]:has(.deposito-nav-dock-marker) {
     display: none !important;
@@ -377,18 +378,20 @@ div[class*="st-key-deposito_dock_btn_"] button {
     background: #FFFFFF !important;
     border: 1px solid #CBD5E1 !important;
     border-radius: 10px !important;
-    min-height: 36px !important;
-    height: 36px !important;
-    padding: 0 12px !important;
+    min-height: 50px !important;
+    height: 50px !important;
+    padding: 4px 6px !important;
     width: 100% !important;
     display: flex !important;
     align-items: center !important;
-    justify-content: flex-start !important;
-    text-align: left !important;
+    justify-content: center !important;
+    text-align: center !important;
     color: #111111 !important;
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05) !important;
-    margin-bottom: 3px !important;
-    transition: all 0.14s ease !important;
+    box-shadow: 0 2px 5px rgba(15, 23, 42, 0.05) !important;
+    margin-bottom: 2px !important;
+    white-space: normal !important;
+    line-height: 1.15 !important;
+    transition: all 0.12s ease !important;
 }
 div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) .stButton button p,
 div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) .stButton button span,
@@ -397,27 +400,24 @@ div[class*="st-key-deposito_dock_btn_"] button p,
 div[class*="st-key-deposito_dock_btn_"] button span,
 div[class*="st-key-deposito_dock_btn_"] button strong {
     color: #111111 !important;
-    font-size: 12px !important;
-    font-weight: 700 !important;
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    line-height: 1.15 !important;
+    text-align: center !important;
+    white-space: normal !important;
 }
 div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) .stButton button:hover,
 div[class*="st-key-deposito_dock_btn_"] button:hover {
     background: #DBEAFE !important;
-    border-color: #3B82F6 !important;
-    transform: translateX(2px) !important;
-}
-div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) .stButton button:hover p,
-div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) .stButton button:hover span,
-div[class*="st-key-deposito_dock_btn_"] button:hover p,
-div[class*="st-key-deposito_dock_btn_"] button:hover span {
-    color: #111111 !important;
+    border-color: #2563EB !important;
+    transform: translateY(-1px) !important;
 }
 div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) .stButton button[kind="primary"],
 div[class*="st-key-deposito_dock_btn_"] button[kind="primary"] {
     background: linear-gradient(135deg, #FCD34D 0%, #FBBF24 100%) !important;
     border: 1.5px solid #D97706 !important;
     color: #111111 !important;
-    box-shadow: 0 3px 10px rgba(217, 119, 6, 0.20) !important;
+    box-shadow: 0 3px 8px rgba(217, 119, 6, 0.22) !important;
 }
 div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) .stButton button[kind="primary"] p,
 div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) .stButton button[kind="primary"] span,
@@ -429,22 +429,22 @@ div[class*="st-key-deposito_dock_btn_"] button[kind="primary"] strong {
     font-weight: 900 !important;
 }
 .deposito-dock-sec-lbl {
-    font-size: 10.5px;
+    font-size: 9.5px;
     font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.06em;
     color: #111111;
-    margin: 9px 0 4px 4px;
+    margin: 4px 0 2px 2px;
 }
 
 /* ======================================================================
-   DEPOSITO LANDING PAGE STACKED CARDS & WIDGETS
+   DEPOSITO LANDING PAGE STACKED CARDS & WIDGETS (COMPACT SINGLE-SCREEN FIT)
    ====================================================================== */
 .deposito-kpi-strip {
     display: grid;
-    grid-template-columns: 1.05fr 1.15fr 1.55fr 1.55fr 1.15fr;
-    gap: 10px;
-    margin-bottom: 12px;
+    grid-template-columns: 0.95fr 1.15fr 1.45fr 1.50fr 1.25fr;
+    gap: 8px;
+    margin-bottom: 6px;
 }
 @media (max-width: 1100px) {
     .deposito-kpi-strip {
@@ -454,40 +454,40 @@ div[class*="st-key-deposito_dock_btn_"] button[kind="primary"] strong {
 .dep-kpi-card {
     background: #FFFFFF;
     border: 1px solid #E2E8F0;
-    border-radius: 13px;
-    padding: 12px 14px;
-    box-shadow: 0 4px 14px rgba(30, 34, 82, 0.05);
+    border-radius: 11px;
+    padding: 7px 10px;
+    box-shadow: 0 2px 8px rgba(30, 34, 82, 0.04);
     display: flex;
     flex-direction: column;
     justify-content: center;
-    min-height: 82px;
+    min-height: 58px;
 }
 .dep-kpi-dual {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    gap: 6px;
     align-items: center;
 }
 .dep-kpi-dual > div:first-child {
     border-right: 1px solid #E2E8F0;
-    padding-right: 8px;
+    padding-right: 6px;
 }
 .dep-kpi-dual > div:last-child {
-    padding-left: 6px;
+    padding-left: 4px;
 }
 .dep-kpi-num {
     font-family: 'Plus Jakarta Sans', sans-serif;
-    font-size: 1.26rem;
+    font-size: 1.06rem;
     font-weight: 800;
     color: #0F172A;
-    line-height: 1.15;
+    line-height: 1.12;
     white-space: nowrap;
 }
 .dep-kpi-lbl {
-    font-size: 11px;
-    font-weight: 600;
+    font-size: 10px;
+    font-weight: 700;
     color: #64748B;
-    margin-top: 3px;
+    margin-top: 2px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -495,85 +495,87 @@ div[class*="st-key-deposito_dock_btn_"] button[kind="primary"] strong {
 .dep-time-pill {
     display: inline-block;
     background: #DBEAFE;
-    color: #2563EB;
-    font-size: 11px;
-    font-weight: 700;
-    padding: 4px 10px;
-    border-radius: 7px;
-    margin-top: 5px;
+    color: #1D4ED8;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 6px;
+    margin-top: 3px;
     text-align: center;
 }
 
-/* Emerald Green "Section 5 usage" Freezer Utilization Card */
+/* Emerald Green Capacity Utilization Card (Compact 218px height) */
 .dep-emerald-card {
     background: linear-gradient(160deg, #059669 0%, #047857 60%, #065F46 100%);
-    border-radius: 15px;
-    padding: 16px 16px 14px 16px;
+    border-radius: 13px;
+    padding: 10px 12px 9px 12px;
     color: #FFFFFF;
-    box-shadow: 0 8px 22px rgba(4, 120, 87, 0.22);
+    box-shadow: 0 6px 16px rgba(4, 120, 87, 0.18);
     position: relative;
-    min-height: 325px;
+    min-height: 222px;
+    height: 222px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
 }
 .dep-emerald-hdr {
     text-align: right;
-    font-size: 13px;
-    font-weight: 700;
+    font-size: 11.5px;
+    font-weight: 800;
     color: #ECFDF5;
     letter-spacing: 0.01em;
 }
 .dep-emerald-float-strip {
     position: absolute;
     left: 0;
-    top: 52%;
+    top: 48%;
     transform: translateY(-50%);
     background: #FFFFFF;
-    border-radius: 0 9px 9px 0;
-    padding: 6px 5px;
+    border-radius: 0 7px 7px 0;
+    padding: 4px 4px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    box-shadow: 2px 4px 12px rgba(0, 0, 0, 0.15);
+    gap: 4px;
+    box-shadow: 2px 3px 8px rgba(0, 0, 0, 0.14);
 }
 .dep-emerald-float-dot {
-    width: 18px;
-    height: 18px;
-    border-radius: 5px;
+    width: 15px;
+    height: 15px;
+    border-radius: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 10px;
+    font-size: 9px;
 }
 .dep-emerald-footer {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    gap: 6px;
     border-top: 1px solid rgba(255, 255, 255, 0.18);
-    padding-top: 10px;
+    padding-top: 6px;
     text-align: center;
 }
 .dep-emerald-ft-lbl {
-    font-size: 10.5px;
+    font-size: 9.5px;
     color: #A7F3D0;
-    font-weight: 600;
+    font-weight: 700;
 }
 .dep-emerald-ft-val {
-    font-size: 13.5px;
+    font-size: 11.5px;
     color: #FFFFFF;
     font-weight: 800;
     margin-top: 1px;
 }
 
-/* White "Section Overview" Stock Slot Matrix Card */
+/* White "Section Overview" 10-Day Sales Matrix Card (Compact 222px height) */
 .dep-matrix-card {
     background: #FFFFFF;
     border: 1px solid #E2E8F0;
-    border-radius: 15px;
-    padding: 14px 16px;
-    box-shadow: 0 4px 16px rgba(30, 34, 82, 0.05);
-    min-height: 325px;
+    border-radius: 13px;
+    padding: 9px 12px 7px 12px;
+    box-shadow: 0 3px 12px rgba(30, 34, 82, 0.04);
+    min-height: 222px;
+    height: 222px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -583,97 +585,55 @@ div[class*="st-key-deposito_dock_btn_"] button[kind="primary"] strong {
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid #F1F5F9;
-    padding-bottom: 8px;
-    margin-bottom: 8px;
+    padding-bottom: 4px;
+    margin-bottom: 4px;
 }
 .dep-date-badge {
     background: #F1F5F9;
     color: #334155;
-    font-size: 11px;
-    font-weight: 700;
-    padding: 4px 10px;
-    border-radius: 7px;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 6px;
     border: 1px solid #E2E8F0;
 }
-.dep-slot-row {
-    display: grid;
-    grid-template-columns: 112px repeat(9, 1fr);
-    gap: 6px;
-    align-items: center;
-    margin-bottom: 6px;
-}
 .dep-slot-row-lbl {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 800;
     color: #1E2252;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.dep-slot-tile {
-    height: 36px;
-    border-radius: 7px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    line-height: 1.05;
-    transition: transform 0.12s ease;
-}
-.dep-slot-tile.loaded {
-    background: linear-gradient(180deg, #FCD34D 0%, #FBBF24 100%);
-    color: #1E2252;
-    border: 1px solid #F59E0B;
-    box-shadow: 0 2px 5px rgba(245, 158, 11, 0.18);
-}
-.dep-slot-tile.low {
-    background: #FEF3C7;
-    color: #78350F;
-    border: 1px solid #FDE68A;
-}
-.dep-slot-tile.empty {
-    background: #FFFBEB;
-    color: #94A3B8;
-    border: 1px dashed #FDE68A;
-}
-.dep-slot-code {
-    font-size: 9px;
-    font-weight: 800;
-    opacity: 0.85;
-}
-.dep-slot-qty {
-    font-size: 11px;
-    font-weight: 900;
-}
 /* 10-Day Sales Matrix Grid (Center Section Overview Card) */
 .dep-sales10-row {
     display: grid;
-    grid-template-columns: 118px repeat(10, minmax(0, 1fr));
-    gap: 5px;
+    grid-template-columns: 110px repeat(10, minmax(0, 1fr));
+    gap: 4px;
     align-items: center;
-    margin-bottom: 5px;
+    margin-bottom: 3px;
 }
 .dep-sales10-hdr-cell {
-    font-size: 9.5px;
+    font-size: 8.8px;
     font-weight: 800;
     color: #475569;
     text-align: center;
     background: #F1F5F9;
     border: 1px solid #E2E8F0;
-    border-radius: 5px;
-    padding: 3px 2px;
+    border-radius: 4px;
+    padding: 2px 1px;
     white-space: nowrap;
 }
 .dep-sales10-tile {
-    height: 34px;
-    border-radius: 7px;
+    height: 21px;
+    border-radius: 5px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    line-height: 1.05;
-    padding: 2px;
-    font-size: 10px;
+    line-height: 1;
+    padding: 1px;
+    font-size: 9.2px;
     font-weight: 800;
     white-space: nowrap;
     overflow: hidden;
@@ -683,8 +643,7 @@ div[class*="st-key-deposito_dock_btn_"] button[kind="primary"] strong {
 .dep-sales10-tile.total-row {
     background: linear-gradient(180deg, #A7F3D0 0%, #6EE7B7 100%);
     color: #064E3B;
-    border: 1.5px solid #059669;
-    box-shadow: 0 2px 5px rgba(5, 150, 105, 0.16);
+    border: 1px solid #059669;
     font-weight: 900;
 }
 /* Individual Cart Sales Rows — Deposito Amber / Soft Cream Tiles */
@@ -718,46 +677,47 @@ div[class*="st-key-deposito_dock_btn_"] button[kind="primary"] strong {
     font-weight: 800;
 }
 
-/* Bottom 3 Analytical Cards */
+/* Bottom 3 Analytical Cards (Compact 154px height) */
 .dep-bottom-card {
     background: #FFFFFF;
     border: 1px solid #E2E8F0;
-    border-radius: 15px;
-    padding: 14px 16px;
-    box-shadow: 0 4px 16px rgba(30, 34, 82, 0.05);
-    min-height: 238px;
+    border-radius: 13px;
+    padding: 8px 12px;
+    box-shadow: 0 3px 12px rgba(30, 34, 82, 0.04);
+    min-height: 154px;
+    height: 154px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
 }
 .dep-bottom-hdr {
-    font-size: 12.5px;
+    font-size: 11px;
     font-weight: 800;
     color: #1E2252;
     text-align: right;
     border-bottom: 1px solid #F1F5F9;
-    padding-bottom: 6px;
-    margin-bottom: 8px;
+    padding-bottom: 3px;
+    margin-bottom: 4px;
 }
 
 /* ======================================================================
-   LAUNCHPAD SECTION HEADERS & CLICKABLE ACTION CARDS
+   LAUNCHPAD SECTION HEADERS & QUICK ENTRY PANEL BUTTONS (COMPACT)
    ====================================================================== */
 .launchpad-section-hdr {
     font-family: 'Plus Jakarta Sans', sans-serif !important;
-    font-size: 12px !important;
+    font-size: 10.5px !important;
     font-weight: 800 !important;
     color: #1E2252 !important;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    margin: 0 0 8px 0 !important;
-    padding: 5px 10px;
+    margin: 0 0 4px 0 !important;
+    padding: 3px 8px;
     background: linear-gradient(90deg, #EFF6FF 0%, #F8FAFC 100%);
-    border-left: 4px solid #3B82F6;
-    border-radius: 5px;
+    border-left: 3.5px solid #3B82F6;
+    border-radius: 4px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
 }
 div[data-testid="stElementContainer"]:has(.kulfi-clickable-card-grid),
 div[data-testid="stElementContainer"]:has(.kulfi-card-set-1),
@@ -774,36 +734,35 @@ div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kul
 div[data-testid="stHorizontalBlock"]:has(.kulfi-clickable-card-grid) .stButton button {
     background: linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%) !important;
     border: 1.5px solid #CBD5E1 !important;
-    border-left: 4.5px solid #3B82F6 !important;
-    border-radius: 11px !important;
-    padding: 10px 14px !important;
-    min-height: 50px !important;
-    height: 50px !important;
+    border-left: 4px solid #3B82F6 !important;
+    border-radius: 9px !important;
+    padding: 4px 10px !important;
+    min-height: 36px !important;
+    height: 36px !important;
     width: 100% !important;
     display: flex !important;
     align-items: center !important;
     justify-content: flex-start !important;
     text-align: left !important;
     white-space: nowrap !important;
-    box-shadow: 0 2px 8px rgba(30, 34, 82, 0.06) !important;
-    transition: all 0.14s ease !important;
-    margin-bottom: 4px !important;
+    box-shadow: 0 1px 4px rgba(30, 34, 82, 0.05) !important;
+    transition: all 0.12s ease !important;
+    margin-bottom: 0px !important;
     cursor: pointer !important;
 }
 div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button:hover,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-clickable-card-grid) .stButton button:hover {
     background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%) !important;
     border-color: #3B82F6 !important;
-    border-left: 4.5px solid #1E2252 !important;
+    border-left: 4px solid #1E2252 !important;
     transform: translateY(-1px) !important;
-    box-shadow: 0 5px 14px rgba(37, 99, 235, 0.14) !important;
 }
 div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button p,
 div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button p strong {
     font-family: 'Plus Jakarta Sans', sans-serif !important;
-    font-size: 13px !important;
+    font-size: 11.5px !important;
     font-weight: 800 !important;
-    color: #1E2252 !important;
+    color: #111111 !important;
     margin: 0 !important;
 }
 
@@ -816,21 +775,21 @@ div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kul
 [data-testid="stLinkButton"] > a,
 [data-testid="stPopover"] > div > button {
     background: linear-gradient(180deg, #FFFFFF 0%, #F1F5F9 100%) !important;
-    color: #1E2252 !important;
+    color: #111111 !important;
     border: 1.5px solid #CBD5E1 !important;
-    border-radius: 9px !important;
+    border-radius: 8px !important;
     font-weight: 700 !important;
-    font-size: 12.5px !important;
-    min-height: 38px !important;
-    height: 38px !important;
-    padding: 0 13px !important;
+    font-size: 12px !important;
+    min-height: 36px !important;
+    height: 36px !important;
+    padding: 0 12px !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
     box-sizing: border-box !important;
     margin: 0 !important;
     text-decoration: none !important;
-    box-shadow: 0 2px 5px rgba(15, 23, 42, 0.06) !important;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.05) !important;
     transition: all 0.12s ease !important;
 }
 .stButton button p,
@@ -844,7 +803,7 @@ div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kul
 [data-testid="stLinkButton"] > a span,
 [data-testid="stPopover"] > div > button p,
 [data-testid="stPopover"] > div > button span {
-    color: #1E2252 !important;
+    color: #111111 !important;
     font-weight: 700 !important;
 }
 .stButton button:hover,
@@ -854,12 +813,11 @@ div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kul
 [data-testid="stPopover"] > div > button:hover {
     background: linear-gradient(180deg, #EFF6FF 0%, #DBEAFE 100%) !important;
     border-color: #3B82F6 !important;
-    color: #1E2252 !important;
+    color: #111111 !important;
     transform: translateY(-1px) !important;
-    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.14) !important;
 }
 
-/* Primary Action Buttons (Sky-Blue / Amber with High-Contrast Black #111111 Text) */
+/* Primary Action Buttons (Sky-Blue with High-Contrast Black #111111 Text) */
 .stButton button[kind="primary"],
 [data-testid="stFormSubmitButton"] > button[kind="primary"],
 .stDownloadButton > button[kind="primary"],
@@ -867,7 +825,7 @@ div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kul
     background: linear-gradient(135deg, #93C5FD 0%, #60A5FA 100%) !important;
     color: #111111 !important;
     border: 1.5px solid #2563EB !important;
-    box-shadow: 0 3px 10px rgba(37, 99, 235, 0.18) !important;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.18) !important;
 }
 .stButton button[kind="primary"] p,
 .stButton button[kind="primary"] span,
@@ -909,7 +867,7 @@ div[class*="st-key-row_del_"] button {
     border-radius: 6px !important;
     border: 1px solid #93C5FD !important;
     background: linear-gradient(180deg, #EFF6FF 0%, #DBEAFE 100%) !important;
-    color: #1E2252 !important;
+    color: #111111 !important;
     box-shadow: 0 1px 3px rgba(30, 34, 82, 0.10) !important;
     display: inline-flex !important;
     align-items: center !important;
@@ -926,7 +884,7 @@ div[class*="st-key-row_del_"] button p {
     line-height: 1 !important;
     margin: 0 !important;
     padding: 0 !important;
-    color: #1E2252 !important;
+    color: #111111 !important;
     overflow: visible !important;
     white-space: nowrap !important;
 }
@@ -945,7 +903,7 @@ div[class*="st-key-row_del_"] button {
     color: #FFFFFF !important;
     border: 1px solid #1E2252;
     border-radius: 10px;
-    padding: 9px 14px;
+    padding: 8px 13px;
     font-weight: 800;
     font-size: 13px;
     margin-bottom: 8px;
@@ -962,7 +920,7 @@ div[class*="st-key-row_del_"] button {
     color: #FFFFFF !important;
     border: 1px solid #047857;
     border-radius: 10px;
-    padding: 9px 14px;
+    padding: 8px 13px;
     font-weight: 800;
     font-size: 13px;
     margin-bottom: 8px;
@@ -1060,8 +1018,8 @@ div[data-testid="stMetric"] {
     border: 1px solid #E2E8F0 !important;
     border-top: 3.5px solid #3B82F6 !important;
     border-radius: 12px !important;
-    padding: 10px 12px !important;
-    box-shadow: 0 4px 12px rgba(30, 34, 82, 0.05) !important;
+    padding: 9px 11px !important;
+    box-shadow: 0 3px 10px rgba(30, 34, 82, 0.04) !important;
     height: 100%;
 }
 div[data-testid="stMetricLabel"], 
@@ -1080,14 +1038,14 @@ div[data-testid="stMetricLabel"] span {
 }
 div[data-testid="stMetricLabel"] {
     height: auto !important;
-    min-height: 24px;
+    min-height: 22px;
 }
 div[data-testid="stMetricValue"] { 
     font-family: 'Plus Jakarta Sans', sans-serif; 
-    font-size: 1.18rem !important; 
+    font-size: 1.15rem !important; 
     font-weight: 800 !important;
     color: #1E2252 !important; 
-    margin-top: 3px;
+    margin-top: 2px;
 }
 
 /* Data Grids & Tables Across the Entire App */
@@ -1147,7 +1105,7 @@ div[data-testid="stDataFrame"] td, div[data-testid="stDataEditor"] td {
     background: #EFF6FF !important;
 }
 
-hr { border-color: #CBD5E1 !important; opacity: 0.65 !important; margin: 0.45rem 0 !important; }
+hr { border-color: #CBD5E1 !important; opacity: 0.65 !important; margin: 0.35rem 0 !important; }
 
 div[data-testid="stNumberInput"] div[data-baseweb="input"] {
     border: 1.5px solid #93C5FD !important;
@@ -4795,7 +4753,7 @@ if not check_login(): st.stop()
 # NAVIGATION & ROLE CONFIG — DEPOSITO WHITE HEADER BAR WITH TOP-LEFT SQUARE LOGO
 # ----------------------------------------------------------------------
 user_role = st.session_state.get("user_role", "admin")
-_top_left_logo_html = get_top_left_square_logo_html(42)
+_top_left_logo_html = get_top_left_square_logo_html(36)
 
 if user_role == "entry":
     st.session_state["current_location"] = st.session_state.get("assigned_location", "HOSUR")
@@ -4982,7 +4940,7 @@ if page == "Home" and user_role == "admin":
     # Filter out any test cart (e.g. "test cart") from landing page carts
     REAL_CARTS_HOME = [c for c in CARTS if "test" not in str(c).strip().lower()]
     if not REAL_CARTS_HOME:
-        REAL_CARTS_HOME = list(CARTS)
+        REAL_CARTS_HOME = [c for c in CARTS]
 
     try:
         home_daily_df = load_db_daily_df()
@@ -4999,22 +4957,23 @@ if page == "Home" and user_role == "admin":
             period_df_home = home_daily_df[(home_daily_df["Date"].dt.date >= period_start_home) & (home_daily_df["Date"].dt.date <= today_home)]
             period_badge_lbl = "Last 30 Days"
             period_short_lbl = "30d"
+            avg_divisor_home = max(1, int(period_df_home["Date"].dt.date.nunique()))
         else:
             period_start_home = mtd_start
             period_df_home = mtd_df
             period_badge_lbl = f"{today_home.strftime('%b %Y')} (MTD)"
             period_short_lbl = "MTD"
+            avg_divisor_home = max(1, (today_home - mtd_start).days)
     else:
         period_start_home = mtd_start
         period_df_home = pd.DataFrame()
         period_badge_lbl = f"{today_home.strftime('%b %Y')} (MTD)"
         period_short_lbl = "MTD"
+        avg_divisor_home = max(1, (today_home - mtd_start).days)
 
     period_rev_home = float(period_df_home["Total_Collection"].sum()) if not period_df_home.empty else 0.0
     period_units_home = int(round(period_df_home["Sold_Total"].sum())) if not period_df_home.empty else 0
-    period_shifts_home = int(len(period_df_home[period_df_home["Total_Collection"] > 0])) if not period_df_home.empty else 0
-    active_days_home = max(1, int(period_df_home["Date"].dt.date.nunique())) if not period_df_home.empty else 1
-    avg_daily_rev_home = period_rev_home / float(active_days_home)
+    avg_daily_rev_home = period_rev_home / float(avg_divisor_home) if avg_divisor_home > 0 else 0.0
 
     yest_df_home = home_daily_df[home_daily_df["Date"].dt.date == yesterday_home] if not home_daily_df.empty else pd.DataFrame()
     yest_rev_home = float(yest_df_home["Total_Collection"].sum()) if not yest_df_home.empty else 0.0
@@ -5081,37 +5040,14 @@ if page == "Home" and user_role == "admin":
         except Exception:
             pass
 
-    # Cash Custody summary for KPI Card 5
-    ops_cash_home, yogesh_cash_home = 0.0, 0.0
-    if db_conn is not None:
-        try:
-            cust_df_h = db_conn.query(
-                """
-                SELECT current_holder, COALESCE(SUM(cash_amount), 0) AS total_cash
-                FROM public.v_cash_custody_status
-                WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(city, 'HOSUR'))) = :active_loc)
-                GROUP BY current_holder;
-                """,
-                params={"active_loc": get_active_location_filter()},
-                ttl="0s",
-            )
-            for _, _hr in cust_df_h.iterrows():
-                _hname = str(_hr.get("current_holder") or "").strip().upper()
-                if _hname == "OPS_COORDINATOR":
-                    ops_cash_home = float(_hr.get("total_cash") or 0.0)
-                elif _hname == "YOGESH":
-                    yogesh_cash_home = float(_hr.get("total_cash") or 0.0)
-        except Exception:
-            pass
-    unhanded_cash_home = ops_cash_home + yogesh_cash_home
-
-    # Flavour-wise sales for Period (Best Sellers & Inventory Stock Chart)
+    # Flavour-wise sales & COGS for Period + Net Margin calculation for KPI Card 5
     try:
         flv_period_df = load_db_flavor_sales(start_date=period_start_home, end_date=today_home)
     except Exception:
         flv_period_df = pd.DataFrame()
     sold_period_by_code = {c: 0 for c in FLAVOR_CODES}
     rev_period_by_code = {c: 0.0 for c in FLAVOR_CODES}
+    exact_cogs_home = float(flv_period_df["COGS (₹)"].sum()) if not flv_period_df.empty and "COGS (₹)" in flv_period_df.columns else 0.0
     if not flv_period_df.empty:
         for _, _fr in flv_period_df.iterrows():
             _fc = str(_fr.get("code") or "").strip()
@@ -5119,26 +5055,55 @@ if page == "Home" and user_role == "admin":
                 sold_period_by_code[_fc] = int(round(_num(_fr.get("Units sold"))))
                 rev_period_by_code[_fc] = float(_num(_fr.get("Est. revenue (₹)")))
 
+    # Compute Net Margin (Absolute ₹ and %) using Dashboard P&L formula
+    total_opex_home = 0.0
+    try:
+        home_exp_list = load_db_expenses_list()
+        home_exp_df = pd.DataFrame(home_exp_list)
+        if not home_exp_df.empty and "Date" in home_exp_df.columns:
+            range_exp_h = home_exp_df[(home_exp_df["Date"].dt.date >= period_start_home) & (home_exp_df["Date"].dt.date <= today_home)]
+        else:
+            range_exp_h = pd.DataFrame()
+        _, _, _, staff_pay_h = calculate_incurred_labour_for_range(period_start_home, today_home, limit_to_employment=True)
+        staff_sal_h = sum(float(sv["incurred"]) for sv in staff_pay_h.values())
+        if not range_exp_h.empty:
+            _etypes = range_exp_h["Expense_Type"].fillna("").astype(str).str.strip().str.upper()
+            _ecats = range_exp_h["Category"].fillna("").astype(str).str.strip().str.casefold()
+            _unass_lab = float(range_exp_h[(_etypes == "OPEX") & (_ecats == "labour charges") & range_exp_h["Staff_Name"].isna()]["Amount"].sum())
+            _other_opex = float(range_exp_h[(_etypes == "OPEX") & (~_ecats.isin(["labour charges", "cost of goods"]))]["Amount"].sum())
+        else:
+            _unass_lab, _other_opex = 0.0, 0.0
+        total_opex_home = staff_sal_h + _unass_lab + _other_opex
+    except Exception:
+        total_opex_home = 0.0
+
+    gross_profit_home = period_rev_home - exact_cogs_home
+    net_profit_home = gross_profit_home - total_opex_home
+    net_margin_pct_home = (net_profit_home / period_rev_home * 100.0) if period_rev_home > 0 else 0.0
+
     # ------------------------------------------------------------------
-    # MASTER 2-COLUMN DEPOSITO LAYOUT:
-    # LEFT = STACKED KPI & ANALYTICS CANVAS | RIGHT = NAVIGATION DOCK
+    # MASTER 2-COLUMN DEPOSITO LAYOUT (FITS ENTIRELY IN ONE VIEWPORT):
+    # LEFT = STACKED KPI & ANALYTICS CANVAS | RIGHT = 2x2 SQUARE NAVIGATION DOCK
     # ------------------------------------------------------------------
-    main_canvas_col, right_dock_col = st.columns([3.55, 1.12], gap="medium")
+    main_canvas_col, right_dock_col = st.columns([3.45, 1.22], gap="small")
 
     with main_canvas_col:
-        # 1. TOP 5 WHITE KPI CARDS STRIP (Exact Deposito Top Strip)
+        # 1. TOP 5 WHITE KPI CARDS STRIP (Avg Sale / Day + Net Margin with % in brackets)
         rev_compact_str = f"₹{period_rev_home/1000.0:.1f}k" if period_rev_home >= 100000 else f"₹{period_rev_home:,.0f}"
+        avg_sale_str = f"₹{avg_daily_rev_home:,.0f}"
+        net_margin_color = "#059669" if net_profit_home >= 0 else "#DC2626"
+        net_profit_abs_str = f"-₹{abs(net_profit_home):,.0f}" if net_profit_home < 0 else f"₹{net_profit_home:,.0f}"
         yest_pct_badge = f"({yest_vs_avg_pct:+.0f}%)"
+
         st.markdown(
             f"""
             <div class="deposito-kpi-strip">
                 <div class="dep-kpi-card">
-                    <div style="font-size:11px;font-weight:700;color:#64748B;text-align:center;">Time Period</div>
+                    <div style="font-size:10px;font-weight:700;color:#64748B;text-align:center;">Time Period</div>
                     <div class="dep-time-pill">• {escape(period_badge_lbl)}</div>
-                    <div style="font-size:10px;color:#64748B;text-align:center;margin-top:4px;font-weight:600;">📍 {escape(loc_badge)}</div>
                 </div>
                 <div class="dep-kpi-card" style="text-align:center;">
-                    <div class="dep-kpi-num"><span style="color:#059669;font-size:0.95rem;">{yest_pct_badge}</span> ₹{yest_rev_home:,.0f}</div>
+                    <div class="dep-kpi-num"><span style="color:#059669;font-size:0.88rem;">{yest_pct_badge}</span> ₹{yest_rev_home:,.0f}</div>
                     <div class="dep-kpi-lbl">Yesterday Sales ({yest_units_home:,} pcs)</div>
                 </div>
                 <div class="dep-kpi-card">
@@ -5156,8 +5121,8 @@ if page == "Home" and user_role == "admin":
                 <div class="dep-kpi-card">
                     <div class="dep-kpi-dual">
                         <div style="text-align:center;">
-                            <div class="dep-kpi-num" style="color:#1E2252;">{period_shifts_home:,}</div>
-                            <div class="dep-kpi-lbl">Active Shifts ({period_short_lbl})</div>
+                            <div class="dep-kpi-num" style="color:#1E2252;">{avg_sale_str}</div>
+                            <div class="dep-kpi-lbl">Avg Sale / Day</div>
                         </div>
                         <div style="text-align:center;">
                             <div class="dep-kpi-num" style="color:#059669;">{rev_compact_str}</div>
@@ -5166,72 +5131,58 @@ if page == "Home" and user_role == "admin":
                     </div>
                 </div>
                 <div class="dep-kpi-card" style="text-align:center;">
-                    <div class="dep-kpi-num" style="color:#4F46E5;">₹{unhanded_cash_home:,.0f}</div>
-                    <div class="dep-kpi-lbl" title="Ops: ₹{ops_cash_home:,.0f} | Yogesh: ₹{yogesh_cash_home:,.0f}">Cash in Custody</div>
+                    <div class="dep-kpi-num" style="color:{net_margin_color};font-size:1.0rem;">{net_profit_abs_str} <span style="font-size:0.86rem;">({net_margin_pct_home:.1f}%)</span></div>
+                    <div class="dep-kpi-lbl">Net Margin ({period_short_lbl})</div>
                 </div>
             </div>
             """,
             unsafe_allow_html=True,
         )
 
-        # 2. MIDDLE ROW: EMERALD GREEN CAPACITY CARD (4000 FREEZER / 400 CART) + 10-DAY SALES & SPLIT MATRIX
-        mid_left_col, mid_right_col = st.columns([1.12, 2.43], gap="small")
+        # 2. MIDDLE ROW: EMERALD GREEN CAPACITY CARD (4000 FREEZER / 400 PER CART = 1200) + 10-DAY SALES MATRIX
+        mid_left_col, mid_right_col = st.columns([1.05, 2.50], gap="small")
 
         with mid_left_col:
-            # Freezer capacity = 4000, Cart capacity = 400
+            # Freezer capacity = 4000; Cart capacity = 400 per cart (e.g. 3 carts = 1200)
             FREEZER_CAP_UNITS = 4000
-            CART_CAP_UNITS = 400
+            NUM_ACTIVE_CARTS = max(1, len(REAL_CARTS_HOME))
+            CART_CAP_UNITS = 400 * NUM_ACTIVE_CARTS
             fzr_util_pct = max(0.0, (float(tot_freezer_units_home) / float(FREEZER_CAP_UNITS)) * 100.0)
             cart_util_pct = max(0.0, (float(tot_cart_units_home) / float(CART_CAP_UNITS)) * 100.0)
 
             fzr_arc_pct = min(100.0, max(2.0 if tot_freezer_units_home > 0 else 0.0, fzr_util_pct))
-            cart_arc_pct = min(100.0, max(2.0 if tot_cart_units_home > 0 else 0.0, cart_util_pct))
-
-            outer_circum = 289.0  # r=46
-            inner_circum = 226.2  # r=36
+            outer_circum = 276.5  # r=44
             outer_offset = outer_circum * (1.0 - (fzr_arc_pct / 100.0))
-            inner_offset = inner_circum * (1.0 - (cart_arc_pct / 100.0))
 
             st.markdown(
                 f"""
                 <div class="dep-emerald-card">
                     <div class="dep-emerald-hdr">Capacity Utilization</div>
                     <div class="dep-emerald-float-strip">
-                        <div class="dep-emerald-float-dot" style="background:#FEF3C7;color:#D97706;" title="Outer Ring: Freezer (4,000 cap)">❄️</div>
-                        <div class="dep-emerald-float-dot" style="background:#DBEAFE;color:#2563EB;" title="Inner Ring: Cart (400 cap)">🛒</div>
-                        <div class="dep-emerald-float-dot" style="background:#ECFDF5;color:#059669;" title="Healthy Flavours">📦</div>
+                        <div class="dep-emerald-float-dot" style="background:#FEF3C7;color:#D97706;">❄️</div>
+                        <div class="dep-emerald-float-dot" style="background:#DBEAFE;color:#2563EB;">🛒</div>
+                        <div class="dep-emerald-float-dot" style="background:#ECFDF5;color:#059669;">📦</div>
                     </div>
-                    <div style="display:flex;justify-content:center;align-items:center;margin:4px 0;">
-                        <svg width="174" height="174" viewBox="0 0 112 112">
-                            <!-- Outer Ring: Freezer Utilization (out of 4,000) -->
-                            <circle cx="56" cy="56" r="46" fill="none" stroke="rgba(255,255,255,0.20)" stroke-width="7" />
-                            <circle cx="56" cy="56" r="46" fill="none" stroke="#F59E0B" stroke-width="7"
+                    <div style="display:flex;justify-content:center;align-items:center;margin:0;">
+                        <svg width="122" height="122" viewBox="0 0 108 108">
+                            <circle cx="54" cy="54" r="44" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="7.5" />
+                            <circle cx="54" cy="54" r="44" fill="none" stroke="#F59E0B" stroke-width="7.5"
                                     stroke-linecap="round"
                                     stroke-dasharray="{outer_circum:.1f}"
                                     stroke-dashoffset="{outer_offset:.1f}"
-                                    transform="rotate(-90 56 56)" />
-                            <!-- Inner Ring: Cart Utilization (out of 400) -->
-                            <circle cx="56" cy="56" r="36" fill="none" stroke="rgba(255,255,255,0.16)" stroke-width="5.5" />
-                            <circle cx="56" cy="56" r="36" fill="none" stroke="#60A5FA" stroke-width="5.5"
-                                    stroke-linecap="round"
-                                    stroke-dasharray="{inner_circum:.1f}"
-                                    stroke-dashoffset="{inner_offset:.1f}"
-                                    transform="rotate(-90 56 56)" />
-                            <text x="56" y="48" text-anchor="middle" fill="#FFFFFF" font-size="15.5" font-weight="800" font-family="Plus Jakarta Sans, sans-serif">Fzr {fzr_util_pct:.0f}%</text>
-                            <text x="56" y="62" text-anchor="middle" fill="#BFDBFE" font-size="11.5" font-weight="800" font-family="Plus Jakarta Sans, sans-serif">Cart {cart_util_pct:.0f}%</text>
-                            <text x="56" y="75" text-anchor="middle" fill="#D1FAE5" font-size="7.2" font-weight="600" font-family="Plus Jakarta Sans, sans-serif">4,000 Fzr • 400 Cart Cap</text>
+                                    transform="rotate(-90 54 54)" />
+                            <text x="54" y="54" text-anchor="middle" dominant-baseline="middle" fill="#FFFFFF" font-size="22" font-weight="900" font-family="Plus Jakarta Sans, sans-serif">{fzr_util_pct:.0f}%</text>
+                            <text x="54" y="72" text-anchor="middle" fill="#D1FAE5" font-size="8.5" font-weight="700" font-family="Plus Jakarta Sans, sans-serif">Freezer Used</text>
                         </svg>
                     </div>
                     <div class="dep-emerald-footer">
                         <div>
                             <div class="dep-emerald-ft-lbl">Freezer ({fzr_util_pct:.1f}%)</div>
-                            <div class="dep-emerald-ft-val">{tot_freezer_units_home:,} / 4,000</div>
-                            <div style="font-size:10px;color:#A7F3D0;">₹{tot_freezer_cp_home:,.0f} CP</div>
+                            <div class="dep-emerald-ft-val">{tot_freezer_units_home:,} / {FREEZER_CAP_UNITS:,}</div>
                         </div>
                         <div>
-                            <div class="dep-emerald-ft-lbl">Cart ({cart_util_pct:.1f}%)</div>
-                            <div class="dep-emerald-ft-val">{tot_cart_units_home:,} / 400</div>
-                            <div style="font-size:10px;color:#A7F3D0;">₹{tot_cart_cp_home:,.0f} CP</div>
+                            <div class="dep-emerald-ft-lbl">Carts ({cart_util_pct:.1f}%)</div>
+                            <div class="dep-emerald-ft-val">{tot_cart_units_home:,} / {CART_CAP_UNITS:,}</div>
                         </div>
                     </div>
                 </div>
@@ -5241,7 +5192,6 @@ if page == "Home" and user_role == "admin":
 
         with mid_right_col:
             # 10-DAY SALES BY CART & OVERALL + PHONEPE / CASH SPLIT MATRIX (Excluding Test Carts)
-            # Determine the 10 dates: last 10 dates up to yesterday (or latest 10 sales dates)
             last_10_dates = [yesterday_home - timedelta(days=i) for i in range(9, -1, -1)]
             if not home_daily_df.empty:
                 df_non_test = home_daily_df.copy()
@@ -5263,13 +5213,12 @@ if page == "Home" and user_role == "admin":
                 for d in last_10_dates
             ]
             sales10_rows_html = [
-                f'<div class="dep-sales10-row" style="margin-bottom:6px;">'
-                f'<div class="dep-slot-row-lbl" style="color:#64748B;font-size:10px;">DATE (LAST 10D)</div>'
+                f'<div class="dep-sales10-row" style="margin-bottom:3px;">'
+                f'<div class="dep-slot-row-lbl" style="color:#64748B;font-size:9.5px;">DATE (LAST 10D)</div>'
                 f'{"".join(date_hdr_cells)}'
                 f'</div>'
             ]
 
-            # Precompute per-date totals, per-cart sales, and overall PhonePe / Cash split
             day_overall_rev = {d: 0.0 for d in last_10_dates}
             day_overall_units = {d: 0 for d in last_10_dates}
             day_overall_phonepe = {d: 0.0 for d in last_10_dates}
@@ -5308,7 +5257,7 @@ if page == "Home" and user_role == "admin":
                     f'</div>'
                 )
             sales10_rows_html.append(
-                f'<div class="dep-sales10-row" style="padding-bottom:4px;border-bottom:1.5px solid #E2E8F0;margin-bottom:6px;">'
+                f'<div class="dep-sales10-row" style="padding-bottom:2px;border-bottom:1px solid #E2E8F0;margin-bottom:3px;">'
                 f'<div class="dep-slot-row-lbl" style="color:#065F46;font-weight:900;" title="10-Day Total Sales: ₹{tot_10d_sum:,.0f}">🔥 Total (₹{tot_10d_sum/1000.0:.1f}k)</div>'
                 f'{"".join(tot_tiles_html)}'
                 f'</div>'
@@ -5355,7 +5304,7 @@ if page == "Home" and user_role == "admin":
                 )
 
             sales10_rows_html.append(
-                f'<div class="dep-sales10-row" style="margin-top:4px;padding-top:5px;border-top:1.5px dashed #CBD5E1;">'
+                f'<div class="dep-sales10-row" style="margin-top:2px;padding-top:3px;border-top:1px dashed #CBD5E1;">'
                 f'<div class="dep-slot-row-lbl" style="color:#4C1D95;font-weight:800;" title="10-Day PhonePe Total: ₹{tot_10d_ph:,.0f}">📱 PhonePe (₹{tot_10d_ph/1000.0:.1f}k)</div>'
                 f'{"".join(ph_tiles_html)}'
                 f'</div>'
@@ -5373,20 +5322,20 @@ if page == "Home" and user_role == "admin":
                     <div>
                         <div class="dep-matrix-top">
                             <span class="dep-date-badge">📅 {last_10_dates[0].strftime('%d %b')} – {last_10_dates[-1].strftime('%d %b %Y')}</span>
-                            <span style="font-size:13px;font-weight:800;color:#1E2252;">Last 10 Days Sales — By Cart, Total &amp; PhonePe / Cash Split</span>
+                            <span style="font-size:11.5px;font-weight:800;color:#1E2252;">Last 10 Days Sales — By Cart, Total &amp; PhonePe / Cash Split</span>
                         </div>
-                        <div style="padding:2px 0;">
+                        <div>
                             {"".join(sales10_rows_html)}
                         </div>
                     </div>
-                    <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid #F1F5F9;padding-top:7px;margin-top:4px;font-size:10.5px;color:#64748B;font-weight:700;flex-wrap:wrap;gap:8px;">
-                        <span>10-Day Total: <b style="color:#065F46;">₹{tot_10d_sum:,.0f}</b> (PhonePe: <b style="color:#4C1D95;">₹{tot_10d_ph:,.0f}</b> • Cash: <b style="color:#1E3A8A;">₹{tot_10d_cs:,.0f}</b>)</span>
-                        <div style="display:flex;gap:10px;align-items:center;">
-                            <span>Total <span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#6EE7B7;border:1px solid #059669;vertical-align:middle;margin-left:2px;"></span></span>
-                            <span>Cart ≥₹2.5k <span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#FBBF24;vertical-align:middle;margin-left:2px;"></span></span>
-                            <span>Cart &lt;₹2.5k <span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#FEF3C7;border:1px solid #FCD34D;vertical-align:middle;margin-left:2px;"></span></span>
-                            <span>PhonePe <span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#C4B5FD;vertical-align:middle;margin-left:2px;"></span></span>
-                            <span>Cash <span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#BFDBFE;vertical-align:middle;margin-left:2px;"></span></span>
+                    <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid #F1F5F9;padding-top:3px;font-size:9.5px;color:#64748B;font-weight:700;">
+                        <span>10d Total: <b style="color:#065F46;">₹{tot_10d_sum:,.0f}</b> (PhonePe: <b style="color:#4C1D95;">₹{tot_10d_ph:,.0f}</b> • Cash: <b style="color:#1E3A8A;">₹{tot_10d_cs:,.0f}</b>)</span>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <span>Total <span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#6EE7B7;border:1px solid #059669;vertical-align:middle;"></span></span>
+                            <span>≥₹2.5k <span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#FBBF24;vertical-align:middle;"></span></span>
+                            <span>&lt;₹2.5k <span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#FEF3C7;border:1px solid #FCD34D;vertical-align:middle;"></span></span>
+                            <span>PhonePe <span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#C4B5FD;vertical-align:middle;"></span></span>
+                            <span>Cash <span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#BFDBFE;vertical-align:middle;"></span></span>
                         </div>
                     </div>
                 </div>
@@ -5394,10 +5343,8 @@ if page == "Home" and user_role == "admin":
                 unsafe_allow_html=True,
             )
 
-        st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
-
         # 3. BOTTOM ROW: 3 STACKED ANALYTICAL CARDS (BEST SELLERS | INVENTORY STOCK BARS | TOP CARTS HORIZONTAL BARS)
-        bot_c1, bot_c2, bot_c3 = st.columns([1.08, 1.32, 1.15], gap="small")
+        bot_c1, bot_c2, bot_c3 = st.columns([1.05, 1.35, 1.15], gap="small")
 
         with bot_c1:
             sorted_flavs = sorted(FLAVOR_CODES, key=lambda c: (sold_period_by_code.get(c, 0), rev_period_by_code.get(c, 0.0)), reverse=True)
@@ -5408,11 +5355,11 @@ if page == "Home" and user_role == "admin":
             top1_mrp = float(top1_info["mrp"])
 
             runner_ups_html = []
-            for _rk, _rc in enumerate(sorted_flavs[1:4], start=2):
+            for _rk, _rc in enumerate(sorted_flavs[1:3], start=2):
                 _ru = int(sold_period_by_code.get(_rc, 0))
                 _rr = float(rev_period_by_code.get(_rc, 0.0))
                 runner_ups_html.append(
-                    f'<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:7px;font-size:11px;margin-top:5px;">'
+                    f'<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 7px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:6px;font-size:10px;margin-top:3px;">'
                     f'<span style="font-weight:800;color:#1E2252;">#{_rk} {escape(FLAVOR_MAP[_rc]["name"])} ({_rc})</span>'
                     f'<span style="font-weight:800;color:#059669;">{_ru:,} pcs • ₹{_rr:,.0f}</span>'
                     f'</div>'
@@ -5423,19 +5370,19 @@ if page == "Home" and user_role == "admin":
                 <div class="dep-bottom-card">
                     <div>
                         <div class="dep-bottom-hdr">Best Sellers ({escape(period_short_lbl)})</div>
-                        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 4px 10px 4px;border-bottom:1px dashed #E2E8F0;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;padding:3px 2px 5px 2px;border-bottom:1px dashed #E2E8F0;">
                             <div>
-                                <div style="font-size:16px;font-weight:800;color:#0F172A;">Units {top1_u:,}</div>
-                                <div style="font-size:11px;color:#64748B;font-weight:600;margin-top:2px;">per unit | ₹{top1_mrp:.0f}</div>
-                                <div style="font-size:13.5px;font-weight:800;color:#059669;margin-top:2px;">₹{top1_r:,.0f}</div>
+                                <div style="font-size:13.5px;font-weight:800;color:#0F172A;">Units {top1_u:,}</div>
+                                <div style="font-size:9.5px;color:#64748B;font-weight:600;">per unit | ₹{top1_mrp:.0f}</div>
+                                <div style="font-size:12px;font-weight:800;color:#059669;">₹{top1_r:,.0f}</div>
                             </div>
                             <div style="text-align:right;">
-                                <div style="font-size:13.5px;font-weight:800;color:#1E2252;">{escape(top1_info['name'])}</div>
-                                <div style="font-size:11px;color:#4F46E5;font-weight:700;margin-top:2px;">Code: {top1_c}</div>
-                                <div style="font-size:10.5px;color:#64748B;margin-top:2px;">Freezer: {int(freezer_stock_map.get(top1_c, 0)):,} pcs</div>
+                                <div style="font-size:12px;font-weight:800;color:#1E2252;">{escape(top1_info['name'])}</div>
+                                <div style="font-size:10px;color:#4F46E5;font-weight:700;">Code: {top1_c}</div>
+                                <div style="font-size:9.5px;color:#64748B;">Fzr: {int(freezer_stock_map.get(top1_c, 0)):,} pcs</div>
                             </div>
                         </div>
-                        <div style="margin-top:6px;">
+                        <div style="margin-top:3px;">
                             {"".join(runner_ups_html)}
                         </div>
                     </div>
@@ -5445,7 +5392,7 @@ if page == "Home" and user_role == "admin":
             )
 
         with bot_c2:
-            # Vertical 3-Segment Purple/Violet/Blue Stacked Bar Chart (Matches "Inventory Stock" in Screenshot)
+            # Vertical 3-Segment Purple/Violet/Blue Stacked Bar Chart (Compact 82px bars)
             top6_codes = sorted_flavs[:6]
             max_stack = max(
                 1,
@@ -5462,20 +5409,20 @@ if page == "Home" and user_role == "admin":
                 _ct_u = max(0, sum(int(cart_flavor_stock_matrix.get(cn, {}).get(_c, 0)) for cn in REAL_CARTS_HOME))
                 _sd_u = max(0, int(sold_period_by_code.get(_c, 0)))
                 _tot_col = max(1, _fz_u + _ct_u + _sd_u)
-                _h_pct = min(100, max(18, int(round((_tot_col / float(max_stack)) * 100.0))))
+                _h_pct = min(100, max(20, int(round((_tot_col / float(max_stack)) * 100.0))))
                 _p_sd = int(round((_sd_u / float(_tot_col)) * 100.0))
                 _p_ct = int(round((_ct_u / float(_tot_col)) * 100.0))
                 _p_fz = max(10, 100 - _p_sd - _p_ct)
                 bars_cols_html.append(
                     f'<div style="display:flex;flex-direction:column;align-items:center;flex:1;" title="Freezer {_fz_u} | Carts {_ct_u} | Sold {_sd_u}">'
-                    f'<div style="height:126px;width:22px;display:flex;flex-direction:column;justify-content:flex-end;background:#F8FAFC;border-radius:7px;overflow:hidden;padding:0;">'
-                    f'<div style="height:{_h_pct}%;width:100%;display:flex;flex-direction:column;border-radius:6px;overflow:hidden;">'
-                    f'<div style="height:{_p_sd}%;background:#60A5FA;min-height:4px;"></div>'
-                    f'<div style="height:{_p_ct}%;background:#8B5CF6;min-height:4px;"></div>'
-                    f'<div style="height:{_p_fz}%;background:#4C1D95;min-height:6px;"></div>'
+                    f'<div style="height:82px;width:20px;display:flex;flex-direction:column;justify-content:flex-end;background:#F8FAFC;border-radius:6px;overflow:hidden;padding:0;">'
+                    f'<div style="height:{_h_pct}%;width:100%;display:flex;flex-direction:column;border-radius:5px;overflow:hidden;">'
+                    f'<div style="height:{_p_sd}%;background:#60A5FA;min-height:3px;"></div>'
+                    f'<div style="height:{_p_ct}%;background:#8B5CF6;min-height:3px;"></div>'
+                    f'<div style="height:{_p_fz}%;background:#4C1D95;min-height:5px;"></div>'
                     f'</div></div>'
-                    f'<div style="font-size:10px;font-weight:800;color:#334155;margin-top:5px;">{_c}</div>'
-                    f'<div style="font-size:9px;font-weight:700;color:#64748B;">{_fz_u+_ct_u}</div>'
+                    f'<div style="font-size:9.5px;font-weight:800;color:#334155;margin-top:3px;">{_c}</div>'
+                    f'<div style="font-size:8.5px;font-weight:700;color:#64748B;">{_fz_u+_ct_u}</div>'
                     f'</div>'
                 )
 
@@ -5483,15 +5430,15 @@ if page == "Home" and user_role == "admin":
                 f"""
                 <div class="dep-bottom-card">
                     <div>
-                        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #F1F5F9;padding-bottom:6px;margin-bottom:8px;">
-                            <div style="font-size:10.5px;font-weight:700;color:#64748B;display:flex;gap:8px;align-items:center;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #F1F5F9;padding-bottom:3px;margin-bottom:4px;">
+                            <div style="font-size:9.5px;font-weight:700;color:#64748B;display:flex;gap:6px;align-items:center;">
                                 <span>Sold <span style="color:#60A5FA;">■</span></span>
                                 <span>Carts <span style="color:#8B5CF6;">■</span></span>
-                                <span>Freezer <span style="color:#4C1D95;">■</span></span>
+                                <span>Fzr <span style="color:#4C1D95;">■</span></span>
                             </div>
-                            <div style="font-size:12.5px;font-weight:800;color:#1E2252;">Inventory Stock</div>
+                            <div style="font-size:11px;font-weight:800;color:#1E2252;">Inventory Stock</div>
                         </div>
-                        <div style="display:flex;justify-content:space-around;align-items:flex-end;padding:6px 4px 2px 4px;">
+                        <div style="display:flex;justify-content:space-around;align-items:flex-end;padding:2px 2px 0 2px;">
                             {"".join(bars_cols_html)}
                         </div>
                     </div>
@@ -5516,17 +5463,17 @@ if page == "Home" and user_role == "admin":
 
             max_c_rev = max(1.0, max((r[1] for r in cart_rev_rows), default=1.0))
             h_bars_html = []
-            for _cname, _crev, _cunits in cart_rev_rows[:5]:
+            for _cname, _crev, _cunits in cart_rev_rows[:4]:
                 _w_pct = min(100, max(12, int(round((_crev / max_c_rev) * 100.0)))) if _crev > 0 else 12
                 _short_c = _cname.replace("HOSUR ", "").replace("UTTARAHALLI ", "UTT ")
                 h_bars_html.append(
-                    f'<div style="margin-bottom:9px;">'
-                    f'<div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;color:#334155;margin-bottom:3px;">'
+                    f'<div style="margin-bottom:5px;">'
+                    f'<div style="display:flex;justify-content:space-between;font-size:10px;font-weight:700;color:#334155;margin-bottom:2px;">'
                     f'<span>{escape(_short_c)}</span>'
-                    f'<span style="color:#1E2252;font-weight:800;">₹{_crev:,.0f} ({_cunits:,} pcs)</span>'
+                    f'<span style="color:#1E2252;font-weight:800;">₹{_crev:,.0f} ({_cunits:,})</span>'
                     f'</div>'
-                    f'<div style="width:100%;background:#EFF6FF;height:8px;border-radius:999px;overflow:hidden;">'
-                    f'<div style="width:{_w_pct}%;background:linear-gradient(90deg, #60A5FA 0%, #3B82F6 100%);height:8px;border-radius:999px;"></div>'
+                    f'<div style="width:100%;background:#EFF6FF;height:6px;border-radius:999px;overflow:hidden;">'
+                    f'<div style="width:{_w_pct}%;background:linear-gradient(90deg, #60A5FA 0%, #3B82F6 100%);height:6px;border-radius:999px;"></div>'
                     f'</div>'
                     f'</div>'
                 )
@@ -5535,8 +5482,8 @@ if page == "Home" and user_role == "admin":
                 f"""
                 <div class="dep-bottom-card">
                     <div>
-                        <div class="dep-bottom-hdr">Top Carts &amp; Locations ({escape(period_short_lbl)})</div>
-                        <div style="padding:4px 2px 0 2px;">
+                        <div class="dep-bottom-hdr">Top Carts ({escape(period_short_lbl)})</div>
+                        <div style="padding:2px 2px 0 2px;">
                             {"".join(h_bars_html)}
                         </div>
                     </div>
@@ -5545,8 +5492,7 @@ if page == "Home" and user_role == "admin":
                 unsafe_allow_html=True,
             )
 
-        # 4. QUICK OPERATIONS LAUNCHPAD STRIP BELOW VISUAL CARDS
-        st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
+        # 4. QUICK OPERATIONS LAUNCHPAD STRIP BELOW VISUAL CARDS (FITS ON SAME SCREEN)
         with st.container(border=True):
             st.markdown('<span class="kulfi-clickable-card-grid"></span>', unsafe_allow_html=True)
             st.markdown('<div class="launchpad-section-hdr">⚡ Quick Daily Entry &amp; Operations Shortcuts</div>', unsafe_allow_html=True)
@@ -5568,19 +5514,19 @@ if page == "Home" and user_role == "admin":
                         st.rerun()
 
     # ------------------------------------------------------------------
-    # RIGHT COLUMN: NAVIGATION DOCK WITH CRISP BLACK (#111111) TEXT FOR "KULFI OPS" & "DASHBOARD HOME"
+    # RIGHT COLUMN: 2-COLUMN SQUARE BUTTON NAVIGATION DOCK (ALL ON ONE SCREEN)
     # ------------------------------------------------------------------
     with right_dock_col:
         with st.container(border=True):
             st.markdown('<span class="deposito-nav-dock-marker"></span>', unsafe_allow_html=True)
             st.markdown(
                 f"""
-                <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px 10px 8px;background:#DBEAFE;border:1px solid #93C5FD;border-radius:10px;margin-bottom:8px;">
-                    <div style="display:flex;align-items:center;gap:9px;">
-                        {get_top_left_square_logo_html(34)}
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 8px 6px 8px;background:#DBEAFE;border:1px solid #93C5FD;border-radius:9px;margin-bottom:4px;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        {get_top_left_square_logo_html(28)}
                         <div>
-                            <div style="font-size:14.5px;font-weight:900;color:#111111;letter-spacing:0.03em;line-height:1.1;">KULFI OPS</div>
-                            <div style="font-size:10.5px;font-weight:800;color:#111111;margin-top:2px;">📍 {escape(loc_badge)}</div>
+                            <div style="font-size:13px;font-weight:900;color:#111111;letter-spacing:0.03em;line-height:1.05;">KULFI OPS</div>
+                            <div style="font-size:9.5px;font-weight:800;color:#111111;margin-top:1px;">📍 {escape(loc_badge)}</div>
                         </div>
                     </div>
                 </div>
@@ -5588,53 +5534,39 @@ if page == "Home" and user_role == "admin":
                 unsafe_allow_html=True,
             )
 
-            _dock_groups = [
-                ("Analytics & Sales", [
-                    ("Home", "🏠  Dashboard Home", {}),
-                    ("Dashboard", "📊  Financials & P&L", {"dash_sub_page": None}),
-                    ("Daily Entry", "🛒  Daily Entry Hub", {"daily_entry_mode": None}),
-                    ("Live Cart Tracking", "📡  Live Cart POS", {}),
-                    ("Bulk Orders & Quotes", "📦  Bulk Orders & Quotes", {}),
-                ]),
-                ("Freezer & Stock", [
-                    ("Freezer Analysis", "📈  Freezer Analysis", {}),
-                    ("Freezer Stock", "❄️  Stock Received / Audit", {"db_stock_mode": "New entry"}),
-                    ("Stock Removed", "🗑️  Stock Removed Log", {"rem_screen_mode": "New Entry"}),
-                    ("Purchase Orders", "🧾  Purchase Orders", {}),
-                ]),
-                ("Finance & Admin", [
-                    ("Expenses", "💳  Expenses & Payments", {}),
-                    ("Cash Custody", "💰  Cash Custody", {}),
-                    ("Staff & Payroll", "👥  Staff & Payroll", {}),
-                    ("Payslip Generator", "📄  Payslip Generator", {}),
-                    ("Locations & Logins", "🌐  Locations & Logins", {}),
-                ]),
+            _dock_grid_items = [
+                ("Home", "🏠  Home", {}),
+                ("Dashboard", "📊  Financials", {"dash_sub_page": None}),
+                ("Daily Entry", "🛒  Daily Entry", {"daily_entry_mode": None}),
+                ("Live Cart Tracking", "📡  Live POS", {}),
+                ("Bulk Orders & Quotes", "📦  Bulk Orders", {}),
+                ("Freezer Analysis", "📈  Fzr Analysis", {}),
+                ("Freezer Stock", "❄️  Stock Recv", {"db_stock_mode": "New entry"}),
+                ("Stock Removed", "🗑️  Stock Rem", {"rem_screen_mode": "New Entry"}),
+                ("Purchase Orders", "🧾  PO Orders", {}),
+                ("Expenses", "💳  Expenses", {}),
+                ("Cash Custody", "💰  Cash Custody", {}),
+                ("Staff & Payroll", "👥  Staff & Pay", {}),
+                ("Payslip Generator", "📄  Payslips", {}),
+                ("Locations & Logins", "🌐  Locations", {}),
             ]
 
-            for _grp_name, _grp_items in _dock_groups:
-                st.markdown(f'<div class="deposito-dock-sec-lbl">{escape(_grp_name)}</div>', unsafe_allow_html=True)
-                for _m_idx, (_target_p, _m_lbl, _m_state) in enumerate(_grp_items):
+            for _r_start in range(0, len(_dock_grid_items), 2):
+                _pair = _dock_grid_items[_r_start:_r_start + 2]
+                _dcols = st.columns(2, gap="small")
+                for _c_i, (_target_p, _m_lbl, _m_state) in enumerate(_pair):
                     _is_active_dock = (page == _target_p)
-                    if st.button(
-                        _m_lbl,
-                        key=f"deposito_dock_btn_{_grp_name}_{_m_idx}",
-                        type="primary" if _is_active_dock else "secondary",
-                        use_container_width=True,
-                    ):
-                        for _k, _v in _m_state.items():
-                            st.session_state[_k] = _v
-                        st.session_state["page_nav"] = _target_p
-                        st.rerun()
-
-            st.markdown(
-                """
-                <div style="text-align:center;padding-top:10px;margin-top:8px;border-top:1px solid #CBD5E1;font-size:10px;color:#334155;line-height:1.4;">
-                    <div style="font-weight:800;color:#111111;">Kulfi Ops Admin Suite</div>
-                    <div>Multi-Location Cloud POS ©</div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+                    with _dcols[_c_i]:
+                        if st.button(
+                            _m_lbl,
+                            key=f"deposito_dock_btn_grid_{_r_start + _c_i}",
+                            type="primary" if _is_active_dock else "secondary",
+                            use_container_width=True,
+                        ):
+                            for _k, _v in _m_state.items():
+                                st.session_state[_k] = _v
+                            st.session_state["page_nav"] = _target_p
+                            st.rerun()
 
 if page == "Locations & Logins" and user_role == "admin":
     st.subheader("🌐 Locations, Carts / Freezers & Logins Setup")
