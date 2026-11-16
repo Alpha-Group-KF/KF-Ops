@@ -376,7 +376,14 @@ div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) {
     letter-spacing: 0.01em !important;
     box-shadow: 0 1px 4px rgba(37, 99, 235, 0.16) !important;
 }
-/* Constrain standalone submit buttons so they never stretch across the entire screen width */
+/* Center entry submit buttons horizontally beneath the table & constrain width */
+div[class*="st-key-submit_"] {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    width: 100% !important;
+    margin-top: 3px !important;
+}
 [data-testid="stFormSubmitButton"],
 div[class*="st-key-submit_"] .stButton,
 div[class*="st-key-btn_save_"] .stButton,
@@ -387,7 +394,8 @@ div[class*="st-key-cash_handover_button_"] .stButton,
 div[class*="st-key-fa_create_order"] .stButton,
 div[class*="st-key-update_audit_"] .stButton {
     width: auto !important;
-    display: inline-block !important;
+    display: inline-flex !important;
+    justify-content: center !important;
 }
 [data-testid="stFormSubmitButton"] > button,
 div[class*="st-key-submit_"] .stButton > button,
@@ -1003,37 +1011,131 @@ div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .
     display: inline-block;
 }
 
-/* Consistent Compact Input Heights & Slate-Blue Borders */
+/* Consistent Compact Input Heights & Slate-Blue Borders (Targeting data-testid for Streamlit 1.38+) */
 .stSelectbox div[data-baseweb="select"] > div,
+div[data-testid="stSelectbox"] div[data-baseweb="select"] > div,
 .stDateInput div[data-baseweb="input"],
+div[data-testid="stDateInput"] div[data-baseweb="input"],
+div[data-testid="stDateInput"] div[data-baseweb="base-input"],
 .stTimeInput div[data-baseweb="input"],
+div[data-testid="stTimeInput"] div[data-baseweb="input"],
+div[data-testid="stTimeInput"] div[data-baseweb="base-input"],
 .stTextInput div[data-baseweb="input"],
+div[data-testid="stTextInput"] div[data-baseweb="input"],
+div[data-testid="stTextInput"] div[data-baseweb="base-input"],
 .stNumberInput div[data-baseweb="input"],
+div[data-testid="stNumberInput"] div[data-baseweb="input"],
 div[data-testid="stNumberInputContainer"] {
-    min-height: 30px !important;
-    height: 30px !important;
+    min-height: 32px !important;
+    height: 32px !important;
+    max-height: 32px !important;
     border-radius: 5px !important;
     background-color: #FFFFFF !important;
     border: 1.5px solid #CBD5E1 !important;
     box-sizing: border-box !important;
+    align-items: center !important;
 }
-.stTextInput input, .stNumberInput input, .stDateInput input, .stTimeInput input {
-    padding: 1px 7px !important;
+/* Prevent double border on nested base-input inside input */
+div[data-testid="stTextInput"] div[data-baseweb="input"] > div[data-baseweb="base-input"],
+div[data-testid="stDateInput"] div[data-baseweb="input"] > div[data-baseweb="base-input"],
+div[data-testid="stTimeInput"] div[data-baseweb="input"] > div[data-baseweb="base-input"],
+div[data-testid="stNumberInput"] div[data-baseweb="input"] > div[data-baseweb="base-input"] {
+    border: none !important;
+    background: transparent !important;
+    min-height: 30px !important;
+    height: 30px !important;
+    max-height: 30px !important;
+}
+.stTextInput input, .stNumberInput input, .stDateInput input, .stTimeInput input,
+div[data-testid="stTextInput"] input,
+div[data-testid="stDateInput"] input,
+div[data-testid="stTimeInput"] input {
+    padding: 0px 8px !important;
     font-size: 11.5px !important;
     text-align: left !important;
     font-weight: 700 !important;
     color: #0F172A !important;
-    height: 28px !important;
-    min-height: 28px !important;
-    line-height: 28px !important;
+    -webkit-text-fill-color: #0F172A !important;
+    height: 30px !important;
+    min-height: 30px !important;
+    line-height: 30px !important;
 }
-.stNumberInput label, .stTextInput label, .stSelectbox label, .stDateInput label, .stTimeInput label {
+div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
+    font-size: 11.5px !important;
+    font-weight: 700 !important;
+    color: #0F172A !important;
+}
+.stNumberInput label, .stTextInput label, .stSelectbox label, .stDateInput label, .stTimeInput label,
+div[data-testid="stNumberInput"] label[data-testid="stWidgetLabel"],
+div[data-testid="stTextInput"] label[data-testid="stWidgetLabel"],
+div[data-testid="stSelectbox"] label[data-testid="stWidgetLabel"],
+div[data-testid="stDateInput"] label[data-testid="stWidgetLabel"],
+div[data-testid="stTimeInput"] label[data-testid="stWidgetLabel"] {
     font-size: 10.5px !important;
     font-weight: 700 !important;
-    margin-bottom: 1px !important;
-    line-height: 1.15 !important;
+    height: 16px !important;
+    min-height: 16px !important;
+    max-height: 16px !important;
+    margin-bottom: 2px !important;
+    line-height: 16px !important;
     text-align: left !important;
     color: #334155 !important;
+}
+
+/* Top Row of Entry Screens: Align "Back" button at far left with Assigned Cart, Date, and Staff fields (exact same 32px height & baseline) */
+div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-back_to_entry_menu_"]) {
+    align-items: flex-end !important;
+    margin-bottom: 2px !important;
+}
+div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-back_to_entry_menu_"]) > div[data-testid="stColumn"] {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-end !important;
+}
+div[class*="st-key-back_to_entry_menu_"] {
+    margin-top: 18px !important;
+    margin-bottom: 0px !important;
+    padding: 0px !important;
+    width: 100% !important;
+}
+div[class*="st-key-back_to_entry_menu_"] .stButton,
+div[class*="st-key-back_to_entry_menu_"] .stButton > button {
+    height: 32px !important;
+    min-height: 32px !important;
+    max-height: 32px !important;
+    width: 100% !important;
+    margin: 0px !important;
+    padding: 0 10px !important;
+    border-radius: 5px !important;
+    font-size: 11.5px !important;
+    font-weight: 800 !important;
+    box-sizing: border-box !important;
+}
+
+/* Disabled Leakage Unexplained Text Input Styling (Matches sibling inputs 100% in height & alignment) */
+div[class*="st-key-daily_leak_unexp_ro"] div[data-baseweb="input"] {
+    background-color: #F8FAFC !important;
+    border: 1.5px solid #CBD5E1 !important;
+    opacity: 1 !important;
+}
+div[class*="st-key-daily_leak_unexp_ro"] input {
+    color: #0F172A !important;
+    -webkit-text-fill-color: #0F172A !important;
+    font-weight: 800 !important;
+    opacity: 1 !important;
+}
+div[class*="st-key-daily_leak_unexp_alert"] div[data-baseweb="input"] {
+    background-color: #FFF0ED !important;
+    border: 1.5px solid #FCA5A5 !important;
+    opacity: 1 !important;
+}
+div[class*="st-key-daily_leak_unexp_alert"] input {
+    color: #C41C1C !important;
+    -webkit-text-fill-color: #C41C1C !important;
+    font-weight: 800 !important;
+    opacity: 1 !important;
 }
 
 /* Hide "Press Enter to apply" instructions so number inputs never shift or expand */
@@ -6164,9 +6266,9 @@ elif page == "Daily Entry":
         # SALES ENTRY (CARTS) — Compact 80% Single-Page Layout
         # --------------------------------------------------------------
         if entry_mode == "sales":
-            top_c0, top_c1, top_c2, top_c3 = st.columns([0.9, 1.25, 1.0, 1.25], gap="small", vertical_alignment="bottom")
+            top_c0, top_c1, top_c2, top_c3 = st.columns([0.65, 1.35, 1.05, 1.35], gap="small", vertical_alignment="bottom")
             with top_c0:
-                if st.button("⬅ Entry Menu", key="back_to_entry_menu_sales", type="secondary", use_container_width=True):
+                if st.button("⬅ Back", key="back_to_entry_menu_sales", type="secondary", use_container_width=True):
                     st.session_state.pop("_last_mismatch_modal_target", None)
                     st.session_state["daily_entry_mode"] = None
                     st.rerun()
@@ -6385,7 +6487,7 @@ elif page == "Daily Entry":
                     with pay_r1_c4:
                         staff_advance_val = _num(st.text_input("Advance to staff (₹)", key=f"daily_adv{data_key_suffix}", disabled=sales_opening_mismatch))
 
-                    pay_r2_c1, pay_r2_c2, pay_r2_c3, pay_r2_c4 = st.columns([1.0, 1.0, 1.0, 1.35], gap="small", vertical_alignment="bottom")
+                    pay_r2_c1, pay_r2_c2, pay_r2_c3, pay_r2_c4 = st.columns(4, gap="small")
                     with pay_r2_c1:
                         food_tea_val = _num(st.text_input("Cash Food / Tea (₹)", key=f"daily_food{data_key_suffix}", disabled=sales_opening_mismatch))
 
@@ -6404,17 +6506,13 @@ elif page == "Daily Entry":
                         )
                     cash_leakage_unexplained = max(0.0, available_cash_leakage - cash_leakage_explained)
                     with pay_r2_c3:
-                        unexp_color = "#C41C1C" if cash_leakage_unexplained > 0.001 else "#0F172A"
-                        unexp_bg = "#FFF0ED" if cash_leakage_unexplained > 0.001 else "#F8FAFC"
-                        st.markdown(
-                            f"""
-                            <div style="font-size:10px;font-weight:700;margin-bottom:1px;color:#334155;line-height:1.1;">Leakage Unexplained (₹)</div>
-                            <div style="height:28px;display:flex;align-items:center;border:1.5px solid #CBD5E1;border-radius:5px;padding:0 8px;
-                                        background:{unexp_bg};color:{unexp_color};font-size:11.5px;font-weight:800;">
-                                ₹{cash_leakage_unexplained:,.2f}
-                            </div>
-                            """,
-                            unsafe_allow_html=True,
+                        _unexp_key_prefix = "daily_leak_unexp_alert" if cash_leakage_unexplained > 0.001 else "daily_leak_unexp_ro"
+                        _unexp_w_key = f"{_unexp_key_prefix}{data_key_suffix}"
+                        st.session_state[_unexp_w_key] = f"₹{cash_leakage_unexplained:,.2f}"
+                        st.text_input(
+                            "Leakage Unexplained (₹)",
+                            key=_unexp_w_key,
+                            disabled=True,
                         )
                     with pay_r2_c4:
                         remarks = st.text_input(
@@ -6496,7 +6594,7 @@ elif page == "Daily Entry":
 
             hdr_c0, hdr_c1, hdr_c2, hdr_c3 = st.columns([0.9, 1.5, 1.3, 1.3], gap="small", vertical_alignment="center")
             with hdr_c0:
-                if st.button("⬅ Entry Menu", key="back_to_entry_menu_freezer_sales", type="secondary", use_container_width=True):
+                if st.button("⬅ Back", key="back_to_entry_menu_freezer_sales", type="secondary", use_container_width=True):
                     st.session_state["daily_entry_mode"] = None
                     st.rerun()
             with hdr_c1:
@@ -6825,9 +6923,9 @@ elif page == "Daily Entry":
         # RESTOCK ENTRY — Compact 80% Single-Page Layout & Matched Columns
         # --------------------------------------------------------------
         elif entry_mode == "restock":
-            rc_top0, rc_top1, rc_top2, rc_top3 = st.columns([0.9, 1.25, 0.95, 1.25], gap="small", vertical_alignment="bottom")
+            rc_top0, rc_top1, rc_top2, rc_top3 = st.columns([0.65, 1.35, 1.05, 1.35], gap="small", vertical_alignment="bottom")
             with rc_top0:
-                if st.button("⬅ Entry Menu", key="back_to_entry_menu_restock", type="secondary", use_container_width=True):
+                if st.button("⬅ Back", key="back_to_entry_menu_restock", type="secondary", use_container_width=True):
                     st.session_state["daily_entry_mode"] = None
                     st.rerun()
             with rc_top1:
@@ -6925,9 +7023,9 @@ elif page == "Daily Entry":
         # EXTRA STOCK — Compact 80% Single-Page Layout
         # --------------------------------------------------------------
         elif entry_mode == "extra":
-            ec_top0, ec_top1, ec_top2 = st.columns([0.9, 1.35, 1.15], gap="small", vertical_alignment="bottom")
+            ec_top0, ec_top1, ec_top2 = st.columns([0.65, 1.5, 1.25], gap="small", vertical_alignment="bottom")
             with ec_top0:
-                if st.button("⬅ Entry Menu", key="back_to_entry_menu_extra", type="secondary", use_container_width=True):
+                if st.button("⬅ Back", key="back_to_entry_menu_extra", type="secondary", use_container_width=True):
                     st.session_state["daily_entry_mode"] = None
                     st.rerun()
             with ec_top1:
@@ -7063,9 +7161,9 @@ elif page == "Daily Entry":
             date_label_map = {_entry_date_display(d): d for d in allowed_stock_dates}
             date_labels_list = list(date_label_map.keys())
 
-            vc0, vc1, vc2, vc3 = st.columns([0.9, 1.25, 1.05, 1.15], gap="small", vertical_alignment="bottom")
+            vc0, vc1, vc2, vc3 = st.columns([0.65, 1.35, 1.05, 1.35], gap="small", vertical_alignment="bottom")
             with vc0:
-                if st.button("⬅ Entry Menu", key="back_to_entry_menu_view_stock", type="secondary", use_container_width=True):
+                if st.button("⬅ Back", key="back_to_entry_menu_view_stock", type="secondary", use_container_width=True):
                     st.session_state["daily_entry_mode"] = None
                     st.rerun()
             with vc1:
@@ -7139,9 +7237,9 @@ elif page == "Daily Entry":
             if st.session_state.get("_rm_cart_success_msg"):
                 st.success(st.session_state.pop("_rm_cart_success_msg"))
 
-            rc0, rc1, rc2, rc3, rc4 = st.columns([0.85, 1.25, 0.95, 0.95, 0.75], gap="small", vertical_alignment="bottom")
+            rc0, rc1, rc2, rc3, rc4 = st.columns([0.65, 1.3, 0.95, 0.95, 0.75], gap="small", vertical_alignment="bottom")
             with rc0:
-                if st.button("⬅ Entry Menu", key="back_to_entry_menu_remove_cart_stock", type="secondary", use_container_width=True):
+                if st.button("⬅ Back", key="back_to_entry_menu_remove_cart_stock", type="secondary", use_container_width=True):
                     st.session_state["daily_entry_mode"] = None
                     st.rerun()
             with rc1:
@@ -7289,7 +7387,7 @@ elif page == "Daily Entry":
         elif entry_mode == "live_flavour_view":
             back_lv, _ = st.columns([1.0, 4.5])
             with back_lv:
-                if st.button("⬅ Entry Menu", key="back_to_entry_menu_live_flv", type="secondary", use_container_width=True):
+                if st.button("⬅ Back", key="back_to_entry_menu_live_flv", type="secondary", use_container_width=True):
                     st.session_state["daily_entry_mode"] = None
                     st.rerun()
             render_live_cart_flavour_tables_section(key_prefix="entry_live_flv")
