@@ -927,17 +927,14 @@ div[class*="st-key-row_del_"] button {
 .stSelectbox div[data-baseweb="select"] > div,
 .stDateInput div[data-baseweb="input"],
 .stTextInput div[data-baseweb="input"],
-.stNumberInput div[data-baseweb="input"] {
+.stNumberInput div[data-baseweb="input"],
+div[data-testid="stNumberInputContainer"] {
     min-height: 36px !important;
     height: 36px !important;
-    border-radius: 8px !important;
+    border-radius: 7px !important;
     background-color: #FFFFFF !important;
     border: 1.5px solid #CBD5E1 !important;
-}
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) .stNumberInput div[data-baseweb="input"] {
-    min-height: 28px !important;
-    height: 28px !important;
-    border-radius: 6px !important;
+    box-sizing: border-box !important;
 }
 .stTextInput input, .stNumberInput input, .stDateInput input {
     padding: 2px 8px !important;
@@ -952,6 +949,91 @@ div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) .stNumberInpu
     margin-bottom: 2px !important;
     text-align: left !important;
     color: #334155 !important;
+}
+
+/* Completely collapse hidden labels inside entry-grid rows so number inputs never shift down */
+label[data-testid="stWidgetLabel"][aria-hidden="true"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) label,
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) [data-testid="stWidgetLabel"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) label,
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) [data-testid="stWidgetLabel"] {
+    display: none !important;
+    height: 0px !important;
+    min-height: 0px !important;
+    max-height: 0px !important;
+    margin: 0px !important;
+    padding: 0px !important;
+    border: none !important;
+    overflow: hidden !important;
+}
+
+/* Force all columns inside entry-grid header, flavour rows, and total rows to align on the exact same horizontal axis */
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-header) {
+    align-items: center !important;
+    margin-top: 2px !important;
+    margin-bottom: 6px !important;
+}
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour),
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) {
+    align-items: center !important;
+    margin-top: 0px !important;
+    margin-bottom: 4px !important;
+}
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-total-row) {
+    align-items: center !important;
+    margin-top: 6px !important;
+    margin-bottom: 10px !important;
+}
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) > div[data-testid="stColumn"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) > div[data-testid="column"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-header) > div[data-testid="stColumn"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-header) > div[data-testid="column"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-total-row) > div[data-testid="stColumn"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-total-row) > div[data-testid="column"] {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    margin: 0px !important;
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
+}
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stNumberInput"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stNumberInput"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) .stNumberInput,
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) .stNumberInput {
+    margin: 0px !important;
+    padding: 0px !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+    display: flex !important;
+    align-items: center !important;
+}
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stNumberInputContainer"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stNumberInput"] div[data-baseweb="input"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stNumberInput"] div[data-baseweb="base-input"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) .stNumberInput div[data-baseweb="input"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stNumberInputContainer"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stNumberInput"] div[data-baseweb="input"] {
+    min-height: 36px !important;
+    height: 36px !important;
+    max-height: 36px !important;
+    border-radius: 6px !important;
+    margin: 0px !important;
+    padding: 0px !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    align-items: center !important;
+}
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stNumberInput"] input,
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) .stNumberInput input {
+    height: 34px !important;
+    min-height: 34px !important;
+    line-height: 34px !important;
+    padding: 0 8px !important;
+    margin: 0px !important;
+    font-size: 12.5px !important;
+    font-weight: 800 !important;
 }
 
 /* Metric Cards — Crisp White with Indigo/Blue Top Accent */
@@ -1065,79 +1147,119 @@ div[data-testid="stNumberInput"] input {
     padding-left: 8px !important;
 }
 
-/* Daily Entry & Stock Grid Cells */
+/* Daily Entry & Stock Grid Cells — Matched 36px Height & Zero Overlap */
 .entry-grid-header {
     background: linear-gradient(180deg, #EFF6FF 0%, #DBEAFE 100%);
     color: #1E2252 !important;
     border: 1px solid #93C5FD;
     border-bottom: 1.5px solid #60A5FA;
-    padding: 6px 10px;
+    height: 36px !important;
+    min-height: 36px !important;
+    padding: 0 10px !important;
     border-radius: 7px;
     font-size: 11.5px;
     font-weight: 800;
     text-align: center;
-    margin-bottom: 4px;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+}
+.entry-grid-header[style*="text-align:left"] {
+    justify-content: flex-start !important;
+}
+.entry-grid-header[style*="text-align:right"] {
+    justify-content: flex-end !important;
 }
 .entry-grid-cell {
     background: #FFFFFF;
     border: 1px solid #CBD5E1;
     border-radius: 6px;
-    height: 28px;
-    display: flex;
-    align-items: center;
+    height: 36px !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+    display: flex !important;
+    align-items: center !important;
     justify-content: center;
     font-size: 12px;
     font-weight: 800;
     color: #0F172A;
+    box-sizing: border-box !important;
+    margin: 0 !important;
 }
 .entry-grid-cell-flavour {
     background: #FFFFFF;
     border: 1px solid #CBD5E1;
     border-left: 3.5px solid #3B82F6;
     border-radius: 6px;
-    height: 28px;
-    display: flex;
-    align-items: center;
+    height: 36px !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+    display: flex !important;
+    align-items: center !important;
     justify-content: space-between;
-    padding: 0 8px;
+    padding: 0 10px !important;
     font-size: 12px;
     font-weight: 800;
     color: #1E2252;
+    box-sizing: border-box !important;
+    margin: 0 !important;
 }
 .entry-grid-cell-sold {
     background: #FEF3C7;
     border: 1px solid #FCD34D;
     border-radius: 6px;
-    height: 28px;
-    display: flex;
-    align-items: center;
+    height: 36px !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+    display: flex !important;
+    align-items: center !important;
     justify-content: center;
     font-size: 12px;
     font-weight: 900;
     color: #92400E;
+    box-sizing: border-box !important;
+    margin: 0 !important;
 }
 .entry-grid-cell-amount {
     background: #ECFDF5;
     border: 1px solid #6EE7B7;
     border-radius: 6px;
-    height: 28px;
-    display: flex;
-    align-items: center;
+    height: 36px !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+    display: flex !important;
+    align-items: center !important;
     justify-content: flex-end;
-    padding: 0 8px;
+    padding: 0 10px !important;
     font-size: 12px;
     font-weight: 900;
     color: #065F46;
+    box-sizing: border-box !important;
+    margin: 0 !important;
 }
 .entry-grid-total-row {
     background: linear-gradient(90deg, #EFF6FF 0%, #E0E7FF 100%);
     border: 1.5px solid #93C5FD;
     border-radius: 8px;
-    padding: 7px 10px;
-    margin-top: 6px;
+    height: 38px !important;
+    min-height: 38px !important;
+    padding: 0 10px !important;
+    margin: 0 !important;
     font-size: 12px;
     font-weight: 900;
     color: #1E2252;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center;
+    box-sizing: border-box !important;
+}
+.entry-grid-total-row[style*="text-align:left"] {
+    justify-content: flex-start !important;
+}
+.entry-grid-total-row[style*="text-align:right"] {
+    justify-content: flex-end !important;
 }
 
 /* Compact No-Scroll Ledger Rows for Expenses & Payments */
@@ -1348,13 +1470,17 @@ div[data-testid="stNumberInput"] input {
     background: #EFF6FF;
     border: 1px solid #93C5FD;
     border-radius: 6px;
-    height: 28px;
-    display: flex;
-    align-items: center;
+    height: 36px !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+    display: flex !important;
+    align-items: center !important;
     justify-content: center;
     font-size: 12px;
     font-weight: 900;
     color: #1D4ED8;
+    box-sizing: border-box !important;
+    margin: 0 !important;
 }
 
 /* Bulk Order Planner Cards */
@@ -1840,7 +1966,7 @@ def list_daily_entries_with_prefill():
                 "db_id": f"prefill_{cart}_{yesterday.strftime('%Y%m%d')}", "date": pd.Timestamp(yesterday), "cart": cart, "by_code": by_code,
                 "total": 0.0, "phonepe": 0.0, "cash": 0.0, "cash_leakage": 0.0,
                 "cash_leakage_explained": 0.0, "cash_leakage_unexplained": 0.0,
-                "remarks": "", "staff_name": prev_staff, "staff_advance": 0.0, "food_tea_cash": 0.0, "is_prefill": True
+                "remarks": "[web app]", "staff_name": prev_staff, "staff_advance": 0.0, "food_tea_cash": 0.0, "is_prefill": True
             })
 
     entries.sort(key=lambda x: (x["date"], x["cart"]), reverse=True)
@@ -1850,9 +1976,8 @@ def sync_daily_entry(entry_date, cart_name, added_map, closing_map, opening_map,
                      staff_name="", staff_advance=0.0, food_tea_cash=0.0,
                      cash_leakage_explained=0.0, cash_leakage_unexplained=0.0):
     web_entry_tag = "[web app]"
-    remarks_text = str(remarks or "").strip()
-    if web_entry_tag.lower() not in remarks_text.lower():
-        remarks_text = f"{remarks_text} {web_entry_tag}".strip()
+    remarks_text = re.sub(r"\[(?:mobile\s*app|web\s*app)\]", "", str(remarks or ""), flags=re.IGNORECASE).strip()
+    remarks_text = f"{remarks_text} {web_entry_tag}".strip()
 
     cash_leakage_explained = max(0.0, float(cash_leakage_explained or 0.0))
     cash_leakage_unexplained = max(0.0, float(cash_leakage_unexplained or 0.0))
@@ -5210,11 +5335,11 @@ if page == "Home" and user_role == "admin":
                                 <span class="dep-fin-val" style="color:#1E2252;">{period_units_home:,}</span>
                             </div>
                             <div class="dep-fin-item">
-                                <span class="dep-fin-lbl">Average Rev / Day</span>
+                                <span class="dep-fin-lbl">Avg Rev / Day</span>
                                 <span class="dep-fin-val" style="color:#2563EB;">₹{avg_daily_rev_home:,.0f}</span>
                             </div>
                             <div class="dep-fin-item">
-                                <span class="dep-fin-lbl">Average Units / Day</span>
+                                <span class="dep-fin-lbl">Avg Units / Day</span>
                                 <span class="dep-fin-val" style="color:#2563EB;">{avg_daily_units_home:,}</span>
                             </div>
                             <div class="dep-fin-item" style="border-left-color:#F59E0B;">
@@ -5851,10 +5976,12 @@ elif page == "Daily Entry":
                     unsafe_allow_html=True,
                 )
                 with st.container(border=True):
-                    pass
+                    st.caption(
+                        f"Enter **+ Added** and **Closing** units in the highlighted boxes for **{_entry_date_display(entry_date)}**:"
+                    )
                     live_sold_map = get_live_cart_sold_map_for_single_cart(cart_name, entry_date)
 
-                    hc1, hc2, hc3, hc4, hc5, hc6, hc7 = st.columns([1.95, 0.78, 0.95, 0.95, 0.78, 0.82, 1.1], gap="small")
+                    hc1, hc2, hc3, hc4, hc5, hc6, hc7 = st.columns([1.95, 0.78, 0.95, 0.95, 0.78, 0.82, 1.1], gap="small", vertical_alignment="center")
                     hc1.markdown("<div class='entry-grid-header' style='text-align:left;'>Flavour (MRP)</div>", unsafe_allow_html=True)
                     hc2.markdown("<div class='entry-grid-header'>Open</div>", unsafe_allow_html=True)
                     hc3.markdown("<div class='entry-grid-header'>+ Add ✏️</div>", unsafe_allow_html=True)
@@ -5872,7 +5999,7 @@ elif page == "Daily Entry":
                             st.session_state[k_cls] = loaded["by_code"][code]["closing"]
 
                         cur_open = opening_map[code]
-                        rc1, rc2, rc3, rc4, rc5, rc6, rc7 = st.columns([1.95, 0.78, 0.95, 0.95, 0.78, 0.82, 1.1], gap="small")
+                        rc1, rc2, rc3, rc4, rc5, rc6, rc7 = st.columns([1.95, 0.78, 0.95, 0.95, 0.78, 0.82, 1.1], gap="small", vertical_alignment="center")
                         with rc1:
                             st.markdown(
                                 f"<div class='entry-grid-cell-flavour'><span>{f_info['name']}</span><span style='color:#2563EB;font-size:11px;'>₹{f_info['mrp']:.0f}</span></div>",
@@ -5922,7 +6049,7 @@ elif page == "Daily Entry":
                     tot_live_sold = sum(live_sold_map.values())
                     calculated_mrp_total = float(sum(amount_map.values()))
 
-                    tc1, tc2, tc3, tc4, tc5, tc6, tc7 = st.columns([1.95, 0.78, 0.95, 0.95, 0.78, 0.82, 1.1], gap="small")
+                    tc1, tc2, tc3, tc4, tc5, tc6, tc7 = st.columns([1.95, 0.78, 0.95, 0.95, 0.78, 0.82, 1.1], gap="small", vertical_alignment="center")
                     tc1.markdown("<div class='entry-grid-total-row' style='text-align:left;'>TOTAL</div>", unsafe_allow_html=True)
                     tc2.markdown(f"<div class='entry-grid-total-row' style='text-align:center;'>{tot_open}</div>", unsafe_allow_html=True)
                     tc3.markdown(f"<div class='entry-grid-total-row' style='text-align:center;'>{tot_add}</div>", unsafe_allow_html=True)
@@ -5990,8 +6117,8 @@ elif page == "Daily Entry":
                         unexp_bg = "#FFF0ED" if cash_leakage_unexplained > 0.001 else "#F8FAFC"
                         st.markdown(
                             f"""
-                            <div style="font-size:10.5px;font-weight:700;margin-bottom:1px;">Cash Leakage (Unexplained) (₹)</div>
-                            <div style="height:28px;border:1px solid #CBD5E1;border-radius:6px;padding:4px 7px;
+                            <div style="font-size:11px;font-weight:700;margin-bottom:2px;color:#334155;">Cash Leakage (Unexplained) (₹)</div>
+                            <div style="height:36px;display:flex;align-items:center;border:1.5px solid #CBD5E1;border-radius:7px;padding:0 10px;
                                         background:{unexp_bg};color:{unexp_color};font-size:12px;font-weight:800;">
                                 ₹{cash_leakage_unexplained:,.2f}
                             </div>
@@ -6011,15 +6138,29 @@ elif page == "Daily Entry":
                             unsafe_allow_html=True,
                         )
 
+                    _clean_loaded_rem = re.sub(
+                        r"\[(?:mobile\s*app|web\s*app)\]",
+                        "",
+                        str(loaded.get("remarks") or ""),
+                        flags=re.IGNORECASE,
+                    ).strip()
+                    _default_web_rem = f"{_clean_loaded_rem} [web app]".strip()
+                    _rem_state_key = f"daily_remarks{data_key_suffix}"
+                    if _rem_state_key not in st.session_state:
+                        st.session_state[_rem_state_key] = _default_web_rem
+                    elif "[mobile app]" in str(st.session_state.get(_rem_state_key, "")).lower() or not str(st.session_state.get(_rem_state_key, "")).strip():
+                        _cur_r = re.sub(r"\[(?:mobile\s*app|web\s*app)\]", "", str(st.session_state.get(_rem_state_key, "")), flags=re.IGNORECASE).strip()
+                        st.session_state[_rem_state_key] = f"{_cur_r} [web app]".strip()
+
                     remarks = st.text_input(
                         "Remarks",
-                        value=loaded["remarks"],
-                        key=f"daily_remarks{data_key_suffix}",
+                        value=_default_web_rem,
+                        key=_rem_state_key,
                         placeholder="Enter remarks (mandatory if cash leakage)...",
                         disabled=sales_opening_mismatch,
                     )
                     manual_remarks = re.sub(
-                        r"\[(?:web appert{}mobile app)\]",
+                        r"\[(?:web\s*app|mobile\s*app)\]",
                         "",
                         str(remarks or ""),
                         flags=re.IGNORECASE,
@@ -6252,7 +6393,7 @@ elif page == "Daily Entry":
                     unsafe_allow_html=True,
                 )
                 with st.container(border=True):
-                    fhc1, fhc2, fhc3, fhc4, fhc5 = st.columns([2.0, 1.0, 0.9, 1.1, 1.2], gap="small")
+                    fhc1, fhc2, fhc3, fhc4, fhc5 = st.columns([2.0, 1.0, 0.9, 1.1, 1.2], gap="small", vertical_alignment="center")
                     fhc1.markdown("<div class='entry-grid-header' style='text-align:left;'>Flavour</div>", unsafe_allow_html=True)
                     fhc2.markdown("<div class='entry-grid-header'>Current Stock</div>", unsafe_allow_html=True)
                     fhc3.markdown("<div class='entry-grid-header'>MRP</div>", unsafe_allow_html=True)
@@ -6268,7 +6409,7 @@ elif page == "Daily Entry":
                         if k_sold not in st.session_state:
                             st.session_state[k_sold] = orig_edit_qty
 
-                        r1, r2, r3, r4, r5 = st.columns([2.0, 1.0, 0.9, 1.1, 1.2], gap="small")
+                        r1, r2, r3, r4, r5 = st.columns([2.0, 1.0, 0.9, 1.1, 1.2], gap="small", vertical_alignment="center")
                         with r1:
                             st.markdown(f"<div class='entry-grid-cell-flavour'><span>{f_info['name']}</span></div>", unsafe_allow_html=True)
                         with r2:
@@ -6299,7 +6440,7 @@ elif page == "Daily Entry":
                     tot_fzr_sold = sum(fzr_sold_map.values())
                     tot_fzr_value = float(sum(fzr_val_map.values()))
 
-                    ft1, ft2, ft3, ft4, ft5 = st.columns([2.0, 1.0, 0.9, 1.1, 1.2], gap="small")
+                    ft1, ft2, ft3, ft4, ft5 = st.columns([2.0, 1.0, 0.9, 1.1, 1.2], gap="small", vertical_alignment="center")
                     ft1.markdown("<div class='entry-grid-total-row' style='text-align:left;'>TOTAL</div>", unsafe_allow_html=True)
                     ft2.markdown(f"<div class='entry-grid-total-row' style='text-align:center;'>{tot_fzr_stock}</div>", unsafe_allow_html=True)
                     ft3.markdown("<div class='entry-grid-total-row' style='text-align:center;'>—</div>", unsafe_allow_html=True)
@@ -6443,7 +6584,7 @@ elif page == "Daily Entry":
                 unsafe_allow_html=True,
             )
             with st.container(border=True):
-                rh1, rh2, rh3, rh4 = st.columns([2.2, 1.0, 1.2, 1.2], gap="small")
+                rh1, rh2, rh3, rh4 = st.columns([2.2, 1.0, 1.2, 1.2], gap="small", vertical_alignment="center")
                 rh1.markdown("<div class='entry-grid-header' style='background:#D1FAE5;color:#111111;border:1px solid #4ADE80;text-align:left;'>Flavour</div>", unsafe_allow_html=True)
                 rh2.markdown("<div class='entry-grid-header' style='background:#D1FAE5;color:#111111;border:1px solid #4ADE80;'>Opening</div>", unsafe_allow_html=True)
                 rh3.markdown("<div class='entry-grid-header' style='background:#D1FAE5;color:#111111;border:1px solid #4ADE80;'>+ Restock ✏️</div>", unsafe_allow_html=True)
@@ -6457,7 +6598,7 @@ elif page == "Daily Entry":
                     if key not in st.session_state:
                         st.session_state[key] = existing_added
 
-                    c1, c2, c3, c4 = st.columns([2.2, 1.0, 1.2, 1.2], gap="small")
+                    c1, c2, c3, c4 = st.columns([2.2, 1.0, 1.2, 1.2], gap="small", vertical_alignment="center")
                     with c1:
                         st.markdown(f"<div class='entry-grid-cell-flavour'><span>{f_info['name']}</span></div>", unsafe_allow_html=True)
                     with c2:
@@ -6482,7 +6623,7 @@ elif page == "Daily Entry":
                 total_restock = sum(restock_map.values())
                 total_opening_after = sum(restock_after_map.values())
 
-                tf1, tf2, tf3, tf4 = st.columns([2.2, 1.0, 1.2, 1.2], gap="small")
+                tf1, tf2, tf3, tf4 = st.columns([2.2, 1.0, 1.2, 1.2], gap="small", vertical_alignment="center")
                 tf1.markdown("<div class='entry-grid-total-row' style='text-align:left;'>TOTAL</div>", unsafe_allow_html=True)
                 tf2.markdown(f"<div class='entry-grid-total-row' style='text-align:center;'>{total_opening_base}</div>", unsafe_allow_html=True)
                 tf3.markdown(f"<div class='entry-grid-total-row' style='text-align:center;color:#047857;'>+{total_restock} pcs</div>", unsafe_allow_html=True)
@@ -6523,7 +6664,7 @@ elif page == "Daily Entry":
             extra_map = {}
 
             with st.container(border=True):
-                eh1, eh2, eh3, eh4, eh5 = st.columns([2.0, 0.9, 0.9, 1.1, 1.1], gap="small")
+                eh1, eh2, eh3, eh4, eh5 = st.columns([2.0, 0.9, 0.9, 1.1, 1.1], gap="small", vertical_alignment="center")
                 eh1.markdown("<div class='entry-grid-header' style='text-align:left;'>Flavour</div>", unsafe_allow_html=True)
                 eh2.markdown("<div class='entry-grid-header'>Current</div>", unsafe_allow_html=True)
                 eh3.markdown("<div class='entry-grid-header'>Added Today</div>", unsafe_allow_html=True)
@@ -6538,7 +6679,7 @@ elif page == "Daily Entry":
                     if key not in st.session_state:
                         st.session_state[key] = 0
 
-                    c1, c2, c3, c4, c5 = st.columns([2.0, 0.9, 0.9, 1.1, 1.1], gap="small")
+                    c1, c2, c3, c4, c5 = st.columns([2.0, 0.9, 0.9, 1.1, 1.1], gap="small", vertical_alignment="center")
                     with c1:
                         st.markdown(f"<div class='entry-grid-cell-flavour'><span>{f_info['name']}</span></div>", unsafe_allow_html=True)
                     with c2:
@@ -6565,7 +6706,7 @@ elif page == "Daily Entry":
                 total_extra = sum(extra_map.values())
                 total_after_extra = tot_curr_stock + total_extra
 
-                ef1, ef2, ef3, ef4, ef5 = st.columns([2.0, 0.9, 0.9, 1.1, 1.1], gap="small")
+                ef1, ef2, ef3, ef4, ef5 = st.columns([2.0, 0.9, 0.9, 1.1, 1.1], gap="small", vertical_alignment="center")
                 ef1.markdown("<div class='entry-grid-total-row' style='text-align:left;'>TOTAL</div>", unsafe_allow_html=True)
                 ef2.markdown(f"<div class='entry-grid-total-row' style='text-align:center;'>{tot_curr_stock}</div>", unsafe_allow_html=True)
                 ef3.markdown(f"<div class='entry-grid-total-row' style='text-align:center;'>{tot_added_today}</div>", unsafe_allow_html=True)
@@ -6670,7 +6811,7 @@ elif page == "Daily Entry":
             )
 
             with st.container(border=True):
-                vh1, vh2, vh3, vh4 = st.columns([2.2, 1.1, 1.1, 1.1], gap="small")
+                vh1, vh2, vh3, vh4 = st.columns([2.2, 1.1, 1.1, 1.1], gap="small", vertical_alignment="center")
                 vh1.markdown("<div class='entry-grid-header' style='text-align:left;'>Flavour</div>", unsafe_allow_html=True)
                 vh2.markdown("<div class='entry-grid-header'>Opening</div>", unsafe_allow_html=True)
                 vh3.markdown("<div class='entry-grid-header'>Restock</div>", unsafe_allow_html=True)
@@ -6691,7 +6832,7 @@ elif page == "Daily Entry":
 
                     rs_disp = f"{rs_val} ({ex_val})" if ex_val > 0 else f"{rs_val}"
 
-                    r1, r2, r3, r4 = st.columns([2.2, 1.1, 1.1, 1.1], gap="small")
+                    r1, r2, r3, r4 = st.columns([2.2, 1.1, 1.1, 1.1], gap="small", vertical_alignment="center")
                     r1.markdown(f"<div class='entry-grid-cell-flavour'><span>{escape(r['flavour'])}</span></div>", unsafe_allow_html=True)
                     r2.markdown(f"<div class='entry-grid-cell'>{op_val}</div>", unsafe_allow_html=True)
                     r3.markdown(f"<div class='entry-grid-cell'>{rs_disp}</div>", unsafe_allow_html=True)
@@ -6699,7 +6840,7 @@ elif page == "Daily Entry":
 
                 tot_rs_disp = f"{tot_restock_v} ({tot_extra_v})" if tot_extra_v > 0 else f"{tot_restock_v}"
 
-                vt1, vt2, vt3, vt4 = st.columns([2.2, 1.1, 1.1, 1.1], gap="small")
+                vt1, vt2, vt3, vt4 = st.columns([2.2, 1.1, 1.1, 1.1], gap="small", vertical_alignment="center")
                 vt1.markdown("<div class='entry-grid-total-row' style='text-align:left;font-weight:900;'><b>TOTAL</b></div>", unsafe_allow_html=True)
                 vt2.markdown(f"<div class='entry-grid-total-row' style='text-align:center;font-weight:900;'><b>{tot_open_v}</b></div>", unsafe_allow_html=True)
                 vt3.markdown(f"<div class='entry-grid-total-row' style='text-align:center;font-weight:900;'><b>{tot_rs_disp}</b></div>", unsafe_allow_html=True)
@@ -6764,7 +6905,7 @@ elif page == "Daily Entry":
 
             return_map = {}
             with st.container(border=True):
-                rh1, rh2, rh3, rh4, rh5 = st.columns([2.0, 0.9, 1.0, 1.2, 1.1], gap="small")
+                rh1, rh2, rh3, rh4, rh5 = st.columns([2.0, 0.9, 1.0, 1.2, 1.1], gap="small", vertical_alignment="center")
                 rh1.markdown("<div class='entry-grid-header' style='text-align:left;'>Flavour</div>", unsafe_allow_html=True)
                 rh2.markdown("<div class='entry-grid-header'>Opening</div>", unsafe_allow_html=True)
                 rh3.markdown("<div class='entry-grid-header'>In Cart Now</div>", unsafe_allow_html=True)
@@ -6781,7 +6922,7 @@ elif page == "Daily Entry":
                     if int(st.session_state[r_key] or 0) > in_cart_u:
                         st.session_state[r_key] = in_cart_u
 
-                    c1, c2, c3, c4, c5 = st.columns([2.0, 0.9, 1.0, 1.2, 1.1], gap="small")
+                    c1, c2, c3, c4, c5 = st.columns([2.0, 0.9, 1.0, 1.2, 1.1], gap="small", vertical_alignment="center")
                     with c1:
                         st.markdown(f"<div class='entry-grid-cell-flavour'><span>{escape(f_info['name'])}</span><span style='color:#2563EB;font-size:10.5px;'>₹{int(f_info['mrp'])}</span></div>", unsafe_allow_html=True)
                     with c2:
@@ -6809,7 +6950,7 @@ elif page == "Daily Entry":
                 tot_move_c = sum(return_map.values())
                 tot_rem_c = max(0, tot_in_cart_now - tot_move_c)
 
-                rf1, rf2, rf3, rf4, rf5 = st.columns([2.0, 0.9, 1.0, 1.2, 1.1], gap="small")
+                rf1, rf2, rf3, rf4, rf5 = st.columns([2.0, 0.9, 1.0, 1.2, 1.1], gap="small", vertical_alignment="center")
                 rf1.markdown("<div class='entry-grid-total-row' style='text-align:left;'>TOTAL</div>", unsafe_allow_html=True)
                 rf2.markdown(f"<div class='entry-grid-total-row' style='text-align:center;'>{tot_open_c}</div>", unsafe_allow_html=True)
                 rf3.markdown(f"<div class='entry-grid-total-row' style='text-align:center;color:#047857;'>{tot_in_cart_now}</div>", unsafe_allow_html=True)
@@ -13594,7 +13735,7 @@ elif page == "Dashboard" and user_role == "admin":
             ) = _render_dash_date_filter_and_compute(key_suffix="main_overview")
 
             _render_7_financial_overview_boxes(
-                total_rev, avg_rev_per_day, total_units,
+                total_rev, avg_units_per_day, total_units,
                 exact_cogs_sold, cogs_margin, gross_profit, gross_margin,
                 total_incurred_opex, opex_margin, net_profit, net_margin
             )
@@ -14073,7 +14214,7 @@ elif page == "Dashboard" and user_role == "admin":
 
             st.markdown("### Financials Overview")
             _render_7_financial_overview_boxes(
-                total_rev, avg_rev_per_day, total_units,
+                total_rev, avg_units_per_day, total_units,
                 exact_cogs_sold, cogs_margin, gross_profit, gross_margin,
                 total_incurred_opex, opex_margin, net_profit, net_margin
             )
