@@ -1011,21 +1011,21 @@ div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .
     display: inline-block;
 }
 
-/* Consistent Compact Input Heights & Slate-Blue Borders (Targeting data-testid for Streamlit 1.38+) */
+/* Consistent Compact 32px Input Heights & Slate-Blue Borders (Direct child & data-testid selectors for Streamlit 1.38+/1.40+) */
+div[data-testid="stSelectbox"] > div,
+div[data-testid="stTextInput"] > div,
+div[data-testid="stTextInputRootElement"],
+div[data-testid="stDateInput"] > div,
+div[data-testid="stTimeInput"] > div,
+div[data-testid="stNumberInputContainer"],
 .stSelectbox div[data-baseweb="select"] > div,
 div[data-testid="stSelectbox"] div[data-baseweb="select"] > div,
 .stDateInput div[data-baseweb="input"],
 div[data-testid="stDateInput"] div[data-baseweb="input"],
-div[data-testid="stDateInput"] div[data-baseweb="base-input"],
 .stTimeInput div[data-baseweb="input"],
 div[data-testid="stTimeInput"] div[data-baseweb="input"],
-div[data-testid="stTimeInput"] div[data-baseweb="base-input"],
 .stTextInput div[data-baseweb="input"],
-div[data-testid="stTextInput"] div[data-baseweb="input"],
-div[data-testid="stTextInput"] div[data-baseweb="base-input"],
-.stNumberInput div[data-baseweb="input"],
-div[data-testid="stNumberInput"] div[data-baseweb="input"],
-div[data-testid="stNumberInputContainer"] {
+div[data-testid="stTextInput"] div[data-baseweb="input"] {
     min-height: 32px !important;
     height: 32px !important;
     max-height: 32px !important;
@@ -1033,33 +1033,51 @@ div[data-testid="stNumberInputContainer"] {
     background-color: #FFFFFF !important;
     border: 1.5px solid #CBD5E1 !important;
     box-sizing: border-box !important;
+    overflow: hidden !important;
+    display: flex !important;
     align-items: center !important;
 }
-/* Prevent double border on nested base-input inside input */
-div[data-testid="stTextInput"] div[data-baseweb="input"] > div[data-baseweb="base-input"],
-div[data-testid="stDateInput"] div[data-baseweb="input"] > div[data-baseweb="base-input"],
-div[data-testid="stTimeInput"] div[data-baseweb="input"] > div[data-baseweb="base-input"],
+/* Reset all nested inner divs inside Selectbox, TextInput, DateInput, and TimeInput so they never force 40px height or double borders */
+div[data-testid="stSelectbox"] > div div,
+div[data-testid="stTextInput"] > div div,
+div[data-testid="stDateInput"] > div div,
+div[data-testid="stTimeInput"] > div div,
 div[data-testid="stNumberInput"] div[data-baseweb="input"] > div[data-baseweb="base-input"] {
     border: none !important;
     background: transparent !important;
-    min-height: 30px !important;
+    background-color: transparent !important;
+    min-height: 0px !important;
     height: 30px !important;
     max-height: 30px !important;
+    line-height: 30px !important;
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
+    margin-top: 0px !important;
+    margin-bottom: 0px !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    align-items: center !important;
 }
 .stTextInput input, .stNumberInput input, .stDateInput input, .stTimeInput input,
 div[data-testid="stTextInput"] input,
 div[data-testid="stDateInput"] input,
 div[data-testid="stTimeInput"] input {
     padding: 0px 8px !important;
+    margin: 0px !important;
     font-size: 11.5px !important;
     text-align: left !important;
     font-weight: 700 !important;
     color: #0F172A !important;
     -webkit-text-fill-color: #0F172A !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
     height: 30px !important;
     min-height: 30px !important;
+    max-height: 30px !important;
     line-height: 30px !important;
 }
+div[data-testid="stSelectbox"] > div,
 div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
     padding-top: 0px !important;
     padding-bottom: 0px !important;
@@ -1067,6 +1085,7 @@ div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
     font-weight: 700 !important;
     color: #0F172A !important;
 }
+/* Uniform 16px height (+ 2px bottom margin = 18px) for all widget labels */
 .stNumberInput label, .stTextInput label, .stSelectbox label, .stDateInput label, .stTimeInput label,
 div[data-testid="stNumberInput"] label[data-testid="stWidgetLabel"],
 div[data-testid="stTextInput"] label[data-testid="stWidgetLabel"],
@@ -1078,30 +1097,82 @@ div[data-testid="stTimeInput"] label[data-testid="stWidgetLabel"] {
     height: 16px !important;
     min-height: 16px !important;
     max-height: 16px !important;
-    margin-bottom: 2px !important;
+    margin: 0px 0px 2px 0px !important;
+    padding: 0px !important;
     line-height: 16px !important;
     text-align: left !important;
     color: #334155 !important;
 }
+div[data-testid="stNumberInput"] label[data-testid="stWidgetLabel"] *,
+div[data-testid="stTextInput"] label[data-testid="stWidgetLabel"] *,
+div[data-testid="stSelectbox"] label[data-testid="stWidgetLabel"] *,
+div[data-testid="stDateInput"] label[data-testid="stWidgetLabel"] *,
+div[data-testid="stTimeInput"] label[data-testid="stWidgetLabel"] * {
+    margin: 0px !important;
+    padding: 0px !important;
+    line-height: 16px !important;
+    font-size: 10.5px !important;
+    font-weight: 700 !important;
+}
 
-/* Top Row of Entry Screens: Align "Back" button at far left with Assigned Cart, Date, and Staff fields (exact same 32px height & baseline) */
+/* ======================================================================
+   TOP ROW OF ALL ENTRY SCREENS:
+   Align "⬅ Back" button (and action buttons) at far left with Assigned Cart,
+   Date, and Staff fields — exact same 32px control height & 50px total height
+   ====================================================================== */
 div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-back_to_entry_menu_"]) {
     align-items: flex-end !important;
-    margin-bottom: 2px !important;
+    margin-top: 0px !important;
+    margin-bottom: 3px !important;
 }
-div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-back_to_entry_menu_"]) > div[data-testid="stColumn"] {
+div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-back_to_entry_menu_"]) > div[data-testid="stColumn"],
+div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-back_to_entry_menu_"]) > div[data-testid="column"] {
     display: flex !important;
     flex-direction: column !important;
     justify-content: flex-end !important;
+    margin: 0px !important;
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
 }
-div[class*="st-key-back_to_entry_menu_"] {
+div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-back_to_entry_menu_"]) div[data-testid="stVerticalBlock"],
+div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-back_to_entry_menu_"]) div[data-testid="stElementContainer"] {
+    margin: 0px !important;
+    padding: 0px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+}
+div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-back_to_entry_menu_"]) div[data-testid="stSelectbox"],
+div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-back_to_entry_menu_"]) div[data-testid="stTextInput"],
+div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-back_to_entry_menu_"]) div[data-testid="stDateInput"] {
+    height: 50px !important;
+    min-height: 50px !important;
+    max-height: 50px !important;
+    margin: 0px !important;
+    padding: 0px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-end !important;
+    width: 100% !important;
+}
+div[class*="st-key-back_to_entry_menu_"],
+div[class*="st-key-refresh_rm_cart_"],
+div[class*="st-key-btn_fzr_mode_"] {
     margin-top: 18px !important;
     margin-bottom: 0px !important;
     padding: 0px !important;
     width: 100% !important;
+    height: 32px !important;
+    min-height: 32px !important;
+    max-height: 32px !important;
+    display: flex !important;
+    align-items: flex-end !important;
 }
 div[class*="st-key-back_to_entry_menu_"] .stButton,
-div[class*="st-key-back_to_entry_menu_"] .stButton > button {
+div[class*="st-key-back_to_entry_menu_"] .stButton > button,
+div[class*="st-key-refresh_rm_cart_"] .stButton,
+div[class*="st-key-refresh_rm_cart_"] .stButton > button,
+div[class*="st-key-btn_fzr_mode_"] .stButton,
+div[class*="st-key-btn_fzr_mode_"] .stButton > button {
     height: 32px !important;
     min-height: 32px !important;
     max-height: 32px !important;
@@ -1114,7 +1185,31 @@ div[class*="st-key-back_to_entry_menu_"] .stButton > button {
     box-sizing: border-box !important;
 }
 
+/* Remove Cart Stock secondary bar: align green stock banner with Empty Cart & Clear Inputs buttons */
+div[data-testid="stHorizontalBlock"]:has(.header-box-restock) {
+    align-items: center !important;
+    margin-top: 0px !important;
+    margin-bottom: 2px !important;
+}
+div[data-testid="stHorizontalBlock"]:has(.header-box-restock) div[data-testid="stMarkdown"],
+div[data-testid="stHorizontalBlock"]:has(.header-box-restock) div[data-testid="stMarkdownContainer"],
+div[data-testid="stHorizontalBlock"]:has(.header-box-restock) div[data-testid="stElementContainer"] {
+    margin: 0px !important;
+    padding: 0px !important;
+    width: 100% !important;
+}
+div[class*="st-key-btn_empty_cart_"] .stButton > button,
+div[class*="st-key-btn_clear_rm_cart_"] .stButton > button {
+    height: 28px !important;
+    min-height: 28px !important;
+    max-height: 28px !important;
+    padding: 0 10px !important;
+    margin: 0px !important;
+}
+
 /* Disabled Leakage Unexplained Text Input Styling (Matches sibling inputs 100% in height & alignment) */
+div[class*="st-key-daily_leak_unexp_ro"] > div,
+div[class*="st-key-daily_leak_unexp_ro"] div[data-testid="stTextInputRootElement"],
 div[class*="st-key-daily_leak_unexp_ro"] div[data-baseweb="input"] {
     background-color: #F8FAFC !important;
     border: 1.5px solid #CBD5E1 !important;
@@ -1126,6 +1221,8 @@ div[class*="st-key-daily_leak_unexp_ro"] input {
     font-weight: 800 !important;
     opacity: 1 !important;
 }
+div[class*="st-key-daily_leak_unexp_alert"] > div,
+div[class*="st-key-daily_leak_unexp_alert"] div[data-testid="stTextInputRootElement"],
 div[class*="st-key-daily_leak_unexp_alert"] div[data-baseweb="input"] {
     background-color: #FFF0ED !important;
     border: 1.5px solid #FCA5A5 !important;
@@ -1225,59 +1322,61 @@ div[data-testid="stHorizontalBlock"]:has(.entry-grid-total-row) > div[data-testi
     padding-bottom: 0px !important;
 }
 
-/* Ensure stNumberInput inside entry-grid rows spans 100% of its column width (matching its column header) and exact 28px height */
+/* CRITICAL: Force every wrapper div from stColumn down to stNumberInput & input in entry-grid rows to span 100% of the column width */
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) > div[data-testid="stColumn"]:has(div[data-testid="stNumberInput"]) div:not([data-testid="InputInstructions"]),
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) > div[data-testid="stColumn"]:has(div[data-testid="stNumberInput"]) div:not([data-testid="InputInstructions"]),
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stNumberInput"],
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stNumberInput"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stNumberInput"] div:not([data-testid="InputInstructions"]),
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stNumberInput"] div:not([data-testid="InputInstructions"]),
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) .stNumberInput,
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) .stNumberInput {
     width: 100% !important;
+    min-width: 100% !important;
     max-width: 100% !important;
-    min-width: 0 !important;
     flex: 1 1 100% !important;
+    align-self: stretch !important;
     margin: 0px !important;
     padding: 0px !important;
     height: 28px !important;
     min-height: 28px !important;
     max-height: 28px !important;
+    box-sizing: border-box !important;
     display: flex !important;
     align-items: center !important;
 }
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stNumberInputContainer"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stNumberInputContainer"] {
+    border: 1.5px solid #93C5FD !important;
+    background-color: #FFFFFF !important;
+    border-radius: 5px !important;
+}
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stNumberInput"] div[data-baseweb="input"],
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stNumberInput"] div[data-baseweb="base-input"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) .stNumberInput div[data-baseweb="input"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stNumberInputContainer"],
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stNumberInput"] div[data-baseweb="input"],
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stNumberInput"] div[data-baseweb="base-input"] {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    flex: 1 1 100% !important;
-    min-height: 28px !important;
-    height: 28px !important;
-    max-height: 28px !important;
-    border-radius: 5px !important;
-    margin: 0px !important;
-    padding: 0px !important;
-    box-sizing: border-box !important;
-    display: flex !important;
-    align-items: center !important;
+    border: none !important;
+    background: transparent !important;
 }
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stNumberInput"] input,
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) .stNumberInput input,
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stNumberInput"] input,
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) .stNumberInput input {
     width: 100% !important;
+    min-width: 100% !important;
     max-width: 100% !important;
     flex: 1 1 100% !important;
     height: 26px !important;
     min-height: 26px !important;
+    max-height: 26px !important;
     line-height: 26px !important;
     padding: 0 6px !important;
     margin: 0px !important;
     text-align: center !important;
     font-size: 11.5px !important;
     font-weight: 800 !important;
+    background: transparent !important;
+    border: none !important;
 }
 
 /* Center checkboxes cleanly inside Bulk Orders entry-grid rows */
@@ -6592,40 +6691,39 @@ elif page == "Daily Entry":
             fzr_sub_mode = st.session_state["fzr_entry_sub_mode"]
             editing_txn_id = st.session_state.get("_editing_freezer_txn_id")
 
-            hdr_c0, hdr_c1, hdr_c2, hdr_c3 = st.columns([0.9, 1.5, 1.3, 1.3], gap="small", vertical_alignment="center")
-            with hdr_c0:
-                if st.button("⬅ Back", key="back_to_entry_menu_freezer_sales", type="secondary", use_container_width=True):
-                    st.session_state["daily_entry_mode"] = None
-                    st.rerun()
-            with hdr_c1:
-                st.markdown("<div style='font-size:14px;font-weight:800;color:#1E2252;'>❄️ Sales Entry (Freezer)</div>", unsafe_allow_html=True)
-            with hdr_c2:
-                if st.button(
-                    "➕ New Freezer Sale",
-                    key="btn_fzr_mode_new",
-                    type="primary" if fzr_sub_mode == "new" else "secondary",
-                    use_container_width=True
-                ):
-                    st.session_state["fzr_entry_sub_mode"] = "new"
-                    st.session_state.pop("_editing_freezer_txn_id", None)
-                    st.session_state["fzr_sale_form_nonce"] = int(st.session_state.get("fzr_sale_form_nonce", 0)) + 1
-                    st.rerun()
-            with hdr_c3:
-                if st.button(
-                    f"✏️ Editing #{editing_txn_id}" if (fzr_sub_mode == "edit" and editing_txn_id) else "✏️ Past Entries",
-                    key="btn_fzr_mode_list",
-                    type="primary" if fzr_sub_mode in ("list", "edit") else "secondary",
-                    use_container_width=True
-                ):
-                    st.session_state["fzr_entry_sub_mode"] = "list"
-                    st.session_state.pop("_editing_freezer_txn_id", None)
-                    st.rerun()
-
             freezer_asset_name = get_freezer_asset_name_for_location(CITY)
             staff_options = load_active_staff_list()
 
             # MODE A: LIST OF PREVIOUS FREEZER SALE TRANSACTIONS
             if fzr_sub_mode == "list":
+                hdr_c0, hdr_c1, hdr_c2, hdr_c3 = st.columns([0.65, 1.75, 1.15, 1.15], gap="small", vertical_alignment="bottom")
+                with hdr_c0:
+                    if st.button("⬅ Back", key="back_to_entry_menu_freezer_sales", type="secondary", use_container_width=True):
+                        st.session_state["daily_entry_mode"] = None
+                        st.rerun()
+                with hdr_c1:
+                    st.text_input("Freezer Asset", value=freezer_asset_name, disabled=True, key="fzr_list_asset_ro")
+                with hdr_c2:
+                    if st.button(
+                        "➕ New Freezer Sale",
+                        key="btn_fzr_mode_new",
+                        type="primary" if fzr_sub_mode == "new" else "secondary",
+                        use_container_width=True
+                    ):
+                        st.session_state["fzr_entry_sub_mode"] = "new"
+                        st.session_state.pop("_editing_freezer_txn_id", None)
+                        st.session_state["fzr_sale_form_nonce"] = int(st.session_state.get("fzr_sale_form_nonce", 0)) + 1
+                        st.rerun()
+                with hdr_c3:
+                    if st.button(
+                        "✏️ Past Entries",
+                        key="btn_fzr_mode_list",
+                        type="primary",
+                        use_container_width=True
+                    ):
+                        st.session_state["fzr_entry_sub_mode"] = "list"
+                        st.session_state.pop("_editing_freezer_txn_id", None)
+                        st.rerun()
                 prev_txns_df = load_freezer_sale_transactions_df()
                 if prev_txns_df.empty:
                     st.info("No previous Freezer sale transactions found.")
@@ -6724,7 +6822,11 @@ elif page == "Daily Entry":
                 mode_tag = f"edit_{int(editing_row['id'])}_{form_nonce}" if editing_row else f"new_{form_nonce}"
                 default_sale_dt = pd.to_datetime(editing_row["sale_date"]).date() if editing_row else today_val
 
-                fs_top1, fs_top2 = st.columns([1.0, 1.4], gap="small")
+                fs_top0, fs_top1, fs_top2, fs_top3, fs_top4 = st.columns([0.65, 1.05, 1.35, 1.0, 0.95], gap="small", vertical_alignment="bottom")
+                with fs_top0:
+                    if st.button("⬅ Back", key="back_to_entry_menu_freezer_sales", type="secondary", use_container_width=True):
+                        st.session_state["daily_entry_mode"] = None
+                        st.rerun()
                 with fs_top1:
                     fzr_sale_date = st.date_input(
                         "Sale Date",
@@ -6752,6 +6854,27 @@ elif page == "Daily Entry":
                         index=staff_options.index(st.session_state[fzr_staff_key]) if st.session_state[fzr_staff_key] in staff_options else 0,
                         key=fzr_staff_key
                     )
+                with fs_top3:
+                    if st.button(
+                        "➕ New Freezer Sale",
+                        key="btn_fzr_mode_new",
+                        type="primary" if fzr_sub_mode == "new" else "secondary",
+                        use_container_width=True
+                    ):
+                        st.session_state["fzr_entry_sub_mode"] = "new"
+                        st.session_state.pop("_editing_freezer_txn_id", None)
+                        st.session_state["fzr_sale_form_nonce"] = int(st.session_state.get("fzr_sale_form_nonce", 0)) + 1
+                        st.rerun()
+                with fs_top4:
+                    if st.button(
+                        f"✏️ Editing #{editing_txn_id}" if (fzr_sub_mode == "edit" and editing_txn_id) else "✏️ Past Entries",
+                        key="btn_fzr_mode_list",
+                        type="primary" if fzr_sub_mode in ("list", "edit") else "secondary",
+                        use_container_width=True
+                    ):
+                        st.session_state["fzr_entry_sub_mode"] = "list"
+                        st.session_state.pop("_editing_freezer_txn_id", None)
+                        st.rerun()
 
                 curr_fzr_stock_map = get_physical_current_stock_map()
                 fzr_sold_map = {}
@@ -7023,7 +7146,7 @@ elif page == "Daily Entry":
         # EXTRA STOCK — Compact 80% Single-Page Layout
         # --------------------------------------------------------------
         elif entry_mode == "extra":
-            ec_top0, ec_top1, ec_top2 = st.columns([0.65, 1.5, 1.25], gap="small", vertical_alignment="bottom")
+            ec_top0, ec_top1, ec_top2, ec_top3 = st.columns([0.65, 1.35, 1.05, 1.35], gap="small", vertical_alignment="bottom")
             with ec_top0:
                 if st.button("⬅ Back", key="back_to_entry_menu_extra", type="secondary", use_container_width=True):
                     st.session_state["daily_entry_mode"] = None
@@ -7039,6 +7162,13 @@ elif page == "Daily Entry":
                 )
 
             today_stock_state, today_staff = get_today_cart_stock_state(cart_name, today_val)
+            with ec_top3:
+                st.text_input(
+                    "Cart Staff Assigned",
+                    value=today_staff or "—",
+                    disabled=True,
+                    key=f"extra_staff_disp_{cart_name}",
+                )
             extra_map = {}
 
             st.markdown(
@@ -7314,17 +7444,17 @@ elif page == "Daily Entry":
                     with c3:
                         st.markdown(f"<div class='entry-grid-cell' style='font-weight:900;color:#047857;'>{in_cart_u}</div>", unsafe_allow_html=True)
                     with c4:
-                        move_qty = int(
+                        raw_move_qty = int(
                             st.number_input(
                                 f"Move {f_info['name']} to Freezer",
                                 min_value=0,
-                                max_value=max(0, in_cart_u),
                                 step=1,
                                 format="%d",
                                 key=r_key,
                                 label_visibility="collapsed",
                             )
                         )
+                        move_qty = min(max(0, in_cart_u), max(0, raw_move_qty))
                     return_map[code] = move_qty
                     rem_in_cart = max(0, in_cart_u - move_qty)
                     with c5:
