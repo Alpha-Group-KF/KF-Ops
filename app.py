@@ -1314,6 +1314,56 @@ div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) .stNumberInput input 
     font-weight: 800 !important;
 }
 
+/* Entry-grid text inputs (used for Restock, Extra Stock, Remove Cart Stock, Freezer Sale): 100% column width, 28px height, centered */
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-entry-80-scope) div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stTextInput"],
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-entry-80-scope) div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stTextInput"] {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    margin: 0px !important;
+    padding: 0px !important;
+    height: 28px !important;
+    min-height: 28px !important;
+    max-height: 28px !important;
+}
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-entry-80-scope) div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stTextInput"] div[data-baseweb="input"],
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-entry-80-scope) div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stTextInput"] div[data-baseweb="input"] {
+    width: 100% !important;
+    min-height: 28px !important;
+    height: 28px !important;
+    max-height: 28px !important;
+    border-radius: 5px !important;
+    border: 1.5px solid #93C5FD !important;
+    background-color: #FFFFFF !important;
+    margin: 0px !important;
+    padding: 0px !important;
+    box-sizing: border-box !important;
+}
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-entry-80-scope) div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stTextInput"] div[data-baseweb="base-input"],
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-entry-80-scope) div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stTextInput"] div[data-baseweb="base-input"] {
+    width: 100% !important;
+    min-height: 26px !important;
+    height: 26px !important;
+    max-height: 26px !important;
+    border: none !important;
+    background: transparent !important;
+    margin: 0px !important;
+    padding: 0px !important;
+}
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-entry-80-scope) div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stTextInput"] input,
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-entry-80-scope) div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stTextInput"] input {
+    width: 100% !important;
+    height: 26px !important;
+    min-height: 26px !important;
+    max-height: 26px !important;
+    line-height: 26px !important;
+    padding: 0 6px !important;
+    margin: 0px !important;
+    text-align: center !important;
+    font-size: 11.5px !important;
+    font-weight: 800 !important;
+}
+
 /* Center checkboxes cleanly inside Bulk Orders entry-grid rows */
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stCheckbox"] {
     height: 28px !important;
@@ -2965,7 +3015,7 @@ def confirm_move_cart_to_freezer_modal(today_date, cart_name, return_map, staff_
             try:
                 moved_cnt = remove_today_cart_stock_to_freezer(today_date, cart_name, return_map, staff_name)
                 for code in FLAVOR_CODES:
-                    st.session_state[f"rm_cart_stock_{cart_name}_{code}"] = 0
+                    st.session_state[f"rm_cart_stock_{cart_name}_{code}"] = "0"
                 st.session_state[f"rm_cart_empty_fill_{cart_name}"] = {}
                 st.cache_data.clear()
                 st.cache_resource.clear()
@@ -6268,14 +6318,14 @@ elif page == "Daily Entry":
                 if st.button("➕  **Extra Stock (Carts)**", key="open_extra_stock", use_container_width=True):
                     for _cart in CARTS:
                         for _code in FLAVOR_CODES:
-                            st.session_state[f"extra_stock_{_cart}_{_code}"] = 0
+                            st.session_state[f"extra_stock_{_cart}_{_code}"] = "0"
                     st.session_state["daily_entry_mode"] = "extra"
                     st.rerun()
             with r1_c4:
                 if st.button("🔄  **Remove Cart Stock**", key="open_remove_cart_stock", use_container_width=True):
                     for _cart in CARTS:
                         for _code in FLAVOR_CODES:
-                            st.session_state[f"rm_cart_stock_{_cart}_{_code}"] = 0
+                            st.session_state[f"rm_cart_stock_{_cart}_{_code}"] = "0"
                     st.session_state["daily_entry_mode"] = "remove_cart_stock"
                     st.rerun()
 
@@ -6840,7 +6890,9 @@ elif page == "Daily Entry":
                         mrp_val = float(f_info["mrp"])
                         k_sold = f"fzr_sold_{freezer_asset_name}_{date_key_str}_{code}"
                         if k_sold not in st.session_state:
-                            st.session_state[k_sold] = orig_edit_qty
+                            st.session_state[k_sold] = str(orig_edit_qty)
+                        elif not isinstance(st.session_state[k_sold], str):
+                            st.session_state[k_sold] = str(max(0, _int_num(st.session_state[k_sold])))
 
                         r1, r2, r3, r4, r5 = st.columns(fzr_col_w, gap="small", vertical_alignment="center")
                         with r1:
@@ -6850,15 +6902,15 @@ elif page == "Daily Entry":
                         with r3:
                             st.markdown(f"<div class='entry-grid-cell'>₹{mrp_val:.0f}</div>", unsafe_allow_html=True)
                         with r4:
-                            qty_sold = _int_num(
-                                st.number_input(
-                                    f"Freezer Sold {f_info['name']}",
-                                    min_value=0,
-                                    step=1,
-                                    format="%d",
-                                    key=k_sold,
-                                    label_visibility="collapsed"
-                                )
+                            qty_sold = max(
+                                0,
+                                _int_num(
+                                    st.text_input(
+                                        f"Freezer Sold {f_info['name']}",
+                                        key=k_sold,
+                                        label_visibility="collapsed"
+                                    )
+                                ),
                             )
                         line_val = max(0, qty_sold) * mrp_val
                         fzr_sold_map[code] = max(0, qty_sold)
@@ -7031,7 +7083,9 @@ elif page == "Daily Entry":
                     existing_added = int(today_stock_state[code]["added"])
                     key = f"restock_entry_{cart_name}_{code}"
                     if key not in st.session_state:
-                        st.session_state[key] = existing_added
+                        st.session_state[key] = str(existing_added)
+                    elif not isinstance(st.session_state[key], str):
+                        st.session_state[key] = str(max(0, _int_num(st.session_state[key])))
 
                     c1, c2, c3, c4 = st.columns(restock_col_w, gap="small", vertical_alignment="center")
                     with c1:
@@ -7039,15 +7093,15 @@ elif page == "Daily Entry":
                     with c2:
                         st.markdown(f"<div class='entry-grid-cell'>{opening}</div>", unsafe_allow_html=True)
                     with c3:
-                        qty = int(
-                            st.number_input(
-                                f"Restock {f_info['name']}",
-                                min_value=0,
-                                step=1,
-                                format="%d",
-                                key=key,
-                                label_visibility="collapsed",
-                            )
+                        qty = max(
+                            0,
+                            _int_num(
+                                st.text_input(
+                                    f"Restock {f_info['name']}",
+                                    key=key,
+                                    label_visibility="collapsed",
+                                )
+                            ),
                         )
                     restock_map[code] = qty
                     restock_after_map[code] = opening + qty
@@ -7125,7 +7179,9 @@ elif page == "Daily Entry":
                     current_stock = int(today_stock_state[code]["closing"])
                     key = f"extra_stock_{cart_name}_{code}"
                     if key not in st.session_state:
-                        st.session_state[key] = 0
+                        st.session_state[key] = "0"
+                    elif not isinstance(st.session_state[key], str):
+                        st.session_state[key] = str(max(0, _int_num(st.session_state[key])))
 
                     c1, c2, c3, c4, c5 = st.columns(extra_col_w, gap="small", vertical_alignment="center")
                     with c1:
@@ -7135,15 +7191,15 @@ elif page == "Daily Entry":
                     with c3:
                         st.markdown(f"<div class='entry-grid-cell'>{current_added}</div>", unsafe_allow_html=True)
                     with c4:
-                        qty = int(
-                            st.number_input(
-                                f"Extra {f_info['name']}",
-                                min_value=0,
-                                step=1,
-                                format="%d",
-                                key=key,
-                                label_visibility="collapsed",
-                            )
+                        qty = max(
+                            0,
+                            _int_num(
+                                st.text_input(
+                                    f"Extra {f_info['name']}",
+                                    key=key,
+                                    label_visibility="collapsed",
+                                )
+                            ),
                         )
                     extra_map[code] = qty
                     with c5:
@@ -7168,7 +7224,7 @@ elif page == "Daily Entry":
                     try:
                         add_today_extra_stock_entry(today_val, cart_name, extra_map, today_staff)
                         for code in FLAVOR_CODES:
-                            st.session_state[f"extra_stock_{cart_name}_{code}"] = 0
+                            st.session_state[f"extra_stock_{cart_name}_{code}"] = "0"
                         st.cache_data.clear()
                         st.cache_resource.clear()
                         show_success_modal(
@@ -7343,12 +7399,12 @@ elif page == "Daily Entry":
             with top_bar2:
                 if st.button("🧹 Empty Cart (Fill All)", type="primary", use_container_width=True, key=f"btn_empty_cart_{cart_name}"):
                     for code in FLAVOR_CODES:
-                        st.session_state[f"rm_cart_stock_{cart_name}_{code}"] = max(0, int(today_stock_state[code]["closing"]))
+                        st.session_state[f"rm_cart_stock_{cart_name}_{code}"] = str(max(0, int(today_stock_state[code]["closing"])))
                     st.rerun()
             with top_bar3:
                 if st.button("↺ Clear Inputs", use_container_width=True, key=f"btn_clear_rm_cart_{cart_name}"):
                     for code in FLAVOR_CODES:
-                        st.session_state[f"rm_cart_stock_{cart_name}_{code}"] = 0
+                        st.session_state[f"rm_cart_stock_{cart_name}_{code}"] = "0"
                     st.rerun()
 
             return_map = {}
@@ -7367,9 +7423,9 @@ elif page == "Daily Entry":
                     in_cart_u = max(0, int(today_stock_state[code]["closing"]))
                     r_key = f"rm_cart_stock_{cart_name}_{code}"
                     if r_key not in st.session_state:
-                        st.session_state[r_key] = 0
-                    if int(st.session_state[r_key] or 0) > in_cart_u:
-                        st.session_state[r_key] = in_cart_u
+                        st.session_state[r_key] = "0"
+                    else:
+                        st.session_state[r_key] = str(min(in_cart_u, max(0, _int_num(st.session_state[r_key]))))
 
                     c1, c2, c3, c4, c5 = st.columns(rm_col_w, gap="small", vertical_alignment="center")
                     with c1:
@@ -7379,17 +7435,17 @@ elif page == "Daily Entry":
                     with c3:
                         st.markdown(f"<div class='entry-grid-cell' style='font-weight:900;color:#047857;'>{in_cart_u}</div>", unsafe_allow_html=True)
                     with c4:
-                        raw_move_qty = int(
-                            st.number_input(
-                                f"Move {f_info['name']} to Freezer",
-                                min_value=0,
-                                step=1,
-                                format="%d",
-                                key=r_key,
-                                label_visibility="collapsed",
-                            )
+                        raw_move_qty = max(
+                            0,
+                            _int_num(
+                                st.text_input(
+                                    f"Move {f_info['name']} to Freezer",
+                                    key=r_key,
+                                    label_visibility="collapsed",
+                                )
+                            ),
                         )
-                        move_qty = min(max(0, in_cart_u), max(0, raw_move_qty))
+                        move_qty = min(max(0, in_cart_u), raw_move_qty)
                     return_map[code] = move_qty
                     rem_in_cart = max(0, in_cart_u - move_qty)
                     with c5:
