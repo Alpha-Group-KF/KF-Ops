@@ -99,7 +99,7 @@ header[data-testid="stHeader"] {
     height: 0.35rem !important;
 }
 div[data-testid="stVerticalBlock"] {
-    gap: 0.35rem !important;
+    gap: 0.55rem !important;
 }
 html, body, [class*="css"] {
     font-family: 'Plus Jakarta Sans', 'Manrope', sans-serif;
@@ -377,9 +377,9 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) .
 div[class*="st-key-deposito_dock_btn_"] button {
     background: #FFFFFF !important;
     border: 1px solid #CBD5E1 !important;
-    border-radius: 10px !important;
-    min-height: 50px !important;
-    height: 50px !important;
+    border-radius: 11px !important;
+    min-height: 60px !important;
+    height: 60px !important;
     padding: 4px 6px !important;
     width: 100% !important;
     display: flex !important;
@@ -443,8 +443,8 @@ div[class*="st-key-deposito_dock_btn_"] button[kind="primary"] strong {
 .deposito-kpi-strip {
     display: grid;
     grid-template-columns: 0.95fr 1.15fr 1.45fr 1.50fr 1.25fr;
-    gap: 8px;
-    margin-bottom: 6px;
+    gap: 10px;
+    margin-bottom: 10px;
 }
 @media (max-width: 1100px) {
     .deposito-kpi-strip {
@@ -454,13 +454,13 @@ div[class*="st-key-deposito_dock_btn_"] button[kind="primary"] strong {
 .dep-kpi-card {
     background: #FFFFFF;
     border: 1px solid #E2E8F0;
-    border-radius: 11px;
-    padding: 7px 10px;
-    box-shadow: 0 2px 8px rgba(30, 34, 82, 0.04);
+    border-radius: 12px;
+    padding: 10px 12px;
+    box-shadow: 0 3px 10px rgba(30, 34, 82, 0.05);
     display: flex;
     flex-direction: column;
     justify-content: center;
-    min-height: 58px;
+    min-height: 68px;
 }
 .dep-kpi-dual {
     display: grid;
@@ -504,19 +504,21 @@ div[class*="st-key-deposito_dock_btn_"] button[kind="primary"] strong {
     text-align: center;
 }
 
-/* Emerald Green Capacity Utilization Card (Compact 218px height) */
+/* Emerald Green Capacity Utilization Card (Balanced Auto Height, No Overlap) */
 .dep-emerald-card {
     background: linear-gradient(160deg, #059669 0%, #047857 60%, #065F46 100%);
-    border-radius: 13px;
-    padding: 10px 12px 9px 12px;
+    border-radius: 14px;
+    padding: 14px 16px 12px 16px;
     color: #FFFFFF;
-    box-shadow: 0 6px 16px rgba(4, 120, 87, 0.18);
+    box-shadow: 0 6px 18px rgba(4, 120, 87, 0.18);
     position: relative;
-    min-height: 222px;
-    height: 222px;
+    min-height: 292px;
+    height: auto;
+    margin-bottom: 6px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    box-sizing: border-box;
 }
 .dep-emerald-hdr {
     text-align: right;
@@ -567,18 +569,20 @@ div[class*="st-key-deposito_dock_btn_"] button[kind="primary"] strong {
     margin-top: 1px;
 }
 
-/* White "Section Overview" 10-Day Sales Matrix Card (Compact 222px height) */
+/* White "Section Overview" 10-Day Sales Matrix Card (Balanced Auto Height, No Overlap) */
 .dep-matrix-card {
     background: #FFFFFF;
     border: 1px solid #E2E8F0;
-    border-radius: 13px;
-    padding: 9px 12px 7px 12px;
-    box-shadow: 0 3px 12px rgba(30, 34, 82, 0.04);
-    min-height: 222px;
-    height: 222px;
+    border-radius: 14px;
+    padding: 12px 14px 10px 14px;
+    box-shadow: 0 4px 14px rgba(30, 34, 82, 0.05);
+    min-height: 292px;
+    height: auto;
+    margin-bottom: 6px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    box-sizing: border-box;
 }
 .dep-matrix-top {
     display: flex;
@@ -608,10 +612,10 @@ div[class*="st-key-deposito_dock_btn_"] button[kind="primary"] strong {
 /* 10-Day Sales Matrix Grid (Center Section Overview Card) */
 .dep-sales10-row {
     display: grid;
-    grid-template-columns: 110px repeat(10, minmax(0, 1fr));
-    gap: 4px;
+    grid-template-columns: 116px repeat(10, minmax(0, 1fr));
+    gap: 5px;
     align-items: center;
-    margin-bottom: 3px;
+    margin-bottom: 4.5px;
 }
 .dep-sales10-hdr-cell {
     font-size: 8.8px;
@@ -625,15 +629,15 @@ div[class*="st-key-deposito_dock_btn_"] button[kind="primary"] strong {
     white-space: nowrap;
 }
 .dep-sales10-tile {
-    height: 21px;
-    border-radius: 5px;
+    height: 25px;
+    border-radius: 6px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    line-height: 1;
-    padding: 1px;
-    font-size: 9.2px;
+    line-height: 1.05;
+    padding: 1px 2px;
+    font-size: 9.8px;
     font-weight: 800;
     white-space: nowrap;
     overflow: hidden;
@@ -677,18 +681,20 @@ div[class*="st-key-deposito_dock_btn_"] button[kind="primary"] strong {
     font-weight: 800;
 }
 
-/* Bottom 3 Analytical Cards (Compact 154px height) */
+/* Bottom 3 Analytical Cards (Balanced Auto Height, No Overlap) */
 .dep-bottom-card {
     background: #FFFFFF;
     border: 1px solid #E2E8F0;
-    border-radius: 13px;
-    padding: 8px 12px;
-    box-shadow: 0 3px 12px rgba(30, 34, 82, 0.04);
-    min-height: 154px;
-    height: 154px;
+    border-radius: 14px;
+    padding: 12px 14px;
+    box-shadow: 0 4px 14px rgba(30, 34, 82, 0.05);
+    min-height: 188px;
+    height: auto;
+    margin-bottom: 6px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    box-sizing: border-box;
 }
 .dep-bottom-hdr {
     font-size: 11px;
@@ -735,10 +741,10 @@ div[data-testid="stHorizontalBlock"]:has(.kulfi-clickable-card-grid) .stButton b
     background: linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%) !important;
     border: 1.5px solid #CBD5E1 !important;
     border-left: 4px solid #3B82F6 !important;
-    border-radius: 9px !important;
-    padding: 4px 10px !important;
-    min-height: 36px !important;
-    height: 36px !important;
+    border-radius: 10px !important;
+    padding: 6px 12px !important;
+    min-height: 42px !important;
+    height: 42px !important;
     width: 100% !important;
     display: flex !important;
     align-items: center !important;
@@ -5164,7 +5170,7 @@ if page == "Home" and user_role == "admin":
                         <div class="dep-emerald-float-dot" style="background:#ECFDF5;color:#059669;">📦</div>
                     </div>
                     <div style="display:flex;justify-content:center;align-items:center;margin:0;">
-                        <svg width="122" height="122" viewBox="0 0 108 108">
+                        <svg width="146" height="146" viewBox="0 0 108 108">
                             <circle cx="54" cy="54" r="44" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="7.5" />
                             <circle cx="54" cy="54" r="44" fill="none" stroke="#F59E0B" stroke-width="7.5"
                                     stroke-linecap="round"
@@ -5415,7 +5421,7 @@ if page == "Home" and user_role == "admin":
                 _p_fz = max(10, 100 - _p_sd - _p_ct)
                 bars_cols_html.append(
                     f'<div style="display:flex;flex-direction:column;align-items:center;flex:1;" title="Freezer {_fz_u} | Carts {_ct_u} | Sold {_sd_u}">'
-                    f'<div style="height:82px;width:20px;display:flex;flex-direction:column;justify-content:flex-end;background:#F8FAFC;border-radius:6px;overflow:hidden;padding:0;">'
+                    f'<div style="height:102px;width:22px;display:flex;flex-direction:column;justify-content:flex-end;background:#F8FAFC;border-radius:6px;overflow:hidden;padding:0;">'
                     f'<div style="height:{_h_pct}%;width:100%;display:flex;flex-direction:column;border-radius:5px;overflow:hidden;">'
                     f'<div style="height:{_p_sd}%;background:#60A5FA;min-height:3px;"></div>'
                     f'<div style="height:{_p_ct}%;background:#8B5CF6;min-height:3px;"></div>'
