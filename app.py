@@ -42,19 +42,22 @@ except ImportError:
 st.set_page_config(page_title="Kulfi Ops", page_icon="🍦", layout="wide", initial_sidebar_state="collapsed")
 
 # ----------------------------------------------------------------------
-# GLOBAL UI STYLES — WARM TERRACOTTA-ORANGE (#E4763D), SOFT CREAM-IVORY (#F4F2E8) & LIGHT MINT GREEN (3D SUITE)
+# ----------------------------------------------------------------------
+# GLOBAL UI STYLES — DEPOSITO WAREHOUSE ADMIN DASHBOARD THEME
+# (Cool Sky-Ice Backdrop #DCEEF8, Crisp White Cards #FFFFFF, Royal Indigo #1E2252,
+#  Emerald Green #059669, Warm Amber #F59E0B, Violet #6D28D9 & Sky Blue #3B82F6)
 # ----------------------------------------------------------------------
 st.html("""
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&family=Manrope:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-/* Soft Warm Cream-Sand Outer Backdrop so the 80% Framed Screen Stands Out */
+/* Cool Sky-Aqua Outer Backdrop (Matches Deposito Template Frame) */
 .stApp, [data-testid="stAppViewContainer"], .main {
-    background: linear-gradient(135deg, #EAE6D7 0%, #E2DEC9 50%, #DAD5BE 100%) !important;
-    color: #140A04 !important;
+    background: linear-gradient(135deg, #BEE3F8 0%, #D8EEF9 45%, #E6F3FB 100%) !important;
+    color: #0F172A !important;
 }
 
-/* Completely hide the left sidebar and sidebar toggle button */
+/* Completely hide the default Streamlit left sidebar and toggle button */
 section[data-testid="stSidebar"],
 [data-testid="collapsedControl"],
 [data-testid="stSidebarCollapsedControl"] {
@@ -63,54 +66,55 @@ section[data-testid="stSidebar"],
     min-width: 0 !important;
 }
 
-/* Compact & Nicely Centered ~80% Page Layout with Aesthetic #E4763D Double-Framed Border */
+/* Main Dashboard Shell — Crisp Cool Slate-White Framed Container */
 .block-container,
 div[data-testid="stMainBlockContainer"] {
-    background: linear-gradient(180deg, #FAF8F1 0%, #F4F2E8 100%) !important;
-    border: 2.5px solid #E4763D !important;
-    outline: 4px solid rgba(228, 118, 61, 0.16) !important;
-    border-radius: 18px !important;
+    background: linear-gradient(180deg, #F4F7FB 0%, #EDF2F8 100%) !important;
+    border: 1.5px solid #FFFFFF !important;
+    outline: 1px solid rgba(30, 34, 82, 0.08) !important;
+    border-radius: 20px !important;
     box-shadow:
-        inset 0 0 0 2px #FFFDF8,
-        0 12px 32px rgba(158, 71, 27, 0.14) !important;
-    padding-top: 1.35rem !important;
-    padding-bottom: 1.6rem !important;
-    padding-left: 1.6rem !important;
-    padding-right: 1.6rem !important;
-    margin-top: 1.5rem !important;
-    margin-bottom: 1.8rem !important;
+        inset 0 1px 0 #FFFFFF,
+        0 20px 48px rgba(23, 27, 66, 0.14) !important;
+    padding-top: 1.1rem !important;
+    padding-bottom: 1.5rem !important;
+    padding-left: 1.45rem !important;
+    padding-right: 1.45rem !important;
+    margin-top: 1.1rem !important;
+    margin-bottom: 1.5rem !important;
     margin-left: auto !important;
     margin-right: auto !important;
-    width: 80% !important;
-    max-width: 1160px !important;
+    width: 90% !important;
+    max-width: 1320px !important;
 }
 @media (max-width: 992px) {
     .block-container,
     div[data-testid="stMainBlockContainer"] {
-        width: 95% !important;
-        max-width: 95% !important;
-        padding-left: 1.0rem !important;
-        padding-right: 1.0rem !important;
+        width: 97% !important;
+        max-width: 97% !important;
+        padding-left: 0.9rem !important;
+        padding-right: 0.9rem !important;
     }
 }
 header[data-testid="stHeader"] {
     background-color: transparent !important;
-    height: 1.6rem !important;
+    height: 1.2rem !important;
 }
 html, body, [class*="css"] {
-    font-family: 'Manrope', sans-serif;
+    font-family: 'Plus Jakarta Sans', 'Manrope', sans-serif;
     font-variant-numeric: tabular-nums;
-    color: #140A04;
+    color: #0F172A;
 }
 h1, h2, h3, h4 {
-    font-family: 'Fraunces', serif !important;
-    color: #140A04 !important;
-    letter-spacing: -0.01em;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    color: #1E2252 !important;
+    letter-spacing: -0.015em;
+    font-weight: 800 !important;
 }
-h1 { font-size: 1.4rem !important; margin-top: 0 !important; }
-h2 { font-size: 1.18rem !important; }
-h3 { font-size: 1.04rem !important; }
-p, span, label, .stMarkdown { color: #140A04; }
+h1 { font-size: 1.38rem !important; margin-top: 0 !important; }
+h2 { font-size: 1.16rem !important; }
+h3 { font-size: 1.02rem !important; }
+p, span, label, .stMarkdown { color: #0F172A; }
 
 /* Hide stepper buttons on number inputs */
 input[type=number]::-webkit-inner-spin-button, 
@@ -121,85 +125,78 @@ input[type=number]::-webkit-outer-spin-button {
 input[type=number] { -moz-appearance: textfield !important; }
 div[data-testid="stNumberInput"] button { display: none !important; }
 
-/* Cream-Ivory (#F4F2E8) & Terracotta (#E4763D) Layered Containers, Expanders & Tabs */
+/* Crisp White Elevated Cards, Expanders & Tabs */
 div[data-testid="stVerticalBlockBorderWrapper"] {
-    background: #FAF8F1 !important;
-    border: 1.5px solid #E4763D !important;
-    border-top: 3.5px solid #E4763D !important;
-    border-radius: 12px !important;
-    box-shadow: 0 3px 12px rgba(228, 118, 61, 0.09) !important;
+    background: #FFFFFF !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 14px !important;
+    box-shadow: 0 4px 16px rgba(30, 34, 82, 0.05) !important;
     padding: 12px 14px !important;
 }
 div[data-testid="stExpander"] {
-    background: #FAF8F1 !important;
-    border: 1.5px solid #E4763D !important;
-    border-radius: 10px !important;
-    box-shadow: 0 2px 8px rgba(228, 118, 61, 0.08) !important;
+    background: #FFFFFF !important;
+    border: 1px solid #CBD5E1 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 3px 10px rgba(30, 34, 82, 0.05) !important;
     overflow: hidden;
 }
 div[data-testid="stExpander"] summary {
-    background: linear-gradient(90deg, #EE854F 0%, #E4763D 55%, #CE622B 100%) !important;
+    background: linear-gradient(90deg, #EFF6FF 0%, #E0E7FF 100%) !important;
     padding: 8px 14px !important;
     font-weight: 800 !important;
-    color: #111111 !important;
-    border-bottom: 1.5px solid #9E471B !important;
+    color: #1E2252 !important;
+    border-bottom: 1px solid #CBD5E1 !important;
 }
 div[data-testid="stExpander"] summary p,
 div[data-testid="stExpander"] summary span,
 div[data-testid="stExpander"] summary svg {
-    color: #111111 !important;
-    fill: #111111 !important;
+    color: #1E2252 !important;
+    fill: #1E2252 !important;
     font-weight: 800 !important;
 }
 div[data-testid="stTabs"] [data-baseweb="tab-list"] {
     gap: 8px !important;
-    background: #EAE6D7 !important;
+    background: #E2E8F0 !important;
     padding: 5px 6px !important;
     border-radius: 10px !important;
-    border: 1.5px solid #E4763D !important;
+    border: 1px solid #CBD5E1 !important;
 }
 div[data-testid="stTabs"] button[data-baseweb="tab"] {
-    background: #F4F2E8 !important;
-    border: 1.5px solid #E4763D !important;
+    background: #FFFFFF !important;
+    border: 1px solid #CBD5E1 !important;
     border-radius: 8px !important;
     padding: 6px 14px !important;
-    font-weight: 800 !important;
-    color: #111111 !important;
-    box-shadow: 0 2px 0 #9E471B !important;
+    font-weight: 700 !important;
+    color: #334155 !important;
     transition: all 0.14s ease !important;
 }
 div[data-testid="stTabs"] button[data-baseweb="tab"] p {
-    color: #111111 !important;
-    font-weight: 800 !important;
+    color: #334155 !important;
+    font-weight: 700 !important;
 }
 div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] {
-    background: linear-gradient(180deg, #EE854F 0%, #E4763D 55%, #CE622B 100%) !important;
-    color: #111111 !important;
-    border-color: #9E471B !important;
-    box-shadow: 0 2px 0 #7C3512, 0 4px 10px rgba(228, 118, 61, 0.24) !important;
+    background: linear-gradient(135deg, #1E2252 0%, #2D337A 100%) !important;
+    color: #FFFFFF !important;
+    border-color: #1E2252 !important;
+    box-shadow: 0 3px 10px rgba(30, 34, 82, 0.22) !important;
 }
 div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] p {
-    color: #111111 !important;
-    font-weight: 900 !important;
+    color: #FFFFFF !important;
+    font-weight: 800 !important;
 }
 
 /* ======================================================================
-   UNIFIED TOP COMMAND BAR — WARM GOLDEN SAFFRON-AMBER VARIANT (#F8BC6B -> #F1A245 -> #DC8828)
-   (Distinct from the #E4763D Terracotta Set 1 buttons while in the same warm theme)
+   UNIFIED TOP HEADER BAR — CRISP WHITE DEPOSITO UTILITY BAR WITH COMPRESSED SQUARE LOGO
    ====================================================================== */
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) {
-    background: linear-gradient(135deg, #F9C57A 0%, #F1A245 52%, #D98224 100%) !important;
-    border: 2px solid #9E471B !important;
-    border-radius: 12px !important;
-    padding: 10px 16px !important;
-    margin-bottom: 10px !important;
+    background: #FFFFFF !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 14px !important;
+    padding: 8px 14px !important;
+    margin-bottom: 12px !important;
     align-items: center !important;
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.55),
-        0 3px 0 #9E471B,
-        0 6px 16px rgba(158, 71, 27, 0.18) !important;
+    box-shadow: 0 4px 16px rgba(30, 34, 82, 0.06) !important;
 }
-/* Hide zero-height deltaPath spacer elements used to force-close popovers on selection */
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stElementContainer"]:has(.kulfi-pop-spacer) {
     display: none !important;
     width: 0 !important;
@@ -207,7 +204,6 @@ div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid=
     margin: 0 !important;
     padding: 0 !important;
 }
-/* Ensure every column and wrapper inside the top bar is strictly centered with zero extra gap */
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) > div[data-testid="stColumn"],
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) > div[data-testid="column"] {
     display: flex !important;
@@ -230,19 +226,41 @@ div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid=
     flex-wrap: nowrap !important;
     margin: 0 !important;
     padding: 0 2px !important;
-    min-height: 38px !important;
+    min-height: 44px !important;
 }
-.kulfi-cmd-crest {
-    width: 36px;
-    height: 36px;
-    border-radius: 9px;
-    background: linear-gradient(145deg, #FAF8F1 0%, #F4F2E8 100%);
-    border: 1.5px solid #9E471B;
-    box-shadow: 0 2px 5px rgba(20, 10, 4, 0.18);
+.kulfi-cmd-logo-sq {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: linear-gradient(145deg, #FFFFFF 0%, #F1F5F9 100%);
+    border: 1.5px solid #CBD5E1;
+    box-shadow: 0 2px 8px rgba(30, 34, 82, 0.12);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
+    overflow: hidden;
+    flex-shrink: 0;
+    padding: 2px;
+}
+.kulfi-cmd-logo-sq img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 7px;
+    display: block;
+}
+.kulfi-cmd-crest {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #1E2252 0%, #3B82F6 100%);
+    border: 1.5px solid #1E2252;
+    box-shadow: 0 2px 8px rgba(30, 34, 82, 0.16);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: #FFFFFF;
     flex-shrink: 0;
     margin: 0 !important;
 }
@@ -253,44 +271,57 @@ div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid=
     margin: 0 !important;
     padding: 0 !important;
 }
+.kulfi-cmd-title-row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+}
 .kulfi-cmd-title {
-    font-family: 'Fraunces', serif !important;
-    font-size: 1.12rem !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-size: 1.08rem !important;
     font-weight: 800 !important;
-    color: #111111 !important;
-    letter-spacing: 0.01em;
+    color: #1E2252 !important;
+    letter-spacing: -0.01em;
     line-height: 1.15 !important;
     margin: 0 !important;
     padding: 0 !important;
     white-space: nowrap;
-    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.30);
 }
 .kulfi-cmd-sub {
-    font-size: 10.5px !important;
-    font-weight: 800 !important;
-    color: #1F1108 !important;
-    letter-spacing: 0.03em;
-    line-height: 1.15 !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    color: #64748B !important;
+    letter-spacing: 0.02em;
+    line-height: 1.2 !important;
     margin: 2px 0 0 0 !important;
     padding: 0 !important;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.kulfi-top-pill {
+    background: #EFF6FF;
+    color: #2563EB;
+    border: 1px solid #BFDBFE;
+    padding: 1px 8px;
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 700;
 }
 
-/* Top Command Bar 3D Buttons — Strictly 38px Tall, Cream #F4F2E8 & Black Text */
+/* Top Command Bar Buttons */
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton button,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button {
-    min-height: 38px !important;
-    height: 38px !important;
+    min-height: 36px !important;
+    height: 36px !important;
     padding: 0 12px !important;
-    font-size: 12.5px !important;
-    font-weight: 800 !important;
-    border-radius: 8px !important;
-    border: 1.5px solid #9E471B !important;
-    background: linear-gradient(180deg, #FAF8F1 0%, #F4F2E8 100%) !important;
-    color: #111111 !important;
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.85),
-        0 2px 0 #9E471B,
-        0 3px 8px rgba(20, 10, 4, 0.16) !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    border-radius: 9px !important;
+    border: 1px solid #CBD5E1 !important;
+    background: #F8FAFC !important;
+    color: #1E2252 !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05) !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -302,53 +333,349 @@ div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton but
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button p,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button span,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button svg {
-    color: #111111 !important;
-    fill: #111111 !important;
-    font-weight: 800 !important;
-    font-size: 12.5px !important;
+    color: #1E2252 !important;
+    fill: #1E2252 !important;
+    font-weight: 700 !important;
+    font-size: 12px !important;
 }
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton button:hover,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid="stPopover"] > div > button:hover {
-    background: linear-gradient(180deg, #FFFFFF 0%, #FAF8F1 100%) !important;
-    border-color: #111111 !important;
-    color: #111111 !important;
+    background: #EFF6FF !important;
+    border-color: #3B82F6 !important;
+    color: #1D4ED8 !important;
     transform: translateY(-1px) !important;
 }
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton button[kind="primary"] {
-    background: linear-gradient(180deg, #F4F2E8 0%, #E5DFCE 100%) !important;
-    border: 2px solid #111111 !important;
-    color: #111111 !important;
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.90),
-        0 2px 0 #111111,
-        0 4px 10px rgba(20, 10, 4, 0.22) !important;
+    background: linear-gradient(135deg, #1E2252 0%, #2D337A 100%) !important;
+    border: 1px solid #1E2252 !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 3px 10px rgba(30, 34, 82, 0.22) !important;
 }
-div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton button[kind="primary"] p {
-    color: #111111 !important;
-    font-weight: 900 !important;
+div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton button[kind="primary"] p,
+div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton button[kind="primary"] span {
+    color: #FFFFFF !important;
+    font-weight: 800 !important;
 }
 
 /* ======================================================================
-   LAUNCHPAD SECTION HEADERS & 4-COLUMN CLICKABLE 3D CARDS
+   DEPOSITO RIGHT-HAND ROYAL INDIGO NAVIGATION DOCK (#1E2252)
+   ====================================================================== */
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) {
+    background: linear-gradient(180deg, #1E2252 0%, #171A42 100%) !important;
+    border: 1.5px solid #2E347A !important;
+    border-radius: 16px !important;
+    padding: 14px 12px !important;
+    box-shadow: 0 12px 28px rgba(23, 26, 66, 0.26) !important;
+}
+div[data-testid="stElementContainer"]:has(.deposito-nav-dock-marker) {
+    display: none !important;
+    height: 0 !important;
+    margin: 0 !important;
+}
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) .stButton button {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border: 1px solid rgba(255, 255, 255, 0.10) !important;
+    border-radius: 10px !important;
+    min-height: 36px !important;
+    height: 36px !important;
+    padding: 0 12px !important;
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    text-align: left !important;
+    color: #E2E8F0 !important;
+    box-shadow: none !important;
+    margin-bottom: 3px !important;
+    transition: all 0.14s ease !important;
+}
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) .stButton button p,
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) .stButton button span,
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) .stButton button strong {
+    color: #E2E8F0 !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+}
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) .stButton button:hover {
+    background: rgba(255, 255, 255, 0.16) !important;
+    border-color: rgba(147, 197, 253, 0.45) !important;
+    transform: translateX(2px) !important;
+}
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) .stButton button:hover p,
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) .stButton button:hover span {
+    color: #FFFFFF !important;
+}
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) .stButton button[kind="primary"] {
+    background: #FFFFFF !important;
+    border: 1.5px solid #93C5FD !important;
+    color: #1E2252 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.20) !important;
+}
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) .stButton button[kind="primary"] p,
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) .stButton button[kind="primary"] span,
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) .stButton button[kind="primary"] strong {
+    color: #1E2252 !important;
+    font-weight: 800 !important;
+}
+.deposito-dock-sec-lbl {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #93C5FD;
+    margin: 9px 0 4px 4px;
+}
+
+/* ======================================================================
+   DEPOSITO LANDING PAGE STACKED CARDS & WIDGETS
+   ====================================================================== */
+.deposito-kpi-strip {
+    display: grid;
+    grid-template-columns: 1.05fr 1.15fr 1.55fr 1.55fr 1.15fr;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+@media (max-width: 1100px) {
+    .deposito-kpi-strip {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+.dep-kpi-card {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 13px;
+    padding: 12px 14px;
+    box-shadow: 0 4px 14px rgba(30, 34, 82, 0.05);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 82px;
+}
+.dep-kpi-dual {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    align-items: center;
+}
+.dep-kpi-dual > div:first-child {
+    border-right: 1px solid #E2E8F0;
+    padding-right: 8px;
+}
+.dep-kpi-dual > div:last-child {
+    padding-left: 6px;
+}
+.dep-kpi-num {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 1.26rem;
+    font-weight: 800;
+    color: #0F172A;
+    line-height: 1.15;
+    white-space: nowrap;
+}
+.dep-kpi-lbl {
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748B;
+    margin-top: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.dep-time-pill {
+    display: inline-block;
+    background: #DBEAFE;
+    color: #2563EB;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 7px;
+    margin-top: 5px;
+    text-align: center;
+}
+
+/* Emerald Green "Section 5 usage" Freezer Utilization Card */
+.dep-emerald-card {
+    background: linear-gradient(160deg, #059669 0%, #047857 60%, #065F46 100%);
+    border-radius: 15px;
+    padding: 16px 16px 14px 16px;
+    color: #FFFFFF;
+    box-shadow: 0 8px 22px rgba(4, 120, 87, 0.22);
+    position: relative;
+    min-height: 325px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.dep-emerald-hdr {
+    text-align: right;
+    font-size: 13px;
+    font-weight: 700;
+    color: #ECFDF5;
+    letter-spacing: 0.01em;
+}
+.dep-emerald-float-strip {
+    position: absolute;
+    left: 0;
+    top: 52%;
+    transform: translateY(-50%);
+    background: #FFFFFF;
+    border-radius: 0 9px 9px 0;
+    padding: 6px 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    box-shadow: 2px 4px 12px rgba(0, 0, 0, 0.15);
+}
+.dep-emerald-float-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+}
+.dep-emerald-footer {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.18);
+    padding-top: 10px;
+    text-align: center;
+}
+.dep-emerald-ft-lbl {
+    font-size: 10.5px;
+    color: #A7F3D0;
+    font-weight: 600;
+}
+.dep-emerald-ft-val {
+    font-size: 13.5px;
+    color: #FFFFFF;
+    font-weight: 800;
+    margin-top: 1px;
+}
+
+/* White "Section Overview" Stock Slot Matrix Card */
+.dep-matrix-card {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 15px;
+    padding: 14px 16px;
+    box-shadow: 0 4px 16px rgba(30, 34, 82, 0.05);
+    min-height: 325px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.dep-matrix-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #F1F5F9;
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+}
+.dep-date-badge {
+    background: #F1F5F9;
+    color: #334155;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 7px;
+    border: 1px solid #E2E8F0;
+}
+.dep-slot-row {
+    display: grid;
+    grid-template-columns: 112px repeat(9, 1fr);
+    gap: 6px;
+    align-items: center;
+    margin-bottom: 6px;
+}
+.dep-slot-row-lbl {
+    font-size: 11px;
+    font-weight: 800;
+    color: #1E2252;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.dep-slot-tile {
+    height: 36px;
+    border-radius: 7px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.05;
+    transition: transform 0.12s ease;
+}
+.dep-slot-tile.loaded {
+    background: linear-gradient(180deg, #FCD34D 0%, #FBBF24 100%);
+    color: #1E2252;
+    border: 1px solid #F59E0B;
+    box-shadow: 0 2px 5px rgba(245, 158, 11, 0.18);
+}
+.dep-slot-tile.low {
+    background: #FEF3C7;
+    color: #78350F;
+    border: 1px solid #FDE68A;
+}
+.dep-slot-tile.empty {
+    background: #FFFBEB;
+    color: #94A3B8;
+    border: 1px dashed #FDE68A;
+}
+.dep-slot-code {
+    font-size: 9px;
+    font-weight: 800;
+    opacity: 0.85;
+}
+.dep-slot-qty {
+    font-size: 11px;
+    font-weight: 900;
+}
+
+/* Bottom 3 Analytical Cards */
+.dep-bottom-card {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 15px;
+    padding: 14px 16px;
+    box-shadow: 0 4px 16px rgba(30, 34, 82, 0.05);
+    min-height: 238px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.dep-bottom-hdr {
+    font-size: 12.5px;
+    font-weight: 800;
+    color: #1E2252;
+    text-align: right;
+    border-bottom: 1px solid #F1F5F9;
+    padding-bottom: 6px;
+    margin-bottom: 8px;
+}
+
+/* ======================================================================
+   LAUNCHPAD SECTION HEADERS & CLICKABLE ACTION CARDS
    ====================================================================== */
 .launchpad-section-hdr {
-    font-family: 'Fraunces', serif !important;
-    font-size: 13px !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-size: 12px !important;
     font-weight: 800 !important;
-    color: #111111 !important;
+    color: #1E2252 !important;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    margin: 6px 0 6px 2px;
-    padding: 6px 12px;
-    background: linear-gradient(90deg, rgba(228, 118, 61, 0.22) 0%, rgba(244, 242, 232, 0) 100%);
-    border-left: 4px solid #E4763D;
-    border-radius: 4px;
+    margin: 0 0 8px 0 !important;
+    padding: 5px 10px;
+    background: linear-gradient(90deg, #EFF6FF 0%, #F8FAFC 100%);
+    border-left: 4px solid #3B82F6;
+    border-radius: 5px;
     display: flex;
     align-items: center;
     gap: 8px;
 }
-
-/* Zero-height marker elements for Clickable 3D Card Grids & Theme Sets */
 div[data-testid="stElementContainer"]:has(.kulfi-clickable-card-grid),
 div[data-testid="stElementContainer"]:has(.kulfi-card-set-1),
 div[data-testid="stElementContainer"]:has(.kulfi-card-set-2),
@@ -360,100 +687,56 @@ div[data-testid="stElementContainer"]:has(.kulfi-card-set-4) {
     padding: 0 !important;
 }
 
-/* Section Headers for the 4 Landing Page Sets — Warm Saffron-Champagne Banner Rows */
-.launchpad-section-hdr.set-1 {
-    color: #111111 !important;
-    background: linear-gradient(90deg, #F9C57A 0%, #F5DCA8 60%, #FAF8F1 100%) !important;
-    border: 1px solid #D98224 !important;
-    border-left: 4.5px solid #9E471B !important;
-}
-.launchpad-section-hdr.set-2 {
-    color: #111111 !important;
-    background: linear-gradient(90deg, #FDE6B8 0%, #FAF0D7 65%, #FAF8F1 100%) !important;
-    border: 1px solid #D98224 !important;
-    border-left: 4.5px solid #D97706 !important;
-}
-.launchpad-section-hdr.set-3 {
-    color: #111111 !important;
-    background: linear-gradient(90deg, #F8D4B4 0%, #F6E6D5 65%, #FAF8F1 100%) !important;
-    border: 1px solid #E4763D !important;
-    border-left: 4.5px solid #C85A22 !important;
-}
-.launchpad-section-hdr.set-4 {
-    color: #111111 !important;
-    background: linear-gradient(90deg, #C6F6D5 0%, #E6FAEE 65%, #FAFDFB 100%) !important;
-    border: 1px solid #4ADE80 !important;
-    border-left: 4.5px solid #16A34A !important;
-}
-
-/* Directly Clickable 3D Cards — Base Geometry & Terracotta #E4763D Default */
 div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-clickable-card-grid) .stButton button {
-    background: linear-gradient(135deg, #EE854F 0%, #E4763D 52%, #CE622B 100%) !important;
-    border: 1.5px solid #9E471B !important;
-    border-left: 4.5px solid #F4F2E8 !important;
+    background: linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%) !important;
+    border: 1.5px solid #CBD5E1 !important;
+    border-left: 4.5px solid #3B82F6 !important;
     border-radius: 11px !important;
-    padding: 14px 16px !important;
-    min-height: 64px !important;
-    height: 64px !important;
+    padding: 10px 14px !important;
+    min-height: 50px !important;
+    height: 50px !important;
     width: 100% !important;
     display: flex !important;
     align-items: center !important;
     justify-content: flex-start !important;
     text-align: left !important;
     white-space: nowrap !important;
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.35),
-        0 3px 0 #9E471B,
-        0 5px 12px rgba(228, 118, 61, 0.18) !important;
-    transition: all 0.15s ease !important;
+    box-shadow: 0 2px 8px rgba(30, 34, 82, 0.06) !important;
+    transition: all 0.14s ease !important;
     margin-bottom: 4px !important;
     cursor: pointer !important;
 }
 div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button:hover,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-clickable-card-grid) .stButton button:hover {
-    background: linear-gradient(135deg, #F39362 0%, #EE854F 55%, #E4763D 100%) !important;
-    border-color: #111111 !important;
-    border-left: 4.5px solid #111111 !important;
+    background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%) !important;
+    border-color: #3B82F6 !important;
+    border-left: 4.5px solid #1E2252 !important;
     transform: translateY(-1px) !important;
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.45),
-        0 4px 0 #9E471B,
-        0 8px 16px rgba(228, 118, 61, 0.25) !important;
+    box-shadow: 0 5px 14px rgba(37, 99, 235, 0.14) !important;
 }
-div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button:active {
-    transform: translateY(1px) !important;
-    box-shadow: 0 1px 0 #9E471B !important;
-}
-div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button > div[data-testid="stMarkdownContainer"] {
-    width: 100% !important;
-    text-align: left !important;
-}
-div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button > div[data-testid="stMarkdownContainer"] p,
-div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button > div[data-testid="stMarkdownContainer"] p strong {
-    font-family: 'Manrope', sans-serif !important;
-    font-size: 14.5px !important;
+div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button p,
+div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button p strong {
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-size: 13px !important;
     font-weight: 800 !important;
-    color: #111111 !important;
-    line-height: 1.25 !important;
+    color: #1E2252 !important;
     margin: 0 !important;
-    letter-spacing: 0.01em !important;
-    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.28) !important;
 }
 
 /* ======================================================================
-   ALL STANDARD 3D BUTTONS ACROSS INDIVIDUAL SCREENS — TERRACOTTA #E4763D & BLACK TEXT
+   STANDARD BUTTONS ACROSS INDIVIDUAL SCREENS — DEPOSITO SLATE & INDIGO
    ====================================================================== */
 .stButton button,
 [data-testid="stFormSubmitButton"] > button,
 .stDownloadButton > button,
 [data-testid="stLinkButton"] > a,
 [data-testid="stPopover"] > div > button {
-    background: linear-gradient(180deg, #EE854F 0%, #E4763D 55%, #CE622B 100%) !important;
-    color: #111111 !important;
-    border: 1.5px solid #9E471B !important;
-    border-radius: 8px !important;
-    font-weight: 800 !important;
+    background: linear-gradient(180deg, #FFFFFF 0%, #F1F5F9 100%) !important;
+    color: #1E2252 !important;
+    border: 1.5px solid #CBD5E1 !important;
+    border-radius: 9px !important;
+    font-weight: 700 !important;
     font-size: 12.5px !important;
     min-height: 38px !important;
     height: 38px !important;
@@ -464,12 +747,8 @@ div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kul
     box-sizing: border-box !important;
     margin: 0 !important;
     text-decoration: none !important;
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.35),
-        0 2px 0 #9E471B,
-        0 4px 8px rgba(228, 118, 61, 0.16) !important;
+    box-shadow: 0 2px 5px rgba(15, 23, 42, 0.06) !important;
     transition: all 0.12s ease !important;
-    letter-spacing: 0.01em !important;
 }
 .stButton button p,
 .stButton button span,
@@ -482,189 +761,48 @@ div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kul
 [data-testid="stLinkButton"] > a span,
 [data-testid="stPopover"] > div > button p,
 [data-testid="stPopover"] > div > button span {
-    color: #111111 !important;
-    font-weight: 800 !important;
+    color: #1E2252 !important;
+    font-weight: 700 !important;
 }
 .stButton button:hover,
 [data-testid="stFormSubmitButton"] > button:hover,
 .stDownloadButton > button:hover,
 [data-testid="stLinkButton"] > a:hover,
 [data-testid="stPopover"] > div > button:hover {
-    background: linear-gradient(180deg, #F39362 0%, #E4763D 100%) !important;
-    border-color: #111111 !important;
-    color: #111111 !important;
+    background: linear-gradient(180deg, #EFF6FF 0%, #DBEAFE 100%) !important;
+    border-color: #3B82F6 !important;
+    color: #1E2252 !important;
     transform: translateY(-1px) !important;
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.45),
-        0 3px 0 #9E471B,
-        0 5px 10px rgba(228, 118, 61, 0.22) !important;
-}
-.stButton button:active,
-[data-testid="stFormSubmitButton"] > button:active,
-.stDownloadButton > button:active,
-[data-testid="stLinkButton"] > a:active,
-[data-testid="stPopover"] > div > button:active {
-    transform: translateY(1px) !important;
-    box-shadow: 0 1px 0 #9E471B !important;
+    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.14) !important;
 }
 
-/* ======================================================================
-   LANDING PAGE 4 CARD SET BUTTON THEMES (PLACED AFTER .stButton FOR PRIORITY)
-   ====================================================================== */
-/* Set 1 Buttons: Sales, Daily Operations & Financials — Attached Terracotta-Orange (#E4763D) with Black Text */
-div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-1) .stButton button,
-div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-1):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button,
-div[class*="st-key-launchpad_card_kulfi_card_set_1_"] button {
-    background: linear-gradient(135deg, #EE854F 0%, #E4763D 52%, #CE622B 100%) !important;
-    border: 1.5px solid #9E471B !important;
-    border-left: 4.5px solid #F4F2E8 !important;
-    color: #111111 !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 3px 0 #9E471B, 0 5px 12px rgba(228, 118, 61, 0.18) !important;
-}
-div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-1) .stButton button:hover,
-div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-1):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button:hover,
-div[class*="st-key-launchpad_card_kulfi_card_set_1_"] button:hover {
-    background: linear-gradient(135deg, #F39362 0%, #EE854F 55%, #E4763D 100%) !important;
-    border-color: #111111 !important;
-    border-left: 4.5px solid #111111 !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 4px 0 #9E471B, 0 8px 16px rgba(228, 118, 61, 0.25) !important;
-}
-
-/* Set 2 Buttons: Stock & Freezer — Warm Soft Apricot-Sand (#FCE3C3 -> #F6C28B -> #EDA964) with Black Text */
-div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-2) .stButton button,
-div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-2):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button,
-div[class*="st-key-launchpad_card_kulfi_card_set_2_"] button {
-    background: linear-gradient(135deg, #FCE3C3 0%, #F6C28B 55%, #EDA964 100%) !important;
-    border: 1.5px solid #C86D25 !important;
-    border-left: 4.5px solid #E4763D !important;
-    color: #111111 !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65), 0 3px 0 #B45309, 0 5px 12px rgba(228, 118, 61, 0.15) !important;
-}
-div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-2) .stButton button:hover,
-div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-2):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button:hover,
-div[class*="st-key-launchpad_card_kulfi_card_set_2_"] button:hover {
-    background: linear-gradient(135deg, #FDF0DC 0%, #FCE3C3 55%, #F6C28B 100%) !important;
-    border-color: #111111 !important;
-    border-left: 4.5px solid #111111 !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.80), 0 4px 0 #B45309, 0 8px 16px rgba(228, 118, 61, 0.22) !important;
-}
-
-/* Set 3 Buttons: POs, Expenses & Cash — Rich Cream-Ivory (#FAF8F1 -> #E8E2CE) Framed in #E4763D with Black Text */
-div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-3) .stButton button,
-div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-3):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button,
-div[class*="st-key-launchpad_card_kulfi_card_set_3_"] button {
-    background: linear-gradient(135deg, #FFFDF8 0%, #F4F2E8 52%, #E6E0CE 100%) !important;
-    border: 1.5px solid #E4763D !important;
-    border-left: 4.5px solid #E4763D !important;
-    color: #111111 !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85), 0 3px 0 #9E471B, 0 5px 12px rgba(228, 118, 61, 0.14) !important;
-}
-div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-3) .stButton button:hover,
-div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-3):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button:hover,
-div[class*="st-key-launchpad_card_kulfi_card_set_3_"] button:hover {
-    background: linear-gradient(135deg, #FFFFFF 0%, #FAF8F1 55%, #F4F2E8 100%) !important;
-    border-color: #111111 !important;
-    border-left: 4.5px solid #111111 !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95), 0 4px 0 #9E471B, 0 8px 16px rgba(228, 118, 61, 0.22) !important;
-}
-
-/* Set 4 Buttons: Staff Payroll & Admin Setup — VERY LIGHTER GREEN (#E6FAEE -> #BBF7D0) with Crisp Black Text */
-div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-4) .stButton button,
-div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-4):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button,
-div[class*="st-key-launchpad_card_kulfi_card_set_4_"] button {
-    background: linear-gradient(135deg, #E6FAEE 0%, #D1FAE5 52%, #BBF7D0 100%) !important;
-    border: 1.5px solid #4ADE80 !important;
-    border-left: 4.5px solid #16A34A !important;
-    color: #111111 !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85), 0 3px 0 #22C55E, 0 5px 12px rgba(22, 163, 74, 0.14) !important;
-}
-div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-4) .stButton button p,
-div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-4) .stButton button span,
-div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-4) .stButton button strong,
-div[class*="st-key-launchpad_card_kulfi_card_set_4_"] button p,
-div[class*="st-key-launchpad_card_kulfi_card_set_4_"] button span,
-div[class*="st-key-launchpad_card_kulfi_card_set_4_"] button strong {
-    color: #111111 !important;
-    font-weight: 800 !important;
-    text-shadow: none !important;
-}
-div[data-testid="stHorizontalBlock"]:has(.kulfi-card-set-4) .stButton button:hover,
-div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-card-set-4):not(:has(.kulfi-top-cmd-bar-scope)) .stButton button:hover,
-div[class*="st-key-launchpad_card_kulfi_card_set_4_"] button:hover {
-    background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 55%, #BBF7D0 100%) !important;
-    border-color: #15803D !important;
-    border-left: 4.5px solid #111111 !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95), 0 4px 0 #16A34A, 0 8px 16px rgba(22, 163, 74, 0.20) !important;
-}
-
-/* Primary 3D Action Buttons (Warm Terracotta #E4763D -> #C85A22 with Crisp Black Text) */
+/* Primary Action Buttons (Deep Royal Indigo #1E2252 -> #2D337A with Crisp White Text) */
 .stButton button[kind="primary"],
 [data-testid="stFormSubmitButton"] > button[kind="primary"],
 .stDownloadButton > button[kind="primary"],
 [data-testid="baseButton-primary"] {
-    background: linear-gradient(180deg, #EE854F 0%, #E4763D 50%, #C85A22 100%) !important;
-    color: #111111 !important;
-    border: 1.5px solid #111111 !important;
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.40),
-        0 2px 0 #7C3512,
-        0 4px 10px rgba(228, 118, 61, 0.24) !important;
+    background: linear-gradient(135deg, #1E2252 0%, #2D337A 100%) !important;
+    color: #FFFFFF !important;
+    border: 1.5px solid #1E2252 !important;
+    box-shadow: 0 4px 12px rgba(30, 34, 82, 0.22) !important;
 }
 .stButton button[kind="primary"] p,
 .stButton button[kind="primary"] span,
+.stButton button[kind="primary"] strong,
 [data-testid="stFormSubmitButton"] > button[kind="primary"] p,
-.stDownloadButton > button[kind="primary"] p {
-    color: #111111 !important;
-    font-weight: 900 !important;
+[data-testid="stFormSubmitButton"] > button[kind="primary"] span,
+.stDownloadButton > button[kind="primary"] p,
+.stDownloadButton > button[kind="primary"] span {
+    color: #FFFFFF !important;
+    font-weight: 800 !important;
 }
 .stButton button[kind="primary"]:hover,
 [data-testid="stFormSubmitButton"] > button[kind="primary"]:hover,
 .stDownloadButton > button[kind="primary"]:hover {
-    background: linear-gradient(180deg, #F39362 0%, #E4763D 100%) !important;
-    border-color: #111111 !important;
-    color: #111111 !important;
+    background: linear-gradient(135deg, #282E6E 0%, #3B82F6 100%) !important;
+    border-color: #1D4ED8 !important;
+    color: #FFFFFF !important;
     transform: translateY(-1px) !important;
-}
-
-/* Aesthetic Bordered Frames Around Each Set of Landing Page Cards (#F4F2E8 Cream + #E4763D Borders) */
-div[data-testid="stVerticalBlockBorderWrapper"]:has(.kulfi-card-set-1) {
-    background: linear-gradient(180deg, #FAF8F1 0%, #F4F2E8 100%) !important;
-    border: 2px solid #E4763D !important;
-    border-top: 4.5px solid #E4763D !important;
-    border-radius: 14px !important;
-    padding: 10px 14px 12px 14px !important;
-    margin-bottom: 10px !important;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.80), 0 4px 14px rgba(228, 118, 61, 0.10) !important;
-}
-div[data-testid="stVerticalBlockBorderWrapper"]:has(.kulfi-card-set-2) {
-    background: linear-gradient(180deg, #FAF8F1 0%, #F4F2E8 100%) !important;
-    border: 2px solid #E4763D !important;
-    border-top: 4.5px solid #D97706 !important;
-    border-radius: 14px !important;
-    padding: 10px 14px 12px 14px !important;
-    margin-bottom: 10px !important;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.80), 0 4px 14px rgba(228, 118, 61, 0.10) !important;
-}
-div[data-testid="stVerticalBlockBorderWrapper"]:has(.kulfi-card-set-3) {
-    background: linear-gradient(180deg, #FAF8F1 0%, #F4F2E8 100%) !important;
-    border: 2px solid #E4763D !important;
-    border-top: 4.5px solid #C85A22 !important;
-    border-radius: 14px !important;
-    padding: 10px 14px 12px 14px !important;
-    margin-bottom: 10px !important;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.80), 0 4px 14px rgba(228, 118, 61, 0.10) !important;
-}
-div[data-testid="stVerticalBlockBorderWrapper"]:has(.kulfi-card-set-4) {
-    background: linear-gradient(180deg, #FAFDFB 0%, #F0FDF4 100%) !important;
-    border: 2px solid #E4763D !important;
-    border-top: 4.5px solid #22C55E !important;
-    border-radius: 14px !important;
-    padding: 10px 14px 12px 14px !important;
-    margin-bottom: 10px !important;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.80), 0 4px 14px rgba(22, 163, 74, 0.08) !important;
-}
-.launchpad-section-hdr {
-    margin: 0 0 8px 0 !important;
 }
 
 /* Compact 30px inline action buttons (Edit, Copy, Delete) inside .ledger-cell table rows */
@@ -686,10 +824,10 @@ div[class*="st-key-row_del_"] button {
     font-size: 13px !important;
     line-height: 1 !important;
     border-radius: 6px !important;
-    border: 1.5px solid #9E471B !important;
-    background: linear-gradient(180deg, #EE854F 0%, #E4763D 100%) !important;
-    color: #111111 !important;
-    box-shadow: 0 2px 0 #9E471B !important;
+    border: 1px solid #93C5FD !important;
+    background: linear-gradient(180deg, #EFF6FF 0%, #DBEAFE 100%) !important;
+    color: #1E2252 !important;
+    box-shadow: 0 1px 3px rgba(30, 34, 82, 0.10) !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -705,60 +843,63 @@ div[class*="st-key-row_del_"] button p {
     line-height: 1 !important;
     margin: 0 !important;
     padding: 0 !important;
-    color: #111111 !important;
+    color: #1E2252 !important;
     overflow: visible !important;
     white-space: nowrap !important;
 }
-/* Distinct subtle color coding for Edit (Terracotta), Copy (Cream), and Delete (Soft Coral) */
 div[class*="st-key-row_clone_"] button {
-    background: linear-gradient(180deg, #FAF8F1 0%, #F4F2E8 100%) !important;
-    border-color: #E4763D !important;
-    box-shadow: 0 2px 0 #9E471B !important;
+    background: linear-gradient(180deg, #F8FAFC 0%, #E2E8F0 100%) !important;
+    border-color: #CBD5E1 !important;
 }
 div[class*="st-key-row_del_"] button {
-    background: linear-gradient(180deg, #FEE2E2 0%, #FECACA 100%) !important;
-    border-color: #EF4444 !important;
-    box-shadow: 0 2px 0 #B91C1C !important;
+    background: linear-gradient(180deg, #FEF2F2 0%, #FECACA 100%) !important;
+    border-color: #FCA5A5 !important;
 }
 
-/* High-Contrast Section Headers */
+/* Section Headers for Sales & Restock */
 .header-box-sales {
-    background: linear-gradient(90deg, #EE854F 0%, #E4763D 100%);
-    color: #111111 !important;
-    border: 1.5px solid #9E471B;
-    border-radius: 9px;
-    padding: 8px 13px;
+    background: linear-gradient(90deg, #1E2252 0%, #2D337A 100%);
+    color: #FFFFFF !important;
+    border: 1px solid #1E2252;
+    border-radius: 10px;
+    padding: 9px 14px;
     font-weight: 800;
     font-size: 13px;
     margin-bottom: 8px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 2px 5px rgba(228, 118, 61, 0.14);
+    box-shadow: 0 3px 10px rgba(30, 34, 82, 0.14);
+}
+.header-box-sales span, .header-box-sales b {
+    color: #FFFFFF !important;
 }
 .header-box-restock {
-    background: linear-gradient(90deg, #E6FAEE 0%, #BBF7D0 100%);
-    color: #111111 !important;
-    border: 1.5px solid #4ADE80;
-    border-radius: 9px;
-    padding: 8px 13px;
+    background: linear-gradient(90deg, #059669 0%, #047857 100%);
+    color: #FFFFFF !important;
+    border: 1px solid #047857;
+    border-radius: 10px;
+    padding: 9px 14px;
     font-weight: 800;
     font-size: 13px;
     margin-bottom: 8px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 2px 5px rgba(22, 163, 74, 0.08);
+    box-shadow: 0 3px 10px rgba(5, 150, 105, 0.14);
+}
+.header-box-restock span, .header-box-restock b {
+    color: #FFFFFF !important;
 }
 
 /* Compact Flavor Card Grid */
 .flavor-entry-row {
-    background: #FAF8F1;
-    border: 1px solid #E4763D;
+    background: #FFFFFF;
+    border: 1px solid #CBD5E1;
     border-radius: 8px;
     padding: 5px 8px;
     margin-bottom: 5px;
-    box-shadow: 0 2px 4px rgba(228, 118, 61, 0.06);
+    box-shadow: 0 2px 4px rgba(15, 23, 42, 0.04);
 }
 .flavor-title-bar {
     display: flex;
@@ -769,19 +910,19 @@ div[class*="st-key-row_del_"] button {
 .flavor-name {
     font-weight: 800;
     font-size: 12.5px;
-    color: #111111;
+    color: #1E2252;
 }
 .badge-open {
-    background: #F4F2E8;
-    color: #111111;
-    border: 1px solid #E4763D;
+    background: #F1F5F9;
+    color: #1E2252;
+    border: 1px solid #CBD5E1;
     font-weight: 800;
     font-size: 11px;
     padding: 1px 6px;
     border-radius: 6px;
 }
 .badge-sold {
-    background: #FEE2E2;
+    background: #FEF2F2;
     color: #991B1B;
     font-weight: 800;
     font-size: 11px;
@@ -789,26 +930,26 @@ div[class*="st-key-row_del_"] button {
     border-radius: 6px;
 }
 .badge-today-open {
-    background: #DCFCE7;
-    color: #111111;
+    background: #ECFDF5;
+    color: #065F46;
     font-weight: 800;
     font-size: 11.5px;
     padding: 2px 7px;
     border-radius: 6px;
-    border: 1px solid #86EFAC;
+    border: 1px solid #6EE7B7;
     display: inline-block;
 }
 
-/* Consistent Input Heights & Terracotta Borders */
+/* Consistent Input Heights & Slate-Blue Borders */
 .stSelectbox div[data-baseweb="select"] > div,
 .stDateInput div[data-baseweb="input"],
 .stTextInput div[data-baseweb="input"],
 .stNumberInput div[data-baseweb="input"] {
     min-height: 36px !important;
     height: 36px !important;
-    border-radius: 7px !important;
-    background-color: #FFFDF8 !important;
-    border: 1.5px solid #E4763D !important;
+    border-radius: 8px !important;
+    background-color: #FFFFFF !important;
+    border: 1.5px solid #CBD5E1 !important;
 }
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) .stNumberInput div[data-baseweb="input"] {
     min-height: 28px !important;
@@ -820,24 +961,24 @@ div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) .stNumberInpu
     font-size: 12.5px !important;
     text-align: left !important;
     font-weight: 700 !important;
-    color: #111111 !important;
+    color: #0F172A !important;
 }
 .stNumberInput label, .stTextInput label, .stSelectbox label, .stDateInput label {
     font-size: 11px !important;
-    font-weight: 800 !important;
+    font-weight: 700 !important;
     margin-bottom: 2px !important;
     text-align: left !important;
-    color: #111111 !important;
+    color: #334155 !important;
 }
 
-/* Metric Cards — Soft Cream #F4F2E8 with Terracotta #E4763D Top Bar */
+/* Metric Cards — Crisp White with Indigo/Blue Top Accent */
 div[data-testid="stMetric"] {
-    background: #FAF8F1 !important;
-    border: 1.5px solid #E4763D !important;
-    border-top: 3.5px solid #E4763D !important;
-    border-radius: 10px !important;
-    padding: 9px 12px !important;
-    box-shadow: 0 2px 8px rgba(228, 118, 61, 0.08) !important;
+    background: #FFFFFF !important;
+    border: 1px solid #E2E8F0 !important;
+    border-top: 3.5px solid #3B82F6 !important;
+    border-radius: 12px !important;
+    padding: 10px 12px !important;
+    box-shadow: 0 4px 12px rgba(30, 34, 82, 0.05) !important;
     height: 100%;
 }
 div[data-testid="stMetricLabel"], 
@@ -845,9 +986,9 @@ div[data-testid="stMetricLabel"] > div,
 div[data-testid="stMetricLabel"] label,
 div[data-testid="stMetricLabel"] p, 
 div[data-testid="stMetricLabel"] span { 
-    font-weight: 800 !important; 
+    font-weight: 700 !important; 
     font-size: 11px !important; 
-    color: #3D2210 !important; 
+    color: #64748B !important; 
     white-space: normal !important; 
     word-wrap: break-word !important; 
     overflow: visible !important; 
@@ -856,29 +997,29 @@ div[data-testid="stMetricLabel"] span {
 }
 div[data-testid="stMetricLabel"] {
     height: auto !important;
-    min-height: 26px;
+    min-height: 24px;
 }
 div[data-testid="stMetricValue"] { 
-    font-family: 'Fraunces', serif; 
-    font-size: 1.15rem !important; 
+    font-family: 'Plus Jakarta Sans', sans-serif; 
+    font-size: 1.18rem !important; 
     font-weight: 800 !important;
-    color: #111111 !important; 
-    margin-top: 4px;
+    color: #1E2252 !important; 
+    margin-top: 3px;
 }
 
-/* Data Grids & Tables Across the Entire App — Terracotta #E4763D & Cream #F4F2E8 */
+/* Data Grids & Tables Across the Entire App */
 div[data-testid="stDataFrame"], div[data-testid="stDataEditor"] {
-    border-radius: 10px !important;
-    border: 1.5px solid #E4763D !important;
-    background: #FAF8F1 !important;
-    box-shadow: 0 3px 10px rgba(228, 118, 61, 0.08) !important;
+    border-radius: 11px !important;
+    border: 1px solid #CBD5E1 !important;
+    background: #FFFFFF !important;
+    box-shadow: 0 3px 10px rgba(30, 34, 82, 0.05) !important;
     overflow: hidden;
 }
 div[data-testid="stDataFrame"] th, div[data-testid="stDataEditor"] th {
     font-weight: 800 !important;
-    color: #111111 !important;
-    background: linear-gradient(180deg, #EE854F 0%, #E4763D 100%) !important;
-    border-bottom: 1.5px solid #9E471B !important;
+    color: #1E2252 !important;
+    background: linear-gradient(180deg, #EFF6FF 0%, #DBEAFE 100%) !important;
+    border-bottom: 1.5px solid #93C5FD !important;
     text-align: center !important;
     font-size: 12px !important;
 }
@@ -886,68 +1027,67 @@ div[data-testid="stDataFrame"] td, div[data-testid="stDataEditor"] td {
     text-align: center !important;
     font-size: 11.5px !important;
     font-weight: 700 !important;
-    color: #111111 !important;
+    color: #0F172A !important;
 }
 .stMarkdown table {
     width: 100%;
     border-collapse: separate !important;
     border-spacing: 0 !important;
-    background: #FAF8F1;
-    border: 1.5px solid #E4763D;
-    border-radius: 10px;
+    background: #FFFFFF;
+    border: 1px solid #CBD5E1;
+    border-radius: 11px;
     overflow: hidden;
-    box-shadow: 0 3px 10px rgba(228, 118, 61, 0.08);
+    box-shadow: 0 3px 10px rgba(30, 34, 82, 0.05);
     margin: 6px 0 12px 0;
 }
 .stMarkdown table th {
-    background: linear-gradient(180deg, #EE854F 0%, #E4763D 100%) !important;
-    color: #111111 !important;
+    background: linear-gradient(180deg, #EFF6FF 0%, #DBEAFE 100%) !important;
+    color: #1E2252 !important;
     font-weight: 800 !important;
     padding: 8px 10px !important;
-    border-bottom: 1.5px solid #9E471B !important;
-    border-right: 1px solid rgba(20, 10, 4, 0.14) !important;
+    border-bottom: 1.5px solid #93C5FD !important;
+    border-right: 1px solid #E2E8F0 !important;
     font-size: 11.5px !important;
 }
 .stMarkdown table td {
     padding: 7px 10px !important;
-    border-bottom: 1px solid #E5DFCE !important;
-    border-right: 1px solid #EFECE0 !important;
+    border-bottom: 1px solid #F1F5F9 !important;
+    border-right: 1px solid #F1F5F9 !important;
     font-size: 12px !important;
     font-weight: 700 !important;
-    color: #111111 !important;
+    color: #0F172A !important;
 }
 .stMarkdown table tr:nth-child(even) td {
-    background: #F4F2E8 !important;
+    background: #F8FAFC !important;
 }
 .stMarkdown table tr:hover td {
-    background: #FDE8D7 !important;
+    background: #EFF6FF !important;
 }
 
-hr { border-color: #E4763D !important; opacity: 0.45 !important; margin: 0.4rem 0 !important; }
+hr { border-color: #CBD5E1 !important; opacity: 0.65 !important; margin: 0.45rem 0 !important; }
 
-/* Distinct Editable Table Input Borders */
 div[data-testid="stNumberInput"] div[data-baseweb="input"] {
-    border: 1.5px solid #E4763D !important;
-    background-color: #FFFDF8 !important;
+    border: 1.5px solid #93C5FD !important;
+    background-color: #FFFFFF !important;
     border-radius: 6px !important;
 }
 div[data-testid="stNumberInput"] div[data-baseweb="input"]:focus-within {
-    border: 2px solid #22C55E !important;
-    background-color: #F0FDF4 !important;
+    border: 2px solid #2563EB !important;
+    background-color: #EFF6FF !important;
 }
 div[data-testid="stNumberInput"] input {
     text-align: left !important;
     font-weight: 800 !important;
-    color: #111111 !important;
+    color: #0F172A !important;
     padding-left: 8px !important;
 }
 
 /* Daily Entry & Stock Grid Cells */
 .entry-grid-header {
-    background: linear-gradient(180deg, #EE854F 0%, #E4763D 100%);
-    color: #111111 !important;
-    border: 1px solid #9E471B;
-    border-bottom: 1.5px solid #9E471B;
+    background: linear-gradient(180deg, #EFF6FF 0%, #DBEAFE 100%);
+    color: #1E2252 !important;
+    border: 1px solid #93C5FD;
+    border-bottom: 1.5px solid #60A5FA;
     padding: 6px 10px;
     border-radius: 7px;
     font-size: 11.5px;
@@ -956,8 +1096,8 @@ div[data-testid="stNumberInput"] input {
     margin-bottom: 4px;
 }
 .entry-grid-cell {
-    background: #FAF8F1;
-    border: 1px solid #E4763D;
+    background: #FFFFFF;
+    border: 1px solid #CBD5E1;
     border-radius: 6px;
     height: 28px;
     display: flex;
@@ -965,12 +1105,12 @@ div[data-testid="stNumberInput"] input {
     justify-content: center;
     font-size: 12px;
     font-weight: 800;
-    color: #111111;
+    color: #0F172A;
 }
 .entry-grid-cell-flavour {
-    background: #FAF8F1;
-    border: 1px solid #E4763D;
-    border-left: 3.5px solid #E4763D;
+    background: #FFFFFF;
+    border: 1px solid #CBD5E1;
+    border-left: 3.5px solid #3B82F6;
     border-radius: 6px;
     height: 28px;
     display: flex;
@@ -979,11 +1119,11 @@ div[data-testid="stNumberInput"] input {
     padding: 0 8px;
     font-size: 12px;
     font-weight: 800;
-    color: #111111;
+    color: #1E2252;
 }
 .entry-grid-cell-sold {
-    background: #FEE2E2;
-    border: 1px solid #FCA5A5;
+    background: #FEF3C7;
+    border: 1px solid #FCD34D;
     border-radius: 6px;
     height: 28px;
     display: flex;
@@ -991,11 +1131,11 @@ div[data-testid="stNumberInput"] input {
     justify-content: center;
     font-size: 12px;
     font-weight: 900;
-    color: #991B1B;
+    color: #92400E;
 }
 .entry-grid-cell-amount {
-    background: #E6FAEE;
-    border: 1px solid #86EFAC;
+    background: #ECFDF5;
+    border: 1px solid #6EE7B7;
     border-radius: 6px;
     height: 28px;
     display: flex;
@@ -1004,25 +1144,25 @@ div[data-testid="stNumberInput"] input {
     padding: 0 8px;
     font-size: 12px;
     font-weight: 900;
-    color: #111111;
+    color: #065F46;
 }
 .entry-grid-total-row {
-    background: linear-gradient(90deg, #FDE8D7 0%, #F4F2E8 100%);
-    border: 1.5px solid #E4763D;
+    background: linear-gradient(90deg, #EFF6FF 0%, #E0E7FF 100%);
+    border: 1.5px solid #93C5FD;
     border-radius: 8px;
     padding: 7px 10px;
     margin-top: 6px;
     font-size: 12px;
     font-weight: 900;
-    color: #111111;
+    color: #1E2252;
 }
 
 /* Compact No-Scroll Ledger Rows for Expenses & Payments */
 .ledger-tbl-header {
-    background: linear-gradient(180deg, #EE854F 0%, #E4763D 100%);
-    color: #111111 !important;
-    border: 1px solid #9E471B;
-    border-bottom: 1.5px solid #9E471B;
+    background: linear-gradient(180deg, #EFF6FF 0%, #DBEAFE 100%);
+    color: #1E2252 !important;
+    border: 1px solid #93C5FD;
+    border-bottom: 1.5px solid #60A5FA;
     padding: 5px 6px;
     border-radius: 6px;
     font-size: 10px;
@@ -1038,8 +1178,8 @@ div[data-testid="stNumberInput"] input {
     min-height: 27px;
 }
 .ledger-cell {
-    background: #FAF8F1;
-    border: 1px solid #E4763D;
+    background: #FFFFFF;
+    border: 1px solid #CBD5E1;
     border-radius: 5px;
     min-height: 30px;
     height: 30px;
@@ -1048,16 +1188,16 @@ div[data-testid="stNumberInput"] input {
     align-items: center;
     font-size: 10.5px;
     font-weight: 700;
-    color: #111111;
+    color: #0F172A;
     line-height: 1.15;
     white-space: nowrap !important;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 .ledger-cell-desc {
-    background: #FAF8F1;
-    border: 1px solid #E4763D;
-    border-left: 3px solid #E4763D;
+    background: #FFFFFF;
+    border: 1px solid #CBD5E1;
+    border-left: 3px solid #3B82F6;
     border-radius: 5px;
     min-height: 30px;
     height: 30px;
@@ -1067,7 +1207,7 @@ div[data-testid="stNumberInput"] input {
     justify-content: center;
     font-size: 10.5px;
     font-weight: 700;
-    color: #111111;
+    color: #0F172A;
     line-height: 1.12;
     overflow: hidden;
 }
@@ -1081,14 +1221,14 @@ div[data-testid="stNumberInput"] input {
 .ledger-subtext {
     font-size: 9px;
     font-weight: 800;
-    color: #9E471B;
+    color: #4F46E5;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
 }
 .ledger-amt-total {
-    background: #F4F2E8;
-    border: 1px solid #E4763D;
+    background: #F8FAFC;
+    border: 1px solid #CBD5E1;
     border-radius: 5px;
     min-height: 30px;
     height: 30px;
@@ -1098,12 +1238,12 @@ div[data-testid="stNumberInput"] input {
     justify-content: flex-end;
     font-size: 10.5px;
     font-weight: 800;
-    color: #111111;
+    color: #1E2252;
     white-space: nowrap !important;
 }
 .ledger-amt-paid {
-    background: #E6FAEE;
-    border: 1px solid #86EFAC;
+    background: #ECFDF5;
+    border: 1px solid #6EE7B7;
     border-radius: 5px;
     min-height: 30px;
     height: 30px;
@@ -1113,11 +1253,11 @@ div[data-testid="stNumberInput"] input {
     justify-content: flex-end;
     font-size: 10.5px;
     font-weight: 800;
-    color: #111111;
+    color: #065F46;
     white-space: nowrap !important;
 }
 .ledger-amt-due {
-    background: #FEE2E2;
+    background: #FEF2F2;
     border: 1px solid #FCA5A5;
     border-radius: 5px;
     min-height: 30px;
@@ -1140,12 +1280,12 @@ div[data-testid="stNumberInput"] input {
     text-align: center;
     white-space: nowrap !important;
 }
-.status-paid { background: #E6FAEE; color: #111111; border: 1px solid #86EFAC; }
-.status-partial { background: #FEF3C7; color: #111111; border: 1px solid #FDE68A; }
-.status-pending { background: #FEE2E2; color: #991B1B; border: 1px solid #FCA5A5; }
-.status-other { background: #F4F2E8; color: #111111; border: 1px solid #E4763D; }
+.status-paid { background: #ECFDF5; color: #065F46; border: 1px solid #6EE7B7; }
+.status-partial { background: #FEF3C7; color: #92400E; border: 1px solid #FCD34D; }
+.status-pending { background: #FEF2F2; color: #991B1B; border: 1px solid #FCA5A5; }
+.status-other { background: #F1F5F9; color: #334155; border: 1px solid #CBD5E1; }
 
-/* Freezer Analysis Boxed Table Styling — Terracotta #E4763D & Light Mint Grid */
+/* Freezer Analysis Boxed Table Styling — Deposito Indigo, Emerald & Sky Grid */
 .fa-boxed-table-wrap {
     width: 100%;
     overflow-x: auto;
@@ -1155,80 +1295,79 @@ div[data-testid="stNumberInput"] input {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
-    background: #FAF8F1;
-    border: 1.5px solid #E4763D;
-    border-radius: 11px;
+    background: #FFFFFF;
+    border: 1.5px solid #CBD5E1;
+    border-radius: 12px;
     overflow: hidden;
     font-size: 12.5px;
-    box-shadow: 0 3px 10px rgba(228, 118, 61, 0.08);
+    box-shadow: 0 4px 12px rgba(30, 34, 82, 0.06);
 }
 .fa-boxed-table th {
-    background: linear-gradient(180deg, #EE854F 0%, #E4763D 100%);
-    color: #111111 !important;
+    background: linear-gradient(180deg, #EFF6FF 0%, #DBEAFE 100%);
+    color: #1E2252 !important;
     font-weight: 800;
-    padding: 9px 10px;
+    padding: 9px 14px !important;
     text-align: center;
     font-size: 11.5px;
     letter-spacing: 0.02em;
-    border-bottom: 1.5px solid #9E471B;
-    border-right: 1px solid rgba(20, 10, 4, 0.14);
+    border-bottom: 1.5px solid #93C5FD;
+    border-right: 1px solid #E2E8F0;
 }
 .fa-boxed-table td {
-    padding: 7px 10px;
-    border-bottom: 1px solid #E5DFCE;
-    border-right: 1px solid #EFECE0;
+    padding: 9px 14px !important;
+    border-bottom: 1px solid #F1F5F9;
+    border-right: 1px solid #F1F5F9;
     text-align: center;
     font-weight: 700;
-    color: #111111;
+    color: #0F172A;
 }
 .fa-boxed-table tr:nth-child(even) td {
-    background: #F4F2E8;
+    background: #F8FAFC;
 }
 .fa-boxed-table tr:hover td {
-    background: #FDE8D7;
+    background: #EFF6FF;
 }
 .fa-boxed-table tr.fa-total-row td {
-    background: linear-gradient(90deg, #EE854F 0%, #E4763D 100%) !important;
-    border-top: 2px solid #9E471B !important;
+    background: linear-gradient(90deg, #DBEAFE 0%, #E0E7FF 100%) !important;
+    border-top: 2px solid #3B82F6 !important;
     border-bottom: none !important;
     font-weight: 900 !important;
-    color: #111111 !important;
+    color: #1E2252 !important;
     font-size: 13px;
 }
 /* Group Box 1: Audit */
-.fa-box-audit-th { border-left: 2px solid #9E471B !important; border-right: 2px solid #9E471B !important; border-top: 2px solid #9E471B !important; background: #E4763D !important; color: #111111 !important; }
-.fa-box-audit-td { border-left: 1.5px solid #E4763D !important; border-right: 1.5px solid #E4763D !important; background: #FAF8F1 !important; }
-.fa-box-audit-tot { border-left: 2px solid #9E471B !important; border-right: 2px solid #9E471B !important; border-bottom: 2px solid #9E471B !important; }
+.fa-box-audit-th { border-left: 2px solid #6366F1 !important; border-right: 2px solid #6366F1 !important; border-top: 2px solid #6366F1 !important; background: #E0E7FF !important; color: #1E2252 !important; }
+.fa-box-audit-td { border-left: 1.5px solid #818CF8 !important; border-right: 1.5px solid #818CF8 !important; background: #F8FAFC !important; }
+.fa-box-audit-tot { border-left: 2px solid #6366F1 !important; border-right: 2px solid #6366F1 !important; border-bottom: 2px solid #6366F1 !important; }
 
-/* Group Box 2: Recv & Frm Cart — Very Lighter Green with Black Text */
-.fa-box-in-left-th { border-left: 2px solid #22C55E !important; border-top: 2px solid #22C55E !important; background: #D1FAE5 !important; color: #111111 !important; }
-.fa-box-in-right-th { border-right: 2px solid #22C55E !important; border-top: 2px solid #22C55E !important; background: #BBF7D0 !important; color: #111111 !important; }
-.fa-box-in-left-td { border-left: 1.5px solid #22C55E !important; background: #F0FDF4 !important; color: #111111 !important; }
-.fa-box-in-right-td { border-right: 1.5px solid #22C55E !important; background: #E6FAEE !important; color: #111111 !important; font-weight: 800 !important; }
-.fa-box-in-left-tot { border-left: 2px solid #22C55E !important; border-bottom: 2px solid #22C55E !important; color: #111111 !important; }
-.fa-box-in-right-tot { border-right: 2px solid #22C55E !important; border-bottom: 2px solid #22C55E !important; color: #111111 !important; }
+/* Group Box 2: Recv & -Cart (Emerald Mint) */
+.fa-box-in-left-th { border-left: 2px solid #10B981 !important; border-top: 2px solid #10B981 !important; background: #D1FAE5 !important; color: #065F46 !important; }
+.fa-box-in-right-th { border-right: 2px solid #10B981 !important; border-top: 2px solid #10B981 !important; background: #A7F3D0 !important; color: #065F46 !important; }
+.fa-box-in-left-td { border-left: 1.5px solid #10B981 !important; background: #ECFDF5 !important; color: #065F46 !important; }
+.fa-box-in-right-td { border-right: 1.5px solid #10B981 !important; background: #ECFDF5 !important; color: #065F46 !important; font-weight: 800 !important; }
+.fa-box-in-left-tot { border-left: 2px solid #10B981 !important; border-bottom: 2px solid #10B981 !important; color: #065F46 !important; }
+.fa-box-in-right-tot { border-right: 2px solid #10B981 !important; border-bottom: 2px solid #10B981 !important; color: #065F46 !important; }
 
-/* Group Box 3: To Cart, FZR Sale, Rem */
-.fa-box-out-left-th { border-left: 2px solid #9E471B !important; border-top: 2px solid #9E471B !important; background: #EE854F !important; color: #111111 !important; }
-.fa-box-out-mid-th { border-top: 2px solid #9E471B !important; background: #EE854F !important; color: #111111 !important; }
-.fa-box-out-right-th { border-right: 2px solid #9E471B !important; border-top: 2px solid #9E471B !important; background: #EE854F !important; color: #111111 !important; }
-.fa-box-out-left-td { border-left: 1.5px solid #E4763D !important; background: #FAF8F1 !important; }
-.fa-box-out-mid-td { background: #FAF8F1 !important; color: #111111 !important; font-weight: 800 !important; }
-.fa-box-out-right-td { border-right: 1.5px solid #E4763D !important; background: #FAF8F1 !important; }
-.fa-box-out-left-tot { border-left: 2px solid #9E471B !important; border-bottom: 2px solid #9E471B !important; }
-.fa-box-out-mid-tot { border-bottom: 2px solid #9E471B !important; color: #111111 !important; }
-.fa-box-out-right-tot { border-right: 2px solid #9E471B !important; border-bottom: 2px solid #9E471B !important; }
+/* Group Box 3: +Cart, FZR Sale, Rem (Warm Amber) */
+.fa-box-out-left-th { border-left: 2px solid #F59E0B !important; border-top: 2px solid #F59E0B !important; background: #FEF3C7 !important; color: #78350F !important; }
+.fa-box-out-mid-th { border-top: 2px solid #F59E0B !important; background: #FEF3C7 !important; color: #78350F !important; }
+.fa-box-out-right-th { border-right: 2px solid #F59E0B !important; border-top: 2px solid #F59E0B !important; background: #FEF3C7 !important; color: #78350F !important; }
+.fa-box-out-left-td { border-left: 1.5px solid #F59E0B !important; background: #FFFBEB !important; }
+.fa-box-out-mid-td { background: #FFFBEB !important; color: #78350F !important; font-weight: 800 !important; }
+.fa-box-out-right-td { border-right: 1.5px solid #F59E0B !important; background: #FFFBEB !important; }
+.fa-box-out-left-tot { border-left: 2px solid #F59E0B !important; border-bottom: 2px solid #F59E0B !important; }
+.fa-box-out-mid-tot { border-bottom: 2px solid #F59E0B !important; color: #78350F !important; }
+.fa-box-out-right-tot { border-right: 2px solid #F59E0B !important; border-bottom: 2px solid #F59E0B !important; }
 
-/* Group Box 4: Current */
-.fa-boxed-table th, .fa-boxed-table td { padding: 9px 14px !important; }
-.fa-box-cur-only-th { border-left: 2px solid #9E471B !important; border-right: 2px solid #9E471B !important; border-top: 2px solid #9E471B !important; background: #E4763D !important; color: #111111 !important; }
-.fa-box-cur-only-td { border-left: 1.5px solid #E4763D !important; border-right: 1.5px solid #E4763D !important; background: #F4F2E8 !important; color: #111111 !important; font-weight: 900 !important; font-size: 13.5px !important; }
-.fa-box-cur-only-tot { border-left: 2px solid #9E471B !important; border-right: 2px solid #9E471B !important; border-bottom: 2px solid #9E471B !important; color: #111111 !important; font-size: 14px !important; }
+/* Group Box 4: Current (Sky-Indigo) */
+.fa-box-cur-only-th { border-left: 2px solid #2563EB !important; border-right: 2px solid #2563EB !important; border-top: 2px solid #2563EB !important; background: #DBEAFE !important; color: #1E2252 !important; }
+.fa-box-cur-only-td { border-left: 1.5px solid #3B82F6 !important; border-right: 1.5px solid #3B82F6 !important; background: #EFF6FF !important; color: #1E2252 !important; font-weight: 900 !important; font-size: 13.5px !important; }
+.fa-box-cur-only-tot { border-left: 2px solid #2563EB !important; border-right: 2px solid #2563EB !important; border-bottom: 2px solid #2563EB !important; color: #1E2252 !important; font-size: 14px !important; }
 
 /* Read-only Live Sold cell in Sales Entry */
 .entry-grid-cell-livesold {
-    background: #F4F2E8;
-    border: 1px solid #E4763D;
+    background: #EFF6FF;
+    border: 1px solid #93C5FD;
     border-radius: 6px;
     height: 28px;
     display: flex;
@@ -1236,7 +1375,7 @@ div[data-testid="stNumberInput"] input {
     justify-content: center;
     font-size: 12px;
     font-weight: 900;
-    color: #111111;
+    color: #1D4ED8;
 }
 
 /* Bulk Order Planner Cards */
@@ -1247,32 +1386,32 @@ div[data-testid="stNumberInput"] input {
     margin: 10px 0 14px 0;
 }
 .bulk-kpi-card {
-    background: #FAF8F1;
-    border: 1.5px solid #E4763D;
-    border-top: 3.5px solid #E4763D;
+    background: #FFFFFF;
+    border: 1px solid #CBD5E1;
+    border-top: 3.5px solid #3B82F6;
     border-radius: 10px;
     padding: 10px 12px;
     text-align: center;
-    box-shadow: 0 2px 8px rgba(228, 118, 61, 0.08);
+    box-shadow: 0 3px 10px rgba(30, 34, 82, 0.05);
 }
 .bulk-kpi-label {
     font-size: 10.5px;
     font-weight: 800;
     text-transform: uppercase;
-    color: #3D2210;
+    color: #64748B;
     letter-spacing: 0.03em;
 }
 .bulk-kpi-val {
-    font-family: 'Fraunces', serif;
+    font-family: 'Plus Jakarta Sans', sans-serif;
     font-size: 17px;
     font-weight: 800;
-    color: #111111;
+    color: #1E2252;
     margin-top: 3px;
 }
 .bulk-kpi-sub {
     font-size: 10.5px;
     font-weight: 700;
-    color: #9E471B;
+    color: #3B82F6;
     margin-top: 2px;
 }
 
@@ -1532,7 +1671,7 @@ def confirm_delete_expense_modal(exp_row):
     st.warning(f"Are you sure you want to permanently delete **Expense #{exp_id}**?")
     st.markdown(
         f'''
-        <div style="background:#FFFBF2;border:1px solid #E3CBA0;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:13px;">
+        <div style="background:#F8FAFC;border:1px solid #CBD5E1;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:13px;">
             <div><b>Date:</b> {exp_dt} &nbsp;|&nbsp; <b>Category:</b> {exp_row["category"]}</div>
             <div><b>Description:</b> {exp_row.get("description") or exp_row.get("vendor_name") or "—"}</div>
             <div><b>Total Amount:</b> ₹{float(exp_row["total_amount"]):,.2f} &nbsp;|&nbsp; <b>Paid:</b> ₹{float(exp_row.get("total_paid") or 0):,.2f}</div>
@@ -1569,7 +1708,7 @@ def confirm_delete_payment_modal(pay_row):
     st.warning(f"Are you sure you want to permanently delete **Payment #{pay_id}**?")
     st.markdown(
         f'''
-        <div style="background:#FFFBF2;border:1px solid #E3CBA0;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:13px;">
+        <div style="background:#F8FAFC;border:1px solid #CBD5E1;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:13px;">
             <div><b>Payment Date:</b> {pay_dt} &nbsp;|&nbsp; <b>Mode:</b> {pay_row["payment_mode"]}</div>
             <div><b>Linked Expense:</b> #{exp_id} ({pay_row.get("category") or "—"})</div>
             <div><b>Amount Paid:</b> ₹{float(pay_row["amount_paid"]):,.2f} &nbsp;|&nbsp; <b>Paid To:</b> {pay_row.get("paid_to") or "—"}</div>
@@ -2390,14 +2529,14 @@ def confirm_move_cart_to_freezer_modal(today_date, cart_name, return_map, staff_
     ]
     st.markdown(
         f"""
-        <div style='background:#FFF8EE;border:1.5px solid #E3CBA0;border-radius:10px;padding:12px 14px;margin-bottom:12px;'>
-            <div style='font-weight:900;color:#4A2418;font-size:14px;margin-bottom:4px;'>
+        <div style='background:#F8FAFC;border:1.5px solid #CBD5E1;border-radius:10px;padding:12px 14px;margin-bottom:12px;'>
+            <div style='font-weight:900;color:#1E2252;font-size:14px;margin-bottom:4px;'>
                 Move {tot_units} pcs from {escape(cart_name)} back to Freezer?
             </div>
-            <div style='font-size:12px;color:#6B5138;margin-bottom:8px;'>
+            <div style='font-size:12px;color:#475569;margin-bottom:8px;'>
                 Date: <b>{today_date.strftime('%d-%b-%Y')}</b> &nbsp;|&nbsp; Staff: <b>{escape(staff_name or '—')}</b>
             </div>
-            <div style='font-size:12px;color:#124A1D;line-height:1.5;'>
+            <div style='font-size:12px;color:#047857;line-height:1.5;'>
                 {" &nbsp;•&nbsp; ".join(flv_lines)}
             </div>
         </div>
@@ -3006,7 +3145,7 @@ def confirm_delete_freezer_sale_modal(txn_row):
     st.warning(f"Are you sure you want to permanently delete **Freezer Sale #{tid}**?")
     st.markdown(
         f'''
-        <div style="background:#FFFBF2;border:1px solid #E3CBA0;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:13px;">
+        <div style="background:#F8FAFC;border:1px solid #CBD5E1;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:13px;">
             <div><b>Date:</b> {t_dt} &nbsp;|&nbsp; <b>Freezer:</b> {escape(str(txn_row.get("freezer_name") or "Freezer"))} &nbsp;|&nbsp; <b>Sold By:</b> {escape(str(txn_row.get("sold_by") or "—"))}</div>
             <div><b>Total Units:</b> {int(txn_row.get("total_units") or 0)} pcs &nbsp;|&nbsp; <b>Total Value:</b> ₹{float(txn_row.get("total_value") or 0):,.0f}</div>
             <div><b>PhonePe:</b> ₹{float(txn_row.get("phonepe") or 0):,.0f} &nbsp;|&nbsp; <b>Cash:</b> ₹{float(txn_row.get("cash") or 0):,.0f} &nbsp;|&nbsp; <b>Leakage:</b> ₹{float(txn_row.get("leakage") or 0):,.0f}</div>
@@ -3268,17 +3407,17 @@ def render_live_cart_flavour_tables_section(key_prefix="live_flv"):
 
     st.markdown(
         f"""
-        <div style='background:linear-gradient(90deg, #FFF2DC 0%, #FFFBF2 100%);
-                    border:1.5px solid #D5B47A;border-radius:10px;padding:10px 16px;
+        <div style='background:linear-gradient(90deg, #EFF6FF 0%, #F8FAFC 100%);
+                    border:1.5px solid #93C5FD;border-radius:10px;padding:10px 16px;
                     margin:8px 0 14px 0;display:flex;justify-content:space-between;align-items:center;'>
-            <div style='font-weight:900;color:#4A2418;font-size:14px;'>
+            <div style='font-weight:900;color:#1E2252;font-size:14px;'>
                 📅 Live Cart Sales Summary — {sel_live_dt.strftime('%d-%b-%Y')}
             </div>
             <div style='display:flex;gap:22px;align-items:center;'>
                 <span style='font-size:13.5px;font-weight:900;color:#C43D17;'>
                     🍦 Overall Units Sold: {overall_units:,} pcs
                 </span>
-                <span style='font-size:14.5px;font-weight:900;color:#124A1D;background:#EAF4EC;border:1px solid #A8D5AF;padding:4px 12px;border-radius:8px;'>
+                <span style='font-size:14.5px;font-weight:900;color:#047857;background:#ECFDF5;border:1px solid #6EE7B7;padding:4px 12px;border-radius:8px;'>
                     💰 Overall Total Collection: ₹{overall_collection:,.0f}
                 </span>
             </div>
@@ -3302,22 +3441,22 @@ def render_live_cart_flavour_tables_section(key_prefix="live_flv"):
                 f_info = FLAVOR_MAP[code]
                 q_u = int(cdata["qty_by_code"].get(code, 0))
                 r_amt = float(cdata["rev_by_code"].get(code, 0.0))
-                qty_color = "#C43D17" if q_u > 0 else "#8A765F"
-                amt_color = "#124A1D" if r_amt > 0 else "#8A765F"
+                qty_color = "#C43D17" if q_u > 0 else "#64748B"
+                amt_color = "#047857" if r_amt > 0 else "#64748B"
                 body_rows_html.append(
                     f"""<tr>
-                        <td style='text-align:left;font-weight:800;color:#4A2418;padding:6px 8px;border-bottom:1px solid #EFE3D0;'>{escape(f_info['name'])}</td>
-                        <td style='text-align:center;color:#8A5E17;font-weight:700;padding:6px 6px;border-bottom:1px solid #EFE3D0;'>₹{float(f_info['mrp']):.0f}</td>
-                        <td style='text-align:center;font-weight:900;color:{qty_color};padding:6px 6px;border-bottom:1px solid #EFE3D0;'>{q_u}</td>
-                        <td style='text-align:right;font-weight:900;color:{amt_color};padding:6px 8px;border-bottom:1px solid #EFE3D0;'>₹{r_amt:,.0f}</td>
+                        <td style='text-align:left;font-weight:800;color:#1E2252;padding:6px 8px;border-bottom:1px solid #E2E8F0;'>{escape(f_info['name'])}</td>
+                        <td style='text-align:center;color:#2563EB;font-weight:700;padding:6px 6px;border-bottom:1px solid #E2E8F0;'>₹{float(f_info['mrp']):.0f}</td>
+                        <td style='text-align:center;font-weight:900;color:{qty_color};padding:6px 6px;border-bottom:1px solid #E2E8F0;'>{q_u}</td>
+                        <td style='text-align:right;font-weight:900;color:{amt_color};padding:6px 8px;border-bottom:1px solid #E2E8F0;'>₹{r_amt:,.0f}</td>
                     </tr>"""
                 )
 
             with cols[idx_c]:
                 st.markdown(
                     f"""
-                    <div style='background:#FFFFFF;border:1.5px solid #D8C19A;border-radius:11px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,0.04);margin-bottom:14px;'>
-                        <div style='background:linear-gradient(90deg, #EE854F 0%, #E4763D 100%);color:#111111;border-bottom:1.5px solid #9E471B;padding:9px 12px;display:flex;justify-content:space-between;align-items:center;'>
+                    <div style='background:#FFFFFF;border:1.5px solid #CBD5E1;border-radius:11px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,0.04);margin-bottom:14px;'>
+                        <div style='background:linear-gradient(90deg, #DBEAFE 0%, #BFDBFE 100%);color:#111111;border-bottom:1.5px solid #93C5FD;padding:9px 12px;display:flex;justify-content:space-between;align-items:center;'>
                             <span style='font-weight:900;font-size:13.5px;'>🛒 {escape(cname)}</span>
                             <span style='font-size:11px;font-weight:700;background:rgba(255,255,255,0.18);padding:2px 8px;border-radius:999px;'>
                                 Staff: {escape(staff_lbl)}
@@ -3325,7 +3464,7 @@ def render_live_cart_flavour_tables_section(key_prefix="live_flv"):
                         </div>
                         <table style='width:100%;border-collapse:collapse;font-size:12px;'>
                             <thead>
-                                <tr style='background:#F6E7CC;color:#4A2418;'>
+                                <tr style='background:#DBEAFE;color:#1E2252;'>
                                     <th style='text-align:left;padding:7px 8px;font-weight:900;'>Flavour</th>
                                     <th style='text-align:center;padding:7px 6px;font-weight:900;'>MRP</th>
                                     <th style='text-align:center;padding:7px 6px;font-weight:900;'>Units Sold</th>
@@ -3336,16 +3475,16 @@ def render_live_cart_flavour_tables_section(key_prefix="live_flv"):
                                 {''.join(body_rows_html)}
                             </tbody>
                             <tfoot>
-                                <tr style='background:#FFF2DC;border-top:2px solid #CDAE76;'>
-                                    <td colspan='2' style='text-align:left;padding:8px 8px;font-weight:900;color:#4A2418;font-size:12.5px;'>FLAVOUR TOTALS</td>
+                                <tr style='background:#EFF6FF;border-top:2px solid #93C5FD;'>
+                                    <td colspan='2' style='text-align:left;padding:8px 8px;font-weight:900;color:#1E2252;font-size:12.5px;'>FLAVOUR TOTALS</td>
                                     <td style='text-align:center;padding:8px 6px;font-weight:900;color:#C43D17;font-size:13px;'>{tot_u:,} pcs</td>
-                                    <td style='text-align:right;padding:8px 8px;font-weight:900;color:#124A1D;font-size:13.5px;'>₹{tot_col:,.0f}</td>
+                                    <td style='text-align:right;padding:8px 8px;font-weight:900;color:#047857;font-size:13.5px;'>₹{tot_col:,.0f}</td>
                                 </tr>
                             </tfoot>
                         </table>
-                        <div style='background:#EAF4EC;border-top:1.5px solid #A8D5AF;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;'>
-                            <span style='font-size:11.5px;font-weight:900;color:#124A1D;text-transform:uppercase;'>Total Collection</span>
-                            <span style='font-size:15px;font-weight:900;color:#124A1D;'>₹{tot_col:,.0f}</span>
+                        <div style='background:#ECFDF5;border-top:1.5px solid #6EE7B7;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;'>
+                            <span style='font-size:11.5px;font-weight:900;color:#047857;text-transform:uppercase;'>Total Collection</span>
+                            <span style='font-size:15px;font-weight:900;color:#047857;'>₹{tot_col:,.0f}</span>
                         </div>
                     </div>
                     """,
@@ -3415,7 +3554,7 @@ def confirm_delete_stock_received_modal(receipt_row):
             <div style='font-weight:900;color:#C43D17;font-size:14px;margin-bottom:4px;'>
                 Permanently delete Stock Receipt #{rid}?
             </div>
-            <div style='font-size:12px;color:#4A2418;line-height:1.5;'>
+            <div style='font-size:12px;color:#1E2252;line-height:1.5;'>
                 <b>Received Date:</b> {rdt} &nbsp;|&nbsp; <b>Location:</b> {escape(rloc)}<br/>
                 <b>Total Received Units:</b> {tot_rec_u:,} pcs &nbsp;|&nbsp; <b>Payment Amount:</b> ₹{pay_amt:,.2f}
             </div>
@@ -4110,8 +4249,8 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
     story, styles = [], getSampleStyleSheet()
-    title_style = ParagraphStyle('TitleStyle', parent=styles['Heading1'], fontName='Helvetica-Bold', fontSize=16, textColor=colors.HexColor('#8A5E17'), alignment=1)
-    sub_style = ParagraphStyle('SubStyle', parent=styles['Normal'], fontName='Helvetica', fontSize=10, textColor=colors.HexColor('#2A1B10'), alignment=1)
+    title_style = ParagraphStyle('TitleStyle', parent=styles['Heading1'], fontName='Helvetica-Bold', fontSize=16, textColor=colors.HexColor('#2563EB'), alignment=1)
+    sub_style = ParagraphStyle('SubStyle', parent=styles['Normal'], fontName='Helvetica', fontSize=10, textColor=colors.HexColor('#0F172A'), alignment=1)
 
     logo_path = "assets/logo.png"
     if os.path.exists(logo_path):
@@ -4212,19 +4351,19 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
     t_summary = Table(summary_data, colWidths=[150, 250, 100])
     t_summary.hAlign = 'LEFT'
     t_summary.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#70440E')), ('TEXTCOLOR', (0,0), (-1,0), colors.white), ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'), ('FONTSIZE', (0,0), (-1,0), 9.5),
-        ('BACKGROUND', (0,-1), (-1,-1), colors.HexColor('#FFF2DC')), ('FONTNAME', (0,-1), (-1,-1), 'Helvetica-Bold'), ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#E3CBA0')), ('ALIGN', (2,0), (2,-1), 'RIGHT'),
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#1E2252')), ('TEXTCOLOR', (0,0), (-1,0), colors.white), ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'), ('FONTSIZE', (0,0), (-1,0), 9.5),
+        ('BACKGROUND', (0,-1), (-1,-1), colors.HexColor('#EFF6FF')), ('FONTNAME', (0,-1), (-1,-1), 'Helvetica-Bold'), ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#CBD5E1')), ('ALIGN', (2,0), (2,-1), 'RIGHT'),
         ('VALIGN', (0,0), (-1,-1), 'MIDDLE'), ('FONTNAME', (0,1), (-1,-2), 'Helvetica'), ('FONTSIZE', (0,1), (-1,-1), 9), ('TOPPADDING', (0,1), (-1,-1), 4), ('BOTTOMPADDING', (0,1), (-1,-1), 4)
     ]))
     story.append(t_summary); story.append(Spacer(1, 15))
 
     if not is_ops_coordinator:
         ledger_title = "Detailed Commission & Allowance Entitlement Ledger" if food_mode == "daily" else "Detailed Commission & Salary Ledger"
-        story.append(Paragraph(f"<b>{ledger_title}</b>", ParagraphStyle('SubHeader', fontName='Helvetica-Bold', fontSize=11, textColor=colors.HexColor('#8A5E17'), alignment=0)))
+        story.append(Paragraph(f"<b>{ledger_title}</b>", ParagraphStyle('SubHeader', fontName='Helvetica-Bold', fontSize=11, textColor=colors.HexColor('#2563EB'), alignment=0)))
         story.append(Spacer(1, 4))
 
         line_t = Table([['']], colWidths=[525])
-        line_t.setStyle(TableStyle([('LINEABOVE', (0,0), (-1,-1), 0.75, colors.HexColor('#8A5E17'))]))
+        line_t.setStyle(TableStyle([('LINEABOVE', (0,0), (-1,-1), 0.75, colors.HexColor('#2563EB'))]))
         line_t.hAlign = 'LEFT'
         story.append(line_t)
         story.append(Spacer(1, 6))
@@ -4263,8 +4402,8 @@ def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
         t_ledger = Table(ledger_rows, colWidths=ledger_widths)
         t_ledger.hAlign = 'LEFT'
         t_ledger.setStyle(TableStyle([
-            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#124A1D')), ('TEXTCOLOR', (0,0), (-1,0), colors.white), ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'), ('FONTSIZE', (0,0), (-1,0), 8.5),
-            ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#A8D5AF')), ('ALIGN', (3,0), (-1,-1), 'RIGHT'), ('VALIGN', (0,0), (-1,-1), 'MIDDLE'), ('FONTNAME', (0,1), (-1,-1), 'Helvetica'),
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#047857')), ('TEXTCOLOR', (0,0), (-1,0), colors.white), ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'), ('FONTSIZE', (0,0), (-1,0), 8.5),
+            ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#6EE7B7')), ('ALIGN', (3,0), (-1,-1), 'RIGHT'), ('VALIGN', (0,0), (-1,-1), 'MIDDLE'), ('FONTNAME', (0,1), (-1,-1), 'Helvetica'),
             ('FONTSIZE', (0,1), (-1,-1), 8), ('TOPPADDING', (0,0), (-1,-1), 3), ('BOTTOMPADDING', (0,0), (-1,-1), 3)
         ]))
         story.append(t_ledger); story.append(Spacer(1, 15))
@@ -4294,7 +4433,7 @@ def generate_stock_received_report_pdf(monthly_sections, overall_units, overall_
         parent=styles["Heading1"],
         fontName="Helvetica-Bold",
         fontSize=15,
-        textColor=colors.HexColor("#70440E"),
+        textColor=colors.HexColor("#1E2252"),
         alignment=0,
         spaceAfter=2,
     )
@@ -4303,7 +4442,7 @@ def generate_stock_received_report_pdf(monthly_sections, overall_units, overall_
         parent=styles["Normal"],
         fontName="Helvetica",
         fontSize=9.5,
-        textColor=colors.HexColor("#5A3E1B"),
+        textColor=colors.HexColor("#475569"),
         alignment=0,
         spaceAfter=8,
     )
@@ -4312,7 +4451,7 @@ def generate_stock_received_report_pdf(monthly_sections, overall_units, overall_
         parent=styles["Heading2"],
         fontName="Helvetica-Bold",
         fontSize=12,
-        textColor=colors.HexColor("#4A2418"),
+        textColor=colors.HexColor("#1E2252"),
         alignment=0,
         spaceBefore=4,
         spaceAfter=5,
@@ -4334,20 +4473,20 @@ def generate_stock_received_report_pdf(monthly_sections, overall_units, overall_
     overall_box.hAlign = "LEFT"
     overall_box.setStyle(
         TableStyle([
-            ("BACKGROUND", (0, 0), (0, 0), colors.HexColor("#70440E")),
-            ("BACKGROUND", (1, 0), (1, 0), colors.HexColor("#124A1D")),
+            ("BACKGROUND", (0, 0), (0, 0), colors.HexColor("#1E2252")),
+            ("BACKGROUND", (1, 0), (1, 0), colors.HexColor("#047857")),
             ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
             ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
             ("FONTSIZE", (0, 0), (-1, 0), 9.5),
-            ("BACKGROUND", (0, 1), (0, 1), colors.HexColor("#FFF2DC")),
-            ("BACKGROUND", (1, 1), (1, 1), colors.HexColor("#EAF4EC")),
-            ("TEXTCOLOR", (0, 1), (0, 1), colors.HexColor("#4A2418")),
-            ("TEXTCOLOR", (1, 1), (1, 1), colors.HexColor("#124A1D")),
+            ("BACKGROUND", (0, 1), (0, 1), colors.HexColor("#EFF6FF")),
+            ("BACKGROUND", (1, 1), (1, 1), colors.HexColor("#ECFDF5")),
+            ("TEXTCOLOR", (0, 1), (0, 1), colors.HexColor("#1E2252")),
+            ("TEXTCOLOR", (1, 1), (1, 1), colors.HexColor("#047857")),
             ("FONTNAME", (0, 1), (-1, 1), "Helvetica-Bold"),
             ("FONTSIZE", (0, 1), (-1, 1), 12),
             ("ALIGN", (0, 0), (-1, -1), "CENTER"),
             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("GRID", (0, 0), (-1, -1), 0.8, colors.HexColor("#D8C29D")),
+            ("GRID", (0, 0), (-1, -1), 0.8, colors.HexColor("#CBD5E1")),
             ("TOPPADDING", (0, 0), (-1, -1), 6),
             ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
         ])
@@ -4402,7 +4541,7 @@ def generate_stock_received_report_pdf(monthly_sections, overall_units, overall_
         t.hAlign = "LEFT"
         t.setStyle(
             TableStyle([
-                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#70440E")),
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1E2252")),
                 ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
                 ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
                 ("FONTSIZE", (0, 0), (-1, 0), hdr_font),
@@ -4410,20 +4549,20 @@ def generate_stock_received_report_pdf(monthly_sections, overall_units, overall_
                 ("ALIGN", (1, 0), (-1, -1), "CENTER"),
                 ("FONTNAME", (0, 1), (-1, -3), "Helvetica"),
                 ("FONTSIZE", (0, 1), (-1, -3), body_font),
-                ("TEXTCOLOR", (0, 1), (-1, -3), colors.HexColor("#2A1B10")),
-                ("ROWBACKGROUNDS", (0, 1), (-1, -3), [colors.white, colors.HexColor("#FFFBF2")]),
+                ("TEXTCOLOR", (0, 1), (-1, -3), colors.HexColor("#0F172A")),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -3), [colors.white, colors.HexColor("#F8FAFC")]),
                 # Total Units row (-2)
-                ("BACKGROUND", (0, -2), (-1, -2), colors.HexColor("#FFF2DC")),
+                ("BACKGROUND", (0, -2), (-1, -2), colors.HexColor("#EFF6FF")),
                 ("FONTNAME", (0, -2), (-1, -2), "Helvetica-Bold"),
                 ("FONTSIZE", (0, -2), (-1, -2), tot_font),
-                ("TEXTCOLOR", (0, -2), (-1, -2), colors.HexColor("#4A2418")),
+                ("TEXTCOLOR", (0, -2), (-1, -2), colors.HexColor("#1E2252")),
                 ("LINEABOVE", (0, -2), (-1, -2), 1.1, colors.HexColor("#B47A2B")),
                 # Total Cost (Rs.) row (-1)
-                ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#EAF4EC")),
+                ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#ECFDF5")),
                 ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
                 ("FONTSIZE", (0, -1), (-1, -1), tot_font),
-                ("TEXTCOLOR", (0, -1), (-1, -1), colors.HexColor("#124A1D")),
-                ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#D8C29D")),
+                ("TEXTCOLOR", (0, -1), (-1, -1), colors.HexColor("#047857")),
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#CBD5E1")),
                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
                 ("TOPPADDING", (0, 0), (-1, -1), 4),
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
@@ -4447,21 +4586,21 @@ def generate_stock_received_report_pdf(monthly_sections, overall_units, overall_
         month_summary_box.hAlign = "LEFT"
         month_summary_box.setStyle(
             TableStyle([
-                ("BACKGROUND", (0, 0), (0, 0), colors.HexColor("#FFF2DC")),
-                ("BACKGROUND", (1, 0), (1, 0), colors.HexColor("#EAF4EC")),
-                ("TEXTCOLOR", (0, 0), (0, 0), colors.HexColor("#70440E")),
-                ("TEXTCOLOR", (1, 0), (1, 0), colors.HexColor("#124A1D")),
+                ("BACKGROUND", (0, 0), (0, 0), colors.HexColor("#EFF6FF")),
+                ("BACKGROUND", (1, 0), (1, 0), colors.HexColor("#ECFDF5")),
+                ("TEXTCOLOR", (0, 0), (0, 0), colors.HexColor("#1E2252")),
+                ("TEXTCOLOR", (1, 0), (1, 0), colors.HexColor("#047857")),
                 ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
                 ("FONTSIZE", (0, 0), (-1, 0), lbl_font),
-                ("BACKGROUND", (0, 1), (0, 1), colors.HexColor("#FFFBF2")),
-                ("BACKGROUND", (1, 1), (1, 1), colors.HexColor("#F3FAF4")),
-                ("TEXTCOLOR", (0, 1), (0, 1), colors.HexColor("#4A2418")),
-                ("TEXTCOLOR", (1, 1), (1, 1), colors.HexColor("#124A1D")),
+                ("BACKGROUND", (0, 1), (0, 1), colors.HexColor("#F8FAFC")),
+                ("BACKGROUND", (1, 1), (1, 1), colors.HexColor("#ECFDF5")),
+                ("TEXTCOLOR", (0, 1), (0, 1), colors.HexColor("#1E2252")),
+                ("TEXTCOLOR", (1, 1), (1, 1), colors.HexColor("#047857")),
                 ("FONTNAME", (0, 1), (-1, 1), "Helvetica-Bold"),
                 ("FONTSIZE", (0, 1), (-1, 1), val_font),
                 ("ALIGN", (0, 0), (-1, -1), "CENTER"),
                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                ("GRID", (0, 0), (-1, -1), 0.6, colors.HexColor("#D8C29D")),
+                ("GRID", (0, 0), (-1, -1), 0.6, colors.HexColor("#CBD5E1")),
                 ("TOPPADDING", (0, 0), (-1, -1), 4.5),
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 4.5),
                 ("LEFTPADDING", (0, 0), (-1, -1), 4),
@@ -4486,53 +4625,94 @@ def generate_stock_received_report_pdf(monthly_sections, overall_units, overall_
 
 
 # ----------------------------------------------------------------------
-# AUTHENTICATION
+# LOGO HELPER & AUTHENTICATION
 # ----------------------------------------------------------------------
+@st.cache_data(show_spinner=False)
+def _load_compressed_logo_b64():
+    logo_candidates = ["assets/logo.png", "logo.png"]
+    for p in logo_candidates:
+        if os.path.exists(p):
+            try:
+                with open(p, "rb") as lf:
+                    return base64.b64encode(lf.read()).decode("ascii")
+            except Exception:
+                pass
+    return None
+
+def get_top_left_square_logo_html(size_px=42):
+    """Render the login window logo (assets/logo.png) in a compressed square frame for the top-left corner."""
+    b64 = _load_compressed_logo_b64()
+    if b64:
+        return (
+            f'<div class="kulfi-cmd-logo-sq" style="width:{size_px}px;height:{size_px}px;" title="Kulfi Factory">'
+            f'<img src="data:image/png;base64,{b64}" alt="Kulfi Factory Logo" />'
+            f'</div>'
+        )
+    return f'<div class="kulfi-cmd-crest" style="width:{size_px}px;height:{size_px}px;">🍦</div>'
+
 def check_login():
     if st.session_state.get("authenticated", False): return True
-    _, col_form, _ = st.columns([1, 1.2, 1])
+    _, col_form, _ = st.columns([1, 1.25, 1])
     with col_form:
-        try: st.image("assets/logo.png", width=220)
-        except Exception: st.title("🍦 Kulfi Ops")
-        st.subheader("Sign in")
-        with st.form("login_form"):
-            username = st.text_input("Username")
-            password = st.text_input("Password", type="password")
-            submitted = st.form_submit_button("Sign in", type="primary", use_container_width=True)
-        if submitted:
-            user_clean = str(username).strip().lower()
-            pass_clean = str(password).strip()
-            admin_user = str(st.secrets.get("app_username", "admin")).strip().lower()
-            admin_pass = str(st.secrets.get("app_password", "")).strip()
-            entry_user = str(st.secrets.get("entry_username", "entry")).strip().lower()
-            entry_pass = str(st.secrets.get("entry_password", "")).strip()
-            if admin_pass and hmac.compare_digest(user_clean, admin_user) and hmac.compare_digest(pass_clean, admin_pass):
-                st.session_state["authenticated"] = True; st.session_state["user_role"] = "admin"; st.session_state["assigned_location"] = "ALL"; st.rerun()
-            elif entry_pass and hmac.compare_digest(user_clean, entry_user) and hmac.compare_digest(pass_clean, entry_pass):
-                st.session_state["authenticated"] = True; st.session_state["user_role"] = "entry"; st.session_state["assigned_location"] = str(st.secrets.get("entry_location", "HOSUR")).strip().upper(); st.session_state["current_location"] = st.session_state["assigned_location"]; st.rerun()
-            elif db_conn is not None:
-                try:
-                    auth_df = db_conn.query("SELECT is_valid, assigned_location FROM public.verify_app_login(:r, :p, NULL);", params={"r": user_clean, "p": pass_clean}, ttl="0s")
-                    if not auth_df.empty and bool(auth_df.iloc[0]["is_valid"]):
-                        assigned_loc = str(auth_df.iloc[0]["assigned_location"] or "HOSUR").strip().upper()
-                        st.session_state["authenticated"] = True
-                        st.session_state["user_role"] = "admin" if user_clean == "admin" else "entry"
-                        st.session_state["assigned_location"] = assigned_loc
-                        st.session_state["current_location"] = "All Locations (Aggregated)" if (user_clean == "admin" and assigned_loc == "ALL") else assigned_loc
-                        st.rerun()
-                    else:
+        with st.container(border=True):
+            logo_b64 = _load_compressed_logo_b64()
+            if logo_b64:
+                st.markdown(
+                    f"""
+                    <div style="display:flex;flex-direction:column;align-items:center;padding:8px 0 4px 0;">
+                        <div style="width:84px;height:84px;border-radius:18px;border:1.5px solid #CBD5E1;background:#FFFFFF;
+                                    box-shadow:0 6px 18px rgba(30,34,82,0.12);padding:4px;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+                            <img src="data:image/png;base64,{logo_b64}" style="width:100%;height:100%;object-fit:cover;border-radius:14px;" />
+                        </div>
+                        <div style="font-size:19px;font-weight:800;color:#1E2252;margin-top:10px;">Kulfi Ops Admin Portal</div>
+                        <div style="font-size:12px;color:#64748B;font-weight:600;margin-bottom:6px;">Sign in to access operations &amp; inventory</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+            else:
+                try: st.image("assets/logo.png", width=180)
+                except Exception: st.title("🍦 Kulfi Ops")
+                st.subheader("Sign in")
+            with st.form("login_form"):
+                username = st.text_input("Username")
+                password = st.text_input("Password", type="password")
+                submitted = st.form_submit_button("Sign in", type="primary", use_container_width=True)
+            if submitted:
+                user_clean = str(username).strip().lower()
+                pass_clean = str(password).strip()
+                admin_user = str(st.secrets.get("app_username", "admin")).strip().lower()
+                admin_pass = str(st.secrets.get("app_password", "")).strip()
+                entry_user = str(st.secrets.get("entry_username", "entry")).strip().lower()
+                entry_pass = str(st.secrets.get("entry_password", "")).strip()
+                if admin_pass and hmac.compare_digest(user_clean, admin_user) and hmac.compare_digest(pass_clean, admin_pass):
+                    st.session_state["authenticated"] = True; st.session_state["user_role"] = "admin"; st.session_state["assigned_location"] = "ALL"; st.rerun()
+                elif entry_pass and hmac.compare_digest(user_clean, entry_user) and hmac.compare_digest(pass_clean, entry_pass):
+                    st.session_state["authenticated"] = True; st.session_state["user_role"] = "entry"; st.session_state["assigned_location"] = str(st.secrets.get("entry_location", "HOSUR")).strip().upper(); st.session_state["current_location"] = st.session_state["assigned_location"]; st.rerun()
+                elif db_conn is not None:
+                    try:
+                        auth_df = db_conn.query("SELECT is_valid, assigned_location FROM public.verify_app_login(:r, :p, NULL);", params={"r": user_clean, "p": pass_clean}, ttl="0s")
+                        if not auth_df.empty and bool(auth_df.iloc[0]["is_valid"]):
+                            assigned_loc = str(auth_df.iloc[0]["assigned_location"] or "HOSUR").strip().upper()
+                            st.session_state["authenticated"] = True
+                            st.session_state["user_role"] = "admin" if user_clean == "admin" else "entry"
+                            st.session_state["assigned_location"] = assigned_loc
+                            st.session_state["current_location"] = "All Locations (Aggregated)" if (user_clean == "admin" and assigned_loc == "ALL") else assigned_loc
+                            st.rerun()
+                        else:
+                            st.error("Incorrect username or password — try again.")
+                    except Exception:
                         st.error("Incorrect username or password — try again.")
-                except Exception:
-                    st.error("Incorrect username or password — try again.")
-            else: st.error("Incorrect username or password — try again.")
+                else: st.error("Incorrect username or password — try again.")
     return False
 
 if not check_login(): st.stop()
 
 # ----------------------------------------------------------------------
-# NAVIGATION & ROLE CONFIG — ROYAL OBSIDIAN 3D COMMAND BAR & HOME CARDS
+# NAVIGATION & ROLE CONFIG — DEPOSITO WHITE HEADER BAR WITH TOP-LEFT SQUARE LOGO
 # ----------------------------------------------------------------------
 user_role = st.session_state.get("user_role", "admin")
+_top_left_logo_html = get_top_left_square_logo_html(42)
 
 if user_role == "entry":
     st.session_state["current_location"] = st.session_state.get("assigned_location", "HOSUR")
@@ -4544,10 +4724,10 @@ if user_role == "entry":
     with top_nav_c1:
         st.markdown(
             f'<div class="kulfi-cmd-left kulfi-top-cmd-bar-scope">'
-            f'<div class="kulfi-cmd-crest">🍦</div>'
+            f'{_top_left_logo_html}'
             f'<div class="kulfi-cmd-text">'
             f'<div class="kulfi-cmd-title">Kulfi Ops — Daily Entry ({CITY})</div>'
-            f'<div class="kulfi-cmd-sub">DAILY CART SALES, RESTOCK &amp; STOCK LEDGER</div>'
+            f'<div class="kulfi-cmd-sub"><span class="kulfi-top-pill">📍 {CITY}</span> <span>DAILY CART SALES, RESTOCK &amp; STOCK LEDGER</span></div>'
             f'</div></div>',
             unsafe_allow_html=True,
         )
@@ -4613,19 +4793,22 @@ else:
     ATTRIBUTED_OPTIONS = ["Central / Freezer"] + CARTS
     loc_badge = "All Locations" if get_active_location_filter() == "ALL" else get_active_location_filter()
 
-    # --- UNIFIED ROYAL OBSIDIAN & GOLD TOP COMMAND BAR (SINGLE ROW) ---
-    cmd_c0, cmd_c1, cmd_c2, cmd_c3, cmd_c4 = st.columns(
-        [2.5, 0.95, 1.25, 1.30, 0.95],
+    # --- DEPOSITO WHITE TOP COMMAND BAR WITH COMPRESSED SQUARE LOGO ON TOP-LEFT ---
+    cmd_c0, cmd_c1, cmd_c2, cmd_c3, cmd_c4, cmd_c5 = st.columns(
+        [2.65, 0.82, 0.88, 1.15, 1.15, 0.82],
         gap="small",
         vertical_alignment="center",
     )
     with cmd_c0:
         st.markdown(
             f'<div class="kulfi-cmd-left kulfi-top-cmd-bar-scope">'
-            f'<div class="kulfi-cmd-crest">🍦</div>'
+            f'{_top_left_logo_html}'
             f'<div class="kulfi-cmd-text">'
-            f'<div class="kulfi-cmd-title">Kulfi Ops — {page}</div>'
-            f'<div class="kulfi-cmd-sub">📍 {loc_badge} &nbsp;•&nbsp; {len(CARTS)} Active Carts</div>'
+            f'<div class="kulfi-cmd-title-row"><span class="kulfi-cmd-title">Kulfi Ops — {page}</span></div>'
+            f'<div class="kulfi-cmd-sub">'
+            f'<span class="kulfi-top-pill">📍 {loc_badge}</span>'
+            f'<span>{len(CARTS)} Active Carts &nbsp;•&nbsp; {date.today().strftime("%d %b %Y")}</span>'
+            f'</div>'
             f'</div></div>',
             unsafe_allow_html=True,
         )
@@ -4639,15 +4822,25 @@ else:
             st.session_state["page_nav"] = "Home"
             st.session_state["dash_sub_page"] = None
             st.rerun()
-    _pop_nonce = int(st.session_state.get("_cmd_pop_nonce", 0))
-    _zwsp = "\u200b" * (_pop_nonce % 4)
     with cmd_c2:
+        if st.button(
+            "🛒 Entry",
+            type="primary" if page == "Daily Entry" else "secondary",
+            use_container_width=True,
+            key="top_cmd_entry_btn",
+        ):
+            st.session_state["page_nav"] = "Daily Entry"
+            st.session_state["daily_entry_mode"] = None
+            st.rerun()
+    _pop_nonce = int(st.session_state.get("_cmd_pop_nonce", 0))
+    _zwsp = "​" * (_pop_nonce % 4)
+    with cmd_c3:
         for _sp_i in range(_pop_nonce % 3):
             st.markdown(f"<span class='kulfi-pop-spacer' data-sp='{_sp_i}'></span>", unsafe_allow_html=True)
         with st.popover(f"⇄ Switch Screen{_zwsp}", use_container_width=True):
             st.markdown(
-                "<div style='font-family:Fraunces,serif;font-size:13.5px;font-weight:800;color:#111111;"
-                "margin-bottom:6px;border-bottom:1.5px solid #E4763D;padding-bottom:4px;'>"
+                "<div style='font-family:Plus Jakarta Sans,sans-serif;font-size:13.5px;font-weight:800;color:#1E2252;"
+                "margin-bottom:6px;border-bottom:1.5px solid #3B82F6;padding-bottom:4px;'>"
                 "✨ Select Screen</div>",
                 unsafe_allow_html=True,
             )
@@ -4664,13 +4857,13 @@ else:
                         st.session_state["page_nav"] = _opt
                         st.session_state["dash_sub_page"] = None
                         st.rerun()
-    with cmd_c3:
+    with cmd_c4:
         for _sp_j in range(_pop_nonce % 3):
             st.markdown(f"<span class='kulfi-pop-spacer' data-sp-loc='{_sp_j}'></span>", unsafe_allow_html=True)
         with st.popover(f"📍 {loc_badge}{_zwsp}", use_container_width=True):
             st.markdown(
-                "<div style='font-family:Fraunces,serif;font-size:13.5px;font-weight:800;color:#111111;"
-                "margin-bottom:6px;border-bottom:1.5px solid #E4763D;padding-bottom:4px;'>"
+                "<div style='font-family:Plus Jakarta Sans,sans-serif;font-size:13.5px;font-weight:800;color:#1E2252;"
+                "margin-bottom:6px;border-bottom:1.5px solid #3B82F6;padding-bottom:4px;'>"
                 "🌐 Operating Location</div>",
                 unsafe_allow_html=True,
             )
@@ -4685,7 +4878,7 @@ else:
                     st.session_state["_cmd_pop_nonce"] = _pop_nonce + 1
                     st.session_state["_pending_loc_change"] = _loc_opt
                     st.rerun()
-    with cmd_c4:
+    with cmd_c5:
         if st.button("🚪 Log out", type="secondary", use_container_width=True, key="top_cmd_logout_btn"):
             st.session_state["authenticated"] = False
             st.session_state["user_role"] = None
@@ -4696,73 +4889,577 @@ else:
 # ======================================================================
 
 if page == "Home" and user_role == "admin":
-    _launchpad_sections = [
-        (
-            "set-1",
-            "kulfi-card-set-1",
-            "📊 Sales, Daily Operations & Financials",
-            4,
-            [
-                ("Dashboard", "📊", "Dashboard & Financials", {"dash_sub_page": None}),
-                ("Daily Entry", "🛒", "Daily Entry Hub", {"daily_entry_mode": None}),
-                ("Live Cart Tracking", "📡", "Live Cart Tracking", {}),
-                ("Bulk Orders & Quotes", "📦", "Bulk Order & Quotes", {}),
-            ],
-        ),
-        (
-            "set-2",
-            "kulfi-card-set-2",
-            "❄️ Stock & Freezer",
-            3,
-            [
-                ("Freezer Analysis", "📈", "Current Freezer Position", {}),
-                ("Freezer Stock", "❄️", "Stock Received Entry", {"db_stock_mode": "New entry"}),
-                ("Stock Removed", "🗑️", "Stock Removed Entry", {"rem_screen_mode": "New Entry"}),
-            ],
-        ),
-        (
-            "set-3",
-            "kulfi-card-set-3",
-            "💳 POs, Expenses & Cash",
-            3,
-            [
-                ("Expenses", "💳", "Expenses", {}),
-                ("Purchase Orders", "🧾", "Purchase Order", {}),
-                ("Cash Custody", "💰", "Cash Management", {}),
-            ],
-        ),
-        (
-            "set-4",
-            "kulfi-card-set-4",
-            "👥 Staff Payroll & Admin Setup",
-            3,
-            [
-                ("Staff & Payroll", "👥", "Staff, Attendance & Payroll", {}),
-                ("Payslip Generator", "📄", "Payslip Generator", {}),
-                ("Locations & Logins", "🌐", "Locations, Logins & Carts", {}),
-            ],
-        ),
-    ]
+    # ------------------------------------------------------------------
+    # LIVE OPERATIONAL METRICS FOR THE DEPOSITO-STYLE STACKED LANDING PAGE
+    # ------------------------------------------------------------------
+    today_home = date.today()
+    yesterday_home = today_home - timedelta(days=1)
+    mtd_start = today_home.replace(day=1)
 
-    for _hdr_cls, _set_cls, _sec_title, _num_cols, _sec_cards in _launchpad_sections:
+    try:
+        home_daily_df = load_db_daily_df()
+    except Exception:
+        home_daily_df = pd.DataFrame()
+
+    # Use MTD if available, or fallback to Last 30 Days if MTD has no entries yet (e.g., 1st of month)
+    if not home_daily_df.empty:
+        mtd_df = home_daily_df[(home_daily_df["Date"].dt.date >= mtd_start) & (home_daily_df["Date"].dt.date <= today_home)]
+        if mtd_df.empty:
+            period_start_home = today_home - timedelta(days=29)
+            period_df_home = home_daily_df[(home_daily_df["Date"].dt.date >= period_start_home) & (home_daily_df["Date"].dt.date <= today_home)]
+            period_badge_lbl = "Last 30 Days"
+            period_short_lbl = "30d"
+        else:
+            period_start_home = mtd_start
+            period_df_home = mtd_df
+            period_badge_lbl = f"{today_home.strftime('%b %Y')} (MTD)"
+            period_short_lbl = "MTD"
+    else:
+        period_start_home = mtd_start
+        period_df_home = pd.DataFrame()
+        period_badge_lbl = f"{today_home.strftime('%b %Y')} (MTD)"
+        period_short_lbl = "MTD"
+
+    period_rev_home = float(period_df_home["Total_Collection"].sum()) if not period_df_home.empty else 0.0
+    period_units_home = int(round(period_df_home["Sold_Total"].sum())) if not period_df_home.empty else 0
+    period_shifts_home = int(len(period_df_home[period_df_home["Total_Collection"] > 0])) if not period_df_home.empty else 0
+    active_days_home = max(1, int(period_df_home["Date"].dt.date.nunique())) if not period_df_home.empty else 1
+    avg_daily_rev_home = period_rev_home / float(active_days_home)
+
+    yest_df_home = home_daily_df[home_daily_df["Date"].dt.date == yesterday_home] if not home_daily_df.empty else pd.DataFrame()
+    yest_rev_home = float(yest_df_home["Total_Collection"].sum()) if not yest_df_home.empty else 0.0
+    yest_units_home = int(round(yest_df_home["Sold_Total"].sum())) if not yest_df_home.empty else 0
+    yest_vs_avg_pct = ((yest_rev_home - avg_daily_rev_home) / avg_daily_rev_home * 100.0) if avg_daily_rev_home > 0 else 0.0
+
+    # Freezer stock & 14-day sales velocity to identify Low Stock (<3 days cover)
+    try:
+        freezer_stock_map = get_physical_current_stock_map()
+    except Exception:
+        freezer_stock_map = {c: 0 for c in FLAVOR_CODES}
+    try:
+        vel_df = load_db_flavor_sales(start_date=today_home - timedelta(days=13), end_date=today_home)
+        vel_map = dict(zip(vel_df["code"], vel_df["Units sold"])) if not vel_df.empty else {}
+    except Exception:
+        vel_map = {}
+
+    low_stock_flavors_cnt = 0
+    healthy_flavors_cnt = 0
+    tot_freezer_units_home = 0
+    tot_freezer_cp_home = 0.0
+    for _c in FLAVOR_CODES:
+        _f_qty = int(freezer_stock_map.get(_c, 0))
+        tot_freezer_units_home += _f_qty
+        tot_freezer_cp_home += _f_qty * float(FLAVOR_MAP[_c]["cost_price"])
+        _daily_rate = float(vel_map.get(_c, 0)) / 14.0
+        if _f_qty <= 0 or (_daily_rate > 0 and _f_qty <= (_daily_rate * 3.0)) or (_daily_rate == 0 and _f_qty < 25):
+            low_stock_flavors_cnt += 1
+        else:
+            healthy_flavors_cnt += 1
+
+    # Cart-wise current stock by flavour (for the Section Overview tile matrix & green card footer)
+    cart_flavor_stock_matrix = {cart: {c: 0 for c in FLAVOR_CODES} for cart in CARTS}
+    tot_cart_units_home = 0
+    tot_cart_cp_home = 0.0
+    if db_conn is not None:
+        try:
+            latest_c_df = db_conn.query(
+                """
+                WITH latest_ce AS (
+                    SELECT DISTINCT ON (cart_name) id, cart_name
+                    FROM daily_cart_entries
+                    WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(city, 'HOSUR'))) = :active_loc)
+                    ORDER BY cart_name, entry_date DESC, id DESC
+                )
+                SELECT e.cart_name, i.flavor_code, COALESCE(i.closing_units, 0) AS closing_units
+                FROM latest_ce e
+                JOIN daily_cart_items i ON i.daily_entry_id = e.id;
+                """,
+                params={"active_loc": get_active_location_filter()},
+                ttl="0s",
+            )
+            for _, _cr in latest_c_df.iterrows():
+                _cn = str(_cr.get("cart_name") or "").strip()
+                _fc = str(_cr.get("flavor_code") or "").strip()
+                _cu = max(0, int(round(_num(_cr.get("closing_units")))))
+                if _fc in FLAVOR_CODES:
+                    tot_cart_units_home += _cu
+                    tot_cart_cp_home += _cu * float(FLAVOR_MAP[_fc]["cost_price"])
+                    if _cn in cart_flavor_stock_matrix:
+                        cart_flavor_stock_matrix[_cn][_fc] = _cu
+        except Exception:
+            pass
+
+    # Cash Custody summary for KPI Card 5
+    ops_cash_home, yogesh_cash_home = 0.0, 0.0
+    if db_conn is not None:
+        try:
+            cust_df_h = db_conn.query(
+                """
+                SELECT current_holder, COALESCE(SUM(cash_amount), 0) AS total_cash
+                FROM public.v_cash_custody_status
+                WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(city, 'HOSUR'))) = :active_loc)
+                GROUP BY current_holder;
+                """,
+                params={"active_loc": get_active_location_filter()},
+                ttl="0s",
+            )
+            for _, _hr in cust_df_h.iterrows():
+                _hname = str(_hr.get("current_holder") or "").strip().upper()
+                if _hname == "OPS_COORDINATOR":
+                    ops_cash_home = float(_hr.get("total_cash") or 0.0)
+                elif _hname == "YOGESH":
+                    yogesh_cash_home = float(_hr.get("total_cash") or 0.0)
+        except Exception:
+            pass
+    unhanded_cash_home = ops_cash_home + yogesh_cash_home
+
+    # Flavour-wise sales for Period (Best Sellers & Inventory Stock Chart)
+    try:
+        flv_period_df = load_db_flavor_sales(start_date=period_start_home, end_date=today_home)
+    except Exception:
+        flv_period_df = pd.DataFrame()
+    sold_period_by_code = {c: 0 for c in FLAVOR_CODES}
+    rev_period_by_code = {c: 0.0 for c in FLAVOR_CODES}
+    if not flv_period_df.empty:
+        for _, _fr in flv_period_df.iterrows():
+            _fc = str(_fr.get("code") or "").strip()
+            if _fc in FLAVOR_CODES:
+                sold_period_by_code[_fc] = int(round(_num(_fr.get("Units sold"))))
+                rev_period_by_code[_fc] = float(_num(_fr.get("Est. revenue (₹)")))
+
+    # ------------------------------------------------------------------
+    # MASTER 2-COLUMN DEPOSITO LAYOUT:
+    # LEFT = STACKED KPI & ANALYTICS CANVAS | RIGHT = ROYAL INDIGO NAVIGATION DOCK
+    # ------------------------------------------------------------------
+    main_canvas_col, right_dock_col = st.columns([3.55, 1.12], gap="medium")
+
+    with main_canvas_col:
+        # 1. TOP 5 WHITE KPI CARDS STRIP (Exact Deposito Top Strip)
+        rev_compact_str = f"₹{period_rev_home/1000.0:.1f}k" if period_rev_home >= 100000 else f"₹{period_rev_home:,.0f}"
+        yest_pct_badge = f"({yest_vs_avg_pct:+.0f}%)"
+        st.markdown(
+            f"""
+            <div class="deposito-kpi-strip">
+                <div class="dep-kpi-card">
+                    <div style="font-size:11px;font-weight:700;color:#64748B;text-align:center;">Time Period</div>
+                    <div class="dep-time-pill">• {escape(period_badge_lbl)}</div>
+                    <div style="font-size:10px;color:#64748B;text-align:center;margin-top:4px;font-weight:600;">📍 {escape(loc_badge)}</div>
+                </div>
+                <div class="dep-kpi-card" style="text-align:center;">
+                    <div class="dep-kpi-num"><span style="color:#059669;font-size:0.95rem;">{yest_pct_badge}</span> ₹{yest_rev_home:,.0f}</div>
+                    <div class="dep-kpi-lbl">Yesterday Sales ({yest_units_home:,} pcs)</div>
+                </div>
+                <div class="dep-kpi-card">
+                    <div class="dep-kpi-dual">
+                        <div style="text-align:center;">
+                            <div class="dep-kpi-num" style="color:{'#DC2626' if low_stock_flavors_cnt > 0 else '#059669'};">{tot_freezer_units_home:,}</div>
+                            <div class="dep-kpi-lbl">Freezer ({low_stock_flavors_cnt} Low)</div>
+                        </div>
+                        <div style="text-align:center;">
+                            <div class="dep-kpi-num" style="color:#1E2252;">{period_units_home:,}</div>
+                            <div class="dep-kpi-lbl">Units Sold ({period_short_lbl})</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="dep-kpi-card">
+                    <div class="dep-kpi-dual">
+                        <div style="text-align:center;">
+                            <div class="dep-kpi-num" style="color:#1E2252;">{period_shifts_home:,}</div>
+                            <div class="dep-kpi-lbl">Active Shifts ({period_short_lbl})</div>
+                        </div>
+                        <div style="text-align:center;">
+                            <div class="dep-kpi-num" style="color:#059669;">{rev_compact_str}</div>
+                            <div class="dep-kpi-lbl">Total Sales ({period_short_lbl})</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="dep-kpi-card" style="text-align:center;">
+                    <div class="dep-kpi-num" style="color:#4F46E5;">₹{unhanded_cash_home:,.0f}</div>
+                    <div class="dep-kpi-lbl" title="Ops: ₹{ops_cash_home:,.0f} | Yogesh: ₹{yogesh_cash_home:,.0f}">Cash in Custody</div>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        # 2. MIDDLE ROW: EMERALD GREEN RING GAUGE CARD + SECTION OVERVIEW FLAVOUR/CART MATRIX
+        mid_left_col, mid_right_col = st.columns([1.15, 2.40], gap="small")
+
+        with mid_left_col:
+            # Compute ring gauge fill % (Healthy stocked flavours / 9 flavours, or capacity fill)
+            cap_target = max(1800, len(CARTS) * 600)
+            util_pct = min(100, max(5, int(round((tot_freezer_units_home / float(cap_target)) * 100.0)))) if tot_freezer_units_home > 0 else int(round((healthy_flavors_cnt / float(len(FLAVOR_CODES))) * 100.0))
+            dash_Len = 289.0
+            dash_Offset = dash_Len * (1.0 - (util_pct / 100.0))
+
+            st.markdown(
+                f"""
+                <div class="dep-emerald-card">
+                    <div class="dep-emerald-hdr">Freezer &amp; Cart Utilization</div>
+                    <div class="dep-emerald-float-strip">
+                        <div class="dep-emerald-float-dot" style="background:#ECFDF5;color:#059669;">❄️</div>
+                        <div class="dep-emerald-float-dot" style="background:#FEF2F2;color:#DC2626;">🛒</div>
+                        <div class="dep-emerald-float-dot" style="background:#EFF6FF;color:#2563EB;">📦</div>
+                    </div>
+                    <div style="display:flex;justify-content:center;align-items:center;margin:6px 0;">
+                        <svg width="168" height="168" viewBox="0 0 112 112">
+                            <circle cx="56" cy="56" r="46" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="7.5" />
+                            <circle cx="56" cy="56" r="46" fill="none" stroke="#F59E0B" stroke-width="7.5"
+                                    stroke-linecap="round"
+                                    stroke-dasharray="{dash_Len:.1f}"
+                                    stroke-dashoffset="{dash_Offset:.1f}"
+                                    transform="rotate(-90 56 56)" />
+                            <text x="56" y="52" text-anchor="middle" fill="#FFFFFF" font-size="19" font-weight="800" font-family="Plus Jakarta Sans, sans-serif">{util_pct}%</text>
+                            <text x="56" y="67" text-anchor="middle" fill="#D1FAE5" font-size="8.2" font-weight="600" font-family="Plus Jakarta Sans, sans-serif">Capacity Stocked</text>
+                            <text x="56" y="79" text-anchor="middle" fill="#FDE68A" font-size="7.5" font-weight="700" font-family="Plus Jakarta Sans, sans-serif">{healthy_flavors_cnt}/{len(FLAVOR_CODES)} Flavours OK</text>
+                        </svg>
+                    </div>
+                    <div class="dep-emerald-footer">
+                        <div>
+                            <div class="dep-emerald-ft-lbl">In Freezer</div>
+                            <div class="dep-emerald-ft-val">{tot_freezer_units_home:,} pcs</div>
+                            <div style="font-size:10px;color:#A7F3D0;">₹{tot_freezer_cp_home:,.0f} CP</div>
+                        </div>
+                        <div>
+                            <div class="dep-emerald-ft-lbl">Loaded in Carts</div>
+                            <div class="dep-emerald-ft-val">{tot_cart_units_home:,} pcs</div>
+                            <div style="font-size:10px;color:#A7F3D0;">₹{tot_cart_cp_home:,.0f} CP</div>
+                        </div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+        with mid_right_col:
+            # Build HTML rows of rounded amber/cream square tiles for Freezer + Active Carts across the 9 Flavours
+            matrix_rows_html = []
+
+            # Row 1: Central Freezer
+            fzr_tiles_html = []
+            for _c in FLAVOR_CODES:
+                _q = int(freezer_stock_map.get(_c, 0))
+                _rate = float(vel_map.get(_c, 0)) / 14.0
+                _is_low = (_q <= 0) or (_rate > 0 and _q <= _rate * 3.0) or (_rate == 0 and _q < 25)
+                _cls = "empty" if _q <= 0 else ("low" if _is_low else "loaded")
+                _f_name = FLAVOR_MAP[_c]["name"]
+                fzr_tiles_html.append(
+                    f'<div class="dep-slot-tile {_cls}" title="Freezer • {escape(_f_name)} ({_c}): {_q:,} pcs">'
+                    f'<span class="dep-slot-code">{_c}</span>'
+                    f'<span class="dep-slot-qty">{_q}</span>'
+                    f'</div>'
+                )
+            matrix_rows_html.append(
+                f'<div class="dep-slot-row">'
+                f'<div class="dep-slot-row-lbl" title="Central Freezer">❄️ Freezer ({tot_freezer_units_home:,})</div>'
+                f'{"".join(fzr_tiles_html)}'
+                f'</div>'
+            )
+
+            # Rows 2..N: Active Carts
+            for _cname in CARTS[:4]:
+                _c_map = cart_flavor_stock_matrix.get(_cname, {})
+                _c_tot = sum(_c_map.values())
+                _c_tiles = []
+                for _c in FLAVOR_CODES:
+                    _cq = int(_c_map.get(_c, 0))
+                    _c_cls = "empty" if _cq <= 0 else ("low" if _cq < 10 else "loaded")
+                    _f_name = FLAVOR_MAP[_c]["name"]
+                    _c_tiles.append(
+                        f'<div class="dep-slot-tile {_c_cls}" title="{escape(_cname)} • {escape(_f_name)} ({_c}): {_cq} pcs">'
+                        f'<span class="dep-slot-code">{_c}</span>'
+                        f'<span class="dep-slot-qty">{_cq}</span>'
+                        f'</div>'
+                    )
+                _short_cart = _cname.replace("HOSUR ", "").replace("UTTARAHALLI ", "UTT ")
+                matrix_rows_html.append(
+                    f'<div class="dep-slot-row">'
+                    f'<div class="dep-slot-row-lbl" title="{escape(_cname)}">🛒 {escape(_short_cart)} ({_c_tot})</div>'
+                    f'{"".join(_c_tiles)}'
+                    f'</div>'
+                )
+
+            # Row N+1: Period Units Sold by Flavour
+            sold_tiles_html = []
+            for _c in FLAVOR_CODES:
+                _sq = int(sold_period_by_code.get(_c, 0))
+                _s_cls = "loaded" if _sq >= 30 else ("low" if _sq > 0 else "empty")
+                _f_name = FLAVOR_MAP[_c]["name"]
+                sold_tiles_html.append(
+                    f'<div class="dep-slot-tile {_s_cls}" title="Sold ({period_short_lbl}) • {escape(_f_name)} ({_c}): {_sq:,} pcs">'
+                    f'<span class="dep-slot-code">{_c}</span>'
+                    f'<span class="dep-slot-qty">{_sq}</span>'
+                    f'</div>'
+                )
+            matrix_rows_html.append(
+                f'<div class="dep-slot-row" style="margin-top:4px;padding-top:6px;border-top:1px dashed #E2E8F0;">'
+                f'<div class="dep-slot-row-lbl" style="color:#047857;">🔥 Sold ({period_short_lbl})</div>'
+                f'{"".join(sold_tiles_html)}'
+                f'</div>'
+            )
+
+            st.markdown(
+                f"""
+                <div class="dep-matrix-card">
+                    <div>
+                        <div class="dep-matrix-top">
+                            <span class="dep-date-badge">📅 {today_home.strftime('%d / %m / %Y')}</span>
+                            <span style="font-size:13px;font-weight:800;color:#1E2252;">Section Overview — Flavour &amp; Cart Stock Matrix</span>
+                        </div>
+                        <div style="padding:2px 0;">
+                            {"".join(matrix_rows_html)}
+                        </div>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid #F1F5F9;padding-top:8px;margin-top:6px;font-size:11px;color:#64748B;font-weight:700;">
+                        <span>Hover any tile for exact flavour details</span>
+                        <div style="display:flex;gap:14px;align-items:center;">
+                            <span>Loaded / Healthy <span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:#FBBF24;vertical-align:middle;margin-left:3px;"></span></span>
+                            <span>Low / Reorder <span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:#FEF3C7;border:1px solid #FCD34D;vertical-align:middle;margin-left:3px;"></span></span>
+                        </div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+        st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
+
+        # 3. BOTTOM ROW: 3 STACKED ANALYTICAL CARDS (BEST SELLERS | INVENTORY STOCK BARS | TOP CARTS HORIZONTAL BARS)
+        bot_c1, bot_c2, bot_c3 = st.columns([1.08, 1.32, 1.15], gap="small")
+
+        with bot_c1:
+            sorted_flavs = sorted(FLAVOR_CODES, key=lambda c: (sold_period_by_code.get(c, 0), rev_period_by_code.get(c, 0.0)), reverse=True)
+            top1_c = sorted_flavs[0]
+            top1_info = FLAVOR_MAP[top1_c]
+            top1_u = int(sold_period_by_code.get(top1_c, 0))
+            top1_r = float(rev_period_by_code.get(top1_c, 0.0))
+            top1_mrp = float(top1_info["mrp"])
+
+            runner_ups_html = []
+            for _rk, _rc in enumerate(sorted_flavs[1:4], start=2):
+                _ru = int(sold_period_by_code.get(_rc, 0))
+                _rr = float(rev_period_by_code.get(_rc, 0.0))
+                runner_ups_html.append(
+                    f'<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:7px;font-size:11px;margin-top:5px;">'
+                    f'<span style="font-weight:800;color:#1E2252;">#{_rk} {escape(FLAVOR_MAP[_rc]["name"])} ({_rc})</span>'
+                    f'<span style="font-weight:800;color:#059669;">{_ru:,} pcs • ₹{_rr:,.0f}</span>'
+                    f'</div>'
+                )
+
+            st.markdown(
+                f"""
+                <div class="dep-bottom-card">
+                    <div>
+                        <div class="dep-bottom-hdr">Best Sellers ({escape(period_short_lbl)})</div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 4px 10px 4px;border-bottom:1px dashed #E2E8F0;">
+                            <div>
+                                <div style="font-size:16px;font-weight:800;color:#0F172A;">Units {top1_u:,}</div>
+                                <div style="font-size:11px;color:#64748B;font-weight:600;margin-top:2px;">per unit | ₹{top1_mrp:.0f}</div>
+                                <div style="font-size:13.5px;font-weight:800;color:#059669;margin-top:2px;">₹{top1_r:,.0f}</div>
+                            </div>
+                            <div style="text-align:right;">
+                                <div style="font-size:13.5px;font-weight:800;color:#1E2252;">{escape(top1_info['name'])}</div>
+                                <div style="font-size:11px;color:#4F46E5;font-weight:700;margin-top:2px;">Code: {top1_c}</div>
+                                <div style="font-size:10.5px;color:#64748B;margin-top:2px;">Freezer: {int(freezer_stock_map.get(top1_c, 0)):,} pcs</div>
+                            </div>
+                        </div>
+                        <div style="margin-top:6px;">
+                            {"".join(runner_ups_html)}
+                        </div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+        with bot_c2:
+            # Vertical 3-Segment Purple/Violet/Blue Stacked Bar Chart (Matches "Inventory Stock" in Screenshot)
+            top6_codes = sorted_flavs[:6]
+            max_stack = max(
+                1,
+                max(
+                    int(freezer_stock_map.get(c, 0))
+                    + sum(int(cart_flavor_stock_matrix.get(cn, {}).get(c, 0)) for cn in CARTS)
+                    + int(sold_period_by_code.get(c, 0))
+                    for c in top6_codes
+                ),
+            )
+            bars_cols_html = []
+            for _c in top6_codes:
+                _fz_u = max(0, int(freezer_stock_map.get(_c, 0)))
+                _ct_u = max(0, sum(int(cart_flavor_stock_matrix.get(cn, {}).get(_c, 0)) for cn in CARTS))
+                _sd_u = max(0, int(sold_period_by_code.get(_c, 0)))
+                _tot_col = max(1, _fz_u + _ct_u + _sd_u)
+                _h_pct = min(100, max(18, int(round((_tot_col / float(max_stack)) * 100.0))))
+                _p_sd = int(round((_sd_u / float(_tot_col)) * 100.0))
+                _p_ct = int(round((_ct_u / float(_tot_col)) * 100.0))
+                _p_fz = max(10, 100 - _p_sd - _p_ct)
+                bars_cols_html.append(
+                    f'<div style="display:flex;flex-direction:column;align-items:center;flex:1;" title="Freezer {_fz_u} | Carts {_ct_u} | Sold {_sd_u}">'
+                    f'<div style="height:126px;width:22px;display:flex;flex-direction:column;justify-content:flex-end;background:#F8FAFC;border-radius:7px;overflow:hidden;padding:0;">'
+                    f'<div style="height:{_h_pct}%;width:100%;display:flex;flex-direction:column;border-radius:6px;overflow:hidden;">'
+                    f'<div style="height:{_p_sd}%;background:#60A5FA;min-height:4px;"></div>'
+                    f'<div style="height:{_p_ct}%;background:#8B5CF6;min-height:4px;"></div>'
+                    f'<div style="height:{_p_fz}%;background:#4C1D95;min-height:6px;"></div>'
+                    f'</div></div>'
+                    f'<div style="font-size:10px;font-weight:800;color:#334155;margin-top:5px;">{_c}</div>'
+                    f'<div style="font-size:9px;font-weight:700;color:#64748B;">{_fz_u+_ct_u}</div>'
+                    f'</div>'
+                )
+
+            st.markdown(
+                f"""
+                <div class="dep-bottom-card">
+                    <div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #F1F5F9;padding-bottom:6px;margin-bottom:8px;">
+                            <div style="font-size:10.5px;font-weight:700;color:#64748B;display:flex;gap:8px;align-items:center;">
+                                <span>Sold <span style="color:#60A5FA;">■</span></span>
+                                <span>Carts <span style="color:#8B5CF6;">■</span></span>
+                                <span>Freezer <span style="color:#4C1D95;">■</span></span>
+                            </div>
+                            <div style="font-size:12.5px;font-weight:800;color:#1E2252;">Inventory Stock</div>
+                        </div>
+                        <div style="display:flex;justify-content:space-around;align-items:flex-end;padding:6px 4px 2px 4px;">
+                            {"".join(bars_cols_html)}
+                        </div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+        with bot_c3:
+            # Horizontal Sky-Blue Bar Chart for Carts & Channels (Matches "Top Cities" in Screenshot)
+            cart_rev_rows = []
+            if not period_df_home.empty:
+                c_grp = period_df_home.groupby("Cart", as_index=False).agg({"Total_Collection": "sum", "Sold_Total": "sum"}).sort_values("Total_Collection", ascending=False)
+                for _, _r in c_grp.head(5).iterrows():
+                    cart_rev_rows.append((str(_r["Cart"]), float(_r["Total_Collection"]), int(round(_r["Sold_Total"]))))
+            if not cart_rev_rows:
+                for _cn in CARTS[:4]:
+                    cart_rev_rows.append((_cn, 0.0, 0))
+
+            max_c_rev = max(1.0, max((r[1] for r in cart_rev_rows), default=1.0))
+            h_bars_html = []
+            for _cname, _crev, _cunits in cart_rev_rows:
+                _w_pct = min(100, max(12, int(round((_crev / max_c_rev) * 100.0)))) if _crev > 0 else 12
+                _short_c = _cname.replace("HOSUR ", "").replace("UTTARAHALLI ", "UTT ")
+                h_bars_html.append(
+                    f'<div style="margin-bottom:9px;">'
+                    f'<div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;color:#334155;margin-bottom:3px;">'
+                    f'<span>{escape(_short_c)}</span>'
+                    f'<span style="color:#1E2252;font-weight:800;">₹{_crev:,.0f} ({_cunits:,} pcs)</span>'
+                    f'</div>'
+                    f'<div style="width:100%;background:#EFF6FF;height:8px;border-radius:999px;overflow:hidden;">'
+                    f'<div style="width:{_w_pct}%;background:linear-gradient(90deg, #60A5FA 0%, #3B82F6 100%);height:8px;border-radius:999px;"></div>'
+                    f'</div>'
+                    f'</div>'
+                )
+
+            st.markdown(
+                f"""
+                <div class="dep-bottom-card">
+                    <div>
+                        <div class="dep-bottom-hdr">Top Carts &amp; Locations ({escape(period_short_lbl)})</div>
+                        <div style="padding:4px 2px 0 2px;">
+                            {"".join(h_bars_html)}
+                        </div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+        # 4. QUICK OPERATIONS LAUNCHPAD STRIP BELOW VISUAL CARDS
+        st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
         with st.container(border=True):
-            st.markdown(f'<span class="kulfi-clickable-card-grid {_set_cls}"></span>', unsafe_allow_html=True)
-            st.markdown(f'<div class="launchpad-section-hdr {_hdr_cls}">{_sec_title}</div>', unsafe_allow_html=True)
-            _cols = st.columns(_num_cols, gap="small")
-            for _c_idx, (_target_page, _icon, _title, _extra_state) in enumerate(_sec_cards):
-                with _cols[_c_idx]:
-                    if _c_idx == 0:
-                        st.markdown(f'<span class="kulfi-clickable-card-grid {_set_cls}"></span>', unsafe_allow_html=True)
-                    _safe_set_key = _set_cls.replace("-", "_")
+            st.markdown('<span class="kulfi-clickable-card-grid"></span>', unsafe_allow_html=True)
+            st.markdown('<div class="launchpad-section-hdr">⚡ Quick Daily Entry &amp; Operations Shortcuts</div>', unsafe_allow_html=True)
+            qa_cols = st.columns(6, gap="small")
+            _quick_ops = [
+                ("Daily Entry", "🧾", "Sales Entry", {"daily_entry_mode": "sales"}),
+                ("Daily Entry", "📦", "Restock Carts", {"daily_entry_mode": "restock"}),
+                ("Daily Entry", "➕", "Extra Stock", {"daily_entry_mode": "extra"}),
+                ("Daily Entry", "🔄", "Remove Stock", {"daily_entry_mode": "remove_cart_stock"}),
+                ("Daily Entry", "📋", "View Stock", {"daily_entry_mode": "view_stock"}),
+                ("Daily Entry", "❄️", "Freezer Sale", {"daily_entry_mode": "freezer_sales", "fzr_entry_sub_mode": "new"}),
+            ]
+            for _qi, (_qpage, _qico, _qlbl, _qstate) in enumerate(_quick_ops):
+                with qa_cols[_qi]:
+                    if st.button(f"{_qico} **{_qlbl}**", key=f"home_qa_btn_{_qi}", use_container_width=True):
+                        for _k, _v in _qstate.items():
+                            st.session_state[_k] = _v
+                        st.session_state["page_nav"] = _qpage
+                        st.rerun()
+
+    # ------------------------------------------------------------------
+    # RIGHT COLUMN: DEEP ROYAL INDIGO "DEPOSITO" NAVIGATION DOCK
+    # ------------------------------------------------------------------
+    with right_dock_col:
+        with st.container(border=True):
+            st.markdown('<span class="deposito-nav-dock-marker"></span>', unsafe_allow_html=True)
+            st.markdown(
+                f"""
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:2px 4px 10px 4px;border-bottom:1px solid rgba(255,255,255,0.12);margin-bottom:8px;">
+                    <div style="display:flex;align-items:center;gap:9px;">
+                        {get_top_left_square_logo_html(34)}
+                        <div>
+                            <div style="font-size:14px;font-weight:900;color:#FFFFFF;letter-spacing:0.04em;line-height:1.1;">KULFI OPS</div>
+                            <div style="font-size:10px;font-weight:700;color:#93C5FD;margin-top:2px;">📍 {escape(loc_badge)}</div>
+                        </div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+            _dock_groups = [
+                ("Analytics & Sales", [
+                    ("Home", "🏠  Dashboard Home", {}),
+                    ("Dashboard", "📊  Financials & P&L", {"dash_sub_page": None}),
+                    ("Daily Entry", "🛒  Daily Entry Hub", {"daily_entry_mode": None}),
+                    ("Live Cart Tracking", "📡  Live Cart POS", {}),
+                    ("Bulk Orders & Quotes", "📦  Bulk Orders & Quotes", {}),
+                ]),
+                ("Freezer & Stock", [
+                    ("Freezer Analysis", "📈  Freezer Analysis", {}),
+                    ("Freezer Stock", "❄️  Stock Received / Audit", {"db_stock_mode": "New entry"}),
+                    ("Stock Removed", "🗑️  Stock Removed Log", {"rem_screen_mode": "New Entry"}),
+                    ("Purchase Orders", "🧾  Purchase Orders", {}),
+                ]),
+                ("Finance & Admin", [
+                    ("Expenses", "💳  Expenses & Payments", {}),
+                    ("Cash Custody", "💰  Cash Custody", {}),
+                    ("Staff & Payroll", "👥  Staff & Payroll", {}),
+                    ("Payslip Generator", "📄  Payslip Generator", {}),
+                    ("Locations & Logins", "🌐  Locations & Logins", {}),
+                ]),
+            ]
+
+            for _grp_name, _grp_items in _dock_groups:
+                st.markdown(f'<div class="deposito-dock-sec-lbl">{escape(_grp_name)}</div>', unsafe_allow_html=True)
+                for _m_idx, (_target_p, _m_lbl, _m_state) in enumerate(_grp_items):
+                    _is_active_dock = (page == _target_p)
                     if st.button(
-                        f"{_icon}  **{_title}**",
-                        key=f"launchpad_card_{_safe_set_key}_{_c_idx}",
+                        _m_lbl,
+                        key=f"deposito_dock_btn_{_grp_name}_{_m_idx}",
+                        type="primary" if _is_active_dock else "secondary",
                         use_container_width=True,
                     ):
-                        for _k, _v in _extra_state.items():
+                        for _k, _v in _m_state.items():
                             st.session_state[_k] = _v
-                        st.session_state["page_nav"] = _target_page
+                        st.session_state["page_nav"] = _target_p
                         st.rerun()
+
+            st.markdown(
+                """
+                <div style="text-align:center;padding-top:10px;margin-top:8px;border-top:1px solid rgba(255,255,255,0.12);font-size:10px;color:#94A3B8;line-height:1.4;">
+                    <div style="font-weight:700;color:#CBD5E1;">Kulfi Ops Admin Suite</div>
+                    <div>Multi-Location Cloud POS ©</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
 if page == "Locations & Logins" and user_role == "admin":
     st.subheader("🌐 Locations, Carts / Freezers & Logins Setup")
@@ -5037,18 +5734,18 @@ elif page == "Daily Entry":
     if entry_mode is None:
         st.markdown(
             f"""
-            <div style='background:linear-gradient(90deg, #FFF5E4 0%, #FFFBF2 100%);
-                        border:1.5px solid #E3CBA0;border-radius:14px;padding:14px 20px;
+            <div style='background:linear-gradient(90deg, #EFF6FF 0%, #F8FAFC 100%);
+                        border:1.5px solid #CBD5E1;border-radius:14px;padding:14px 20px;
                         margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;'>
                 <div>
-                    <div style='font-family:Fraunces,serif;font-size:21px;font-weight:700;color:#4A2418;'>
+                    <div style='font-family:Fraunces,serif;font-size:21px;font-weight:700;color:#1E2252;'>
                         🛒 Daily Operations & Stock Entry Hub
                     </div>
-                    <div style='font-size:12px;color:#6B5138;margin-top:2px;'>
+                    <div style='font-size:12px;color:#475569;margin-top:2px;'>
                         Cart sales, restocks, returns &amp; freezer sales
                     </div>
                 </div>
-                <div style='background:#E4763D;color:#111111;border:1.5px solid #9E471B;padding:6px 14px;border-radius:999px;font-size:12px;font-weight:800;'>
+                <div style='background:#BFDBFE;color:#111111;border:1.5px solid #93C5FD;padding:6px 14px;border-radius:999px;font-size:12px;font-weight:800;'>
                     📅 {_entry_date_display(today_val)}
                 </div>
             </div>
@@ -5226,7 +5923,7 @@ elif page == "Daily Entry":
                         rc1, rc2, rc3, rc4, rc5, rc6, rc7 = st.columns([1.95, 0.78, 0.95, 0.95, 0.78, 0.82, 1.1], gap="small")
                         with rc1:
                             st.markdown(
-                                f"<div class='entry-grid-cell-flavour'><span>{f_info['name']}</span><span style='color:#8A5E17;font-size:11px;'>₹{f_info['mrp']:.0f}</span></div>",
+                                f"<div class='entry-grid-cell-flavour'><span>{f_info['name']}</span><span style='color:#2563EB;font-size:11px;'>₹{f_info['mrp']:.0f}</span></div>",
                                 unsafe_allow_html=True,
                             )
                         with rc2:
@@ -5280,7 +5977,7 @@ elif page == "Daily Entry":
                     tc4.markdown(f"<div class='entry-grid-total-row' style='text-align:center;'>{tot_close}</div>", unsafe_allow_html=True)
                     tc5.markdown(f"<div class='entry-grid-total-row' style='text-align:center;color:#C43D17;'>{tot_sold}</div>", unsafe_allow_html=True)
                     tc6.markdown(f"<div class='entry-grid-total-row' style='text-align:center;color:#1B5E91;'>{tot_live_sold}</div>", unsafe_allow_html=True)
-                    tc7.markdown(f"<div class='entry-grid-total-row' style='text-align:right;color:#124A1D;'>₹{calculated_mrp_total:,.0f}</div>", unsafe_allow_html=True)
+                    tc7.markdown(f"<div class='entry-grid-total-row' style='text-align:right;color:#047857;'>₹{calculated_mrp_total:,.0f}</div>", unsafe_allow_html=True)
 
                     k_tot = f"daily_total{data_key_suffix}"
                     k_prev_calc = f"daily_prev_calc{data_key_suffix}"
@@ -5337,12 +6034,12 @@ elif page == "Daily Entry":
                         )
                     cash_leakage_unexplained = max(0.0, available_cash_leakage - cash_leakage_explained)
                     with leak_c2:
-                        unexp_color = "#C41C1C" if cash_leakage_unexplained > 0.001 else "#2A1B10"
-                        unexp_bg = "#FFF0ED" if cash_leakage_unexplained > 0.001 else "#F7F4EF"
+                        unexp_color = "#C41C1C" if cash_leakage_unexplained > 0.001 else "#0F172A"
+                        unexp_bg = "#FFF0ED" if cash_leakage_unexplained > 0.001 else "#F8FAFC"
                         st.markdown(
                             f"""
                             <div style="font-size:10.5px;font-weight:700;margin-bottom:1px;">Cash Leakage (Unexplained) (₹)</div>
-                            <div style="height:28px;border:1px solid #D8C7AA;border-radius:6px;padding:4px 7px;
+                            <div style="height:28px;border:1px solid #CBD5E1;border-radius:6px;padding:4px 7px;
                                         background:{unexp_bg};color:{unexp_color};font-size:12px;font-weight:800;">
                                 ₹{cash_leakage_unexplained:,.2f}
                             </div>
@@ -5655,7 +6352,7 @@ elif page == "Daily Entry":
                     ft2.markdown(f"<div class='entry-grid-total-row' style='text-align:center;'>{tot_fzr_stock}</div>", unsafe_allow_html=True)
                     ft3.markdown("<div class='entry-grid-total-row' style='text-align:center;'>—</div>", unsafe_allow_html=True)
                     ft4.markdown(f"<div class='entry-grid-total-row' style='text-align:center;color:#C43D17;'>{tot_fzr_sold}</div>", unsafe_allow_html=True)
-                    ft5.markdown(f"<div class='entry-grid-total-row' style='text-align:right;color:#124A1D;'>₹{tot_fzr_value:,.0f}</div>", unsafe_allow_html=True)
+                    ft5.markdown(f"<div class='entry-grid-total-row' style='text-align:right;color:#047857;'>₹{tot_fzr_value:,.0f}</div>", unsafe_allow_html=True)
 
                     st.markdown("---")
                     k_f_ph = f"fzr_ph_{freezer_asset_name}_{date_key_str}"
@@ -5836,8 +6533,8 @@ elif page == "Daily Entry":
                 tf1, tf2, tf3, tf4 = st.columns([2.2, 1.0, 1.2, 1.2], gap="small")
                 tf1.markdown("<div class='entry-grid-total-row' style='text-align:left;'>TOTAL</div>", unsafe_allow_html=True)
                 tf2.markdown(f"<div class='entry-grid-total-row' style='text-align:center;'>{total_opening_base}</div>", unsafe_allow_html=True)
-                tf3.markdown(f"<div class='entry-grid-total-row' style='text-align:center;color:#124A1D;'>+{total_restock} pcs</div>", unsafe_allow_html=True)
-                tf4.markdown(f"<div class='entry-grid-total-row' style='text-align:right;color:#124A1D;'>{total_opening_after} pcs</div>", unsafe_allow_html=True)
+                tf3.markdown(f"<div class='entry-grid-total-row' style='text-align:center;color:#047857;'>+{total_restock} pcs</div>", unsafe_allow_html=True)
+                tf4.markdown(f"<div class='entry-grid-total-row' style='text-align:right;color:#047857;'>{total_opening_after} pcs</div>", unsafe_allow_html=True)
 
             if st.button("📦 Submit Restock", type="primary", use_container_width=True, key=f"submit_restock_{cart_name}"):
                 try:
@@ -5921,7 +6618,7 @@ elif page == "Daily Entry":
                 ef2.markdown(f"<div class='entry-grid-total-row' style='text-align:center;'>{tot_curr_stock}</div>", unsafe_allow_html=True)
                 ef3.markdown(f"<div class='entry-grid-total-row' style='text-align:center;'>{tot_added_today}</div>", unsafe_allow_html=True)
                 ef4.markdown(f"<div class='entry-grid-total-row' style='text-align:center;color:#C43D17;'>+{total_extra} pcs</div>", unsafe_allow_html=True)
-                ef5.markdown(f"<div class='entry-grid-total-row' style='text-align:right;color:#124A1D;'>{total_after_extra} pcs</div>", unsafe_allow_html=True)
+                ef5.markdown(f"<div class='entry-grid-total-row' style='text-align:right;color:#047857;'>{total_after_extra} pcs</div>", unsafe_allow_html=True)
 
             if st.button("➕ Submit Extra Stock", type="primary", use_container_width=True, key=f"submit_extra_{cart_name}"):
                 if total_extra <= 0:
@@ -6134,11 +6831,11 @@ elif page == "Daily Entry":
 
                     c1, c2, c3, c4, c5 = st.columns([2.0, 0.9, 1.0, 1.2, 1.1], gap="small")
                     with c1:
-                        st.markdown(f"<div class='entry-grid-cell-flavour'><span>{escape(f_info['name'])}</span><span style='color:#8A5E17;font-size:10.5px;'>₹{int(f_info['mrp'])}</span></div>", unsafe_allow_html=True)
+                        st.markdown(f"<div class='entry-grid-cell-flavour'><span>{escape(f_info['name'])}</span><span style='color:#2563EB;font-size:10.5px;'>₹{int(f_info['mrp'])}</span></div>", unsafe_allow_html=True)
                     with c2:
                         st.markdown(f"<div class='entry-grid-cell'>{open_u}</div>", unsafe_allow_html=True)
                     with c3:
-                        st.markdown(f"<div class='entry-grid-cell' style='font-weight:900;color:#124A1D;'>{in_cart_u}</div>", unsafe_allow_html=True)
+                        st.markdown(f"<div class='entry-grid-cell' style='font-weight:900;color:#047857;'>{in_cart_u}</div>", unsafe_allow_html=True)
                     with c4:
                         move_qty = int(
                             st.number_input(
@@ -6163,9 +6860,9 @@ elif page == "Daily Entry":
                 rf1, rf2, rf3, rf4, rf5 = st.columns([2.0, 0.9, 1.0, 1.2, 1.1], gap="small")
                 rf1.markdown("<div class='entry-grid-total-row' style='text-align:left;'>TOTAL</div>", unsafe_allow_html=True)
                 rf2.markdown(f"<div class='entry-grid-total-row' style='text-align:center;'>{tot_open_c}</div>", unsafe_allow_html=True)
-                rf3.markdown(f"<div class='entry-grid-total-row' style='text-align:center;color:#124A1D;'>{tot_in_cart_now}</div>", unsafe_allow_html=True)
+                rf3.markdown(f"<div class='entry-grid-total-row' style='text-align:center;color:#047857;'>{tot_in_cart_now}</div>", unsafe_allow_html=True)
                 rf4.markdown(f"<div class='entry-grid-total-row' style='text-align:center;color:#0F766E;'>{tot_move_c} pcs</div>", unsafe_allow_html=True)
-                rf5.markdown(f"<div class='entry-grid-total-row' style='text-align:right;color:#4A2418;'>{tot_rem_c} pcs</div>", unsafe_allow_html=True)
+                rf5.markdown(f"<div class='entry-grid-total-row' style='text-align:right;color:#1E2252;'>{tot_rem_c} pcs</div>", unsafe_allow_html=True)
 
             if st.button("❄️ Move back to Freezer", type="primary", use_container_width=True, key=f"submit_rm_cart_{cart_name}"):
                 if tot_move_c <= 0:
@@ -6302,7 +6999,7 @@ elif page == "Bulk Orders & Quotes" and user_role == "admin":
             fontName="Helvetica-Bold",
             fontSize=18,
             leading=22,
-            textColor=colors.HexColor("#4A2418"),
+            textColor=colors.HexColor("#1E2252"),
             spaceAfter=2,
         )
         sub_style = ParagraphStyle(
@@ -6311,7 +7008,7 @@ elif page == "Bulk Orders & Quotes" and user_role == "admin":
             fontName="Helvetica",
             fontSize=9.5,
             leading=13,
-            textColor=colors.HexColor("#6B5138"),
+            textColor=colors.HexColor("#475569"),
         )
         sec_hdr = ParagraphStyle(
             "BulkSecHdr",
@@ -6319,7 +7016,7 @@ elif page == "Bulk Orders & Quotes" and user_role == "admin":
             fontName="Helvetica-Bold",
             fontSize=11,
             leading=14,
-            textColor=colors.HexColor("#70440E"),
+            textColor=colors.HexColor("#1E2252"),
             spaceBefore=10,
             spaceAfter=6,
         )
@@ -6329,7 +7026,7 @@ elif page == "Bulk Orders & Quotes" and user_role == "admin":
             fontName="Helvetica",
             fontSize=9.5,
             leading=13,
-            textColor=colors.HexColor("#2A1B10"),
+            textColor=colors.HexColor("#0F172A"),
         )
 
         story = []
@@ -6382,9 +7079,9 @@ elif page == "Bulk Orders & Quotes" and user_role == "admin":
         meta_tbl = Table(meta_data, colWidths=[280, 260])
         meta_tbl.setStyle(
             TableStyle([
-                ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#FFFBF2")),
-                ("BOX", (0, 0), (-1, -1), 1, colors.HexColor("#E3CBA0")),
-                ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#EFE3D0")),
+                ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#F8FAFC")),
+                ("BOX", (0, 0), (-1, -1), 1, colors.HexColor("#CBD5E1")),
+                ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#E2E8F0")),
                 ("TOPPADDING", (0, 0), (-1, -1), 6),
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
                 ("LEFTPADDING", (0, 0), (-1, -1), 8),
@@ -6434,16 +7131,16 @@ elif page == "Bulk Orders & Quotes" and user_role == "admin":
         item_tbl = Table(tbl_rows, colWidths=[26, 134, 42, 68, 68, 58, 70, 74])
         item_tbl.setStyle(
             TableStyle([
-                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#70440E")),
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1E2252")),
                 ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
                 ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
                 ("FONTSIZE", (0, 0), (-1, -1), 9),
                 ("ALIGN", (0, 0), (0, -1), "CENTER"),
                 ("ALIGN", (2, 0), (2, -1), "CENTER"),
                 ("ALIGN", (3, 0), (-1, -1), "RIGHT"),
-                ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#DFC9A6")),
-                ("ROWBACKGROUNDS", (0, 1), (-1, -2), [colors.white, colors.HexColor("#FFFDF8")]),
-                ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#FFF2DC")),
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#CBD5E1")),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -2), [colors.white, colors.HexColor("#FFFFFF")]),
+                ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#EFF6FF")),
                 ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
                 ("TOPPADDING", (0, 0), (-1, -1), 5),
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
@@ -6468,11 +7165,11 @@ elif page == "Bulk Orders & Quotes" and user_role == "admin":
                 ("ALIGN", (1, 0), (1, -1), "RIGHT"),
                 ("FONTNAME", (0, 0), (-1, -1), "Helvetica-Bold"),
                 ("FONTSIZE", (0, 0), (-1, -1), 10),
-                ("TEXTCOLOR", (0, 0), (-1, -1), colors.HexColor("#4A2418")),
-                ("BACKGROUND", (0, 2), (-1, 2), colors.HexColor("#EAF4EC")),
-                ("TEXTCOLOR", (0, 2), (-1, 2), colors.HexColor("#124A1D")),
-                ("BOX", (0, 0), (-1, -1), 1, colors.HexColor("#D8C19A")),
-                ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#EFE3D0")),
+                ("TEXTCOLOR", (0, 0), (-1, -1), colors.HexColor("#1E2252")),
+                ("BACKGROUND", (0, 2), (-1, 2), colors.HexColor("#ECFDF5")),
+                ("TEXTCOLOR", (0, 2), (-1, 2), colors.HexColor("#047857")),
+                ("BOX", (0, 0), (-1, -1), 1, colors.HexColor("#CBD5E1")),
+                ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#E2E8F0")),
                 ("TOPPADDING", (0, 0), (-1, -1), 5),
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
                 ("RIGHTPADDING", (0, 0), (-1, -1), 10),
@@ -6730,16 +7427,16 @@ elif page == "Bulk Orders & Quotes" and user_role == "admin":
                     sim_net = sim_gross * (1.0 - t_disc / 100.0)
                     sim_profit = sim_net - sim_cost
                     is_active_tier = abs(float(st.session_state.get("bulk_discount_pct", 0.0)) - t_disc) < 0.05
-                    border_col = "#E8542A" if is_active_tier else "#E3CBA0"
-                    bg_col = "#FFF2DC" if is_active_tier else "#FFFBF2"
+                    border_col = "#4F46E5" if is_active_tier else "#CBD5E1"
+                    bg_col = "#EFF6FF" if is_active_tier else "#F8FAFC"
                     with tier_cols[t_idx]:
                         st.markdown(
                             f"""
                             <div style='background:{bg_col};border:1.8px solid {border_col};border-radius:10px;padding:8px 10px;text-align:center;margin-bottom:4px;'>
-                                <div style='font-size:11px;font-weight:900;color:#70440E;'>{t_disc:.0f}% DISCOUNT</div>
-                                <div style='font-size:18px;font-weight:900;color:#124A1D;margin:2px 0;'>{sim_pcs:,} pcs</div>
-                                <div style='font-size:11px;font-weight:800;color:#4A2418;'>Net: ₹{sim_net:,.0f}</div>
-                                <div style='font-size:10px;color:#6B5138;'>MRP Worth: ₹{sim_gross:,.0f}</div>
+                                <div style='font-size:11px;font-weight:900;color:#1E2252;'>{t_disc:.0f}% DISCOUNT</div>
+                                <div style='font-size:18px;font-weight:900;color:#047857;margin:2px 0;'>{sim_pcs:,} pcs</div>
+                                <div style='font-size:11px;font-weight:800;color:#1E2252;'>Net: ₹{sim_net:,.0f}</div>
+                                <div style='font-size:10px;color:#475569;'>MRP Worth: ₹{sim_gross:,.0f}</div>
                                 <div style='font-size:10px;font-weight:800;color:{"#137333" if sim_profit >= 0 else "#C43D17"};'>Profit: ₹{sim_profit:,.0f}</div>
                             </div>
                             """,
@@ -6791,7 +7488,7 @@ elif page == "Bulk Orders & Quotes" and user_role == "admin":
             bh5.markdown("<div class='entry-grid-header' style='background:#D1FAE5;color:#111111;border:1px solid #4ADE80;'>Qty (Pcs) ✏️</div>", unsafe_allow_html=True)
             bh6.markdown("<div class='entry-grid-header'>Total CP</div>", unsafe_allow_html=True)
             bh7.markdown("<div class='entry-grid-header'>Gross MRP</div>", unsafe_allow_html=True)
-            bh8.markdown("<div class='entry-grid-header' style='text-align:right;background:#E4763D;color:#111111;border:1px solid #9E471B;'>After Disc.</div>", unsafe_allow_html=True)
+            bh8.markdown("<div class='entry-grid-header' style='text-align:right;background:#BFDBFE;color:#111111;border:1px solid #93C5FD;'>After Disc.</div>", unsafe_allow_html=True)
 
             curr_disc_pct = float(st.session_state.get("bulk_discount_pct", 0.0) or 0.0)
             disc_mult = 1.0 - (curr_disc_pct / 100.0)
@@ -6822,13 +7519,13 @@ elif page == "Bulk Orders & Quotes" and user_role == "admin":
                 with r_c2:
                     opacity_style = "opacity:1;" if is_checked else "opacity:0.45;"
                     st.markdown(
-                        f"<div class='entry-grid-cell-flavour' style='{opacity_style}'><span>{escape(f_info['name'])}</span><span style='color:#8A5E17;font-size:10.5px;'>{code}</span></div>",
+                        f"<div class='entry-grid-cell-flavour' style='{opacity_style}'><span>{escape(f_info['name'])}</span><span style='color:#2563EB;font-size:10.5px;'>{code}</span></div>",
                         unsafe_allow_html=True,
                     )
                 with r_c3:
                     st.markdown(f"<div class='entry-grid-cell'>₹{float(f_info['cost_price']):.1f}</div>", unsafe_allow_html=True)
                 with r_c4:
-                    st.markdown(f"<div class='entry-grid-cell' style='color:#70440E;'>₹{float(f_info['mrp']):.0f}</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div class='entry-grid-cell' style='color:#1E2252;'>₹{float(f_info['mrp']):.0f}</div>", unsafe_allow_html=True)
                 with r_c5:
                     q_val = int(
                         st.number_input(
@@ -6869,19 +7566,19 @@ elif page == "Bulk Orders & Quotes" and user_role == "admin":
             tf2.markdown("<div class='entry-grid-total-row' style='text-align:left;'>TOTAL</div>", unsafe_allow_html=True)
             tf3.markdown(f"<div class='entry-grid-total-row'>₹{cp_rate_pc:.1f}/pc</div>", unsafe_allow_html=True)
             tf4.markdown("<div class='entry-grid-total-row'>—</div>", unsafe_allow_html=True)
-            tf5.markdown(f"<div class='entry-grid-total-row' style='color:#124A1D;'>{tot_units_b:,} pcs</div>", unsafe_allow_html=True)
+            tf5.markdown(f"<div class='entry-grid-total-row' style='color:#047857;'>{tot_units_b:,} pcs</div>", unsafe_allow_html=True)
             tf6.markdown(f"<div class='entry-grid-total-row'>₹{tot_cost_b:,.0f}</div>", unsafe_allow_html=True)
             tf7.markdown(f"<div class='entry-grid-total-row'>₹{tot_gross_mrp_b:,.0f}</div>", unsafe_allow_html=True)
             tf8.markdown(f"<div class='entry-grid-total-row' style='text-align:right;color:#C43D17;'>₹{tot_net_b:,.0f}</div>", unsafe_allow_html=True)
 
         # Live Cost, Discount & Margin Summary Cards
-        profit_color = "#124A1D" if tot_profit_b >= 0 else "#C43D17"
+        profit_color = "#047857" if tot_profit_b >= 0 else "#C43D17"
         st.markdown(
             f"""
             <div class='bulk-kpi-strip'>
                 <div class='bulk-kpi-card'>
                     <div class='bulk-kpi-label'>Total Pieces</div>
-                    <div class='bulk-kpi-val' style='color:#124A1D;'>{tot_units_b:,} pcs</div>
+                    <div class='bulk-kpi-val' style='color:#047857;'>{tot_units_b:,} pcs</div>
                     <div class='bulk-kpi-sub'>{sum(1 for q in qty_map_current.values() if q > 0)} active flavours</div>
                 </div>
                 <div class='bulk-kpi-card'>
@@ -6889,19 +7586,19 @@ elif page == "Bulk Orders & Quotes" and user_role == "admin":
                     <div class='bulk-kpi-val'>₹{tot_gross_mrp_b:,.2f}</div>
                     <div class='bulk-kpi-sub'>Avg MRP: ₹{(tot_gross_mrp_b / tot_units_b if tot_units_b else 0):.1f}/pc</div>
                 </div>
-                <div class='bulk-kpi-card' style='background:#FFF2DC;border-color:#D97706;'>
+                <div class='bulk-kpi-card' style='background:#EFF6FF;border-color:#D97706;'>
                     <div class='bulk-kpi-label'>Discount ({curr_disc_pct:.1f}%)</div>
                     <div class='bulk-kpi-val' style='color:#B45309;'>- ₹{tot_disc_amt_b:,.2f}</div>
                     <div class='bulk-kpi-sub'>Customer savings</div>
                 </div>
-                <div class='bulk-kpi-card' style='background:#EAF4EC;border-color:#124A1D;'>
+                <div class='bulk-kpi-card' style='background:#ECFDF5;border-color:#047857;'>
                     <div class='bulk-kpi-label'>Revised Quote / Net</div>
-                    <div class='bulk-kpi-val' style='color:#124A1D;'>₹{tot_net_b:,.2f}</div>
+                    <div class='bulk-kpi-val' style='color:#047857;'>₹{tot_net_b:,.2f}</div>
                     <div class='bulk-kpi-sub'>Eff. Rate: ₹{eff_rate_pc:.1f}/pc</div>
                 </div>
                 <div class='bulk-kpi-card'>
                     <div class='bulk-kpi-label'>Our Cost (CP)</div>
-                    <div class='bulk-kpi-val' style='color:#70440E;'>₹{tot_cost_b:,.2f}</div>
+                    <div class='bulk-kpi-val' style='color:#1E2252;'>₹{tot_cost_b:,.2f}</div>
                     <div class='bulk-kpi-sub'>Avg CP: ₹{cp_rate_pc:.1f}/pc</div>
                 </div>
                 <div class='bulk-kpi-card'>
@@ -7222,26 +7919,26 @@ elif page == "Bulk Orders & Quotes" and user_role == "admin":
                 row_qty_map = {c: int(qrow.get(FLAVOR_MAP[c]["audit_col"], 0) or 0) for c in FLAVOR_CODES}
                 flv_chips = " • ".join([f"{c}: {row_qty_map[c]}" for c in FLAVOR_CODES if row_qty_map[c] > 0])
 
-                badge_bg = "#EAF4EC" if q_dtype == "INVOICE" else "#FFF2DC"
-                badge_fg = "#124A1D" if q_dtype == "INVOICE" else "#B45309"
+                badge_bg = "#ECFDF5" if q_dtype == "INVOICE" else "#EFF6FF"
+                badge_fg = "#047857" if q_dtype == "INVOICE" else "#B45309"
 
                 with st.container(border=True):
                     hc1, hc2, hc3 = st.columns([2.4, 1.8, 2.2])
                     with hc1:
                         st.markdown(
                             f"<span style='background:{badge_bg};color:{badge_fg};padding:2px 8px;border-radius:999px;font-size:10.5px;font-weight:900;'>{q_dtype}</span> "
-                            f"&nbsp;<b style='font-size:15px;color:#4A2418;'>{escape(q_cname)}</b> &nbsp;<span style='color:#8A5E17;font-size:12px;'>({escape(q_no)})</span>",
+                            f"&nbsp;<b style='font-size:15px;color:#1E2252;'>{escape(q_cname)}</b> &nbsp;<span style='color:#2563EB;font-size:12px;'>({escape(q_no)})</span>",
                             unsafe_allow_html=True,
                         )
                         st.caption(f"📅 Quote Date: **{q_dt_str}** | 🎉 Event/Delivery: **{ev_dt_str}** | 📞 {q_cphone or '—'} | Status: **{q_stat}**")
-                        st.markdown(f"<div style='font-size:12px;color:#124A1D;font-weight:700;'>🍦 {flv_chips or '—'}</div>", unsafe_allow_html=True)
+                        st.markdown(f"<div style='font-size:12px;color:#047857;font-weight:700;'>🍦 {flv_chips or '—'}</div>", unsafe_allow_html=True)
                     with hc2:
                         st.markdown(
                             f"""
-                            <div style='background:#FFFBF2;border:1px solid #E3CBA0;border-radius:8px;padding:6px 10px;font-size:12px;'>
+                            <div style='background:#F8FAFC;border:1px solid #CBD5E1;border-radius:8px;padding:6px 10px;font-size:12px;'>
                                 <div><b>Total Qty:</b> {q_tot_u:,} pcs &nbsp;|&nbsp; <b>Gross MRP:</b> ₹{q_gmrp:,.0f}</div>
-                                <div><b>Discount ({q_dpct:.1f}%):</b> -₹{q_damt:,.0f} &nbsp;|&nbsp; <b style='color:#124A1D;'>Net: ₹{q_famt:,.0f}</b></div>
-                                <div style='color:#6B5138;font-size:11px;'>CP: ₹{q_tcost:,.0f} • Profit: <b style='color:{"#124A1D" if q_profit>=0 else "#C43D17"};'>₹{q_profit:,.0f}</b> • Bal Due: <b>₹{q_bal:,.0f}</b></div>
+                                <div><b>Discount ({q_dpct:.1f}%):</b> -₹{q_damt:,.0f} &nbsp;|&nbsp; <b style='color:#047857;'>Net: ₹{q_famt:,.0f}</b></div>
+                                <div style='color:#475569;font-size:11px;'>CP: ₹{q_tcost:,.0f} • Profit: <b style='color:{"#047857" if q_profit>=0 else "#C43D17"};'>₹{q_profit:,.0f}</b> • Bal Due: <b>₹{q_bal:,.0f}</b></div>
                             </div>
                             """,
                             unsafe_allow_html=True,
@@ -8977,7 +9674,7 @@ elif page == "Freezer Stock" and user_role == "admin":
                             overflow-x: auto;
                             margin-top: 4px;
                             margin-bottom: 10px;
-                            border: 1.5px solid #E4763D;
+                            border: 1.5px solid #BFDBFE;
                             border-radius: 8px;
                             background: #FFFFFF;
                             box-shadow: 0 2px 5px rgba(0,0,0,0.04);
@@ -8989,35 +9686,35 @@ elif page == "Freezer Stock" and user_role == "admin":
                             font-size: 13px;
                         }}
                         .sr-matrix-tbl th, .sr-matrix-tbl td {{
-                            border: 1px solid #E3D6C2;
+                            border: 1px solid #E2E8F0;
                             padding: 7px 10px;
                             white-space: nowrap;
                         }}
                         .sr-matrix-tbl thead th {{
-                            background: #E4763D;
+                            background: #BFDBFE;
                             color: #111111;
                             font-weight: 800;
                             font-size: 13px;
                         }}
                         .sr-matrix-tbl tbody td:first-child {{
                             font-weight: 700;
-                            color: #4A2418;
-                            background: #FFFBF2;
+                            color: #1E2252;
+                            background: #F8FAFC;
                         }}
                         .sr-matrix-tbl tbody tr:nth-child(even):not(.sr-total-units):not(.sr-total-cost) td:not(:first-child) {{
-                            background: #FFF9F0;
+                            background: #F8FAFC;
                         }}
                         .sr-matrix-tbl tr.sr-total-units td {{
-                            background: #FFF2DC !important;
-                            color: #4A2418 !important;
+                            background: #EFF6FF !important;
+                            color: #1E2252 !important;
                             font-weight: 900 !important;
                             border-top: 2px solid #B47A2B !important;
                         }}
                         .sr-matrix-tbl tr.sr-total-cost td {{
-                            background: #EAF4EC !important;
-                            color: #124A1D !important;
+                            background: #ECFDF5 !important;
+                            color: #047857 !important;
                             font-weight: 900 !important;
-                            border-top: 1.5px solid #A8D5AF !important;
+                            border-top: 1.5px solid #6EE7B7 !important;
                         }}
                         .sr-month-boxes {{
                             display: grid;
@@ -9027,8 +9724,8 @@ elif page == "Freezer Stock" and user_role == "admin":
                             font-family: 'Manrope', sans-serif;
                         }}
                         .sr-month-box-units {{
-                            background: #FFF2DC;
-                            border: 1.5px solid #DEB887;
+                            background: #EFF6FF;
+                            border: 1.5px solid #93C5FD;
                             border-radius: 8px;
                             padding: 10px 14px;
                             display: flex;
@@ -9036,8 +9733,8 @@ elif page == "Freezer Stock" and user_role == "admin":
                             align-items: center;
                         }}
                         .sr-month-box-cost {{
-                            background: #EAF4EC;
-                            border: 1.5px solid #A8D5AF;
+                            background: #ECFDF5;
+                            border: 1.5px solid #6EE7B7;
                             border-radius: 8px;
                             padding: 10px 14px;
                             display: flex;
@@ -9047,19 +9744,19 @@ elif page == "Freezer Stock" and user_role == "admin":
                         .sr-box-lbl {{
                             font-size: 12px;
                             font-weight: 800;
-                            color: #5A3E1B;
+                            color: #475569;
                             text-transform: uppercase;
                             letter-spacing: 0.02em;
                         }}
                         .sr-box-val-u {{
                             font-size: 16px;
                             font-weight: 900;
-                            color: #4A2418;
+                            color: #1E2252;
                         }}
                         .sr-box-val-c {{
                             font-size: 16px;
                             font-weight: 900;
-                            color: #124A1D;
+                            color: #047857;
                         }}
                         </style>
                         <div class="sr-matrix-wrap">
@@ -9074,7 +9771,7 @@ elif page == "Freezer Stock" and user_role == "admin":
                                 <span class="sr-box-val-u">{m_units:,} units</span>
                             </div>
                             <div class="sr-month-box-cost">
-                                <span class="sr-box-lbl" style="color:#124A1D;">💰 {escape(m_name)} — Overall Cost</span>
+                                <span class="sr-box-lbl" style="color:#047857;">💰 {escape(m_name)} — Overall Cost</span>
                                 <span class="sr-box-val-c">₹{m_cost:,.0f}</span>
                             </div>
                         </div>
@@ -9832,7 +10529,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
     for r in phys_base_rows:
         fa_body_trs.append(
             f"""<tr>
-                <td style='text-align:left;font-weight:800;color:#4A2418;'>{escape(r['Flavour'])}</td>
+                <td style='text-align:left;font-weight:800;color:#1E2252;'>{escape(r['Flavour'])}</td>
                 <td class='fa-box-audit-td'>{r['Audit']:,}</td>
                 <td class='fa-box-in-left-td'>{r['Recv']:,}</td>
                 <td class='fa-box-in-right-td'>{r['Frm Cart']:,}</td>
@@ -9844,7 +10541,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
         )
     fa_body_trs.append(
         f"""<tr class='fa-total-row'>
-            <td style='text-align:left;font-weight:900;color:#4A2418;'>🔥 OVERALL TOTAL</td>
+            <td style='text-align:left;font-weight:900;color:#1E2252;'>🔥 OVERALL TOTAL</td>
             <td class='fa-box-audit-tot'>{tot_base_b:,}</td>
             <td class='fa-box-in-left-tot'>{tot_rec_b:,}</td>
             <td class='fa-box-in-right-tot'>{tot_frm_cart_b:,}</td>
@@ -9992,26 +10689,26 @@ elif page == "Freezer Analysis" and user_role == "admin":
         cart_data = cart_stock_breakdown.get(cart, {"units": 0, "value": 0.0})
         cart_rows_html.append(
             f"""<div style='display:grid;grid-template-columns:1.7fr 0.8fr 1fr;align-items:center;
-                    padding:7px 10px;border-top:1px solid #EAD9BC;font-size:12px;'>
-                    <div style='font-weight:800;color:#4A2418;'>{escape(cart)}</div>
-                    <div style='text-align:right;font-weight:800;color:#124A1D;'>{cart_data['units']:,} units</div>
-                    <div style='text-align:right;font-weight:800;color:#70440E;'>₹{cart_data['display_value']:,}</div>
+                    padding:7px 10px;border-top:1px solid #E2E8F0;font-size:12px;'>
+                    <div style='font-weight:800;color:#1E2252;'>{escape(cart)}</div>
+                    <div style='text-align:right;font-weight:800;color:#047857;'>{cart_data['units']:,} units</div>
+                    <div style='text-align:right;font-weight:800;color:#1E2252;'>₹{cart_data['display_value']:,}</div>
                 </div>"""
         )
     cart_rows_html.append(
         f"""<div style='display:grid;grid-template-columns:1.7fr 0.8fr 1fr;align-items:center;
-                padding:8px 10px;border-top:2px solid #D8B879;background:#FFF2DC;font-size:12px;'>
-                <div style='font-weight:900;color:#4A2418;'>TOTAL</div>
-                <div style='text-align:right;font-weight:900;color:#124A1D;'>{current_cart_stock:,} units</div>
-                <div style='text-align:right;font-weight:900;color:#70440E;'>₹{current_cart_stock_value_display:,}</div>
+                padding:8px 10px;border-top:2px solid #93C5FD;background:#EFF6FF;font-size:12px;'>
+                <div style='font-weight:900;color:#1E2252;'>TOTAL</div>
+                <div style='text-align:right;font-weight:900;color:#047857;'>{current_cart_stock:,} units</div>
+                <div style='text-align:right;font-weight:900;color:#1E2252;'>₹{current_cart_stock_value_display:,}</div>
             </div>"""
     )
     st.markdown(
         f"""
-        <div style='margin-top:8px;border:1px solid #E3CBA0;border-radius:9px;overflow:hidden;
-                    background:#FFFBF2;box-shadow:0 1px 2px rgba(0,0,0,0.03);'>
+        <div style='margin-top:8px;border:1px solid #CBD5E1;border-radius:9px;overflow:hidden;
+                    background:#F8FAFC;box-shadow:0 1px 2px rgba(0,0,0,0.03);'>
             <div style='display:grid;grid-template-columns:1.7fr 0.8fr 1fr;align-items:center;
-                        padding:7px 10px;background:#F6E7CC;font-size:11px;color:#6B4A22;'>
+                        padding:7px 10px;background:#DBEAFE;font-size:11px;color:#1E2252;'>
                 <div style='font-weight:900;'>Cart-wise Stock</div>
                 <div style='text-align:right;font-weight:900;'>Units</div>
                 <div style='text-align:right;font-weight:900;'>Value</div>
@@ -10258,7 +10955,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
             fa_disp_df = pd.DataFrame(fa_rows)
             st.dataframe(
                 fa_disp_df.style.apply(
-                    lambda r: ["background-color:#FFF2DC;font-weight:900;color:#4A2418;" if r.get("Txn #") == "SUMMARY TOTAL" else "" for _ in r],
+                    lambda r: ["background-color:#EFF6FF;font-weight:900;color:#1E2252;" if r.get("Txn #") == "SUMMARY TOTAL" else "" for _ in r],
                     axis=1
                 ),
                 hide_index=True,
@@ -11325,11 +12022,11 @@ elif page == "Expenses" and user_role == "admin":
             st.markdown("---"); ch_col1, ch_col2 = st.columns(2)
             with ch_col1:
                 st.markdown("#### Expenses by Category")
-                if not f_exp.empty: st.altair_chart(alt.Chart(f_exp.groupby("category")["total_amount"].sum().reset_index()).mark_bar(color="#70440E").encode(x=alt.X("category:N", title="", sort="-y", axis=alt.Axis(labelAngle=-30)), y=alt.Y("total_amount:Q", title="Incurred (₹)"), tooltip=[alt.Tooltip("category", title="Category"), alt.Tooltip("total_amount:Q", title="Amount", format=",.2f")]).properties(height=260), use_container_width=True)
+                if not f_exp.empty: st.altair_chart(alt.Chart(f_exp.groupby("category")["total_amount"].sum().reset_index()).mark_bar(color="#1E2252").encode(x=alt.X("category:N", title="", sort="-y", axis=alt.Axis(labelAngle=-30)), y=alt.Y("total_amount:Q", title="Incurred (₹)"), tooltip=[alt.Tooltip("category", title="Category"), alt.Tooltip("total_amount:Q", title="Amount", format=",.2f")]).properties(height=260), use_container_width=True)
                 else: st.caption("No expenses in this range.")
             with ch_col2:
                 st.markdown("#### Expenses by Cart / Attribution")
-                if not f_exp.empty: st.altair_chart(alt.Chart(f_exp.groupby("attributed_to")["total_amount"].sum().reset_index()).mark_bar(color="#E8542A").encode(x=alt.X("attributed_to:N", title="", sort="-y", axis=alt.Axis(labelAngle=-20)), y=alt.Y("total_amount:Q", title="Total (₹)"), tooltip=[alt.Tooltip("attributed_to", title="Entity"), alt.Tooltip("total_amount:Q", title="Amount", format=",.2f")]).properties(height=260), use_container_width=True)
+                if not f_exp.empty: st.altair_chart(alt.Chart(f_exp.groupby("attributed_to")["total_amount"].sum().reset_index()).mark_bar(color="#4F46E5").encode(x=alt.X("attributed_to:N", title="", sort="-y", axis=alt.Axis(labelAngle=-20)), y=alt.Y("total_amount:Q", title="Total (₹)"), tooltip=[alt.Tooltip("attributed_to", title="Entity"), alt.Tooltip("total_amount:Q", title="Amount", format=",.2f")]).properties(height=260), use_container_width=True)
                 else: st.caption("No expenses in this range.")
 
             st.markdown("#### Payments Disbursed by Mode")
@@ -11799,9 +12496,9 @@ elif page == "Staff & Payroll" and user_role == "admin":
                     <style>
                     .comp-history-wrap {width:100%; overflow-x:hidden; margin-bottom:0.7rem;}
                     .comp-history-table {width:100%; table-layout:fixed; border-collapse:collapse; font-size:12px;}
-                    .comp-history-table th {background:#E4763D; color:#111111; font-size:11.5px; font-weight:800; padding:6px 4px; border:1px solid #9E471B; white-space:normal; line-height:1.2;}
-                    .comp-history-table td {font-size:12px; padding:6px 4px; border:1px solid #E3CBA0; text-align:center; white-space:normal; overflow-wrap:anywhere; line-height:1.2;}
-                    .comp-history-table tr:nth-child(even) td {background:#FFFBF2;}
+                    .comp-history-table th {background:#BFDBFE; color:#111111; font-size:11.5px; font-weight:800; padding:6px 4px; border:1px solid #93C5FD; white-space:normal; line-height:1.2;}
+                    .comp-history-table td {font-size:12px; padding:6px 4px; border:1px solid #CBD5E1; text-align:center; white-space:normal; overflow-wrap:anywhere; line-height:1.2;}
+                    .comp-history-table tr:nth-child(even) td {background:#F8FAFC;}
                     </style>
                     """,
                     unsafe_allow_html=True
@@ -12920,7 +13617,7 @@ elif page == "Dashboard" and user_role == "admin":
                 y=alt.Y("Amount:Q", title="Revenue (₹)"),
                 color=alt.Color(
                     "Mode:N",
-                    scale=alt.Scale(domain=["Gross Cash", "PhonePe"], range=["#2A9D8F", "#E76F51"]),
+                    scale=alt.Scale(domain=["Gross Cash", "PhonePe"], range=["#059669", "#3B82F6"]),
                     legend=alt.Legend(title="", orient="bottom", direction="horizontal")
                 ),
                 tooltip=[
@@ -12955,7 +13652,7 @@ elif page == "Dashboard" and user_role == "admin":
 
             st.markdown("#### Daily Revenue Trend")
             if not range_df.empty:
-                line_chart = alt.Chart(range_df.groupby("Date", as_index=False)["Total_Collection"].sum()).mark_line(point=True, color="#E8542A").encode(
+                line_chart = alt.Chart(range_df.groupby("Date", as_index=False)["Total_Collection"].sum()).mark_line(point=True, color="#4F46E5").encode(
                     x=alt.X("Date:T", title="Date", axis=alt.Axis(format="%d-%b")),
                     y=alt.Y("Total_Collection:Q", title="Revenue (₹)"),
                     tooltip=[alt.Tooltip("Date:T", format="%d-%b-%y", title="Date"), alt.Tooltip("Total_Collection:Q", format=",.2f", title="Revenue (₹)")]
@@ -13108,7 +13805,7 @@ elif page == "Dashboard" and user_role == "admin":
                 def _highlight_latest_completed_sales_row(row):
                     if row.get("Date") == latest_completed_sales_date:
                         return [
-                            "background-color:#DDF3E2;color:#124A1D;font-weight:900;"
+                            "background-color:#ECFDF5;color:#047857;font-weight:900;"
                             for _ in row
                         ]
                     return ["" for _ in row]
@@ -13148,8 +13845,8 @@ elif page == "Dashboard" and user_role == "admin":
                         <div style="
                             display:grid;
                             grid-template-columns:0.72fr 0.62fr 1.02fr 0.92fr 0.82fr 1.08fr 0.92fr 1.18fr 1.28fr;
-                            background:#E4763D;
-                            border:1.5px solid #9E471B;
+                            background:#BFDBFE;
+                            border:1.5px solid #93C5FD;
                             border-radius:0 0 7px 7px;
                             margin-top:-13px;
                             margin-bottom:8px;
@@ -13166,8 +13863,8 @@ elif page == "Dashboard" and user_role == "admin":
                     .set_properties(
                         subset=["Date", "Units Sold", "Revenue (₹)"],
                         **{
-                            "background-color": "#FFF2DC",
-                            "color": "#4A2418",
+                            "background-color": "#EFF6FF",
+                            "color": "#1E2252",
                             "font-weight": "700",
                         }
                     )
@@ -13228,14 +13925,14 @@ elif page == "Dashboard" and user_role == "admin":
                             margin-top:10px;
                             margin-bottom:6px;
                             padding:9px 12px;
-                            border:1px solid #DEB887;
+                            border:1px solid #93C5FD;
                             border-radius:8px;
-                            background:#FFF2DC;
+                            background:#EFF6FF;
                             display:flex;
                             justify-content:space-between;
                             align-items:center;">
-                            <span style="font-weight:900;color:#70440E;font-size:14px;">🛒 {escape(cart_name)}</span>
-                            <span style="font-weight:900;color:#124A1D;font-size:14px;">
+                            <span style="font-weight:900;color:#1E2252;font-size:14px;">🛒 {escape(cart_name)}</span>
+                            <span style="font-weight:900;color:#047857;font-size:14px;">
                                 {cart_units:,} units &nbsp;•&nbsp; ₹{cart_revenue:,.0f}
                             </span>
                         </div>
@@ -13265,8 +13962,8 @@ elif page == "Dashboard" and user_role == "admin":
                         .set_properties(
                             subset=["Date", "Units Sold", "Revenue (₹)"],
                             **{
-                                "background-color": "#FFF2DC",
-                                "color": "#4A2418",
+                                "background-color": "#EFF6FF",
+                                "color": "#1E2252",
                                 "font-weight": "700",
                             }
                         )
@@ -13342,7 +14039,7 @@ elif page == "Dashboard" and user_role == "admin":
                     sum_table_df = pd.DataFrame(sum_rows)
                     st.dataframe(
                         sum_table_df.style.apply(
-                            lambda r: ["background-color:#FFF2DC;font-weight:900;color:#4A2418;" if r.get("Date") == "SUMMARY TOTAL" else "" for _ in r],
+                            lambda r: ["background-color:#EFF6FF;font-weight:900;color:#1E2252;" if r.get("Date") == "SUMMARY TOTAL" else "" for _ in r],
                             axis=1
                         ),
                         hide_index=True,
@@ -13389,7 +14086,7 @@ elif page == "Dashboard" and user_role == "admin":
                     txn_table_df = pd.DataFrame(txn_rows)
                     st.dataframe(
                         txn_table_df.style.apply(
-                            lambda r: ["background-color:#FFF2DC;font-weight:900;color:#4A2418;" if r.get("Txn #") == "SUMMARY TOTAL" else "" for _ in r],
+                            lambda r: ["background-color:#EFF6FF;font-weight:900;color:#1E2252;" if r.get("Txn #") == "SUMMARY TOTAL" else "" for _ in r],
                             axis=1
                         ),
                         hide_index=True,
@@ -13456,7 +14153,7 @@ elif page == "Dashboard" and user_role == "admin":
                 )
             with opex_btn_c2:
                 st.markdown(
-                    "<div style='font-size:12px;font-weight:700;color:#5C3D24;'>"
+                    "<div style='font-size:12px;font-weight:700;color:#475569;'>"
                     "Category & sub-category split, labour & burn rate"
                     "</div>",
                     unsafe_allow_html=True,
@@ -13466,14 +14163,14 @@ elif page == "Dashboard" and user_role == "admin":
                 with st.container(border=True):
                     st.markdown(
                         f"""
-                        <div style="background:linear-gradient(135deg, #EE854F 0%, #E4763D 100%);border:1.5px solid #9E471B;padding:14px 18px;border-radius:10px;color:#111111;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                        <div style="background:linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%);border:1.5px solid #93C5FD;padding:14px 18px;border-radius:10px;color:#111111;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
                             <div>
                                 <div style="font-size:11px;font-weight:800;color:#111111;letter-spacing:0.6px;text-transform:uppercase;">OPERATING EXPENSE (OPEX) DEEP-DIVE & INSIGHTS</div>
                                 <div style="font-size:18px;font-weight:900;color:#111111;margin-top:2px;">Period: {range_start.strftime('%d %b %Y')} — {range_end.strftime('%d %b %Y')} ({avg_divisor_days} active days)</div>
                             </div>
                             <div style="text-align:right;">
                                 <div style="font-size:11px;color:#111111;font-weight:800;">Total Incurred OPEX</div>
-                                <div style="font-size:22px;font-weight:900;color:#111111;">₹{total_incurred_opex:,.0f} <span style="font-size:13px;color:#1F1108;">({opex_margin:.1f}% of Rev)</span></div>
+                                <div style="font-size:22px;font-weight:900;color:#111111;">₹{total_incurred_opex:,.0f} <span style="font-size:13px;color:#1E2252;">({opex_margin:.1f}% of Rev)</span></div>
                             </div>
                         </div>
                         """,
@@ -13583,10 +14280,10 @@ elif page == "Dashboard" and user_role == "admin":
                     with ins1:
                         st.markdown(
                             f"""
-                            <div style="background:#FFF8EE;border:1.5px solid #E3C391;border-radius:10px;padding:10px 12px;height:100%;">
-                                <div style="font-size:10.5px;font-weight:800;color:#8A5E17;text-transform:uppercase;">🔥 #1 Cost Driver</div>
-                                <div style="font-size:15px;font-weight:900;color:#4A2418;margin-top:2px;">{escape(str(top_cat_name))}</div>
-                                <div style="font-size:14px;font-weight:900;color:#C43D17;margin-top:2px;">₹{top_cat_amt:,.0f} <span style="font-size:11px;color:#6B5138;">({top_cat_share:.1f}% of OPEX)</span></div>
+                            <div style="background:#F8FAFC;border:1.5px solid #CBD5E1;border-radius:10px;padding:10px 12px;height:100%;">
+                                <div style="font-size:10.5px;font-weight:800;color:#2563EB;text-transform:uppercase;">🔥 #1 Cost Driver</div>
+                                <div style="font-size:15px;font-weight:900;color:#1E2252;margin-top:2px;">{escape(str(top_cat_name))}</div>
+                                <div style="font-size:14px;font-weight:900;color:#C43D17;margin-top:2px;">₹{top_cat_amt:,.0f} <span style="font-size:11px;color:#475569;">({top_cat_share:.1f}% of OPEX)</span></div>
                             </div>
                             """,
                             unsafe_allow_html=True,
@@ -13597,7 +14294,7 @@ elif page == "Dashboard" and user_role == "admin":
                             <div style="background:#F4F9FD;border:1.5px solid #B5D3EB;border-radius:10px;padding:10px 12px;height:100%;">
                                 <div style="font-size:10.5px;font-weight:800;color:#1B5E91;text-transform:uppercase;">👥 Labour vs Overhead</div>
                                 <div style="font-size:13px;font-weight:900;color:#1B5E91;margin-top:3px;">Labour: ₹{tot_labour_incurred:,.0f} ({labour_share_opex:.1f}%)</div>
-                                <div style="font-size:12.5px;font-weight:800;color:#4A2418;margin-top:2px;">Other OPEX: ₹{other_opex_total:,.0f} ({other_share_opex:.1f}%)</div>
+                                <div style="font-size:12.5px;font-weight:800;color:#1E2252;margin-top:2px;">Other OPEX: ₹{other_opex_total:,.0f} ({other_share_opex:.1f}%)</div>
                             </div>
                             """,
                             unsafe_allow_html=True,
@@ -13605,10 +14302,10 @@ elif page == "Dashboard" and user_role == "admin":
                     with ins3:
                         st.markdown(
                             f"""
-                            <div style="background:#F3FAF5;border:1.5px solid #B5DFC0;border-radius:10px;padding:10px 12px;height:100%;">
-                                <div style="font-size:10.5px;font-weight:800;color:#124A1D;text-transform:uppercase;">🍦 OPEX Per Kulfi Sold</div>
-                                <div style="font-size:16px;font-weight:900;color:#124A1D;margin-top:2px;">₹{opex_per_unit:,.2f} / pc</div>
-                                <div style="font-size:11.5px;font-weight:700;color:#4A2418;margin-top:2px;">vs Gr. Margin ₹{gp_per_unit:,.2f} / pc</div>
+                            <div style="background:#ECFDF5;border:1.5px solid #6EE7B7;border-radius:10px;padding:10px 12px;height:100%;">
+                                <div style="font-size:10.5px;font-weight:800;color:#047857;text-transform:uppercase;">🍦 OPEX Per Kulfi Sold</div>
+                                <div style="font-size:16px;font-weight:900;color:#047857;margin-top:2px;">₹{opex_per_unit:,.2f} / pc</div>
+                                <div style="font-size:11.5px;font-weight:700;color:#1E2252;margin-top:2px;">vs Gr. Margin ₹{gp_per_unit:,.2f} / pc</div>
                             </div>
                             """,
                             unsafe_allow_html=True,
@@ -13619,7 +14316,7 @@ elif page == "Dashboard" and user_role == "admin":
                             <div style="background:#FDF6F6;border:1.5px solid #EAB6B6;border-radius:10px;padding:10px 12px;height:100%;">
                                 <div style="font-size:10.5px;font-weight:800;color:#9E2A2B;text-transform:uppercase;">📆 Daily OPEX Burn Rate</div>
                                 <div style="font-size:16px;font-weight:900;color:#9E2A2B;margin-top:2px;">₹{daily_opex_burn:,.0f} / day</div>
-                                <div style="font-size:11.5px;font-weight:700;color:#4A2418;margin-top:2px;">vs Daily Gr. Profit ₹{daily_gp_gen:,.0f}/d</div>
+                                <div style="font-size:11.5px;font-weight:700;color:#1E2252;margin-top:2px;">vs Daily Gr. Profit ₹{daily_gp_gen:,.0f}/d</div>
                             </div>
                             """,
                             unsafe_allow_html=True,
@@ -13632,7 +14329,7 @@ elif page == "Dashboard" and user_role == "admin":
                         cat_col_left, sub_col_right = st.columns([1.05, 1.55], gap="medium")
                         with cat_col_left:
                             st.markdown("##### 📊 Category Share of OPEX & Revenue")
-                            palette_bars = ["#E8542A", "#2A9D8F", "#8A5E17", "#1B5E91", "#6A4C93", "#C43D17", "#124A1D", "#D97706"]
+                            palette_bars = ["#4F46E5", "#059669", "#2563EB", "#1B5E91", "#6A4C93", "#C43D17", "#047857", "#D97706"]
                             for idx_c, (c_name, c_amt) in enumerate(sorted_cats):
                                 pct_opex = (c_amt / total_incurred_opex * 100.0) if total_incurred_opex > 0 else 0.0
                                 pct_rev = (c_amt / total_rev * 100.0) if total_rev > 0 else 0.0
@@ -13640,16 +14337,16 @@ elif page == "Dashboard" and user_role == "admin":
                                 b_col = palette_bars[idx_c % len(palette_bars)]
                                 st.markdown(
                                     f"""
-                                    <div style="background:#FFFDF9;border:1px solid #E6D5B8;border-radius:8px;padding:8px 10px;margin-bottom:7px;">
-                                        <div style="display:flex;justify-content:space-between;align-items:center;font-size:12.5px;font-weight:800;color:#2A1B10;">
+                                    <div style="background:#FFFFFF;border:1px solid #CBD5E1;border-radius:8px;padding:8px 10px;margin-bottom:7px;">
+                                        <div style="display:flex;justify-content:space-between;align-items:center;font-size:12.5px;font-weight:800;color:#0F172A;">
                                             <span>{escape(str(c_name))}</span>
                                             <span style="color:{b_col};font-weight:900;">₹{c_amt:,.0f}</span>
                                         </div>
-                                        <div style="display:flex;justify-content:space-between;font-size:11px;color:#6B5138;margin-top:2px;margin-bottom:4px;">
+                                        <div style="display:flex;justify-content:space-between;font-size:11px;color:#475569;margin-top:2px;margin-bottom:4px;">
                                             <span><b>{pct_opex:.1f}%</b> of OPEX</span>
                                             <span><b>{pct_rev:.1f}%</b> of Revenue</span>
                                         </div>
-                                        <div style="width:100%;background:#EFE4D2;height:7px;border-radius:4px;overflow:hidden;">
+                                        <div style="width:100%;background:#E2E8F0;height:7px;border-radius:4px;overflow:hidden;">
                                             <div style="width:{bar_w:.1f}%;background:{b_col};height:7px;border-radius:4px;"></div>
                                         </div>
                                     </div>
@@ -13683,7 +14380,7 @@ elif page == "Dashboard" and user_role == "admin":
                             )
                             st.dataframe(
                                 disp_opex_df.style.apply(
-                                    lambda r: ["background-color:#FFF2DC;font-weight:900;color:#4A2418;" if r.get("Category") == "TOTAL INCURRED OPEX" else "" for _ in r],
+                                    lambda r: ["background-color:#EFF6FF;font-weight:900;color:#1E2252;" if r.get("Category") == "TOTAL INCURRED OPEX" else "" for _ in r],
                                     axis=1,
                                 ),
                                 hide_index=True,
@@ -13706,7 +14403,7 @@ elif page == "Dashboard" and user_role == "admin":
             with pl_c2:
                 st.markdown("#### Cost Distribution: COGS, OPEX & CAPEX")
                 cost_dist_df = pd.DataFrame({"Cost Bucket": ["Cost of Goods Sold", "Operating Expenses (OPEX)", "Capital Expenditure (CAPEX)"], "Amount (₹)": [exact_cogs_sold, total_incurred_opex, capex_total]})
-                cost_chart = alt.Chart(cost_dist_df).mark_bar(width=28).encode(x=alt.X("Cost Bucket:N", title="", sort=None, axis=alt.Axis(labelAngle=-15)), y=alt.Y("Amount (₹):Q", title="Amount (₹)"), color=alt.Color("Cost Bucket:N", scale=alt.Scale(domain=["Cost of Goods Sold", "Operating Expenses (OPEX)", "Capital Expenditure (CAPEX)"], range=["#C43D17", "#8A5E17", "#4A2418"]), legend=None), tooltip=[alt.Tooltip("Cost Bucket:N", title="Type"), alt.Tooltip("Amount (₹):Q", format=",.2f", title="Amount")]).properties(height=200)
+                cost_chart = alt.Chart(cost_dist_df).mark_bar(width=28).encode(x=alt.X("Cost Bucket:N", title="", sort=None, axis=alt.Axis(labelAngle=-15)), y=alt.Y("Amount (₹):Q", title="Amount (₹)"), color=alt.Color("Cost Bucket:N", scale=alt.Scale(domain=["Cost of Goods Sold", "Operating Expenses (OPEX)", "Capital Expenditure (CAPEX)"], range=["#C43D17", "#2563EB", "#1E2252"]), legend=None), tooltip=[alt.Tooltip("Cost Bucket:N", title="Type"), alt.Tooltip("Amount (₹):Q", format=",.2f", title="Amount")]).properties(height=200)
                 st.altair_chart(cost_chart, use_container_width=True)
 
             st.markdown("#### Revenue in Range - Breakdown")
@@ -13733,7 +14430,7 @@ elif page == "Dashboard" and user_role == "admin":
             
                 pie1 = alt.Chart(pie1_df).mark_arc(innerRadius=40).encode(
                     theta=alt.Theta("Amount:Q"),
-                    color=alt.Color("Category:N", scale=alt.Scale(domain=["Gross Cash", "PhonePe"], range=["#2A9D8F", "#E76F51"])),
+                    color=alt.Color("Category:N", scale=alt.Scale(domain=["Gross Cash", "PhonePe"], range=["#059669", "#3B82F6"])),
                     tooltip=[alt.Tooltip("Category:N", title="Category"), alt.Tooltip("Amount:Q", format=",.2f", title="Amount (₹)")]
                 ).properties(height=250)
 
@@ -13745,7 +14442,7 @@ elif page == "Dashboard" and user_role == "admin":
             
                 pie2 = alt.Chart(pie2_df).mark_arc(innerRadius=40).encode(
                     theta=alt.Theta("Amount:Q"),
-                    color=alt.Color("Category:N", scale=alt.Scale(domain=["PhonePe", "Net Cash (In Hand)", "Staff Advance", "Food / Tea"], range=["#E76F51", "#2A9D8F", "#E9C46A", "#F4A261"])),
+                    color=alt.Color("Category:N", scale=alt.Scale(domain=["PhonePe", "Net Cash (In Hand)", "Staff Advance", "Food / Tea"], range=["#3B82F6", "#059669", "#E9C46A", "#F4A261"])),
                     tooltip=[alt.Tooltip("Category:N", title="Category"), alt.Tooltip("Amount:Q", format=",.2f", title="Amount (₹)")]
                 ).properties(height=250)
             
@@ -13811,12 +14508,12 @@ elif page == "Dashboard" and user_role == "admin":
                     x=alt.X("Cart:N", title="", sort="-y", axis=alt.Axis(labelAngle=0, labelFontSize=13, labelPadding=10))
                 )
             
-                bars = base.mark_bar(color="#E8542A", cornerRadiusTopLeft=4, cornerRadiusTopRight=4, size=60).encode(
-                    y=alt.Y("Revenue (₹):Q", title="Total Revenue (₹)", axis=alt.Axis(grid=True, gridColor="#F0E5D1")),
+                bars = base.mark_bar(color="#4F46E5", cornerRadiusTopLeft=4, cornerRadiusTopRight=4, size=60).encode(
+                    y=alt.Y("Revenue (₹):Q", title="Total Revenue (₹)", axis=alt.Axis(grid=True, gridColor="#E2E8F0")),
                     tooltip=["Cart", alt.Tooltip("Revenue (₹):Q", format=",.2f")]
                 )
             
-                text_labels = base.mark_text(align='center', baseline='bottom', dy=-5, color="#4A2418", fontWeight=700, fontSize=14).encode(
+                text_labels = base.mark_text(align='center', baseline='bottom', dy=-5, color="#1E2252", fontWeight=700, fontSize=14).encode(
                     y=alt.Y("Revenue (₹):Q"),
                     text=alt.Text("Revenue (₹):Q", format=",.0f")
                 )
@@ -13964,7 +14661,7 @@ elif page == "Dashboard" and user_role == "admin":
                                 alt.Tooltip(f"{val_col}:Q", title=title_text, format=val_format)
                             ]
                         )
-                        txt_c = base_c.mark_text(dy=-8, fontWeight="bold", fontSize=11.5, color="#2A1B10").encode(
+                        txt_c = base_c.mark_text(dy=-8, fontWeight="bold", fontSize=11.5, color="#0F172A").encode(
                             y=alt.Y(f"{val_col}:Q"),
                             text=alt.Text(f"{val_col}:Q", format=val_format)
                         )
@@ -13972,15 +14669,15 @@ elif page == "Dashboard" and user_role == "admin":
 
                     gc1, gc2 = st.columns(2)
                     with gc1:
-                        st.altair_chart(_build_month_bar_chart("Revenue_Num", "Revenue (₹)", "#E8542A", ",.0f"), use_container_width=True)
+                        st.altair_chart(_build_month_bar_chart("Revenue_Num", "Revenue (₹)", "#4F46E5", ",.0f"), use_container_width=True)
                     with gc2:
-                        st.altair_chart(_build_month_bar_chart("Avg_Rev_Day_Num", "Average Rev / Day (₹)", "#2A9D8F", ",.0f"), use_container_width=True)
+                        st.altair_chart(_build_month_bar_chart("Avg_Rev_Day_Num", "Average Rev / Day (₹)", "#059669", ",.0f"), use_container_width=True)
 
                     gc3, gc4 = st.columns(2)
                     with gc3:
-                        st.altair_chart(_build_month_bar_chart("Units_Sold_Num", "Units Sold", "#70440E", ",.0f"), use_container_width=True)
+                        st.altair_chart(_build_month_bar_chart("Units_Sold_Num", "Units Sold", "#1E2252", ",.0f"), use_container_width=True)
                     with gc4:
-                        st.altair_chart(_build_month_bar_chart("Net_Profit_Pct", "Net Profit %", "#124A1D", ".1f"), use_container_width=True)
+                        st.altair_chart(_build_month_bar_chart("Net_Profit_Pct", "Net Profit %", "#047857", ".1f"), use_container_width=True)
             else:
                 st.info("No sales data available for month-wise comparison.")
             st.markdown("---")
@@ -14023,12 +14720,12 @@ elif page == "Dashboard" and user_role == "admin":
                             rows.append(f"<tr><th scope='row'>{escape(str(cart))}</th>{cells}</tr>")
                         st.html(
                             "<style>"
-                            ".compact-dow-table{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:clamp(9px,.78vw,11.5px);line-height:1.35;background:#FAF8F1;border:1.5px solid #E4763D;border-radius:9px;overflow:hidden;box-shadow:0 3px 10px rgba(228,118,61,0.08)}"
-                            ".compact-dow-table th,.compact-dow-table td{padding:6px 5px;border-bottom:1px solid #E5DFCE;border-right:1px solid #EFECE0;text-align:right;overflow-wrap:anywhere;color:#111111;font-weight:700}"
-                            ".compact-dow-table thead th{font-weight:800;background:linear-gradient(180deg,#EE854F 0%,#E4763D 100%);color:#111111;border-bottom:2px solid #9E471B;text-align:center}"
+                            ".compact-dow-table{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:clamp(9px,.78vw,11.5px);line-height:1.35;background:#FFFFFF;border:1.5px solid #BFDBFE;border-radius:9px;overflow:hidden;box-shadow:0 3px 10px rgba(228,118,61,0.08)}"
+                            ".compact-dow-table th,.compact-dow-table td{padding:6px 5px;border-bottom:1px solid #E2E8F0;border-right:1px solid #F1F5F9;text-align:right;overflow-wrap:anywhere;color:#111111;font-weight:700}"
+                            ".compact-dow-table thead th{font-weight:800;background:linear-gradient(180deg,#DBEAFE 0%,#BFDBFE 100%);color:#111111;border-bottom:2px solid #93C5FD;text-align:center}"
                             ".compact-dow-table th:first-child{width:29%;text-align:left;padding-left:8px}"
-                            ".compact-dow-table tbody tr:nth-child(even) td,.compact-dow-table tbody tr:nth-child(even) th{background:#FAF2E1}"
-                            ".compact-dow-table tbody tr:first-child td,.compact-dow-table tbody tr:first-child th{font-weight:900;background:linear-gradient(90deg,#FBF0D9 0%,#F2DEC0 100%);color:#2D150B;border-bottom:1.5px solid #C89B3C}"
+                            ".compact-dow-table tbody tr:nth-child(even) td,.compact-dow-table tbody tr:nth-child(even) th{background:#F8FAFC}"
+                            ".compact-dow-table tbody tr:first-child td,.compact-dow-table tbody tr:first-child th{font-weight:900;background:linear-gradient(90deg,#EFF6FF 0%,#DBEAFE 100%);color:#1E2252;border-bottom:1.5px solid #C89B3C}"
                             "</style>"
                             f"<table class='compact-dow-table'><thead><tr><th scope='col'>Cart</th>{headers}</tr></thead>"
                             f"<tbody>{''.join(rows)}</tbody></table>"
