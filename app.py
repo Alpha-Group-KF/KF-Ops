@@ -5438,18 +5438,28 @@ else:
                         st.session_state["dash_sub_page"] = None
                         st.rerun()
     with cmd_c4:
-        with st.popover(f"📍 {loc_badge}{_zwsp}", use_container_width=True):
+        _loc_pop_nonce = int(st.session_state.get("_loc_pop_nonce", 0))
+        def _render_loc_popover_items(nonce_val):
             for _lidx, _loc_opt in enumerate(loc_options):
                 _is_cur_loc = (st.session_state.get("current_location") == _loc_opt)
                 if st.button(
                     f"📍 {_loc_opt}",
-                    key=f"top_pop_loc_{_pop_nonce}_{_lidx}",
+                    key=f"top_pop_loc_{nonce_val}_{_lidx}",
                     type="primary" if _is_cur_loc else "secondary",
                     use_container_width=True,
                 ):
+                    st.session_state["_loc_pop_nonce"] = nonce_val + 1
                     st.session_state["_cmd_pop_nonce"] = _pop_nonce + 1
                     st.session_state["_pending_loc_change"] = _loc_opt
                     st.rerun()
+
+        if _loc_pop_nonce % 2 == 0:
+            with st.container():
+                with st.popover(f"📍 {loc_badge}", use_container_width=True):
+                    _render_loc_popover_items(_loc_pop_nonce)
+        else:
+            with st.popover(f"📍 {loc_badge} ", use_container_width=True):
+                _render_loc_popover_items(_loc_pop_nonce)
     with cmd_c5:
         if st.button("🚪 Log out", type="secondary", use_container_width=True, key="top_cmd_logout_btn"):
             st.session_state["authenticated"] = False
