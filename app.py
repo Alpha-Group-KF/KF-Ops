@@ -346,35 +346,36 @@ div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) [data-testid=
     transform: translateY(-1px) !important;
 }
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton button[kind="primary"] {
-    background: linear-gradient(135deg, #1E2252 0%, #2D337A 100%) !important;
-    border: 1px solid #1E2252 !important;
-    color: #FFFFFF !important;
-    box-shadow: 0 3px 10px rgba(30, 34, 82, 0.22) !important;
+    background: linear-gradient(135deg, #DBEAFE 0%, #93C5FD 100%) !important;
+    border: 1.5px solid #2563EB !important;
+    color: #111111 !important;
+    box-shadow: 0 3px 10px rgba(37, 99, 235, 0.16) !important;
 }
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton button[kind="primary"] p,
 div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) .stButton button[kind="primary"] span {
-    color: #FFFFFF !important;
+    color: #111111 !important;
     font-weight: 800 !important;
 }
 
 /* ======================================================================
-   DEPOSITO RIGHT-HAND ROYAL INDIGO NAVIGATION DOCK (#1E2252)
+   DEPOSITO RIGHT-HAND NAVIGATION DOCK (CRISP BLACK TEXT #111111 FOR FULL VISIBILITY)
    ====================================================================== */
 div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) {
-    background: linear-gradient(180deg, #1E2252 0%, #171A42 100%) !important;
-    border: 1.5px solid #2E347A !important;
+    background: linear-gradient(180deg, #E0E7FF 0%, #DBEAFE 55%, #EFF6FF 100%) !important;
+    border: 1.5px solid #93C5FD !important;
     border-radius: 16px !important;
     padding: 14px 12px !important;
-    box-shadow: 0 12px 28px rgba(23, 26, 66, 0.26) !important;
+    box-shadow: 0 8px 24px rgba(30, 34, 82, 0.10) !important;
 }
 div[data-testid="stElementContainer"]:has(.deposito-nav-dock-marker) {
     display: none !important;
     height: 0 !important;
     margin: 0 !important;
 }
-div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) .stButton button {
-    background: rgba(255, 255, 255, 0.06) !important;
-    border: 1px solid rgba(255, 255, 255, 0.10) !important;
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) .stButton button,
+div[class*="st-key-deposito_dock_btn_"] button {
+    background: #FFFFFF !important;
+    border: 1px solid #CBD5E1 !important;
     border-radius: 10px !important;
     min-height: 36px !important;
     height: 36px !important;
@@ -384,45 +385,55 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) .
     align-items: center !important;
     justify-content: flex-start !important;
     text-align: left !important;
-    color: #E2E8F0 !important;
-    box-shadow: none !important;
+    color: #111111 !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05) !important;
     margin-bottom: 3px !important;
     transition: all 0.14s ease !important;
 }
 div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) .stButton button p,
 div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) .stButton button span,
-div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) .stButton button strong {
-    color: #E2E8F0 !important;
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) .stButton button strong,
+div[class*="st-key-deposito_dock_btn_"] button p,
+div[class*="st-key-deposito_dock_btn_"] button span,
+div[class*="st-key-deposito_dock_btn_"] button strong {
+    color: #111111 !important;
     font-size: 12px !important;
-    font-weight: 600 !important;
+    font-weight: 700 !important;
 }
-div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) .stButton button:hover {
-    background: rgba(255, 255, 255, 0.16) !important;
-    border-color: rgba(147, 197, 253, 0.45) !important;
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) .stButton button:hover,
+div[class*="st-key-deposito_dock_btn_"] button:hover {
+    background: #DBEAFE !important;
+    border-color: #3B82F6 !important;
     transform: translateX(2px) !important;
 }
 div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) .stButton button:hover p,
-div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) .stButton button:hover span {
-    color: #FFFFFF !important;
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) .stButton button:hover span,
+div[class*="st-key-deposito_dock_btn_"] button:hover p,
+div[class*="st-key-deposito_dock_btn_"] button:hover span {
+    color: #111111 !important;
 }
-div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) .stButton button[kind="primary"] {
-    background: #FFFFFF !important;
-    border: 1.5px solid #93C5FD !important;
-    color: #1E2252 !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.20) !important;
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) .stButton button[kind="primary"],
+div[class*="st-key-deposito_dock_btn_"] button[kind="primary"] {
+    background: linear-gradient(135deg, #FCD34D 0%, #FBBF24 100%) !important;
+    border: 1.5px solid #D97706 !important;
+    color: #111111 !important;
+    box-shadow: 0 3px 10px rgba(217, 119, 6, 0.20) !important;
 }
 div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) .stButton button[kind="primary"] p,
 div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) .stButton button[kind="primary"] span,
-div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) .stButton button[kind="primary"] strong {
-    color: #1E2252 !important;
-    font-weight: 800 !important;
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) .stButton button[kind="primary"] strong,
+div[class*="st-key-deposito_dock_btn_"] button[kind="primary"] p,
+div[class*="st-key-deposito_dock_btn_"] button[kind="primary"] span,
+div[class*="st-key-deposito_dock_btn_"] button[kind="primary"] strong {
+    color: #111111 !important;
+    font-weight: 900 !important;
 }
 .deposito-dock-sec-lbl {
-    font-size: 10px;
+    font-size: 10.5px;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: #93C5FD;
+    color: #111111;
     margin: 9px 0 4px 4px;
 }
 
@@ -634,6 +645,78 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-marker) .
     font-size: 11px;
     font-weight: 900;
 }
+/* 10-Day Sales Matrix Grid (Center Section Overview Card) */
+.dep-sales10-row {
+    display: grid;
+    grid-template-columns: 118px repeat(10, minmax(0, 1fr));
+    gap: 5px;
+    align-items: center;
+    margin-bottom: 5px;
+}
+.dep-sales10-hdr-cell {
+    font-size: 9.5px;
+    font-weight: 800;
+    color: #475569;
+    text-align: center;
+    background: #F1F5F9;
+    border: 1px solid #E2E8F0;
+    border-radius: 5px;
+    padding: 3px 2px;
+    white-space: nowrap;
+}
+.dep-sales10-tile {
+    height: 34px;
+    border-radius: 7px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.05;
+    padding: 2px;
+    font-size: 10px;
+    font-weight: 800;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+/* Top Total Sale Row — Distinct Emerald-Teal Shade */
+.dep-sales10-tile.total-row {
+    background: linear-gradient(180deg, #A7F3D0 0%, #6EE7B7 100%);
+    color: #064E3B;
+    border: 1.5px solid #059669;
+    box-shadow: 0 2px 5px rgba(5, 150, 105, 0.16);
+    font-weight: 900;
+}
+/* Individual Cart Sales Rows — Deposito Amber / Soft Cream Tiles */
+.dep-sales10-tile.cart-high {
+    background: linear-gradient(180deg, #FCD34D 0%, #FBBF24 100%);
+    color: #111111;
+    border: 1px solid #F59E0B;
+}
+.dep-sales10-tile.cart-low {
+    background: #FEF3C7;
+    color: #78350F;
+    border: 1px solid #FDE68A;
+}
+.dep-sales10-tile.cart-zero {
+    background: #F8FAFC;
+    color: #94A3B8;
+    border: 1px dashed #E2E8F0;
+    font-weight: 600;
+}
+/* Bottom 2 Rows: Overall PhonePe & Cash Split */
+.dep-sales10-tile.phonepe-row {
+    background: linear-gradient(180deg, #DDD6FE 0%, #C4B5FD 100%);
+    color: #1E1B4B;
+    border: 1px solid #8B5CF6;
+    font-weight: 800;
+}
+.dep-sales10-tile.cash-row {
+    background: linear-gradient(180deg, #DBEAFE 0%, #BFDBFE 100%);
+    color: #1E3A8A;
+    border: 1px solid #3B82F6;
+    font-weight: 800;
+}
 
 /* Bottom 3 Analytical Cards */
 .dep-bottom-card {
@@ -776,15 +859,15 @@ div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kul
     box-shadow: 0 4px 10px rgba(37, 99, 235, 0.14) !important;
 }
 
-/* Primary Action Buttons (Deep Royal Indigo #1E2252 -> #2D337A with Crisp White Text) */
+/* Primary Action Buttons (Sky-Blue / Amber with High-Contrast Black #111111 Text) */
 .stButton button[kind="primary"],
 [data-testid="stFormSubmitButton"] > button[kind="primary"],
 .stDownloadButton > button[kind="primary"],
 [data-testid="baseButton-primary"] {
-    background: linear-gradient(135deg, #1E2252 0%, #2D337A 100%) !important;
-    color: #FFFFFF !important;
-    border: 1.5px solid #1E2252 !important;
-    box-shadow: 0 4px 12px rgba(30, 34, 82, 0.22) !important;
+    background: linear-gradient(135deg, #93C5FD 0%, #60A5FA 100%) !important;
+    color: #111111 !important;
+    border: 1.5px solid #2563EB !important;
+    box-shadow: 0 3px 10px rgba(37, 99, 235, 0.18) !important;
 }
 .stButton button[kind="primary"] p,
 .stButton button[kind="primary"] span,
@@ -793,15 +876,15 @@ div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kul
 [data-testid="stFormSubmitButton"] > button[kind="primary"] span,
 .stDownloadButton > button[kind="primary"] p,
 .stDownloadButton > button[kind="primary"] span {
-    color: #FFFFFF !important;
+    color: #111111 !important;
     font-weight: 800 !important;
 }
 .stButton button[kind="primary"]:hover,
 [data-testid="stFormSubmitButton"] > button[kind="primary"]:hover,
 .stDownloadButton > button[kind="primary"]:hover {
-    background: linear-gradient(135deg, #282E6E 0%, #3B82F6 100%) !important;
+    background: linear-gradient(135deg, #BFDBFE 0%, #93C5FD 100%) !important;
     border-color: #1D4ED8 !important;
-    color: #FFFFFF !important;
+    color: #111111 !important;
     transform: translateY(-1px) !important;
 }
 
@@ -4896,8 +4979,15 @@ if page == "Home" and user_role == "admin":
     yesterday_home = today_home - timedelta(days=1)
     mtd_start = today_home.replace(day=1)
 
+    # Filter out any test cart (e.g. "test cart") from landing page carts
+    REAL_CARTS_HOME = [c for c in CARTS if "test" not in str(c).strip().lower()]
+    if not REAL_CARTS_HOME:
+        REAL_CARTS_HOME = list(CARTS)
+
     try:
         home_daily_df = load_db_daily_df()
+        if not home_daily_df.empty and "Cart" in home_daily_df.columns:
+            home_daily_df = home_daily_df[~home_daily_df["Cart"].astype(str).str.lower().str.contains("test", na=False)].copy()
     except Exception:
         home_daily_df = pd.DataFrame()
 
@@ -4956,8 +5046,8 @@ if page == "Home" and user_role == "admin":
         else:
             healthy_flavors_cnt += 1
 
-    # Cart-wise current stock by flavour (for the Section Overview tile matrix & green card footer)
-    cart_flavor_stock_matrix = {cart: {c: 0 for c in FLAVOR_CODES} for cart in CARTS}
+    # Cart-wise current stock by flavour (excluding any test cart)
+    cart_flavor_stock_matrix = {cart: {c: 0 for c in FLAVOR_CODES} for cart in REAL_CARTS_HOME}
     tot_cart_units_home = 0
     tot_cart_cp_home = 0.0
     if db_conn is not None:
@@ -4979,6 +5069,8 @@ if page == "Home" and user_role == "admin":
             )
             for _, _cr in latest_c_df.iterrows():
                 _cn = str(_cr.get("cart_name") or "").strip()
+                if "test" in _cn.lower() or "freezer" in _cn.lower():
+                    continue
                 _fc = str(_cr.get("flavor_code") or "").strip()
                 _cu = max(0, int(round(_num(_cr.get("closing_units")))))
                 if _fc in FLAVOR_CODES:
@@ -5029,7 +5121,7 @@ if page == "Home" and user_role == "admin":
 
     # ------------------------------------------------------------------
     # MASTER 2-COLUMN DEPOSITO LAYOUT:
-    # LEFT = STACKED KPI & ANALYTICS CANVAS | RIGHT = ROYAL INDIGO NAVIGATION DOCK
+    # LEFT = STACKED KPI & ANALYTICS CANVAS | RIGHT = NAVIGATION DOCK
     # ------------------------------------------------------------------
     main_canvas_col, right_dock_col = st.columns([3.55, 1.12], gap="medium")
 
@@ -5082,47 +5174,63 @@ if page == "Home" and user_role == "admin":
             unsafe_allow_html=True,
         )
 
-        # 2. MIDDLE ROW: EMERALD GREEN RING GAUGE CARD + SECTION OVERVIEW FLAVOUR/CART MATRIX
-        mid_left_col, mid_right_col = st.columns([1.15, 2.40], gap="small")
+        # 2. MIDDLE ROW: EMERALD GREEN CAPACITY CARD (4000 FREEZER / 400 CART) + 10-DAY SALES & SPLIT MATRIX
+        mid_left_col, mid_right_col = st.columns([1.12, 2.43], gap="small")
 
         with mid_left_col:
-            # Compute ring gauge fill % (Healthy stocked flavours / 9 flavours, or capacity fill)
-            cap_target = max(1800, len(CARTS) * 600)
-            util_pct = min(100, max(5, int(round((tot_freezer_units_home / float(cap_target)) * 100.0)))) if tot_freezer_units_home > 0 else int(round((healthy_flavors_cnt / float(len(FLAVOR_CODES))) * 100.0))
-            dash_Len = 289.0
-            dash_Offset = dash_Len * (1.0 - (util_pct / 100.0))
+            # Freezer capacity = 4000, Cart capacity = 400
+            FREEZER_CAP_UNITS = 4000
+            CART_CAP_UNITS = 400
+            fzr_util_pct = max(0.0, (float(tot_freezer_units_home) / float(FREEZER_CAP_UNITS)) * 100.0)
+            cart_util_pct = max(0.0, (float(tot_cart_units_home) / float(CART_CAP_UNITS)) * 100.0)
+
+            fzr_arc_pct = min(100.0, max(2.0 if tot_freezer_units_home > 0 else 0.0, fzr_util_pct))
+            cart_arc_pct = min(100.0, max(2.0 if tot_cart_units_home > 0 else 0.0, cart_util_pct))
+
+            outer_circum = 289.0  # r=46
+            inner_circum = 226.2  # r=36
+            outer_offset = outer_circum * (1.0 - (fzr_arc_pct / 100.0))
+            inner_offset = inner_circum * (1.0 - (cart_arc_pct / 100.0))
 
             st.markdown(
                 f"""
                 <div class="dep-emerald-card">
-                    <div class="dep-emerald-hdr">Freezer &amp; Cart Utilization</div>
+                    <div class="dep-emerald-hdr">Capacity Utilization</div>
                     <div class="dep-emerald-float-strip">
-                        <div class="dep-emerald-float-dot" style="background:#ECFDF5;color:#059669;">❄️</div>
-                        <div class="dep-emerald-float-dot" style="background:#FEF2F2;color:#DC2626;">🛒</div>
-                        <div class="dep-emerald-float-dot" style="background:#EFF6FF;color:#2563EB;">📦</div>
+                        <div class="dep-emerald-float-dot" style="background:#FEF3C7;color:#D97706;" title="Outer Ring: Freezer (4,000 cap)">❄️</div>
+                        <div class="dep-emerald-float-dot" style="background:#DBEAFE;color:#2563EB;" title="Inner Ring: Cart (400 cap)">🛒</div>
+                        <div class="dep-emerald-float-dot" style="background:#ECFDF5;color:#059669;" title="Healthy Flavours">📦</div>
                     </div>
-                    <div style="display:flex;justify-content:center;align-items:center;margin:6px 0;">
-                        <svg width="168" height="168" viewBox="0 0 112 112">
-                            <circle cx="56" cy="56" r="46" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="7.5" />
-                            <circle cx="56" cy="56" r="46" fill="none" stroke="#F59E0B" stroke-width="7.5"
+                    <div style="display:flex;justify-content:center;align-items:center;margin:4px 0;">
+                        <svg width="174" height="174" viewBox="0 0 112 112">
+                            <!-- Outer Ring: Freezer Utilization (out of 4,000) -->
+                            <circle cx="56" cy="56" r="46" fill="none" stroke="rgba(255,255,255,0.20)" stroke-width="7" />
+                            <circle cx="56" cy="56" r="46" fill="none" stroke="#F59E0B" stroke-width="7"
                                     stroke-linecap="round"
-                                    stroke-dasharray="{dash_Len:.1f}"
-                                    stroke-dashoffset="{dash_Offset:.1f}"
+                                    stroke-dasharray="{outer_circum:.1f}"
+                                    stroke-dashoffset="{outer_offset:.1f}"
                                     transform="rotate(-90 56 56)" />
-                            <text x="56" y="52" text-anchor="middle" fill="#FFFFFF" font-size="19" font-weight="800" font-family="Plus Jakarta Sans, sans-serif">{util_pct}%</text>
-                            <text x="56" y="67" text-anchor="middle" fill="#D1FAE5" font-size="8.2" font-weight="600" font-family="Plus Jakarta Sans, sans-serif">Capacity Stocked</text>
-                            <text x="56" y="79" text-anchor="middle" fill="#FDE68A" font-size="7.5" font-weight="700" font-family="Plus Jakarta Sans, sans-serif">{healthy_flavors_cnt}/{len(FLAVOR_CODES)} Flavours OK</text>
+                            <!-- Inner Ring: Cart Utilization (out of 400) -->
+                            <circle cx="56" cy="56" r="36" fill="none" stroke="rgba(255,255,255,0.16)" stroke-width="5.5" />
+                            <circle cx="56" cy="56" r="36" fill="none" stroke="#60A5FA" stroke-width="5.5"
+                                    stroke-linecap="round"
+                                    stroke-dasharray="{inner_circum:.1f}"
+                                    stroke-dashoffset="{inner_offset:.1f}"
+                                    transform="rotate(-90 56 56)" />
+                            <text x="56" y="48" text-anchor="middle" fill="#FFFFFF" font-size="15.5" font-weight="800" font-family="Plus Jakarta Sans, sans-serif">Fzr {fzr_util_pct:.0f}%</text>
+                            <text x="56" y="62" text-anchor="middle" fill="#BFDBFE" font-size="11.5" font-weight="800" font-family="Plus Jakarta Sans, sans-serif">Cart {cart_util_pct:.0f}%</text>
+                            <text x="56" y="75" text-anchor="middle" fill="#D1FAE5" font-size="7.2" font-weight="600" font-family="Plus Jakarta Sans, sans-serif">4,000 Fzr • 400 Cart Cap</text>
                         </svg>
                     </div>
                     <div class="dep-emerald-footer">
                         <div>
-                            <div class="dep-emerald-ft-lbl">In Freezer</div>
-                            <div class="dep-emerald-ft-val">{tot_freezer_units_home:,} pcs</div>
+                            <div class="dep-emerald-ft-lbl">Freezer ({fzr_util_pct:.1f}%)</div>
+                            <div class="dep-emerald-ft-val">{tot_freezer_units_home:,} / 4,000</div>
                             <div style="font-size:10px;color:#A7F3D0;">₹{tot_freezer_cp_home:,.0f} CP</div>
                         </div>
                         <div>
-                            <div class="dep-emerald-ft-lbl">Loaded in Carts</div>
-                            <div class="dep-emerald-ft-val">{tot_cart_units_home:,} pcs</div>
+                            <div class="dep-emerald-ft-lbl">Cart ({cart_util_pct:.1f}%)</div>
+                            <div class="dep-emerald-ft-val">{tot_cart_units_home:,} / 400</div>
                             <div style="font-size:10px;color:#A7F3D0;">₹{tot_cart_cp_home:,.0f} CP</div>
                         </div>
                     </div>
@@ -5132,69 +5240,130 @@ if page == "Home" and user_role == "admin":
             )
 
         with mid_right_col:
-            # Build HTML rows of rounded amber/cream square tiles for Freezer + Active Carts across the 9 Flavours
-            matrix_rows_html = []
+            # 10-DAY SALES BY CART & OVERALL + PHONEPE / CASH SPLIT MATRIX (Excluding Test Carts)
+            # Determine the 10 dates: last 10 dates up to yesterday (or latest 10 sales dates)
+            last_10_dates = [yesterday_home - timedelta(days=i) for i in range(9, -1, -1)]
+            if not home_daily_df.empty:
+                df_non_test = home_daily_df.copy()
+                df_non_test["SaleDate"] = pd.to_datetime(df_non_test["Date"]).dt.date
+            else:
+                df_non_test = pd.DataFrame()
 
-            # Row 1: Central Freezer
-            fzr_tiles_html = []
-            for _c in FLAVOR_CODES:
-                _q = int(freezer_stock_map.get(_c, 0))
-                _rate = float(vel_map.get(_c, 0)) / 14.0
-                _is_low = (_q <= 0) or (_rate > 0 and _q <= _rate * 3.0) or (_rate == 0 and _q < 25)
-                _cls = "empty" if _q <= 0 else ("low" if _is_low else "loaded")
-                _f_name = FLAVOR_MAP[_c]["name"]
-                fzr_tiles_html.append(
-                    f'<div class="dep-slot-tile {_cls}" title="Freezer • {escape(_f_name)} ({_c}): {_q:,} pcs">'
-                    f'<span class="dep-slot-code">{_c}</span>'
-                    f'<span class="dep-slot-qty">{_q}</span>'
+            def _fmt_cell_inr(val):
+                v = float(val or 0.0)
+                if v <= 0:
+                    return "—"
+                if v >= 10000:
+                    return f"₹{v/1000.0:.1f}k"
+                return f"₹{v:,.0f}"
+
+            # Header Row: 10 Date Columns
+            date_hdr_cells = [
+                f'<div class="dep-sales10-hdr-cell" title="{d.strftime("%d-%b-%Y (%A)")}">{d.strftime("%d %b")}</div>'
+                for d in last_10_dates
+            ]
+            sales10_rows_html = [
+                f'<div class="dep-sales10-row" style="margin-bottom:6px;">'
+                f'<div class="dep-slot-row-lbl" style="color:#64748B;font-size:10px;">DATE (LAST 10D)</div>'
+                f'{"".join(date_hdr_cells)}'
+                f'</div>'
+            ]
+
+            # Precompute per-date totals, per-cart sales, and overall PhonePe / Cash split
+            day_overall_rev = {d: 0.0 for d in last_10_dates}
+            day_overall_units = {d: 0 for d in last_10_dates}
+            day_overall_phonepe = {d: 0.0 for d in last_10_dates}
+            day_overall_cash = {d: 0.0 for d in last_10_dates}
+            cart_day_rev = {c: {d: 0.0 for d in last_10_dates} for c in REAL_CARTS_HOME}
+            cart_day_units = {c: {d: 0 for d in last_10_dates} for c in REAL_CARTS_HOME}
+
+            if not df_non_test.empty:
+                sub_10d = df_non_test[df_non_test["SaleDate"].isin(last_10_dates)]
+                for _, _sr in sub_10d.iterrows():
+                    _sd = _sr["SaleDate"]
+                    _cname = str(_sr.get("Cart") or "").strip()
+                    if "test" in _cname.lower():
+                        continue
+                    _rev = float(_sr.get("Total_Collection") or 0.0)
+                    _uns = int(round(_num(_sr.get("Sold_Total"))))
+                    _ph = float(_sr.get("PhonePe") or 0.0)
+                    _cs = float(_sr.get("Cash") or 0.0)
+                    day_overall_rev[_sd] = day_overall_rev.get(_sd, 0.0) + _rev
+                    day_overall_units[_sd] = day_overall_units.get(_sd, 0) + _uns
+                    day_overall_phonepe[_sd] = day_overall_phonepe.get(_sd, 0.0) + _ph
+                    day_overall_cash[_sd] = day_overall_cash.get(_sd, 0.0) + _cs
+                    if _cname in cart_day_rev:
+                        cart_day_rev[_cname][_sd] += _rev
+                        cart_day_units[_cname][_sd] += _uns
+
+            # 1) TOP ROW: OVERALL TOTAL SALE (Distinct Emerald Shade)
+            tot_10d_sum = sum(day_overall_rev.values())
+            tot_tiles_html = []
+            for _d in last_10_dates:
+                _v = day_overall_rev[_d]
+                _u = day_overall_units[_d]
+                tot_tiles_html.append(
+                    f'<div class="dep-sales10-tile total-row" title="{_d.strftime("%d %b %Y")} • Overall Sale: ₹{_v:,.0f} ({_u:,} pcs)">'
+                    f'{_fmt_cell_inr(_v)}'
                     f'</div>'
                 )
-            matrix_rows_html.append(
-                f'<div class="dep-slot-row">'
-                f'<div class="dep-slot-row-lbl" title="Central Freezer">❄️ Freezer ({tot_freezer_units_home:,})</div>'
-                f'{"".join(fzr_tiles_html)}'
+            sales10_rows_html.append(
+                f'<div class="dep-sales10-row" style="padding-bottom:4px;border-bottom:1.5px solid #E2E8F0;margin-bottom:6px;">'
+                f'<div class="dep-slot-row-lbl" style="color:#065F46;font-weight:900;" title="10-Day Total Sales: ₹{tot_10d_sum:,.0f}">🔥 Total (₹{tot_10d_sum/1000.0:.1f}k)</div>'
+                f'{"".join(tot_tiles_html)}'
                 f'</div>'
             )
 
-            # Rows 2..N: Active Carts
-            for _cname in CARTS[:4]:
-                _c_map = cart_flavor_stock_matrix.get(_cname, {})
-                _c_tot = sum(_c_map.values())
+            # 2) MIDDLE ROWS: INDIVIDUAL CARTS (Excluding Test Carts)
+            for _cname in REAL_CARTS_HOME:
+                _c_10d_sum = sum(cart_day_rev.get(_cname, {}).values())
+                _short_c = _cname.replace("HOSUR ", "").replace("UTTARAHALLI ", "UTT ")
                 _c_tiles = []
-                for _c in FLAVOR_CODES:
-                    _cq = int(_c_map.get(_c, 0))
-                    _c_cls = "empty" if _cq <= 0 else ("low" if _cq < 10 else "loaded")
-                    _f_name = FLAVOR_MAP[_c]["name"]
+                for _d in last_10_dates:
+                    _cv = cart_day_rev.get(_cname, {}).get(_d, 0.0)
+                    _cu = cart_day_units.get(_cname, {}).get(_d, 0)
+                    _t_cls = "cart-zero" if _cv <= 0 else ("cart-high" if _cv >= 2500 else "cart-low")
                     _c_tiles.append(
-                        f'<div class="dep-slot-tile {_c_cls}" title="{escape(_cname)} • {escape(_f_name)} ({_c}): {_cq} pcs">'
-                        f'<span class="dep-slot-code">{_c}</span>'
-                        f'<span class="dep-slot-qty">{_cq}</span>'
+                        f'<div class="dep-sales10-tile {_t_cls}" title="{escape(_cname)} • {_d.strftime("%d %b %Y")}: ₹{_cv:,.0f} ({_cu:,} pcs)">'
+                        f'{_fmt_cell_inr(_cv)}'
                         f'</div>'
                     )
-                _short_cart = _cname.replace("HOSUR ", "").replace("UTTARAHALLI ", "UTT ")
-                matrix_rows_html.append(
-                    f'<div class="dep-slot-row">'
-                    f'<div class="dep-slot-row-lbl" title="{escape(_cname)}">🛒 {escape(_short_cart)} ({_c_tot})</div>'
+                sales10_rows_html.append(
+                    f'<div class="dep-sales10-row">'
+                    f'<div class="dep-slot-row-lbl" title="{escape(_cname)} • 10-Day Total: ₹{_c_10d_sum:,.0f}">🛒 {escape(_short_c)} (₹{_c_10d_sum/1000.0:.1f}k)</div>'
                     f'{"".join(_c_tiles)}'
                     f'</div>'
                 )
 
-            # Row N+1: Period Units Sold by Flavour
-            sold_tiles_html = []
-            for _c in FLAVOR_CODES:
-                _sq = int(sold_period_by_code.get(_c, 0))
-                _s_cls = "loaded" if _sq >= 30 else ("low" if _sq > 0 else "empty")
-                _f_name = FLAVOR_MAP[_c]["name"]
-                sold_tiles_html.append(
-                    f'<div class="dep-slot-tile {_s_cls}" title="Sold ({period_short_lbl}) • {escape(_f_name)} ({_c}): {_sq:,} pcs">'
-                    f'<span class="dep-slot-code">{_c}</span>'
-                    f'<span class="dep-slot-qty">{_sq}</span>'
+            # 3) LAST 2 ROWS: OVERALL PHONEPE & OVERALL CASH SPLIT FOR THOSE 10 DATES
+            tot_10d_ph = sum(day_overall_phonepe.values())
+            tot_10d_cs = sum(day_overall_cash.values())
+            ph_tiles_html = []
+            cs_tiles_html = []
+            for _d in last_10_dates:
+                _pv = day_overall_phonepe[_d]
+                _csv = day_overall_cash[_d]
+                ph_tiles_html.append(
+                    f'<div class="dep-sales10-tile phonepe-row" title="{_d.strftime("%d %b %Y")} • Overall PhonePe: ₹{_pv:,.0f}">'
+                    f'{_fmt_cell_inr(_pv)}'
                     f'</div>'
                 )
-            matrix_rows_html.append(
-                f'<div class="dep-slot-row" style="margin-top:4px;padding-top:6px;border-top:1px dashed #E2E8F0;">'
-                f'<div class="dep-slot-row-lbl" style="color:#047857;">🔥 Sold ({period_short_lbl})</div>'
-                f'{"".join(sold_tiles_html)}'
+                cs_tiles_html.append(
+                    f'<div class="dep-sales10-tile cash-row" title="{_d.strftime("%d %b %Y")} • Overall Cash: ₹{_csv:,.0f}">'
+                    f'{_fmt_cell_inr(_csv)}'
+                    f'</div>'
+                )
+
+            sales10_rows_html.append(
+                f'<div class="dep-sales10-row" style="margin-top:4px;padding-top:5px;border-top:1.5px dashed #CBD5E1;">'
+                f'<div class="dep-slot-row-lbl" style="color:#4C1D95;font-weight:800;" title="10-Day PhonePe Total: ₹{tot_10d_ph:,.0f}">📱 PhonePe (₹{tot_10d_ph/1000.0:.1f}k)</div>'
+                f'{"".join(ph_tiles_html)}'
+                f'</div>'
+            )
+            sales10_rows_html.append(
+                f'<div class="dep-sales10-row">'
+                f'<div class="dep-slot-row-lbl" style="color:#1E3A8A;font-weight:800;" title="10-Day Cash Total: ₹{tot_10d_cs:,.0f}">💵 Cash (₹{tot_10d_cs/1000.0:.1f}k)</div>'
+                f'{"".join(cs_tiles_html)}'
                 f'</div>'
             )
 
@@ -5203,18 +5372,21 @@ if page == "Home" and user_role == "admin":
                 <div class="dep-matrix-card">
                     <div>
                         <div class="dep-matrix-top">
-                            <span class="dep-date-badge">📅 {today_home.strftime('%d / %m / %Y')}</span>
-                            <span style="font-size:13px;font-weight:800;color:#1E2252;">Section Overview — Flavour &amp; Cart Stock Matrix</span>
+                            <span class="dep-date-badge">📅 {last_10_dates[0].strftime('%d %b')} – {last_10_dates[-1].strftime('%d %b %Y')}</span>
+                            <span style="font-size:13px;font-weight:800;color:#1E2252;">Last 10 Days Sales — By Cart, Total &amp; PhonePe / Cash Split</span>
                         </div>
                         <div style="padding:2px 0;">
-                            {"".join(matrix_rows_html)}
+                            {"".join(sales10_rows_html)}
                         </div>
                     </div>
-                    <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid #F1F5F9;padding-top:8px;margin-top:6px;font-size:11px;color:#64748B;font-weight:700;">
-                        <span>Hover any tile for exact flavour details</span>
-                        <div style="display:flex;gap:14px;align-items:center;">
-                            <span>Loaded / Healthy <span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:#FBBF24;vertical-align:middle;margin-left:3px;"></span></span>
-                            <span>Low / Reorder <span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:#FEF3C7;border:1px solid #FCD34D;vertical-align:middle;margin-left:3px;"></span></span>
+                    <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid #F1F5F9;padding-top:7px;margin-top:4px;font-size:10.5px;color:#64748B;font-weight:700;flex-wrap:wrap;gap:8px;">
+                        <span>10-Day Total: <b style="color:#065F46;">₹{tot_10d_sum:,.0f}</b> (PhonePe: <b style="color:#4C1D95;">₹{tot_10d_ph:,.0f}</b> • Cash: <b style="color:#1E3A8A;">₹{tot_10d_cs:,.0f}</b>)</span>
+                        <div style="display:flex;gap:10px;align-items:center;">
+                            <span>Total <span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#6EE7B7;border:1px solid #059669;vertical-align:middle;margin-left:2px;"></span></span>
+                            <span>Cart ≥₹2.5k <span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#FBBF24;vertical-align:middle;margin-left:2px;"></span></span>
+                            <span>Cart &lt;₹2.5k <span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#FEF3C7;border:1px solid #FCD34D;vertical-align:middle;margin-left:2px;"></span></span>
+                            <span>PhonePe <span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#C4B5FD;vertical-align:middle;margin-left:2px;"></span></span>
+                            <span>Cash <span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#BFDBFE;vertical-align:middle;margin-left:2px;"></span></span>
                         </div>
                     </div>
                 </div>
@@ -5279,7 +5451,7 @@ if page == "Home" and user_role == "admin":
                 1,
                 max(
                     int(freezer_stock_map.get(c, 0))
-                    + sum(int(cart_flavor_stock_matrix.get(cn, {}).get(c, 0)) for cn in CARTS)
+                    + sum(int(cart_flavor_stock_matrix.get(cn, {}).get(c, 0)) for cn in REAL_CARTS_HOME)
                     + int(sold_period_by_code.get(c, 0))
                     for c in top6_codes
                 ),
@@ -5287,7 +5459,7 @@ if page == "Home" and user_role == "admin":
             bars_cols_html = []
             for _c in top6_codes:
                 _fz_u = max(0, int(freezer_stock_map.get(_c, 0)))
-                _ct_u = max(0, sum(int(cart_flavor_stock_matrix.get(cn, {}).get(_c, 0)) for cn in CARTS))
+                _ct_u = max(0, sum(int(cart_flavor_stock_matrix.get(cn, {}).get(_c, 0)) for cn in REAL_CARTS_HOME))
                 _sd_u = max(0, int(sold_period_by_code.get(_c, 0)))
                 _tot_col = max(1, _fz_u + _ct_u + _sd_u)
                 _h_pct = min(100, max(18, int(round((_tot_col / float(max_stack)) * 100.0))))
@@ -5329,19 +5501,22 @@ if page == "Home" and user_role == "admin":
             )
 
         with bot_c3:
-            # Horizontal Sky-Blue Bar Chart for Carts & Channels (Matches "Top Cities" in Screenshot)
+            # Horizontal Sky-Blue Bar Chart for Carts & Channels (Excluding Test Carts)
             cart_rev_rows = []
             if not period_df_home.empty:
                 c_grp = period_df_home.groupby("Cart", as_index=False).agg({"Total_Collection": "sum", "Sold_Total": "sum"}).sort_values("Total_Collection", ascending=False)
-                for _, _r in c_grp.head(5).iterrows():
-                    cart_rev_rows.append((str(_r["Cart"]), float(_r["Total_Collection"]), int(round(_r["Sold_Total"]))))
+                for _, _r in c_grp.iterrows():
+                    _cn_str = str(_r["Cart"]).strip()
+                    if "test" in _cn_str.lower():
+                        continue
+                    cart_rev_rows.append((_cn_str, float(_r["Total_Collection"]), int(round(_r["Sold_Total"]))))
             if not cart_rev_rows:
-                for _cn in CARTS[:4]:
+                for _cn in REAL_CARTS_HOME[:4]:
                     cart_rev_rows.append((_cn, 0.0, 0))
 
             max_c_rev = max(1.0, max((r[1] for r in cart_rev_rows), default=1.0))
             h_bars_html = []
-            for _cname, _crev, _cunits in cart_rev_rows:
+            for _cname, _crev, _cunits in cart_rev_rows[:5]:
                 _w_pct = min(100, max(12, int(round((_crev / max_c_rev) * 100.0)))) if _crev > 0 else 12
                 _short_c = _cname.replace("HOSUR ", "").replace("UTTARAHALLI ", "UTT ")
                 h_bars_html.append(
@@ -5393,19 +5568,19 @@ if page == "Home" and user_role == "admin":
                         st.rerun()
 
     # ------------------------------------------------------------------
-    # RIGHT COLUMN: DEEP ROYAL INDIGO "DEPOSITO" NAVIGATION DOCK
+    # RIGHT COLUMN: NAVIGATION DOCK WITH CRISP BLACK (#111111) TEXT FOR "KULFI OPS" & "DASHBOARD HOME"
     # ------------------------------------------------------------------
     with right_dock_col:
         with st.container(border=True):
             st.markdown('<span class="deposito-nav-dock-marker"></span>', unsafe_allow_html=True)
             st.markdown(
                 f"""
-                <div style="display:flex;align-items:center;justify-content:space-between;padding:2px 4px 10px 4px;border-bottom:1px solid rgba(255,255,255,0.12);margin-bottom:8px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px 10px 8px;background:#DBEAFE;border:1px solid #93C5FD;border-radius:10px;margin-bottom:8px;">
                     <div style="display:flex;align-items:center;gap:9px;">
                         {get_top_left_square_logo_html(34)}
                         <div>
-                            <div style="font-size:14px;font-weight:900;color:#FFFFFF;letter-spacing:0.04em;line-height:1.1;">KULFI OPS</div>
-                            <div style="font-size:10px;font-weight:700;color:#93C5FD;margin-top:2px;">📍 {escape(loc_badge)}</div>
+                            <div style="font-size:14.5px;font-weight:900;color:#111111;letter-spacing:0.03em;line-height:1.1;">KULFI OPS</div>
+                            <div style="font-size:10.5px;font-weight:800;color:#111111;margin-top:2px;">📍 {escape(loc_badge)}</div>
                         </div>
                     </div>
                 </div>
@@ -5453,8 +5628,8 @@ if page == "Home" and user_role == "admin":
 
             st.markdown(
                 """
-                <div style="text-align:center;padding-top:10px;margin-top:8px;border-top:1px solid rgba(255,255,255,0.12);font-size:10px;color:#94A3B8;line-height:1.4;">
-                    <div style="font-weight:700;color:#CBD5E1;">Kulfi Ops Admin Suite</div>
+                <div style="text-align:center;padding-top:10px;margin-top:8px;border-top:1px solid #CBD5E1;font-size:10px;color:#334155;line-height:1.4;">
+                    <div style="font-weight:800;color:#111111;">Kulfi Ops Admin Suite</div>
                     <div>Multi-Location Cloud POS ©</div>
                 </div>
                 """,
