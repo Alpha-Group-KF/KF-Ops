@@ -302,7 +302,6 @@ div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) {
 }
 
 /* Ensure all buttons and popovers across the top bar and entire app are clickable across their entire face */
-.stButton,
 [data-testid="stPopover"] {
     width: 100% !important;
 }
@@ -315,25 +314,28 @@ div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) {
     background: linear-gradient(180deg, #FFFFFF 0%, #F1F5F9 100%) !important;
     color: #111111 !important;
     border: 1.5px solid #CBD5E1 !important;
-    border-radius: 8px !important;
+    border-radius: 5px !important;
     font-weight: 700 !important;
-    font-size: 12px !important;
-    min-height: 35px !important;
-    height: auto !important;
-    padding: 5px 11px !important;
-    width: 100% !important;
+    font-size: 11.5px !important;
+    min-height: 30px !important;
+    height: 30px !important;
+    padding: 3px 12px !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
     box-sizing: border-box !important;
     margin: 0 !important;
     text-decoration: none !important;
-    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.05) !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05) !important;
     transition: all 0.12s ease !important;
     cursor: pointer !important;
     pointer-events: auto !important;
     position: relative !important;
     z-index: 5 !important;
+}
+[data-testid="stPopover"] > div > button,
+[data-testid="stPopoverButton"] {
+    width: 100% !important;
 }
 /* Crucial: child text/icons inside buttons must not intercept pointer events */
 .stButton > button *,
@@ -352,23 +354,61 @@ div[data-testid="stHorizontalBlock"]:has(.kulfi-top-cmd-bar-scope) {
 [data-testid="stPopover"] > div > button:hover,
 [data-testid="stPopoverButton"]:hover {
     background: linear-gradient(180deg, #EFF6FF 0%, #DBEAFE 100%) !important;
-    border-color: #3B82F6 !important;
+    border-color: #2563EB !important;
     color: #111111 !important;
     transform: translateY(-1px) !important;
 }
 
-/* Primary Action Buttons */
+/* Primary Action & Submit Buttons — Smaller, Sharper, Non-Full-Width by Default */
 .stButton > button[kind="primary"],
 [data-testid="stFormSubmitButton"] > button[kind="primary"],
+[data-testid="stFormSubmitButton"] > button,
 .stDownloadButton > button[kind="primary"],
 [data-testid="baseButton-primary"] {
     background: linear-gradient(135deg, #93C5FD 0%, #60A5FA 100%) !important;
     color: #111111 !important;
-    border: 1.5px solid #2563EB !important;
-    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.18) !important;
+    border: 1.5px solid #1D4ED8 !important;
+    border-radius: 4px !important;
+    min-height: 29px !important;
+    height: 29px !important;
+    padding: 2px 16px !important;
+    font-size: 11.5px !important;
+    letter-spacing: 0.01em !important;
+    box-shadow: 0 1px 4px rgba(37, 99, 235, 0.16) !important;
+}
+/* Constrain standalone submit buttons so they never stretch across the entire screen width */
+[data-testid="stFormSubmitButton"],
+div[class*="st-key-submit_"] .stButton,
+div[class*="st-key-btn_save_"] .stButton,
+div[class*="st-key-btn_upd_"] .stButton,
+div[class*="st-key-btn_disburse_"] .stButton,
+div[class*="st-key-confirm_cash_"] .stButton,
+div[class*="st-key-cash_handover_button_"] .stButton,
+div[class*="st-key-fa_create_order"] .stButton,
+div[class*="st-key-update_audit_"] .stButton {
+    width: auto !important;
+    display: inline-block !important;
+}
+[data-testid="stFormSubmitButton"] > button,
+div[class*="st-key-submit_"] .stButton > button,
+div[class*="st-key-btn_save_"] .stButton > button,
+div[class*="st-key-btn_upd_"] .stButton > button,
+div[class*="st-key-btn_disburse_"] .stButton > button,
+div[class*="st-key-confirm_cash_"] .stButton > button,
+div[class*="st-key-cash_handover_button_"] .stButton > button,
+div[class*="st-key-fa_create_order"] .stButton > button,
+div[class*="st-key-update_audit_"] .stButton > button {
+    width: auto !important;
+    min-width: 155px !important;
+    max-width: 240px !important;
+    border-radius: 4px !important;
+    min-height: 29px !important;
+    height: 29px !important;
+    padding: 2px 16px !important;
 }
 .stButton > button[kind="primary"] *,
 [data-testid="stFormSubmitButton"] > button[kind="primary"] *,
+[data-testid="stFormSubmitButton"] > button *,
 .stDownloadButton > button[kind="primary"] * {
     color: #111111 !important;
     font-weight: 800 !important;
@@ -839,20 +879,60 @@ div[class*="st-key-row_del_"] button {
     border-color: #FCA5A5 !important;
 }
 
-/* Section Headers for Sales & Restock */
+/* ======================================================================
+   80% PAGE WIDTH & SINGLE-PAGE NO-SCROLL COMPACT SCOPE FOR ENTRY SCREENS
+   ====================================================================== */
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-entry-80-scope) {
+    width: 80% !important;
+    max-width: 980px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    gap: 0.18rem !important;
+}
+@media (max-width: 992px) {
+    div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-entry-80-scope) {
+        width: 98% !important;
+        max-width: 98% !important;
+    }
+}
+div[data-testid="stElementContainer"]:has(.kulfi-entry-80-scope) {
+    display: none !important;
+    height: 0px !important;
+    margin: 0px !important;
+    padding: 0px !important;
+}
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-entry-80-scope) div[data-testid="stVerticalBlock"] {
+    gap: 0.18rem !important;
+}
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-entry-80-scope) div[data-testid="stVerticalBlockBorderWrapper"] {
+    padding: 6px 10px !important;
+    border-radius: 9px !important;
+}
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-entry-80-scope) div[data-testid="stMetric"] {
+    padding: 4px 8px !important;
+    min-height: 44px !important;
+    border-radius: 8px !important;
+}
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-entry-80-scope) div[data-testid="stMetricValue"] {
+    font-size: 0.96rem !important;
+    margin-top: 0px !important;
+}
+
+/* Section Headers for Sales & Restock (Compact 28px Single-Page Fit) */
 .header-box-sales {
     background: linear-gradient(90deg, #1E2252 0%, #2D337A 100%);
     color: #FFFFFF !important;
     border: 1px solid #1E2252;
-    border-radius: 10px;
-    padding: 8px 13px;
+    border-radius: 7px;
+    padding: 4px 11px;
+    min-height: 28px;
     font-weight: 800;
-    font-size: 13px;
-    margin-bottom: 8px;
+    font-size: 12px;
+    margin-bottom: 3px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 3px 10px rgba(30, 34, 82, 0.14);
+    box-shadow: 0 2px 6px rgba(30, 34, 82, 0.12);
 }
 .header-box-sales span, .header-box-sales b {
     color: #FFFFFF !important;
@@ -861,15 +941,16 @@ div[class*="st-key-row_del_"] button {
     background: linear-gradient(90deg, #059669 0%, #047857 100%);
     color: #FFFFFF !important;
     border: 1px solid #047857;
-    border-radius: 10px;
-    padding: 8px 13px;
+    border-radius: 7px;
+    padding: 4px 11px;
+    min-height: 28px;
     font-weight: 800;
-    font-size: 13px;
-    margin-bottom: 8px;
+    font-size: 12px;
+    margin-bottom: 3px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 3px 10px rgba(5, 150, 105, 0.14);
+    box-shadow: 0 2px 6px rgba(5, 150, 105, 0.12);
 }
 .header-box-restock span, .header-box-restock b {
     color: #FFFFFF !important;
@@ -879,20 +960,19 @@ div[class*="st-key-row_del_"] button {
 .flavor-entry-row {
     background: #FFFFFF;
     border: 1px solid #CBD5E1;
-    border-radius: 8px;
-    padding: 5px 8px;
-    margin-bottom: 5px;
-    box-shadow: 0 2px 4px rgba(15, 23, 42, 0.04);
+    border-radius: 6px;
+    padding: 3px 6px;
+    margin-bottom: 3px;
 }
 .flavor-title-bar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2px;
+    margin-bottom: 1px;
 }
 .flavor-name {
     font-weight: 800;
-    font-size: 12.5px;
+    font-size: 11.5px;
     color: #1E2252;
 }
 .badge-open {
@@ -900,62 +980,75 @@ div[class*="st-key-row_del_"] button {
     color: #1E2252;
     border: 1px solid #CBD5E1;
     font-weight: 800;
-    font-size: 11px;
-    padding: 1px 6px;
-    border-radius: 6px;
+    font-size: 10.5px;
+    padding: 1px 5px;
+    border-radius: 5px;
 }
 .badge-sold {
     background: #FEF2F2;
     color: #991B1B;
     font-weight: 800;
-    font-size: 11px;
-    padding: 1px 6px;
-    border-radius: 6px;
+    font-size: 10.5px;
+    padding: 1px 5px;
+    border-radius: 5px;
 }
 .badge-today-open {
     background: #ECFDF5;
     color: #065F46;
     font-weight: 800;
-    font-size: 11.5px;
-    padding: 2px 7px;
-    border-radius: 6px;
+    font-size: 11px;
+    padding: 1px 6px;
+    border-radius: 5px;
     border: 1px solid #6EE7B7;
     display: inline-block;
 }
 
-/* Consistent Input Heights & Slate-Blue Borders */
+/* Consistent Compact Input Heights & Slate-Blue Borders */
 .stSelectbox div[data-baseweb="select"] > div,
 .stDateInput div[data-baseweb="input"],
+.stTimeInput div[data-baseweb="input"],
 .stTextInput div[data-baseweb="input"],
 .stNumberInput div[data-baseweb="input"],
 div[data-testid="stNumberInputContainer"] {
-    min-height: 36px !important;
-    height: 36px !important;
-    border-radius: 7px !important;
+    min-height: 30px !important;
+    height: 30px !important;
+    border-radius: 5px !important;
     background-color: #FFFFFF !important;
     border: 1.5px solid #CBD5E1 !important;
     box-sizing: border-box !important;
 }
-.stTextInput input, .stNumberInput input, .stDateInput input {
-    padding: 2px 8px !important;
-    font-size: 12.5px !important;
+.stTextInput input, .stNumberInput input, .stDateInput input, .stTimeInput input {
+    padding: 1px 7px !important;
+    font-size: 11.5px !important;
     text-align: left !important;
     font-weight: 700 !important;
     color: #0F172A !important;
+    height: 28px !important;
+    min-height: 28px !important;
+    line-height: 28px !important;
 }
-.stNumberInput label, .stTextInput label, .stSelectbox label, .stDateInput label {
-    font-size: 11px !important;
+.stNumberInput label, .stTextInput label, .stSelectbox label, .stDateInput label, .stTimeInput label {
+    font-size: 10.5px !important;
     font-weight: 700 !important;
-    margin-bottom: 2px !important;
+    margin-bottom: 1px !important;
+    line-height: 1.15 !important;
     text-align: left !important;
     color: #334155 !important;
 }
 
-/* Completely collapse hidden labels inside entry-grid rows so number inputs never shift down */
+/* Hide "Press Enter to apply" instructions so number inputs never shift or expand */
+div[data-testid="InputInstructions"] {
+    display: none !important;
+    height: 0px !important;
+    margin: 0px !important;
+    padding: 0px !important;
+}
+
+/* Completely collapse hidden widget labels inside entry-grid rows (preserving checkbox labels) */
 label[data-testid="stWidgetLabel"][aria-hidden="true"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) label,
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) label[data-testid="stWidgetLabel"],
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) [data-testid="stWidgetLabel"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) label,
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) label[data-testid="stWidgetLabel"],
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) [data-testid="stWidgetLabel"] {
     display: none !important;
     height: 0px !important;
@@ -967,25 +1060,56 @@ div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) [data-testid="stWidge
     overflow: hidden !important;
 }
 
-/* Force all columns inside entry-grid header, flavour rows, and total rows to align on the exact same horizontal axis */
+/* Eliminate Streamlit's default -1rem bottom margin on stMarkdownContainer inside entry grids so markdown cells and number inputs align on the exact same horizontal axis */
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-header) div[data-testid="stMarkdown"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-header) div[data-testid="stMarkdownContainer"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-header) div[data-testid="stElementContainer"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-header) div[data-testid="stVerticalBlock"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stMarkdown"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stMarkdownContainer"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stElementContainer"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stVerticalBlock"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stMarkdown"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stMarkdownContainer"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stElementContainer"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stVerticalBlock"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-total-row) div[data-testid="stMarkdown"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-total-row) div[data-testid="stMarkdownContainer"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-total-row) div[data-testid="stElementContainer"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-total-row) div[data-testid="stVerticalBlock"] {
+    margin: 0px !important;
+    margin-top: 0px !important;
+    margin-bottom: 0px !important;
+    padding: 0px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    line-height: 1 !important;
+}
+
+/* Force all columns inside entry-grid header, flavour rows, and total rows to align on the exact same horizontal axis & match column widths 100% */
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-header) {
     align-items: center !important;
-    margin-top: 2px !important;
-    margin-bottom: 6px !important;
+    gap: 6px !important;
+    margin-top: 0px !important;
+    margin-bottom: 2px !important;
 }
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour),
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) {
     align-items: center !important;
+    gap: 6px !important;
     margin-top: 0px !important;
-    margin-bottom: 4px !important;
+    margin-bottom: 1px !important;
 }
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-total-row) {
     align-items: center !important;
-    margin-top: 6px !important;
-    margin-bottom: 10px !important;
+    gap: 6px !important;
+    margin-top: 2px !important;
+    margin-bottom: 4px !important;
 }
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) > div[data-testid="stColumn"],
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) > div[data-testid="column"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) > div[data-testid="stColumn"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) > div[data-testid="column"],
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-header) > div[data-testid="stColumn"],
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-header) > div[data-testid="column"],
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-total-row) > div[data-testid="stColumn"],
@@ -993,19 +1117,26 @@ div[data-testid="stHorizontalBlock"]:has(.entry-grid-total-row) > div[data-testi
     display: flex !important;
     flex-direction: column !important;
     justify-content: center !important;
+    align-items: stretch !important;
     margin: 0px !important;
     padding-top: 0px !important;
     padding-bottom: 0px !important;
 }
+
+/* Ensure stNumberInput inside entry-grid rows spans 100% of its column width (matching its column header) and exact 28px height */
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stNumberInput"],
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stNumberInput"],
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) .stNumberInput,
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) .stNumberInput {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    flex: 1 1 100% !important;
     margin: 0px !important;
     padding: 0px !important;
-    height: 36px !important;
-    min-height: 36px !important;
-    max-height: 36px !important;
+    height: 28px !important;
+    min-height: 28px !important;
+    max-height: 28px !important;
     display: flex !important;
     align-items: center !important;
 }
@@ -1014,11 +1145,16 @@ div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-test
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stNumberInput"] div[data-baseweb="base-input"],
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) .stNumberInput div[data-baseweb="input"],
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stNumberInputContainer"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stNumberInput"] div[data-baseweb="input"] {
-    min-height: 36px !important;
-    height: 36px !important;
-    max-height: 36px !important;
-    border-radius: 6px !important;
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stNumberInput"] div[data-baseweb="input"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stNumberInput"] div[data-baseweb="base-input"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    flex: 1 1 100% !important;
+    min-height: 28px !important;
+    height: 28px !important;
+    max-height: 28px !important;
+    border-radius: 5px !important;
     margin: 0px !important;
     padding: 0px !important;
     box-sizing: border-box !important;
@@ -1026,14 +1162,39 @@ div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stNu
     align-items: center !important;
 }
 div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stNumberInput"] input,
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) .stNumberInput input {
-    height: 34px !important;
-    min-height: 34px !important;
-    line-height: 34px !important;
-    padding: 0 8px !important;
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) .stNumberInput input,
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stNumberInput"] input,
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) .stNumberInput input {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: 1 1 100% !important;
+    height: 26px !important;
+    min-height: 26px !important;
+    line-height: 26px !important;
+    padding: 0 6px !important;
     margin: 0px !important;
-    font-size: 12.5px !important;
+    text-align: center !important;
+    font-size: 11.5px !important;
     font-weight: 800 !important;
+}
+
+/* Center checkboxes cleanly inside Bulk Orders entry-grid rows */
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stCheckbox"] {
+    height: 28px !important;
+    min-height: 28px !important;
+    max-height: 28px !important;
+    margin: 0px !important;
+    padding: 0px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stCheckbox"] label {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0px !important;
+    padding: 0px !important;
 }
 
 /* Metric Cards — Crisp White with Indigo/Blue Top Accent */
@@ -1147,17 +1308,19 @@ div[data-testid="stNumberInput"] input {
     padding-left: 8px !important;
 }
 
-/* Daily Entry & Stock Grid Cells — Matched 36px Height & Zero Overlap */
+/* Daily Entry & Stock Grid Cells — Matched 28px Compact Single-Page Height & 100% Width */
 .entry-grid-header {
     background: linear-gradient(180deg, #EFF6FF 0%, #DBEAFE 100%);
     color: #1E2252 !important;
     border: 1px solid #93C5FD;
     border-bottom: 1.5px solid #60A5FA;
-    height: 36px !important;
-    min-height: 36px !important;
-    padding: 0 10px !important;
-    border-radius: 7px;
-    font-size: 11.5px;
+    width: 100% !important;
+    height: 28px !important;
+    min-height: 28px !important;
+    max-height: 28px !important;
+    padding: 0 8px !important;
+    border-radius: 5px;
+    font-size: 11px;
     font-weight: 800;
     text-align: center;
     display: flex !important;
@@ -1165,6 +1328,7 @@ div[data-testid="stNumberInput"] input {
     justify-content: center;
     box-sizing: border-box !important;
     margin: 0 !important;
+    white-space: nowrap;
 }
 .entry-grid-header[style*="text-align:left"] {
     justify-content: flex-start !important;
@@ -1175,14 +1339,15 @@ div[data-testid="stNumberInput"] input {
 .entry-grid-cell {
     background: #FFFFFF;
     border: 1px solid #CBD5E1;
-    border-radius: 6px;
-    height: 36px !important;
-    min-height: 36px !important;
-    max-height: 36px !important;
+    border-radius: 5px;
+    width: 100% !important;
+    height: 28px !important;
+    min-height: 28px !important;
+    max-height: 28px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center;
-    font-size: 12px;
+    font-size: 11.5px;
     font-weight: 800;
     color: #0F172A;
     box-sizing: border-box !important;
@@ -1192,15 +1357,16 @@ div[data-testid="stNumberInput"] input {
     background: #FFFFFF;
     border: 1px solid #CBD5E1;
     border-left: 3.5px solid #3B82F6;
-    border-radius: 6px;
-    height: 36px !important;
-    min-height: 36px !important;
-    max-height: 36px !important;
+    border-radius: 5px;
+    width: 100% !important;
+    height: 28px !important;
+    min-height: 28px !important;
+    max-height: 28px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: space-between;
-    padding: 0 10px !important;
-    font-size: 12px;
+    padding: 0 8px !important;
+    font-size: 11.5px;
     font-weight: 800;
     color: #1E2252;
     box-sizing: border-box !important;
@@ -1209,14 +1375,15 @@ div[data-testid="stNumberInput"] input {
 .entry-grid-cell-sold {
     background: #FEF3C7;
     border: 1px solid #FCD34D;
-    border-radius: 6px;
-    height: 36px !important;
-    min-height: 36px !important;
-    max-height: 36px !important;
+    border-radius: 5px;
+    width: 100% !important;
+    height: 28px !important;
+    min-height: 28px !important;
+    max-height: 28px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center;
-    font-size: 12px;
+    font-size: 11.5px;
     font-weight: 900;
     color: #92400E;
     box-sizing: border-box !important;
@@ -1225,29 +1392,36 @@ div[data-testid="stNumberInput"] input {
 .entry-grid-cell-amount {
     background: #ECFDF5;
     border: 1px solid #6EE7B7;
-    border-radius: 6px;
-    height: 36px !important;
-    min-height: 36px !important;
-    max-height: 36px !important;
+    border-radius: 5px;
+    width: 100% !important;
+    height: 28px !important;
+    min-height: 28px !important;
+    max-height: 28px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: flex-end;
-    padding: 0 10px !important;
-    font-size: 12px;
+    padding: 0 8px !important;
+    font-size: 11.5px;
     font-weight: 900;
     color: #065F46;
     box-sizing: border-box !important;
     margin: 0 !important;
 }
+.entry-grid-cell-amount[style*="justify-content:center"],
+.entry-grid-cell-amount[style*="text-align:center"] {
+    justify-content: center !important;
+}
 .entry-grid-total-row {
     background: linear-gradient(90deg, #EFF6FF 0%, #E0E7FF 100%);
     border: 1.5px solid #93C5FD;
-    border-radius: 8px;
-    height: 38px !important;
-    min-height: 38px !important;
-    padding: 0 10px !important;
+    border-radius: 6px;
+    width: 100% !important;
+    height: 30px !important;
+    min-height: 30px !important;
+    max-height: 30px !important;
+    padding: 0 8px !important;
     margin: 0 !important;
-    font-size: 12px;
+    font-size: 11.5px;
     font-weight: 900;
     color: #1E2252;
     display: flex !important;
@@ -1469,14 +1643,15 @@ div[data-testid="stNumberInput"] input {
 .entry-grid-cell-livesold {
     background: #EFF6FF;
     border: 1px solid #93C5FD;
-    border-radius: 6px;
-    height: 36px !important;
-    min-height: 36px !important;
-    max-height: 36px !important;
+    border-radius: 5px;
+    width: 100% !important;
+    height: 28px !important;
+    min-height: 28px !important;
+    max-height: 28px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center;
-    font-size: 12px;
+    font-size: 11.5px;
     font-weight: 900;
     color: #1D4ED8;
     box-sizing: border-box !important;
@@ -2680,6 +2855,7 @@ def load_db_daily_df():
     FROM daily_cart_entries e 
     LEFT JOIN daily_cart_items i ON e.id = i.daily_entry_id
     WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(e.city, 'HOSUR'))) = :active_loc)
+      AND LOWER(TRIM(COALESCE(e.cart_name, ''))) NOT LIKE '%test%'
     GROUP BY e.id, e.entry_date, e.cart_name, e.total_collection, e.phonepe, e.cash, 
              e.staff_name, e.staff_advance, e.food_tea_cash,
              e.cash_leakage_explained, e.cash_leakage_unexplained, e.cash_leakage, e.remarks 
@@ -2691,7 +2867,7 @@ def load_db_daily_df():
 
 def load_db_flavor_sales(start_date=None, end_date=None):
     if db_conn is None: return pd.DataFrame()
-    where_clauses, params = [], {}
+    where_clauses, params = ["LOWER(TRIM(COALESCE(e.cart_name, ''))) NOT LIKE '%test%'"], {}
     active_loc = get_active_location_filter()
     if active_loc != "ALL":
         where_clauses.append("UPPER(TRIM(COALESCE(e.city, 'HOSUR'))) = :active_loc")
@@ -3935,7 +4111,7 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
     if staff_df.empty: return 0.0, 0.0, 0.0, {}
 
     active_loc = get_active_location_filter()
-    entries_df = db_conn.query("SELECT entry_date, cart_name, staff_name, total_collection FROM daily_cart_entries WHERE entry_date >= :sdate AND entry_date <= :edate AND (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(city, 'HOSUR'))) = :active_loc) AND staff_name IS NOT NULL AND staff_name != '' AND staff_name != 'Select Staff';", params={"sdate": start_date, "edate": end_date, "active_loc": active_loc}, ttl="0s")
+    entries_df = db_conn.query("SELECT entry_date, cart_name, staff_name, total_collection FROM daily_cart_entries WHERE entry_date >= :sdate AND entry_date <= :edate AND (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(city, 'HOSUR'))) = :active_loc) AND LOWER(TRIM(COALESCE(cart_name, ''))) NOT LIKE '%test%' AND staff_name IS NOT NULL AND staff_name != '' AND staff_name != 'Select Staff';", params={"sdate": start_date, "edate": end_date, "active_loc": active_loc}, ttl="0s")
     att_df = db_conn.query("SELECT a.staff_id, s.name AS staff_name, a.attendance_date, a.status, a.leave_type FROM staff_attendance a JOIN staff s ON a.staff_id = s.id WHERE a.attendance_date >= :sdate AND a.attendance_date <= :edate AND (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(s.location, 'HOSUR'))) = :active_loc);", params={"sdate": start_date, "edate": end_date, "active_loc": active_loc}, ttl="0s")
     pay_df = db_conn.query("""
         SELECT p.amount_paid, p.payment_date, e.staff_name
@@ -4347,6 +4523,129 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
         }
 
     return total_labour_incurred, total_labour_paid, total_labour_incurred - total_labour_paid, breakdown_by_staff
+
+
+def compute_period_financials(start_date, end_date, avg_divisor_days=None, daily_df_in=None, exp_df_in=None):
+    """
+    Single source of truth for period financial calculations across:
+    - Home Landing Page (Top KPI Strip & Bottom Finance Performance Card)
+    - Dashboard Main Financials Overview
+    - Dashboard -> Financials Sub-Page (KPIs, OPEX Deep-Dive, P&L, Cost Distribution)
+    - Dashboard -> Month-Wise Performance Comparison
+    """
+    d_df = daily_df_in if daily_df_in is not None else load_db_daily_df()
+    if d_df is not None and not d_df.empty and "Cart" in d_df.columns:
+        d_df = d_df[~d_df["Cart"].astype(str).str.lower().str.contains("test", na=False)].copy()
+    else:
+        d_df = pd.DataFrame()
+
+    if exp_df_in is not None:
+        e_df = exp_df_in.copy()
+    else:
+        try:
+            e_df = pd.DataFrame(load_db_expenses_list())
+        except Exception:
+            e_df = pd.DataFrame()
+
+    if not d_df.empty and "Date" in d_df.columns:
+        range_df = d_df[(d_df["Date"].dt.date >= start_date) & (d_df["Date"].dt.date <= end_date)].copy()
+    else:
+        range_df = pd.DataFrame()
+
+    if not e_df.empty and "Date" in e_df.columns and e_df["Date"].notna().any():
+        range_exp = e_df[(e_df["Date"].dt.date >= start_date) & (e_df["Date"].dt.date <= end_date)].copy()
+    else:
+        range_exp = pd.DataFrame()
+
+    total_rev = float(range_df["Total_Collection"].sum()) if not range_df.empty else 0.0
+    total_units = int(round(range_df["Sold_Total"].sum())) if not range_df.empty else 0
+
+    try:
+        flavor_range_df = load_db_flavor_sales(start_date=start_date, end_date=end_date)
+    except Exception:
+        flavor_range_df = pd.DataFrame()
+    exact_cogs_sold = (
+        float(flavor_range_df["COGS (₹)"].sum())
+        if not flavor_range_df.empty and "COGS (₹)" in flavor_range_df.columns
+        else 0.0
+    )
+
+    if not range_exp.empty:
+        expense_types = range_exp["Expense_Type"].fillna("").astype(str).str.strip().str.upper()
+        expense_categories = range_exp["Category"].fillna("").astype(str).str.strip().str.casefold()
+        staff_blank_mask = (
+            range_exp["Staff_Name"].isna()
+            | range_exp["Staff_Name"].astype(str).str.strip().isin(["", "None", "nan", "null", "Select Staff"])
+        )
+        capex_total = float(range_exp.loc[expense_types == "CAPEX", "Amount"].sum())
+        unassigned_labour_df = range_exp[
+            (expense_types == "OPEX") & (expense_categories == "labour charges") & staff_blank_mask
+        ].copy()
+        unassigned_labour_total = float(unassigned_labour_df["Amount"].sum()) if not unassigned_labour_df.empty else 0.0
+        non_labour_opex_df = range_exp[
+            (expense_types == "OPEX") & (~expense_categories.isin(["labour charges", "cost of goods"]))
+        ].copy()
+        other_opex_total = float(non_labour_opex_df["Amount"].sum()) if not non_labour_opex_df.empty else 0.0
+    else:
+        capex_total = 0.0
+        unassigned_labour_df = pd.DataFrame()
+        unassigned_labour_total = 0.0
+        non_labour_opex_df = pd.DataFrame()
+        other_opex_total = 0.0
+
+    try:
+        _, _, _, staff_pay_breakdown = calculate_incurred_labour_for_range(
+            start_date, end_date, limit_to_employment=True
+        )
+    except Exception:
+        staff_pay_breakdown = {}
+
+    staff_salary_total = sum(float(staff.get("incurred", 0.0)) for staff in staff_pay_breakdown.values())
+    tot_labour_incurred = staff_salary_total + unassigned_labour_total
+    total_incurred_opex = tot_labour_incurred + other_opex_total
+
+    gross_profit = total_rev - exact_cogs_sold
+    cogs_margin = (exact_cogs_sold / total_rev * 100.0) if total_rev > 0 else 0.0
+    gross_margin = (gross_profit / total_rev * 100.0) if total_rev > 0 else 0.0
+    net_profit = gross_profit - total_incurred_opex
+    net_margin = (net_profit / total_rev * 100.0) if total_rev > 0 else 0.0
+    opex_margin = (total_incurred_opex / total_rev * 100.0) if total_rev > 0 else 0.0
+
+    if avg_divisor_days is None or int(avg_divisor_days) <= 0:
+        today_ref = date.today()
+        if start_date.day == 1 and start_date.year == today_ref.year and start_date.month == today_ref.month and end_date >= today_ref:
+            avg_divisor_days = max(1, (today_ref - start_date).days)
+        else:
+            avg_divisor_days = max(1, (end_date - start_date).days + 1)
+    else:
+        avg_divisor_days = max(1, int(avg_divisor_days))
+
+    avg_rev_per_day = (total_rev / float(avg_divisor_days)) if avg_divisor_days > 0 else 0.0
+    avg_units_per_day = int(round(total_units / float(avg_divisor_days))) if avg_divisor_days > 0 else 0
+
+    return {
+        "range_df": range_df,
+        "range_exp": range_exp,
+        "total_rev": total_rev,
+        "total_units": total_units,
+        "exact_cogs_sold": exact_cogs_sold,
+        "capex_total": capex_total,
+        "staff_pay_breakdown": staff_pay_breakdown,
+        "unassigned_labour_df": unassigned_labour_df,
+        "non_labour_opex_df": non_labour_opex_df,
+        "tot_labour_incurred": tot_labour_incurred,
+        "other_opex_total": other_opex_total,
+        "total_incurred_opex": total_incurred_opex,
+        "gross_profit": gross_profit,
+        "cogs_margin": cogs_margin,
+        "gross_margin": gross_margin,
+        "net_profit": net_profit,
+        "net_margin": net_margin,
+        "opex_margin": opex_margin,
+        "avg_divisor_days": avg_divisor_days,
+        "avg_rev_per_day": avg_rev_per_day,
+        "avg_units_per_day": avg_units_per_day,
+    }
 
 def generate_payslip_pdf(staff_name, start_date, end_date, data_dict):
     if not REPORTLAB_AVAILABLE: return None
@@ -5007,7 +5306,7 @@ if page == "Home" and user_role == "admin":
             period_df_home = home_daily_df[(home_daily_df["Date"].dt.date >= period_start_home) & (home_daily_df["Date"].dt.date <= today_home)]
             period_badge_lbl = "Last 30 Days"
             period_short_lbl = "30d"
-            avg_divisor_home = max(1, int(period_df_home["Date"].dt.date.nunique()))
+            avg_divisor_home = max(1, (today_home - period_start_home).days + 1)
         else:
             period_start_home = mtd_start
             period_df_home = mtd_df
@@ -5021,10 +5320,17 @@ if page == "Home" and user_role == "admin":
         period_short_lbl = "MTD"
         avg_divisor_home = max(1, (today_home - mtd_start).days)
 
-    period_rev_home = float(period_df_home["Total_Collection"].sum()) if not period_df_home.empty else 0.0
-    period_units_home = int(round(period_df_home["Sold_Total"].sum())) if not period_df_home.empty else 0
-    avg_daily_rev_home = period_rev_home / float(avg_divisor_home) if avg_divisor_home > 0 else 0.0
-    avg_daily_units_home = int(round(period_units_home / float(avg_divisor_home))) if avg_divisor_home > 0 else 0
+    home_fin = compute_period_financials(
+        start_date=period_start_home,
+        end_date=today_home,
+        avg_divisor_days=avg_divisor_home,
+        daily_df_in=home_daily_df,
+        exp_df_in=home_exp_df,
+    )
+    period_rev_home = home_fin["total_rev"]
+    period_units_home = home_fin["total_units"]
+    avg_daily_rev_home = home_fin["avg_rev_per_day"]
+    avg_daily_units_home = home_fin["avg_units_per_day"]
 
     yest_df_home = home_daily_df[home_daily_df["Date"].dt.date == yesterday_home] if not home_daily_df.empty else pd.DataFrame()
     yest_rev_home = float(yest_df_home["Total_Collection"].sum()) if not yest_df_home.empty else 0.0
@@ -5081,35 +5387,12 @@ if page == "Home" and user_role == "admin":
         except Exception:
             pass
 
-    # Exact COGS, Gross Profit, OPEX & Net Profit for the Month
-    try:
-        flv_period_df = load_db_flavor_sales(start_date=period_start_home, end_date=today_home)
-    except Exception:
-        flv_period_df = pd.DataFrame()
-    exact_cogs_home = float(flv_period_df["COGS (₹)"].sum()) if not flv_period_df.empty and "COGS (₹)" in flv_period_df.columns else 0.0
-
-    total_opex_home = 0.0
-    try:
-        if not home_exp_df.empty and "Date" in home_exp_df.columns:
-            range_exp_h = home_exp_df[(home_exp_df["Date"].dt.date >= period_start_home) & (home_exp_df["Date"].dt.date <= today_home)]
-        else:
-            range_exp_h = pd.DataFrame()
-        _, _, _, staff_pay_h = calculate_incurred_labour_for_range(period_start_home, today_home, limit_to_employment=True)
-        staff_sal_h = sum(float(sv["incurred"]) for sv in staff_pay_h.values())
-        if not range_exp_h.empty:
-            _etypes = range_exp_h["Expense_Type"].fillna("").astype(str).str.strip().str.upper()
-            _ecats = range_exp_h["Category"].fillna("").astype(str).str.strip().str.casefold()
-            _unass_lab = float(range_exp_h[(_etypes == "OPEX") & (_ecats == "labour charges") & range_exp_h["Staff_Name"].isna()]["Amount"].sum())
-            _other_opex = float(range_exp_h[(_etypes == "OPEX") & (~_ecats.isin(["labour charges", "cost of goods"]))]["Amount"].sum())
-        else:
-            _unass_lab, _other_opex = 0.0, 0.0
-        total_opex_home = staff_sal_h + _unass_lab + _other_opex
-    except Exception:
-        total_opex_home = 0.0
-
-    gross_profit_home = period_rev_home - exact_cogs_home
-    net_profit_home = gross_profit_home - total_opex_home
-    net_margin_pct_home = (net_profit_home / period_rev_home * 100.0) if period_rev_home > 0 else 0.0
+    # Exact COGS, Gross Profit, OPEX & Net Profit for the Period (via canonical compute_period_financials)
+    exact_cogs_home = home_fin["exact_cogs_sold"]
+    total_opex_home = home_fin["total_incurred_opex"]
+    gross_profit_home = home_fin["gross_profit"]
+    net_profit_home = home_fin["net_profit"]
+    net_margin_pct_home = home_fin["net_margin"]
 
     # ------------------------------------------------------------------
     # MASTER 2-COLUMN DEPOSITO LAYOUT
@@ -5797,6 +6080,7 @@ if page == "Locations & Logins" and user_role == "admin":
                 )
 
 elif page == "Daily Entry":
+    st.markdown('<span class="kulfi-entry-80-scope"></span>', unsafe_allow_html=True)
     # Split Entry flow to mirror the mobile app: Sales Entry, Restock Entry, Extra Stock.
     if "daily_entry_mode" not in st.session_state:
         st.session_state["daily_entry_mode"] = None
@@ -5814,17 +6098,17 @@ elif page == "Daily Entry":
         st.markdown(
             f"""
             <div style='background:linear-gradient(90deg, #EFF6FF 0%, #F8FAFC 100%);
-                        border:1.5px solid #CBD5E1;border-radius:14px;padding:14px 20px;
-                        margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;'>
+                        border:1.5px solid #CBD5E1;border-radius:12px;padding:10px 16px;
+                        margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;'>
                 <div>
-                    <div style='font-family:Fraunces,serif;font-size:21px;font-weight:700;color:#1E2252;'>
-                        🛒 Daily Operations & Stock Entry Hub
+                    <div style='font-family:Plus Jakarta Sans,sans-serif;font-size:17px;font-weight:800;color:#1E2252;'>
+                        🛒 Daily Operations &amp; Stock Entry Hub
                     </div>
-                    <div style='font-size:12px;color:#475569;margin-top:2px;'>
+                    <div style='font-size:11px;color:#475569;margin-top:1px;'>
                         Cart sales, restocks, returns &amp; freezer sales
                     </div>
                 </div>
-                <div style='background:#BFDBFE;color:#111111;border:1.5px solid #93C5FD;padding:6px 14px;border-radius:999px;font-size:12px;font-weight:800;'>
+                <div style='background:#BFDBFE;color:#111111;border:1.5px solid #93C5FD;padding:4px 12px;border-radius:999px;font-size:11px;font-weight:800;'>
                     📅 {_entry_date_display(today_val)}
                 </div>
             </div>
@@ -5876,23 +6160,17 @@ elif page == "Daily Entry":
                     st.session_state["daily_entry_mode"] = "live_flavour_view"
                     st.rerun()
     else:
-        back_col, _ = st.columns([2.2, 4.8])
-        with back_col:
-            if st.button("⬅ Back to Entry Menu", key=f"back_to_entry_menu_{entry_mode}", type="primary", use_container_width=True):
-                st.session_state.pop("_last_mismatch_modal_target", None)
-                st.session_state["daily_entry_mode"] = None
-                st.rerun()
-        st.markdown("<div style='height: 4px;'></div>", unsafe_allow_html=True)
-
         # --------------------------------------------------------------
-        # SALES ENTRY
+        # SALES ENTRY (CARTS) — Compact 80% Single-Page Layout
         # --------------------------------------------------------------
         if entry_mode == "sales":
-            st.subheader("🧾 Sales Entry")
-            st.caption("Sales & closing details")
-
-            f1, f2 = st.columns([1.2, 1])
-            with f1:
+            top_c0, top_c1, top_c2, top_c3 = st.columns([0.9, 1.25, 1.0, 1.25], gap="small", vertical_alignment="bottom")
+            with top_c0:
+                if st.button("⬅ Entry Menu", key="back_to_entry_menu_sales", type="secondary", use_container_width=True):
+                    st.session_state.pop("_last_mismatch_modal_target", None)
+                    st.session_state["daily_entry_mode"] = None
+                    st.rerun()
+            with top_c1:
                 cart_name = st.selectbox("Assigned Cart", CARTS, key="entry_cart_shared")
 
             try:
@@ -5930,7 +6208,7 @@ elif page == "Daily Entry":
                     and any(int(opening_map.get(code, 0)) != int(prev_closings.get(code, 0)) for code in FLAVOR_CODES)
                 )
 
-                with f2:
+                with top_c2:
                     if user_role == "entry" or sales_opening_mismatch:
                         sel_date_label = _entry_date_display(entry_date)
                         st.text_input(
@@ -5947,6 +6225,19 @@ elif page == "Daily Entry":
                             key=f"date_sel_{cart_name}",
                         )
 
+                staff_options = load_active_staff_list()
+                default_staff_name = loaded.get("staff_name", "")
+                if default_staff_name and default_staff_name not in staff_options:
+                    staff_options.append(default_staff_name)
+                with top_c3:
+                    staff_name = st.selectbox(
+                        "Cart Staff Assigned",
+                        staff_options,
+                        index=staff_options.index(default_staff_name) if default_staff_name in staff_options else 0,
+                        key=f"daily_staff{data_key_suffix}",
+                        disabled=sales_opening_mismatch,
+                    )
+
                 if sales_opening_mismatch:
                     mismatch_msg = "Error:: Opening units mismatch with previous closing units - please fix this to proceed"
                     mismatch_target = f"{cart_name}_{entry_date.strftime('%Y%m%d')}"
@@ -5957,31 +6248,17 @@ elif page == "Daily Entry":
                 else:
                     st.session_state.pop("_last_mismatch_modal_target", None)
 
-                staff_options = load_active_staff_list()
-                default_staff_name = loaded.get("staff_name", "")
-                if default_staff_name and default_staff_name not in staff_options:
-                    staff_options.append(default_staff_name)
-                staff_name = st.selectbox(
-                    "Cart staff assigned",
-                    staff_options,
-                    index=staff_options.index(default_staff_name) if default_staff_name in staff_options else 0,
-                    key=f"daily_staff{data_key_suffix}",
-                    disabled=sales_opening_mismatch,
-                )
-
                 added_map, closing_map, sold_map, amount_map = {}, {}, {}, {}
 
                 st.markdown(
-                    f"<div class='header-box-sales'><span>📅 Sales & Closing Entry — {_entry_date_display(entry_date)}</span><span><b>{cart_name}</b></span></div>",
+                    f"<div class='header-box-sales'><span>🧾 Sales &amp; Closing Entry — {_entry_date_display(entry_date)}</span><span><b>{cart_name}</b></span></div>",
                     unsafe_allow_html=True,
                 )
                 with st.container(border=True):
-                    st.caption(
-                        f"Enter **+ Added** and **Closing** units in the highlighted boxes for **{_entry_date_display(entry_date)}**:"
-                    )
                     live_sold_map = get_live_cart_sold_map_for_single_cart(cart_name, entry_date)
+                    sales_col_w = [1.85, 0.85, 0.95, 0.95, 0.85, 0.85, 1.05]
 
-                    hc1, hc2, hc3, hc4, hc5, hc6, hc7 = st.columns([1.95, 0.78, 0.95, 0.95, 0.78, 0.82, 1.1], gap="small", vertical_alignment="center")
+                    hc1, hc2, hc3, hc4, hc5, hc6, hc7 = st.columns(sales_col_w, gap="small", vertical_alignment="center")
                     hc1.markdown("<div class='entry-grid-header' style='text-align:left;'>Flavour (MRP)</div>", unsafe_allow_html=True)
                     hc2.markdown("<div class='entry-grid-header'>Open</div>", unsafe_allow_html=True)
                     hc3.markdown("<div class='entry-grid-header'>+ Add ✏️</div>", unsafe_allow_html=True)
@@ -5999,10 +6276,10 @@ elif page == "Daily Entry":
                             st.session_state[k_cls] = loaded["by_code"][code]["closing"]
 
                         cur_open = opening_map[code]
-                        rc1, rc2, rc3, rc4, rc5, rc6, rc7 = st.columns([1.95, 0.78, 0.95, 0.95, 0.78, 0.82, 1.1], gap="small", vertical_alignment="center")
+                        rc1, rc2, rc3, rc4, rc5, rc6, rc7 = st.columns(sales_col_w, gap="small", vertical_alignment="center")
                         with rc1:
                             st.markdown(
-                                f"<div class='entry-grid-cell-flavour'><span>{f_info['name']}</span><span style='color:#2563EB;font-size:11px;'>₹{f_info['mrp']:.0f}</span></div>",
+                                f"<div class='entry-grid-cell-flavour'><span>{f_info['name']}</span><span style='color:#2563EB;font-size:10.5px;'>₹{f_info['mrp']:.0f}</span></div>",
                                 unsafe_allow_html=True,
                             )
                         with rc2:
@@ -6049,7 +6326,7 @@ elif page == "Daily Entry":
                     tot_live_sold = sum(live_sold_map.values())
                     calculated_mrp_total = float(sum(amount_map.values()))
 
-                    tc1, tc2, tc3, tc4, tc5, tc6, tc7 = st.columns([1.95, 0.78, 0.95, 0.95, 0.78, 0.82, 1.1], gap="small", vertical_alignment="center")
+                    tc1, tc2, tc3, tc4, tc5, tc6, tc7 = st.columns(sales_col_w, gap="small", vertical_alignment="center")
                     tc1.markdown("<div class='entry-grid-total-row' style='text-align:left;'>TOTAL</div>", unsafe_allow_html=True)
                     tc2.markdown(f"<div class='entry-grid-total-row' style='text-align:center;'>{tot_open}</div>", unsafe_allow_html=True)
                     tc3.markdown(f"<div class='entry-grid-total-row' style='text-align:center;'>{tot_add}</div>", unsafe_allow_html=True)
@@ -6083,61 +6360,6 @@ elif page == "Daily Entry":
                     if f"daily_leak_explained{data_key_suffix}" not in st.session_state:
                         st.session_state[f"daily_leak_explained{data_key_suffix}"] = f"{loaded.get('cash_leakage_explained', 0.0):.2f}"
 
-                    st.markdown("---")
-                    sum1, sum2 = st.columns(2)
-                    sum1.metric("Total Sold", f"{tot_sold} pcs")
-                    sum2.metric("Total Collection", f"₹{calculated_mrp_total:,.0f}")
-
-                    c3, c4 = st.columns(2)
-                    with c3:
-                        total_collection_val = _num(st.text_input("Total collection (₹)", key=k_tot, disabled=sales_opening_mismatch))
-                        staff_advance_val = _num(st.text_input("Advance to staff (₹)", key=f"daily_adv{data_key_suffix}", disabled=sales_opening_mismatch))
-                        food_tea_val = _num(st.text_input("Cash Food / Tea (₹)", key=f"daily_food{data_key_suffix}", disabled=sales_opening_mismatch))
-                    with c4:
-                        phonepe_val = _num(st.text_input("PhonePe / UPI (₹)", key=f"daily_phonepe{data_key_suffix}", disabled=sales_opening_mismatch))
-                        cash_val = _num(st.text_input("Cash Collected (₹)", key=f"daily_cash{data_key_suffix}", disabled=sales_opening_mismatch))
-
-                    leakage_before_explanation = total_collection_val - phonepe_val - staff_advance_val - food_tea_val - cash_val
-                    available_cash_leakage = max(0.0, leakage_before_explanation)
-
-                    leak_c1, leak_c2 = st.columns(2)
-                    with leak_c1:
-                        cash_leakage_explained = max(
-                            0.0,
-                            _num(st.text_input(
-                                "Cash Leakage (Explained) (₹)",
-                                key=f"daily_leak_explained{data_key_suffix}",
-                                placeholder="0.00",
-                                disabled=sales_opening_mismatch,
-                            )),
-                        )
-                    cash_leakage_unexplained = max(0.0, available_cash_leakage - cash_leakage_explained)
-                    with leak_c2:
-                        unexp_color = "#C41C1C" if cash_leakage_unexplained > 0.001 else "#0F172A"
-                        unexp_bg = "#FFF0ED" if cash_leakage_unexplained > 0.001 else "#F8FAFC"
-                        st.markdown(
-                            f"""
-                            <div style="font-size:11px;font-weight:700;margin-bottom:2px;color:#334155;">Cash Leakage (Unexplained) (₹)</div>
-                            <div style="height:36px;display:flex;align-items:center;border:1.5px solid #CBD5E1;border-radius:7px;padding:0 10px;
-                                        background:{unexp_bg};color:{unexp_color};font-size:12px;font-weight:800;">
-                                ₹{cash_leakage_unexplained:,.2f}
-                            </div>
-                            """,
-                            unsafe_allow_html=True,
-                        )
-
-                    explained_exceeds_available = cash_leakage_explained > available_cash_leakage + 0.001
-                    has_leakage = cash_leakage_explained > 0.001 or cash_leakage_unexplained > 0.001
-                    if explained_exceeds_available:
-                        st.error(f"Cash Leakage (Explained) cannot exceed the current leakage amount of ₹{available_cash_leakage:,.2f}.")
-                    elif has_leakage:
-                        st.markdown(
-                            "<p style='color:#C41C1C; font-weight:bold; font-size:11.5px; margin: 2px 0 !important;'>"
-                            "⚠️ Remarks are mandatory when explained or unexplained cash leakage is present."
-                            "</p>",
-                            unsafe_allow_html=True,
-                        )
-
                     _clean_loaded_rem = re.sub(
                         r"\[(?:mobile\s*app|web\s*app)\]",
                         "",
@@ -6152,13 +6374,69 @@ elif page == "Daily Entry":
                         _cur_r = re.sub(r"\[(?:mobile\s*app|web\s*app)\]", "", str(st.session_state.get(_rem_state_key, "")), flags=re.IGNORECASE).strip()
                         st.session_state[_rem_state_key] = f"{_cur_r} [web app]".strip()
 
-                    remarks = st.text_input(
-                        "Remarks",
-                        value=_default_web_rem,
-                        key=_rem_state_key,
-                        placeholder="Enter remarks (mandatory if cash leakage)...",
-                        disabled=sales_opening_mismatch,
-                    )
+                    # Compact 2-row financial & remarks bar (no scrolling required)
+                    pay_r1_c1, pay_r1_c2, pay_r1_c3, pay_r1_c4 = st.columns(4, gap="small")
+                    with pay_r1_c1:
+                        total_collection_val = _num(st.text_input("Total collection (₹)", key=k_tot, disabled=sales_opening_mismatch))
+                    with pay_r1_c2:
+                        phonepe_val = _num(st.text_input("PhonePe / UPI (₹)", key=f"daily_phonepe{data_key_suffix}", disabled=sales_opening_mismatch))
+                    with pay_r1_c3:
+                        cash_val = _num(st.text_input("Cash Collected (₹)", key=f"daily_cash{data_key_suffix}", disabled=sales_opening_mismatch))
+                    with pay_r1_c4:
+                        staff_advance_val = _num(st.text_input("Advance to staff (₹)", key=f"daily_adv{data_key_suffix}", disabled=sales_opening_mismatch))
+
+                    pay_r2_c1, pay_r2_c2, pay_r2_c3, pay_r2_c4 = st.columns([1.0, 1.0, 1.0, 1.35], gap="small", vertical_alignment="bottom")
+                    with pay_r2_c1:
+                        food_tea_val = _num(st.text_input("Cash Food / Tea (₹)", key=f"daily_food{data_key_suffix}", disabled=sales_opening_mismatch))
+
+                    leakage_before_explanation = total_collection_val - phonepe_val - staff_advance_val - food_tea_val - cash_val
+                    available_cash_leakage = max(0.0, leakage_before_explanation)
+
+                    with pay_r2_c2:
+                        cash_leakage_explained = max(
+                            0.0,
+                            _num(st.text_input(
+                                "Leakage Explained (₹)",
+                                key=f"daily_leak_explained{data_key_suffix}",
+                                placeholder="0.00",
+                                disabled=sales_opening_mismatch,
+                            )),
+                        )
+                    cash_leakage_unexplained = max(0.0, available_cash_leakage - cash_leakage_explained)
+                    with pay_r2_c3:
+                        unexp_color = "#C41C1C" if cash_leakage_unexplained > 0.001 else "#0F172A"
+                        unexp_bg = "#FFF0ED" if cash_leakage_unexplained > 0.001 else "#F8FAFC"
+                        st.markdown(
+                            f"""
+                            <div style="font-size:10px;font-weight:700;margin-bottom:1px;color:#334155;line-height:1.1;">Leakage Unexplained (₹)</div>
+                            <div style="height:28px;display:flex;align-items:center;border:1.5px solid #CBD5E1;border-radius:5px;padding:0 8px;
+                                        background:{unexp_bg};color:{unexp_color};font-size:11.5px;font-weight:800;">
+                                ₹{cash_leakage_unexplained:,.2f}
+                            </div>
+                            """,
+                            unsafe_allow_html=True,
+                        )
+                    with pay_r2_c4:
+                        remarks = st.text_input(
+                            "Remarks",
+                            value=_default_web_rem,
+                            key=_rem_state_key,
+                            placeholder="Remarks (mandatory if leakage)...",
+                            disabled=sales_opening_mismatch,
+                        )
+
+                    explained_exceeds_available = cash_leakage_explained > available_cash_leakage + 0.001
+                    has_leakage = cash_leakage_explained > 0.001 or cash_leakage_unexplained > 0.001
+                    if explained_exceeds_available:
+                        st.error(f"Cash Leakage (Explained) cannot exceed the current leakage amount of ₹{available_cash_leakage:,.2f}.")
+                    elif has_leakage:
+                        st.markdown(
+                            "<p style='color:#C41C1C; font-weight:bold; font-size:11px; margin: 1px 0 !important;'>"
+                            "⚠️ Remarks are mandatory when explained or unexplained cash leakage is present."
+                            "</p>",
+                            unsafe_allow_html=True,
+                        )
+
                     manual_remarks = re.sub(
                         r"\[(?:web\s*app|mobile\s*app)\]",
                         "",
@@ -6169,7 +6447,7 @@ elif page == "Daily Entry":
                 if any(s < 0 for s in sold_map.values()):
                     st.error(f"Sales negative for at least one flavour on {_entry_date_display(entry_date)} - check closing count.")
 
-                if st.button("💾 Submit Sales Entry", type="primary", use_container_width=True, key=f"submit_sales_{entry_id}", disabled=sales_opening_mismatch):
+                if st.button("💾 Submit Sales Entry", type="primary", use_container_width=False, key=f"submit_sales_{entry_id}", disabled=sales_opening_mismatch):
                     if any(s < 0 for s in sold_map.values()):
                         st.error("Sales works out negative for at least one flavour - fix closing count before saving.")
                     elif explained_exceeds_available:
@@ -6207,7 +6485,7 @@ elif page == "Daily Entry":
                             st.error(f"Could not save Sales Entry - {e}")
 
         # --------------------------------------------------------------
-        # SALES ENTRY (FREEZER) — New Entry (Default) + Edit/Delete Previous Entries
+        # SALES ENTRY (FREEZER) — Compact 80% Single-Page Layout
         # --------------------------------------------------------------
         elif entry_mode == "freezer_sales":
             if "fzr_entry_sub_mode" not in st.session_state:
@@ -6216,12 +6494,16 @@ elif page == "Daily Entry":
             fzr_sub_mode = st.session_state["fzr_entry_sub_mode"]
             editing_txn_id = st.session_state.get("_editing_freezer_txn_id")
 
-            hdr_c1, hdr_c2, hdr_c3 = st.columns([2.2, 1.4, 1.4], gap="small", vertical_alignment="center")
+            hdr_c0, hdr_c1, hdr_c2, hdr_c3 = st.columns([0.9, 1.5, 1.3, 1.3], gap="small", vertical_alignment="center")
+            with hdr_c0:
+                if st.button("⬅ Entry Menu", key="back_to_entry_menu_freezer_sales", type="secondary", use_container_width=True):
+                    st.session_state["daily_entry_mode"] = None
+                    st.rerun()
             with hdr_c1:
-                st.subheader("❄️ Sales Entry (Freezer)")
+                st.markdown("<div style='font-size:14px;font-weight:800;color:#1E2252;'>❄️ Sales Entry (Freezer)</div>", unsafe_allow_html=True)
             with hdr_c2:
                 if st.button(
-                    "➕ New Freezer Sale Entry",
+                    "➕ New Freezer Sale",
                     key="btn_fzr_mode_new",
                     type="primary" if fzr_sub_mode == "new" else "secondary",
                     use_container_width=True
@@ -6232,7 +6514,7 @@ elif page == "Daily Entry":
                     st.rerun()
             with hdr_c3:
                 if st.button(
-                    f"✏️ Editing Sale #{editing_txn_id}" if (fzr_sub_mode == "edit" and editing_txn_id) else "✏️ Edit Previous Entries",
+                    f"✏️ Editing #{editing_txn_id}" if (fzr_sub_mode == "edit" and editing_txn_id) else "✏️ Past Entries",
                     key="btn_fzr_mode_list",
                     type="primary" if fzr_sub_mode in ("list", "edit") else "secondary",
                     use_container_width=True
@@ -6244,15 +6526,12 @@ elif page == "Daily Entry":
             freezer_asset_name = get_freezer_asset_name_for_location(CITY)
             staff_options = load_active_staff_list()
 
-            # ==========================================================
             # MODE A: LIST OF PREVIOUS FREEZER SALE TRANSACTIONS
-            # ==========================================================
             if fzr_sub_mode == "list":
                 prev_txns_df = load_freezer_sale_transactions_df()
                 if prev_txns_df.empty:
                     st.info("No previous Freezer sale transactions found.")
                 else:
-                    pass
                     col_w = [0.65, 0.85, 0.80, 0.98, 0.98, 0.65, 0.80, 0.80, 0.80, 0.80, 1.40, 1.05, 0.55, 0.55]
                     hdrs = [
                         ("Txn #", "Transaction ID"),
@@ -6316,9 +6595,7 @@ elif page == "Daily Entry":
                         if rc[13].button("❌", key=f"row_del_fzr_txn_{tid}", help="Delete Freezer Sale", use_container_width=True):
                             confirm_delete_freezer_sale_modal(tr.to_dict())
 
-            # ==========================================================
             # MODE B & C: NEW FREEZER SALE ENTRY OR EDIT EXISTING ENTRY
-            # ==========================================================
             else:
                 editing_row = None
                 if fzr_sub_mode == "edit" and editing_txn_id is not None:
@@ -6333,14 +6610,13 @@ elif page == "Daily Entry":
                         freezer_asset_name = str(editing_row.get("freezer_name") or freezer_asset_name)
 
                 if editing_row:
-                    eb1, eb2 = st.columns([3.8, 1.2])
+                    eb1, eb2 = st.columns([3.8, 1.2], gap="small", vertical_alignment="center")
                     with eb1:
                         st.info(
                             f"✏️ **Editing Freezer Sale #{int(editing_row['id'])}** "
-                            f"(Originally recorded on {pd.to_datetime(editing_row['sale_date']).strftime('%d-%b-%Y')} for {freezer_asset_name})"
+                            f"({pd.to_datetime(editing_row['sale_date']).strftime('%d-%b-%Y')} • {freezer_asset_name})"
                         )
                     with eb2:
-                        st.markdown("<div style='height: 4px;'></div>", unsafe_allow_html=True)
                         if st.button("⬅ Cancel Edit", key="cancel_fzr_txn_edit_btn", use_container_width=True):
                             st.session_state["fzr_entry_sub_mode"] = "list"
                             st.session_state.pop("_editing_freezer_txn_id", None)
@@ -6350,7 +6626,7 @@ elif page == "Daily Entry":
                 mode_tag = f"edit_{int(editing_row['id'])}_{form_nonce}" if editing_row else f"new_{form_nonce}"
                 default_sale_dt = pd.to_datetime(editing_row["sale_date"]).date() if editing_row else today_val
 
-                fs_top1, fs_top2 = st.columns([1, 1.2])
+                fs_top1, fs_top2 = st.columns([1.0, 1.4], gap="small")
                 with fs_top1:
                     fzr_sale_date = st.date_input(
                         "Sale Date",
@@ -6393,7 +6669,8 @@ elif page == "Daily Entry":
                     unsafe_allow_html=True,
                 )
                 with st.container(border=True):
-                    fhc1, fhc2, fhc3, fhc4, fhc5 = st.columns([2.0, 1.0, 0.9, 1.1, 1.2], gap="small", vertical_alignment="center")
+                    fzr_col_w = [1.9, 0.95, 0.85, 1.05, 1.1]
+                    fhc1, fhc2, fhc3, fhc4, fhc5 = st.columns(fzr_col_w, gap="small", vertical_alignment="center")
                     fhc1.markdown("<div class='entry-grid-header' style='text-align:left;'>Flavour</div>", unsafe_allow_html=True)
                     fhc2.markdown("<div class='entry-grid-header'>Current Stock</div>", unsafe_allow_html=True)
                     fhc3.markdown("<div class='entry-grid-header'>MRP</div>", unsafe_allow_html=True)
@@ -6409,7 +6686,7 @@ elif page == "Daily Entry":
                         if k_sold not in st.session_state:
                             st.session_state[k_sold] = orig_edit_qty
 
-                        r1, r2, r3, r4, r5 = st.columns([2.0, 1.0, 0.9, 1.1, 1.2], gap="small", vertical_alignment="center")
+                        r1, r2, r3, r4, r5 = st.columns(fzr_col_w, gap="small", vertical_alignment="center")
                         with r1:
                             st.markdown(f"<div class='entry-grid-cell-flavour'><span>{f_info['name']}</span></div>", unsafe_allow_html=True)
                         with r2:
@@ -6440,14 +6717,13 @@ elif page == "Daily Entry":
                     tot_fzr_sold = sum(fzr_sold_map.values())
                     tot_fzr_value = float(sum(fzr_val_map.values()))
 
-                    ft1, ft2, ft3, ft4, ft5 = st.columns([2.0, 1.0, 0.9, 1.1, 1.2], gap="small", vertical_alignment="center")
+                    ft1, ft2, ft3, ft4, ft5 = st.columns(fzr_col_w, gap="small", vertical_alignment="center")
                     ft1.markdown("<div class='entry-grid-total-row' style='text-align:left;'>TOTAL</div>", unsafe_allow_html=True)
                     ft2.markdown(f"<div class='entry-grid-total-row' style='text-align:center;'>{tot_fzr_stock}</div>", unsafe_allow_html=True)
                     ft3.markdown("<div class='entry-grid-total-row' style='text-align:center;'>—</div>", unsafe_allow_html=True)
                     ft4.markdown(f"<div class='entry-grid-total-row' style='text-align:center;color:#C43D17;'>{tot_fzr_sold}</div>", unsafe_allow_html=True)
                     ft5.markdown(f"<div class='entry-grid-total-row' style='text-align:right;color:#047857;'>₹{tot_fzr_value:,.0f}</div>", unsafe_allow_html=True)
 
-                    st.markdown("---")
                     k_f_ph = f"fzr_ph_{freezer_asset_name}_{date_key_str}"
                     k_f_cs = f"fzr_cs_{freezer_asset_name}_{date_key_str}"
                     k_f_lk = f"fzr_lk_{freezer_asset_name}_{date_key_str}"
@@ -6461,7 +6737,7 @@ elif page == "Daily Entry":
                     if k_f_rsn not in st.session_state:
                         st.session_state[k_f_rsn] = str(editing_row.get("reason") or "") if editing_row else ""
 
-                    fc1, fc2, fc3 = st.columns(3)
+                    fc1, fc2, fc3, fc4 = st.columns([0.95, 0.95, 1.05, 1.55], gap="small")
                     with fc1:
                         fzr_phonepe_val = max(0.0, _num(st.text_input("PhonePe / UPI (₹)", key=k_f_ph)))
                     with fc2:
@@ -6477,24 +6753,24 @@ elif page == "Daily Entry":
                         st.session_state[k_f_sig] = curr_sig
 
                     with fc3:
-                        fzr_leakage_val = max(0.0, _num(st.text_input("Leakage (₹) (Auto-calculated, editable)", key=k_f_lk)))
+                        fzr_leakage_val = max(0.0, _num(st.text_input("Leakage (₹) (Auto/Edit)", key=k_f_lk)))
+                    with fc4:
+                        fzr_reason = st.text_input(
+                            "Reason / Remarks" + (" *" if fzr_leakage_val > 0.001 else ""),
+                            key=k_f_rsn,
+                            placeholder="Mandatory when leakage > 0..."
+                        )
 
                     if fzr_leakage_val > 0.001:
                         st.markdown(
-                            "<p style='color:#C41C1C; font-weight:bold; font-size:11.5px; margin: 2px 0 !important;'>"
+                            "<p style='color:#C41C1C; font-weight:bold; font-size:11px; margin: 1px 0 !important;'>"
                             "⚠️ Reason for leakage is mandatory when leakage is greater than zero."
                             "</p>",
                             unsafe_allow_html=True,
                         )
 
-                    fzr_reason = st.text_input(
-                        "Reason / Remarks" + (" *" if fzr_leakage_val > 0.001 else ""),
-                        key=k_f_rsn,
-                        placeholder="Mandatory when leakage is positive (e.g. Discount / bulk order / wastage)..."
-                    )
-
                 submit_label = "💾 Update Freezer Sale Entry" if editing_row else "💾 Submit Freezer Sale"
-                if st.button(submit_label, type="primary", use_container_width=True, key=f"submit_fzr_sale_{date_key_str}"):
+                if st.button(submit_label, type="primary", use_container_width=False, key=f"submit_fzr_sale_{date_key_str}"):
                     if tot_fzr_sold <= 0:
                         st.error("Please enter Sold Units greater than 0 for at least one flavour.")
                     elif fzr_sold_by == "Select Staff" or not str(fzr_sold_by).strip():
@@ -6546,13 +6822,14 @@ elif page == "Daily Entry":
                             st.error(f"Could not save Freezer sale: {e}")
 
         # --------------------------------------------------------------
-        # RESTOCK ENTRY
+        # RESTOCK ENTRY — Compact 80% Single-Page Layout & Matched Columns
         # --------------------------------------------------------------
         elif entry_mode == "restock":
-            st.subheader("📦 Restock Entry")
-            pass
-
-            rc_top1, rc_top2 = st.columns([1.2, 1])
+            rc_top0, rc_top1, rc_top2, rc_top3 = st.columns([0.9, 1.25, 0.95, 1.25], gap="small", vertical_alignment="bottom")
+            with rc_top0:
+                if st.button("⬅ Entry Menu", key="back_to_entry_menu_restock", type="secondary", use_container_width=True):
+                    st.session_state["daily_entry_mode"] = None
+                    st.rerun()
             with rc_top1:
                 cart_name = st.selectbox("Assigned Cart", CARTS, key="entry_cart_shared")
             with rc_top2:
@@ -6570,12 +6847,13 @@ elif page == "Daily Entry":
             restock_staff_key = f"restock_staff_{cart_name}_{today_val.strftime('%Y%m%d')}"
             if restock_staff_key not in st.session_state:
                 st.session_state[restock_staff_key] = today_staff if today_staff in staff_options else "Select Staff"
-            staff_name = st.selectbox(
-                "Cart staff assigned",
-                staff_options,
-                index=staff_options.index(st.session_state[restock_staff_key]) if st.session_state[restock_staff_key] in staff_options else 0,
-                key=restock_staff_key,
-            )
+            with rc_top3:
+                staff_name = st.selectbox(
+                    "Cart Staff Assigned",
+                    staff_options,
+                    index=staff_options.index(st.session_state[restock_staff_key]) if st.session_state[restock_staff_key] in staff_options else 0,
+                    key=restock_staff_key,
+                )
             restock_map = {}
             restock_after_map = {}
 
@@ -6584,11 +6862,12 @@ elif page == "Daily Entry":
                 unsafe_allow_html=True,
             )
             with st.container(border=True):
-                rh1, rh2, rh3, rh4 = st.columns([2.2, 1.0, 1.2, 1.2], gap="small", vertical_alignment="center")
+                restock_col_w = [1.9, 1.0, 1.05, 1.05]
+                rh1, rh2, rh3, rh4 = st.columns(restock_col_w, gap="small", vertical_alignment="center")
                 rh1.markdown("<div class='entry-grid-header' style='background:#D1FAE5;color:#111111;border:1px solid #4ADE80;text-align:left;'>Flavour</div>", unsafe_allow_html=True)
                 rh2.markdown("<div class='entry-grid-header' style='background:#D1FAE5;color:#111111;border:1px solid #4ADE80;'>Opening</div>", unsafe_allow_html=True)
                 rh3.markdown("<div class='entry-grid-header' style='background:#D1FAE5;color:#111111;border:1px solid #4ADE80;'>+ Restock ✏️</div>", unsafe_allow_html=True)
-                rh4.markdown("<div class='entry-grid-header' style='background:#D1FAE5;color:#111111;border:1px solid #4ADE80;text-align:right;'>Total Opening</div>", unsafe_allow_html=True)
+                rh4.markdown("<div class='entry-grid-header' style='background:#D1FAE5;color:#111111;border:1px solid #4ADE80;'>Total Opening</div>", unsafe_allow_html=True)
 
                 for code in FLAVOR_CODES:
                     f_info = FLAVOR_MAP[code]
@@ -6598,7 +6877,7 @@ elif page == "Daily Entry":
                     if key not in st.session_state:
                         st.session_state[key] = existing_added
 
-                    c1, c2, c3, c4 = st.columns([2.2, 1.0, 1.2, 1.2], gap="small", vertical_alignment="center")
+                    c1, c2, c3, c4 = st.columns(restock_col_w, gap="small", vertical_alignment="center")
                     with c1:
                         st.markdown(f"<div class='entry-grid-cell-flavour'><span>{f_info['name']}</span></div>", unsafe_allow_html=True)
                     with c2:
@@ -6617,19 +6896,19 @@ elif page == "Daily Entry":
                     restock_map[code] = qty
                     restock_after_map[code] = opening + qty
                     with c4:
-                        st.markdown(f"<div class='entry-grid-cell-amount'>{opening + qty} pcs</div>", unsafe_allow_html=True)
+                        st.markdown(f"<div class='entry-grid-cell-amount' style='justify-content:center;'>{opening + qty} pcs</div>", unsafe_allow_html=True)
 
                 total_opening_base = sum(int(today_stock_state[code]["opening"]) for code in FLAVOR_CODES)
                 total_restock = sum(restock_map.values())
                 total_opening_after = sum(restock_after_map.values())
 
-                tf1, tf2, tf3, tf4 = st.columns([2.2, 1.0, 1.2, 1.2], gap="small", vertical_alignment="center")
+                tf1, tf2, tf3, tf4 = st.columns(restock_col_w, gap="small", vertical_alignment="center")
                 tf1.markdown("<div class='entry-grid-total-row' style='text-align:left;'>TOTAL</div>", unsafe_allow_html=True)
                 tf2.markdown(f"<div class='entry-grid-total-row' style='text-align:center;'>{total_opening_base}</div>", unsafe_allow_html=True)
                 tf3.markdown(f"<div class='entry-grid-total-row' style='text-align:center;color:#047857;'>+{total_restock} pcs</div>", unsafe_allow_html=True)
-                tf4.markdown(f"<div class='entry-grid-total-row' style='text-align:right;color:#047857;'>{total_opening_after} pcs</div>", unsafe_allow_html=True)
+                tf4.markdown(f"<div class='entry-grid-total-row' style='text-align:center;color:#047857;'>{total_opening_after} pcs</div>", unsafe_allow_html=True)
 
-            if st.button("📦 Submit Restock", type="primary", use_container_width=True, key=f"submit_restock_{cart_name}"):
+            if st.button("📦 Submit Restock", type="primary", use_container_width=False, key=f"submit_restock_{cart_name}"):
                 try:
                     selected_staff = "" if staff_name == "Select Staff" else staff_name
                     opening_map = {code: int(today_stock_state[code]["opening"]) for code in FLAVOR_CODES}
@@ -6643,13 +6922,14 @@ elif page == "Daily Entry":
                     st.error(f"Could not save Restock Entry - {e}")
 
         # --------------------------------------------------------------
-        # EXTRA STOCK
+        # EXTRA STOCK — Compact 80% Single-Page Layout
         # --------------------------------------------------------------
         elif entry_mode == "extra":
-            st.subheader("➕ Extra Stock")
-            pass
-
-            ec_top1, ec_top2 = st.columns([1.2, 1])
+            ec_top0, ec_top1, ec_top2 = st.columns([0.9, 1.35, 1.15], gap="small", vertical_alignment="bottom")
+            with ec_top0:
+                if st.button("⬅ Entry Menu", key="back_to_entry_menu_extra", type="secondary", use_container_width=True):
+                    st.session_state["daily_entry_mode"] = None
+                    st.rerun()
             with ec_top1:
                 cart_name = st.selectbox("Assigned Cart", CARTS, key="entry_cart_shared")
             with ec_top2:
@@ -6663,13 +6943,18 @@ elif page == "Daily Entry":
             today_stock_state, today_staff = get_today_cart_stock_state(cart_name, today_val)
             extra_map = {}
 
+            st.markdown(
+                f"<div class='header-box-restock'><span>➕ Extra Stock Entry — {_entry_date_display(today_val)}</span><span><b>{cart_name}</b></span></div>",
+                unsafe_allow_html=True,
+            )
             with st.container(border=True):
-                eh1, eh2, eh3, eh4, eh5 = st.columns([2.0, 0.9, 0.9, 1.1, 1.1], gap="small", vertical_alignment="center")
+                extra_col_w = [1.9, 0.95, 0.95, 1.05, 1.05]
+                eh1, eh2, eh3, eh4, eh5 = st.columns(extra_col_w, gap="small", vertical_alignment="center")
                 eh1.markdown("<div class='entry-grid-header' style='text-align:left;'>Flavour</div>", unsafe_allow_html=True)
                 eh2.markdown("<div class='entry-grid-header'>Current</div>", unsafe_allow_html=True)
                 eh3.markdown("<div class='entry-grid-header'>Added Today</div>", unsafe_allow_html=True)
                 eh4.markdown("<div class='entry-grid-header'>+ Extra ✏️</div>", unsafe_allow_html=True)
-                eh5.markdown("<div class='entry-grid-header' style='text-align:right;'>After Extra</div>", unsafe_allow_html=True)
+                eh5.markdown("<div class='entry-grid-header'>After Extra</div>", unsafe_allow_html=True)
 
                 for code in FLAVOR_CODES:
                     f_info = FLAVOR_MAP[code]
@@ -6679,7 +6964,7 @@ elif page == "Daily Entry":
                     if key not in st.session_state:
                         st.session_state[key] = 0
 
-                    c1, c2, c3, c4, c5 = st.columns([2.0, 0.9, 0.9, 1.1, 1.1], gap="small", vertical_alignment="center")
+                    c1, c2, c3, c4, c5 = st.columns(extra_col_w, gap="small", vertical_alignment="center")
                     with c1:
                         st.markdown(f"<div class='entry-grid-cell-flavour'><span>{f_info['name']}</span></div>", unsafe_allow_html=True)
                     with c2:
@@ -6699,21 +6984,21 @@ elif page == "Daily Entry":
                         )
                     extra_map[code] = qty
                     with c5:
-                        st.markdown(f"<div class='entry-grid-cell-amount'>{current_stock + qty} pcs</div>", unsafe_allow_html=True)
+                        st.markdown(f"<div class='entry-grid-cell-amount' style='justify-content:center;'>{current_stock + qty} pcs</div>", unsafe_allow_html=True)
 
                 tot_curr_stock = sum(int(today_stock_state[code]["closing"]) for code in FLAVOR_CODES)
                 tot_added_today = sum(int(today_stock_state[code]["added"]) for code in FLAVOR_CODES)
                 total_extra = sum(extra_map.values())
                 total_after_extra = tot_curr_stock + total_extra
 
-                ef1, ef2, ef3, ef4, ef5 = st.columns([2.0, 0.9, 0.9, 1.1, 1.1], gap="small", vertical_alignment="center")
+                ef1, ef2, ef3, ef4, ef5 = st.columns(extra_col_w, gap="small", vertical_alignment="center")
                 ef1.markdown("<div class='entry-grid-total-row' style='text-align:left;'>TOTAL</div>", unsafe_allow_html=True)
                 ef2.markdown(f"<div class='entry-grid-total-row' style='text-align:center;'>{tot_curr_stock}</div>", unsafe_allow_html=True)
                 ef3.markdown(f"<div class='entry-grid-total-row' style='text-align:center;'>{tot_added_today}</div>", unsafe_allow_html=True)
                 ef4.markdown(f"<div class='entry-grid-total-row' style='text-align:center;color:#C43D17;'>+{total_extra} pcs</div>", unsafe_allow_html=True)
-                ef5.markdown(f"<div class='entry-grid-total-row' style='text-align:right;color:#047857;'>{total_after_extra} pcs</div>", unsafe_allow_html=True)
+                ef5.markdown(f"<div class='entry-grid-total-row' style='text-align:center;color:#047857;'>{total_after_extra} pcs</div>", unsafe_allow_html=True)
 
-            if st.button("➕ Submit Extra Stock", type="primary", use_container_width=True, key=f"submit_extra_{cart_name}"):
+            if st.button("➕ Submit Extra Stock", type="primary", use_container_width=False, key=f"submit_extra_{cart_name}"):
                 if total_extra <= 0:
                     st.warning("Enter at least one extra stock quantity before submitting.")
                 else:
@@ -6729,51 +7014,47 @@ elif page == "Daily Entry":
                     except Exception as e:
                         st.error(f"Could not add Extra Stock - {e}")
 
-            st.markdown("---")
-            st.markdown(f"#### 📋 Extra Stock Audit Log — {cart_name}")
-            try:
-                extra_log_df = db_conn.query(
-                    """
-                    SELECT id, entry_date, cart_name, location, staff_name,
-                           ml_units, mm_units, ps_units, mn_units, kb_units,
-                           bm_units, sg_units, ch_units, ra_units,
-                           total_extra_units, recorded_by, source_app, created_at
-                    FROM public.cart_extra_stock_logs
-                    WHERE cart_name = :cart
-                    ORDER BY entry_date DESC, id DESC
-                    LIMIT 25;
-                    """,
-                    params={"cart": cart_name},
-                    ttl="0s"
-                )
-                if extra_log_df.empty:
-                    st.caption(f"No extra stock audit logs recorded for {cart_name} yet.")
-                else:
-                    disp_extra_logs = []
-                    for _, lr in extra_log_df.iterrows():
-                        row_d = {
-                            "Log #": f"#{int(lr['id'])}",
-                            "Date": pd.to_datetime(lr["entry_date"]).strftime("%d-%b-%y"),
-                            "Time": pd.to_datetime(lr["created_at"]).strftime("%I:%M %p") if pd.notna(lr.get("created_at")) else "—",
-                            "Cart": lr["cart_name"],
-                            "Staff": lr.get("staff_name") or "—",
-                            "Total Extra": int(lr.get("total_extra_units") or 0),
-                        }
-                        for c_code in FLAVOR_CODES:
-                            row_d[c_code] = int(lr.get(FLAVOR_MAP[c_code]["audit_col"], 0))
-                        row_d["By"] = f"{lr.get('recorded_by') or '—'} ({lr.get('source_app') or 'app'})"
-                        disp_extra_logs.append(row_d)
-                    st.dataframe(pd.DataFrame(disp_extra_logs), hide_index=True, use_container_width=True)
-            except Exception as e:
-                st.caption(f"Extra stock audit log unavailable: {e}")
+            with st.expander(f"📋 Extra Stock Audit Log — {cart_name}", expanded=False):
+                try:
+                    extra_log_df = db_conn.query(
+                        """
+                        SELECT id, entry_date, cart_name, location, staff_name,
+                               ml_units, mm_units, ps_units, mn_units, kb_units,
+                               bm_units, sg_units, ch_units, ra_units,
+                               total_extra_units, recorded_by, source_app, created_at
+                        FROM public.cart_extra_stock_logs
+                        WHERE cart_name = :cart
+                        ORDER BY entry_date DESC, id DESC
+                        LIMIT 25;
+                        """,
+                        params={"cart": cart_name},
+                        ttl="0s"
+                    )
+                    if extra_log_df.empty:
+                        st.caption(f"No extra stock audit logs recorded for {cart_name} yet.")
+                    else:
+                        disp_extra_logs = []
+                        for _, lr in extra_log_df.iterrows():
+                            row_d = {
+                                "Log #": f"#{int(lr['id'])}",
+                                "Date": pd.to_datetime(lr["entry_date"]).strftime("%d-%b-%y"),
+                                "Time": pd.to_datetime(lr["created_at"]).strftime("%I:%M %p") if pd.notna(lr.get("created_at")) else "—",
+                                "Cart": lr["cart_name"],
+                                "Staff": lr.get("staff_name") or "—",
+                                "Total Extra": int(lr.get("total_extra_units") or 0),
+                            }
+                            for c_code in FLAVOR_CODES:
+                                row_d[c_code] = int(lr.get(FLAVOR_MAP[c_code]["audit_col"], 0))
+                            row_d["By"] = f"{lr.get('recorded_by') or '—'} ({lr.get('source_app') or 'app'})"
+                            disp_extra_logs.append(row_d)
+                        st.dataframe(pd.DataFrame(disp_extra_logs), hide_index=True, use_container_width=True)
+                except Exception as e:
+                    st.caption(f"Extra stock audit log unavailable: {e}")
 
         # --------------------------------------------------------------
         # VIEW CART STOCK (Read-Only: Today, Today-1, Today-2)
         # --------------------------------------------------------------
         elif entry_mode == "view_stock":
-            st.subheader("📋 View Cart Stock")
-            st.caption("Read-only view of Cart Stock")
-
             allowed_stock_dates = [
                 today_val,
                 today_val - timedelta(days=1),
@@ -6782,7 +7063,11 @@ elif page == "Daily Entry":
             date_label_map = {_entry_date_display(d): d for d in allowed_stock_dates}
             date_labels_list = list(date_label_map.keys())
 
-            vc1, vc2, vc3 = st.columns([1.2, 1.1, 1.1])
+            vc0, vc1, vc2, vc3 = st.columns([0.9, 1.25, 1.05, 1.15], gap="small", vertical_alignment="bottom")
+            with vc0:
+                if st.button("⬅ Entry Menu", key="back_to_entry_menu_view_stock", type="secondary", use_container_width=True):
+                    st.session_state["daily_entry_mode"] = None
+                    st.rerun()
             with vc1:
                 cart_name = st.selectbox("Cart Name", CARTS, key="entry_cart_shared")
             with vc2:
@@ -6811,7 +7096,8 @@ elif page == "Daily Entry":
             )
 
             with st.container(border=True):
-                vh1, vh2, vh3, vh4 = st.columns([2.2, 1.1, 1.1, 1.1], gap="small", vertical_alignment="center")
+                view_col_w = [2.0, 1.0, 1.0, 1.0]
+                vh1, vh2, vh3, vh4 = st.columns(view_col_w, gap="small", vertical_alignment="center")
                 vh1.markdown("<div class='entry-grid-header' style='text-align:left;'>Flavour</div>", unsafe_allow_html=True)
                 vh2.markdown("<div class='entry-grid-header'>Opening</div>", unsafe_allow_html=True)
                 vh3.markdown("<div class='entry-grid-header'>Restock</div>", unsafe_allow_html=True)
@@ -6832,7 +7118,7 @@ elif page == "Daily Entry":
 
                     rs_disp = f"{rs_val} ({ex_val})" if ex_val > 0 else f"{rs_val}"
 
-                    r1, r2, r3, r4 = st.columns([2.2, 1.1, 1.1, 1.1], gap="small", vertical_alignment="center")
+                    r1, r2, r3, r4 = st.columns(view_col_w, gap="small", vertical_alignment="center")
                     r1.markdown(f"<div class='entry-grid-cell-flavour'><span>{escape(r['flavour'])}</span></div>", unsafe_allow_html=True)
                     r2.markdown(f"<div class='entry-grid-cell'>{op_val}</div>", unsafe_allow_html=True)
                     r3.markdown(f"<div class='entry-grid-cell'>{rs_disp}</div>", unsafe_allow_html=True)
@@ -6840,7 +7126,7 @@ elif page == "Daily Entry":
 
                 tot_rs_disp = f"{tot_restock_v} ({tot_extra_v})" if tot_extra_v > 0 else f"{tot_restock_v}"
 
-                vt1, vt2, vt3, vt4 = st.columns([2.2, 1.1, 1.1, 1.1], gap="small", vertical_alignment="center")
+                vt1, vt2, vt3, vt4 = st.columns(view_col_w, gap="small", vertical_alignment="center")
                 vt1.markdown("<div class='entry-grid-total-row' style='text-align:left;font-weight:900;'><b>TOTAL</b></div>", unsafe_allow_html=True)
                 vt2.markdown(f"<div class='entry-grid-total-row' style='text-align:center;font-weight:900;'><b>{tot_open_v}</b></div>", unsafe_allow_html=True)
                 vt3.markdown(f"<div class='entry-grid-total-row' style='text-align:center;font-weight:900;'><b>{tot_rs_disp}</b></div>", unsafe_allow_html=True)
@@ -6850,13 +7136,14 @@ elif page == "Daily Entry":
         # REMOVE CART STOCK (Move Cart Stock Back to Freezer)
         # --------------------------------------------------------------
         elif entry_mode == "remove_cart_stock":
-            st.subheader("🔄 Remove Cart Stock")
-            st.caption("Empty / Return cart stock")
-
             if st.session_state.get("_rm_cart_success_msg"):
                 st.success(st.session_state.pop("_rm_cart_success_msg"))
 
-            rc1, rc2, rc3, rc4 = st.columns([1.3, 1.0, 1.0, 0.8], gap="small", vertical_alignment="bottom")
+            rc0, rc1, rc2, rc3, rc4 = st.columns([0.85, 1.25, 0.95, 0.95, 0.75], gap="small", vertical_alignment="bottom")
+            with rc0:
+                if st.button("⬅ Entry Menu", key="back_to_entry_menu_remove_cart_stock", type="secondary", use_container_width=True):
+                    st.session_state["daily_entry_mode"] = None
+                    st.rerun()
             with rc1:
                 cart_name = st.selectbox("Select Cart", CARTS, key="entry_cart_shared")
             with rc2:
@@ -6876,13 +7163,13 @@ elif page == "Daily Entry":
                     key=f"rm_cart_staff_disp_{cart_name}",
                 )
             with rc4:
-                if st.button("↻ Refresh Stock", use_container_width=True, key=f"refresh_rm_cart_{cart_name}"):
+                if st.button("↻ Refresh", use_container_width=True, key=f"refresh_rm_cart_{cart_name}"):
                     st.cache_data.clear()
                     st.rerun()
 
             tot_in_cart_now = sum(max(0, int(today_stock_state[c]["closing"])) for c in FLAVOR_CODES)
 
-            top_bar1, top_bar2, top_bar3 = st.columns([2.2, 1.1, 1.1], gap="small", vertical_alignment="center")
+            top_bar1, top_bar2, top_bar3 = st.columns([2.4, 1.0, 0.9], gap="small", vertical_alignment="center")
             with top_bar1:
                 st.markdown(
                     f"<div class='header-box-restock' style='margin-bottom:0;'>"
@@ -6901,16 +7188,15 @@ elif page == "Daily Entry":
                         st.session_state[f"rm_cart_stock_{cart_name}_{code}"] = 0
                     st.rerun()
 
-            st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
-
             return_map = {}
             with st.container(border=True):
-                rh1, rh2, rh3, rh4, rh5 = st.columns([2.0, 0.9, 1.0, 1.2, 1.1], gap="small", vertical_alignment="center")
+                rm_col_w = [1.9, 0.95, 0.95, 1.05, 1.05]
+                rh1, rh2, rh3, rh4, rh5 = st.columns(rm_col_w, gap="small", vertical_alignment="center")
                 rh1.markdown("<div class='entry-grid-header' style='text-align:left;'>Flavour</div>", unsafe_allow_html=True)
                 rh2.markdown("<div class='entry-grid-header'>Opening</div>", unsafe_allow_html=True)
                 rh3.markdown("<div class='entry-grid-header'>In Cart Now</div>", unsafe_allow_html=True)
                 rh4.markdown("<div class='entry-grid-header' style='background:#D1FAE5;color:#111111;border:1px solid #4ADE80;'>Move to Fzr ✏️</div>", unsafe_allow_html=True)
-                rh5.markdown("<div class='entry-grid-header' style='text-align:right;'>Rem. in Cart</div>", unsafe_allow_html=True)
+                rh5.markdown("<div class='entry-grid-header'>Rem. in Cart</div>", unsafe_allow_html=True)
 
                 for code in FLAVOR_CODES:
                     f_info = FLAVOR_MAP[code]
@@ -6922,9 +7208,9 @@ elif page == "Daily Entry":
                     if int(st.session_state[r_key] or 0) > in_cart_u:
                         st.session_state[r_key] = in_cart_u
 
-                    c1, c2, c3, c4, c5 = st.columns([2.0, 0.9, 1.0, 1.2, 1.1], gap="small", vertical_alignment="center")
+                    c1, c2, c3, c4, c5 = st.columns(rm_col_w, gap="small", vertical_alignment="center")
                     with c1:
-                        st.markdown(f"<div class='entry-grid-cell-flavour'><span>{escape(f_info['name'])}</span><span style='color:#2563EB;font-size:10.5px;'>₹{int(f_info['mrp'])}</span></div>", unsafe_allow_html=True)
+                        st.markdown(f"<div class='entry-grid-cell-flavour'><span>{escape(f_info['name'])}</span><span style='color:#2563EB;font-size:10px;'>₹{int(f_info['mrp'])}</span></div>", unsafe_allow_html=True)
                     with c2:
                         st.markdown(f"<div class='entry-grid-cell'>{open_u}</div>", unsafe_allow_html=True)
                     with c3:
@@ -6944,68 +7230,72 @@ elif page == "Daily Entry":
                     return_map[code] = move_qty
                     rem_in_cart = max(0, in_cart_u - move_qty)
                     with c5:
-                        st.markdown(f"<div class='entry-grid-cell-amount'>{rem_in_cart} pcs</div>", unsafe_allow_html=True)
+                        st.markdown(f"<div class='entry-grid-cell-amount' style='justify-content:center;'>{rem_in_cart} pcs</div>", unsafe_allow_html=True)
 
                 tot_open_c = sum(max(0, int(today_stock_state[c]["opening"])) for c in FLAVOR_CODES)
                 tot_move_c = sum(return_map.values())
                 tot_rem_c = max(0, tot_in_cart_now - tot_move_c)
 
-                rf1, rf2, rf3, rf4, rf5 = st.columns([2.0, 0.9, 1.0, 1.2, 1.1], gap="small", vertical_alignment="center")
+                rf1, rf2, rf3, rf4, rf5 = st.columns(rm_col_w, gap="small", vertical_alignment="center")
                 rf1.markdown("<div class='entry-grid-total-row' style='text-align:left;'>TOTAL</div>", unsafe_allow_html=True)
                 rf2.markdown(f"<div class='entry-grid-total-row' style='text-align:center;'>{tot_open_c}</div>", unsafe_allow_html=True)
                 rf3.markdown(f"<div class='entry-grid-total-row' style='text-align:center;color:#047857;'>{tot_in_cart_now}</div>", unsafe_allow_html=True)
                 rf4.markdown(f"<div class='entry-grid-total-row' style='text-align:center;color:#0F766E;'>{tot_move_c} pcs</div>", unsafe_allow_html=True)
-                rf5.markdown(f"<div class='entry-grid-total-row' style='text-align:right;color:#1E2252;'>{tot_rem_c} pcs</div>", unsafe_allow_html=True)
+                rf5.markdown(f"<div class='entry-grid-total-row' style='text-align:center;color:#1E2252;'>{tot_rem_c} pcs</div>", unsafe_allow_html=True)
 
-            if st.button("❄️ Move back to Freezer", type="primary", use_container_width=True, key=f"submit_rm_cart_{cart_name}"):
+            if st.button("❄️ Move back to Freezer", type="primary", use_container_width=False, key=f"submit_rm_cart_{cart_name}"):
                 if tot_move_c <= 0:
                     st.warning("Please enter at least 1 unit to move back to the Freezer (or click 'Empty Cart').")
                 else:
                     confirm_move_cart_to_freezer_modal(today_val, cart_name, return_map, today_staff)
 
-            st.markdown("---")
-            st.markdown(f"#### 📋 Recent Cart-to-Freezer Transfers — {cart_name}")
-            try:
-                ctf_df = db_conn.query(
-                    """
-                    SELECT id, entry_date, cart_name, location, staff_name,
-                           ml_units, mm_units, ps_units, mn_units, kb_units,
-                           bm_units, sg_units, ch_units, ra_units,
-                           total_returned_units, recorded_by, source_app, created_at
-                    FROM public.cart_to_freezer_logs
-                    WHERE cart_name = :cart
-                    ORDER BY entry_date DESC, id DESC
-                    LIMIT 25;
-                    """,
-                    params={"cart": cart_name},
-                    ttl="0s",
-                )
-                if ctf_df.empty:
-                    st.caption(f"No stock transfers from {cart_name} to Freezer recorded yet.")
-                else:
-                    disp_ctf = []
-                    for _, lr in ctf_df.iterrows():
-                        row_d = {
-                            "Log #": f"#{int(lr['id'])}",
-                            "Date": pd.to_datetime(lr["entry_date"]).strftime("%d-%b-%y"),
-                            "Time": pd.to_datetime(lr["created_at"]).strftime("%I:%M %p") if pd.notna(lr.get("created_at")) else "—",
-                            "Cart": lr["cart_name"],
-                            "Staff": lr.get("staff_name") or "—",
-                            "Moved to Fzr": int(lr.get("total_returned_units") or sum(int(lr.get(FLAVOR_MAP[c]["audit_col"], 0)) for c in FLAVOR_CODES)),
-                        }
-                        for c_code in FLAVOR_CODES:
-                            row_d[c_code] = int(lr.get(FLAVOR_MAP[c_code]["audit_col"], 0))
-                        row_d["By"] = f"{lr.get('recorded_by') or '—'} ({lr.get('source_app') or 'app'})"
-                        disp_ctf.append(row_d)
-                    st.dataframe(pd.DataFrame(disp_ctf), hide_index=True, use_container_width=True)
-            except Exception as e:
-                st.caption(f"Remove Cart Stock history log unavailable (run SQL migration if needed): {e}")
-
+            with st.expander(f"📋 Recent Cart-to-Freezer Transfers — {cart_name}", expanded=False):
+                try:
+                    ctf_df = db_conn.query(
+                        """
+                        SELECT id, entry_date, cart_name, location, staff_name,
+                               ml_units, mm_units, ps_units, mn_units, kb_units,
+                               bm_units, sg_units, ch_units, ra_units,
+                               total_returned_units, recorded_by, source_app, created_at
+                        FROM public.cart_to_freezer_logs
+                        WHERE cart_name = :cart
+                        ORDER BY entry_date DESC, id DESC
+                        LIMIT 25;
+                        """,
+                        params={"cart": cart_name},
+                        ttl="0s",
+                    )
+                    if ctf_df.empty:
+                        st.caption(f"No stock transfers from {cart_name} to Freezer recorded yet.")
+                    else:
+                        disp_ctf = []
+                        for _, lr in ctf_df.iterrows():
+                            row_d = {
+                                "Log #": f"#{int(lr['id'])}",
+                                "Date": pd.to_datetime(lr["entry_date"]).strftime("%d-%b-%y"),
+                                "Time": pd.to_datetime(lr["created_at"]).strftime("%I:%M %p") if pd.notna(lr.get("created_at")) else "—",
+                                "Cart": lr["cart_name"],
+                                "Staff": lr.get("staff_name") or "—",
+                                "Moved to Fzr": int(lr.get("total_returned_units") or sum(int(lr.get(FLAVOR_MAP[c]["audit_col"], 0)) for c in FLAVOR_CODES)),
+                            }
+                            for c_code in FLAVOR_CODES:
+                                row_d[c_code] = int(lr.get(FLAVOR_MAP[c_code]["audit_col"], 0))
+                            row_d["By"] = f"{lr.get('recorded_by') or '—'} ({lr.get('source_app') or 'app'})"
+                            disp_ctf.append(row_d)
+                        st.dataframe(pd.DataFrame(disp_ctf), hide_index=True, use_container_width=True)
+                except Exception as e:
+                    st.caption(f"Remove Cart Stock history log unavailable (run SQL migration if needed): {e}")
 
         elif entry_mode == "live_flavour_view":
+            back_lv, _ = st.columns([1.0, 4.5])
+            with back_lv:
+                if st.button("⬅ Entry Menu", key="back_to_entry_menu_live_flv", type="secondary", use_container_width=True):
+                    st.session_state["daily_entry_mode"] = None
+                    st.rerun()
             render_live_cart_flavour_tables_section(key_prefix="entry_live_flv")
 
 elif page == "Bulk Orders & Quotes" and user_role == "admin":
+    st.markdown('<span class="kulfi-entry-80-scope"></span>', unsafe_allow_html=True)
     st.subheader("📦 Bulk Orders — Estimates, Discount Planner & Invoices")
 
     # Popularity weights for smart party mix distribution
@@ -9327,6 +9617,7 @@ elif page == "Cash Custody" and user_role == "admin":
                             st.rerun()
 
 elif page == "Purchase Orders" and user_role == "admin":
+    st.markdown('<span class="kulfi-entry-80-scope"></span>', unsafe_allow_html=True)
     st.subheader("Purchase Order Estimator & Order Management")
     pass
 
@@ -9342,12 +9633,10 @@ elif page == "Purchase Orders" and user_role == "admin":
     if po_mode == "Create New Order":
         pass
 
-        c1, c2, c3 = st.columns(3)
+        c1, c2, c3, c4, c5 = st.columns([1.0, 1.0, 0.95, 1.0, 0.9], gap="small")
         with c1: order_date = st.date_input("Order Date", value=date.today(), key="new_po_order_date", format="DD-MM-YYYY")
         with c2: expected_date = st.date_input("Expected Delivery Date", value=date.today() + timedelta(days=2), key="new_po_exp_date", format="DD-MM-YYYY")
         with c3: location = st.text_input("Delivery Location", value=CITY, key="new_po_loc")
-
-        c4, c5 = st.columns(2)
         with c4: order_status = st.selectbox("Order Status", PO_STATUSES, index=PO_STATUSES.index("Placed"), key="new_po_status")
         with c5: discount_pct = st.number_input("Overall Discount (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.5, format="%.2f", key="new_po_discount")
 
@@ -9357,8 +9646,7 @@ elif page == "Purchase Orders" and user_role == "admin":
             f_info = FLAVOR_MAP[code]
             grid_rows.append({"Flavour": f_info["name"], "Code": code, "Unit Cost (₹)": float(f_info["cost_price"]), "Order Quantity": int(prefill_qty.get(code, 0))})
 
-        pass
-        po_editor_df = st.data_editor(pd.DataFrame(grid_rows), column_config={"Flavour": st.column_config.TextColumn(disabled=True), "Code": st.column_config.TextColumn(disabled=True), "Unit Cost (₹)": st.column_config.NumberColumn(format="₹%,.2f", disabled=True), "Order Quantity": st.column_config.NumberColumn(min_value=0, step=10, format="%d")}, hide_index=True, use_container_width=True, key="new_po_editor")
+        po_editor_df = st.data_editor(pd.DataFrame(grid_rows), column_config={"Flavour": st.column_config.TextColumn(disabled=True), "Code": st.column_config.TextColumn(disabled=True), "Unit Cost (₹)": st.column_config.NumberColumn(format="₹%,.2f", disabled=True), "Order Quantity": st.column_config.NumberColumn(min_value=0, step=10, format="%d")}, hide_index=True, use_container_width=True, row_height=28, key="new_po_editor")
 
         total_units = int(po_editor_df["Order Quantity"].sum())
         gross_cost = float(sum(po_editor_df["Order Quantity"] * po_editor_df["Unit Cost (₹)"]))
@@ -9409,7 +9697,7 @@ elif page == "Purchase Orders" and user_role == "admin":
             else:
                 st.info("There are no suggested/entered quantities to send. Please enter at least one quantity.")
         else:
-            if st.button("🚀 Submit Purchase Order", type="primary", use_container_width=True):
+            if st.button("🚀 Submit Purchase Order", type="primary", use_container_width=False, key="submit_new_po_btn"):
                 if total_units <= 0: st.error("Please enter a quantity greater than 0 for at least one flavour before placing the order.")
                 else:
                     try:
@@ -9455,7 +9743,7 @@ elif page == "Purchase Orders" and user_role == "admin":
             edit_grid_rows = [{"Flavour": FLAVOR_MAP[code]["name"], "Code": code, "Unit Cost (₹)": float(FLAVOR_MAP[code]["cost_price"]), "Order Quantity": int(items_by_code.get(code) or 0)} for code in FLAVOR_CODES]
 
             pass
-            po_edit_editor_df = st.data_editor(pd.DataFrame(edit_grid_rows), column_config={"Flavour": st.column_config.TextColumn(disabled=True), "Code": st.column_config.TextColumn(disabled=True), "Unit Cost (₹)": st.column_config.NumberColumn(format="₹%,.2f", disabled=True), "Order Quantity": st.column_config.NumberColumn(min_value=0, step=10, format="%d")}, hide_index=True, use_container_width=True, key=f"edit_po_editor_{loaded_po_id}")
+            po_edit_editor_df = st.data_editor(pd.DataFrame(edit_grid_rows), column_config={"Flavour": st.column_config.TextColumn(disabled=True), "Code": st.column_config.TextColumn(disabled=True), "Unit Cost (₹)": st.column_config.NumberColumn(format="₹%,.2f", disabled=True), "Order Quantity": st.column_config.NumberColumn(min_value=0, step=10, format="%d")}, hide_index=True, use_container_width=True, row_height=28, key=f"edit_po_editor_{loaded_po_id}")
 
             e_total_units = int(po_edit_editor_df["Order Quantity"].sum())
             e_gross_cost = float(sum(po_edit_editor_df["Order Quantity"] * po_edit_editor_df["Unit Cost (₹)"]))
@@ -9467,7 +9755,7 @@ elif page == "Purchase Orders" and user_role == "admin":
             em1.metric("Total Ordered Units", f"{e_total_units} units"); em2.metric("Gross Cost", f"₹{e_gross_cost:,.2f}"); em3.metric(f"Discount ({e_discount_pct:.1f}%)", f"-₹{e_discount_amount:,.2f}"); em4.metric("Final Amount to Pay", f"₹{e_final_amount:,.2f}")
             e_notes = st.text_input("Order Notes", value=clean_notes, key=f"edit_po_notes_{loaded_po_id}")
 
-            if st.button("💾 Update Purchase Order", type="primary", use_container_width=True):
+            if st.button("💾 Update Purchase Order", type="primary", use_container_width=False, key="submit_upd_po_btn"):
                 if e_total_units <= 0: st.error("Please specify at least one quantity for the order.")
                 else:
                     try:
@@ -9484,6 +9772,7 @@ elif page == "Purchase Orders" and user_role == "admin":
                     except Exception as e: st.error(f"Could not update purchase order: {e}")
 
 elif page == "Freezer Stock" and user_role == "admin":
+    st.markdown('<span class="kulfi-entry-80-scope"></span>', unsafe_allow_html=True)
     st.subheader("Freezer Stock Management")
 
     freezer_tab_choice = st.radio("Section", ["Stock Received (Inward)", "Stock Audit (Physical Count)"], horizontal=True)
@@ -9553,41 +9842,42 @@ elif page == "Freezer Stock" and user_role == "admin":
             grid_rows = [{"Flavour": FLAVOR_MAP[code]["name"], "Code": code, "Unit Cost Price (₹)": float(FLAVOR_MAP[code]["cost_price"]), "Received": int(items_map[code]["rec"]) if (code in items_map and items_map[code].get("rec") is not None) else 0, "Damaged": int(items_map[code]["dam"]) if (code in items_map and items_map[code].get("dam") is not None) else 0} for code in FLAVOR_CODES]
 
             pass
-            stock_edited = st.data_editor(pd.DataFrame(grid_rows), column_config={"Flavour": st.column_config.TextColumn(disabled=True), "Code": st.column_config.TextColumn(disabled=True), "Unit Cost Price (₹)": st.column_config.NumberColumn(format="₹%,.2f", disabled=True), "Received": st.column_config.NumberColumn(min_value=0, step=1, format="%d"), "Damaged": st.column_config.NumberColumn(min_value=0, step=1, format="%d")}, hide_index=True, use_container_width=True, key=f"db_stock_editor{sk}")
+            stock_edited = st.data_editor(pd.DataFrame(grid_rows), column_config={"Flavour": st.column_config.TextColumn(disabled=True), "Code": st.column_config.TextColumn(disabled=True), "Unit Cost Price (₹)": st.column_config.NumberColumn(format="₹%,.2f", disabled=True), "Received": st.column_config.NumberColumn(min_value=0, step=1, format="%d"), "Damaged": st.column_config.NumberColumn(min_value=0, step=1, format="%d")}, hide_index=True, use_container_width=True, row_height=28, key=f"db_stock_editor{sk}")
 
             tot_received, tot_damaged = int(stock_edited["Received"].sum()), int(stock_edited["Damaged"].sum())
             gross_cost_val = float(sum(stock_edited["Received"] * stock_edited["Unit Cost Price (₹)"]))
             rec_discount_amount = gross_cost_val * (rec_discount_pct / 100.0)
             net_cost_val = gross_cost_val - rec_discount_amount
 
-            st.markdown("#### Entry Summary")
-            s_col1, s_col2, s_col3, s_col4 = st.columns(4)
+            s_col1, s_col2, s_col3, s_col4 = st.columns(4, gap="small")
             s_col1.metric("Total Received", f"{tot_received} units"); s_col2.metric("Total Damaged", f"{tot_damaged} units"); s_col3.metric("Gross Cost", f"₹{gross_cost_val:,.2f}"); s_col4.metric(f"Net Cost ({rec_discount_pct:.1f}% off)", f"₹{net_cost_val:,.2f}")
 
-            st.markdown("---"); st.write("**Payment & Logistics**")
-            c5, c6 = st.columns(2)
+            c5, c6, c7, c8 = st.columns(4, gap="small")
             with c5: payment_amount = st.number_input("Payment amount (₹)", min_value=0.0, value=float(stock_loaded["payment_amount"]) if (stock_loaded and stock_loaded.get("payment_amount") is not None) else float(net_cost_val), step=10.0, key=f"db_rec_pay{sk}")
             with c6: payment_status = st.selectbox("Payment status", PAYMENT_STATUSES, index=PAYMENT_STATUSES.index(stock_loaded["payment_status"]) if (stock_loaded and stock_loaded.get("payment_status") in PAYMENT_STATUSES) else 0, key=f"db_rec_status{sk}")
+            with c7: payment_details = st.text_input("Payment details (optional)", value=str(stock_loaded["payment_details"]) if (stock_loaded and stock_loaded.get("payment_details")) else "", key=f"db_rec_pdet{sk}")
+            with c8: notes = st.text_input("Notes (optional)", value=clean_rec_notes, key=f"db_rec_notes{sk}")
 
-            has_payment_date = st.checkbox("Add payment date", value=bool(stock_loaded and stock_loaded.get("payment_date")), key=f"db_rec_has_pdate{sk}")
-            payment_date = st.date_input("Payment date", value=pd.to_datetime(stock_loaded["payment_date"]).date() if (stock_loaded and stock_loaded.get("payment_date")) else date.today(), key=f"db_rec_pdate{sk}", format="DD-MM-YYYY") if has_payment_date else None
-            payment_details = st.text_input("Payment details (optional)", value=str(stock_loaded["payment_details"]) if (stock_loaded and stock_loaded.get("payment_details")) else "", key=f"db_rec_pdet{sk}")
-            has_dam_ret = st.checkbox("Damaged items were returned", value=bool(stock_loaded and stock_loaded.get("damaged_returned_on")), key=f"db_rec_has_dam{sk}")
-            damaged_returned_on = st.date_input("Damaged returned date", value=pd.to_datetime(stock_loaded["damaged_returned_on"]).date() if (stock_loaded and stock_loaded.get("damaged_returned_on")) else date.today(), key=f"db_rec_damdate{sk}", format="DD-MM-YYYY") if has_dam_ret else None
-            notes = st.text_input("Notes (optional)", value=clean_rec_notes, key=f"db_rec_notes{sk}")
+            chk_c1, chk_c2 = st.columns(2, gap="small")
+            with chk_c1:
+                has_payment_date = st.checkbox("Add payment date", value=bool(stock_loaded and stock_loaded.get("payment_date")), key=f"db_rec_has_pdate{sk}")
+                payment_date = st.date_input("Payment date", value=pd.to_datetime(stock_loaded["payment_date"]).date() if (stock_loaded and stock_loaded.get("payment_date")) else date.today(), key=f"db_rec_pdate{sk}", format="DD-MM-YYYY") if has_payment_date else None
+            with chk_c2:
+                has_dam_ret = st.checkbox("Damaged items were returned", value=bool(stock_loaded and stock_loaded.get("damaged_returned_on")), key=f"db_rec_has_dam{sk}")
+                damaged_returned_on = st.date_input("Damaged returned date", value=pd.to_datetime(stock_loaded["damaged_returned_on"]).date() if (stock_loaded and stock_loaded.get("damaged_returned_on")) else date.today(), key=f"db_rec_damdate{sk}", format="DD-MM-YYYY") if has_dam_ret else None
 
             if st.session_state.get("_sr_deleted_msg"):
                 st.success(st.session_state.pop("_sr_deleted_msg"))
 
             if loaded_id:
-                sr_btn_c1, sr_btn_c2 = st.columns([2.2, 1.2], gap="medium")
+                sr_btn_c1, sr_btn_c2, _ = st.columns([1.3, 1.3, 2.4], gap="small")
                 with sr_btn_c1:
-                    save_sr_clicked = st.button("💾 Update delivery entry", type="primary", use_container_width=True, key=f"btn_upd_sr_{loaded_id}")
+                    save_sr_clicked = st.button("💾 Update delivery entry", type="primary", use_container_width=False, key=f"btn_upd_sr_{loaded_id}")
                 with sr_btn_c2:
-                    if st.button("🗑️ Delete delivery entry", use_container_width=True, key=f"btn_del_sr_{loaded_id}"):
+                    if st.button("🗑️ Delete delivery entry", use_container_width=False, key=f"btn_del_sr_{loaded_id}"):
                         confirm_delete_stock_received_modal(stock_loaded)
             else:
-                save_sr_clicked = st.button("💾 Save stock received", type="primary", use_container_width=True, key="btn_save_new_sr")
+                save_sr_clicked = st.button("💾 Save stock received", type="primary", use_container_width=False, key="btn_save_new_sr")
 
             if save_sr_clicked:
                 if tot_received == 0: st.error("Enter at least one quantity received before saving.")
@@ -10121,12 +10411,13 @@ elif page == "Freezer Stock" and user_role == "admin":
                 },
                 hide_index=True,
                 use_container_width=True,
+                row_height=28,
                 key="audit_editor_grid"
             )
             show_audit_totals(audit_edited)
             audit_remarks = st.text_input("Audit remarks / observation notes", key="audit_remarks_input")
 
-            if st.button("Save stock audit", type="primary", use_container_width=True):
+            if st.button("💾 Save Stock Audit", type="primary", use_container_width=False, key="submit_new_stock_audit"):
                 try:
                     phys_by_code = {row["Code"]: int(row["Physical Counted Units"]) for _, row in audit_edited.iterrows()}
                     calc_by_code = {row["Code"]: int(row["Current System Stock"]) for _, row in audit_edited.iterrows()}
@@ -10332,6 +10623,7 @@ elif page == "Freezer Stock" and user_role == "admin":
                     },
                     hide_index=True,
                     use_container_width=True,
+                    row_height=28,
                     key=f"past_audit_editor_{loaded_audit_id}"
                 )
                 show_audit_totals(edited_past_audit)
@@ -10342,7 +10634,7 @@ elif page == "Freezer Stock" and user_role == "admin":
                     key=f"edit_audit_remarks_{loaded_audit_id}"
                 )
 
-                if st.button("Update selected stock audit", type="primary", use_container_width=True, key=f"update_audit_{loaded_audit_id}"):
+                if st.button("💾 Update Stock Audit", type="primary", use_container_width=False, key=f"update_audit_{loaded_audit_id}"):
                     try:
                         edited_phys_by_code = {
                             row["Code"]: int(row["Physical Counted Units"])
@@ -10845,7 +11137,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
     reorder_df = pd.concat([reorder_df, pd.DataFrame([{"Flavour": "🔥 OVERALL TOTAL", "Stock Available": tot_calc_active, "Daily Pace": f"{tot_rate:.1f} /d", "Runway": f"{(tot_calc_active / tot_rate):.0f} days" if tot_rate > 0 else "—", "Target Buffer": int(round(tot_rate * (buffer_days + cover_days))), "Suggested Order": tot_suggested_units, "Urgency": "🔴 Order Now" if overall_order_date and overall_order_date <= today_fa else "🟢 Stable", "Rationale": f"Est Cost: ₹{tot_order_cost:,.0f}"}])], ignore_index=True)
     st.dataframe(reorder_df, hide_index=True, use_container_width=True)
 
-    if st.button("📝 Create Order", type="primary", use_container_width=True, key="fa_create_order"):
+    if st.button("📝 Create Order", type="primary", use_container_width=False, key="fa_create_order"):
         st.session_state["po_prefill_quantities"] = {code: int(reorder_rows[i]["Suggested Order"]) for i, code in enumerate(FLAVOR_CODES)}
         st.session_state["po_prefill_active"] = True
         st.session_state["new_po_order_date"] = date.today()
@@ -11053,6 +11345,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
             )
 
 elif page == "Stock Removed" and user_role == "admin":
+    st.markdown('<span class="kulfi-entry-80-scope"></span>', unsafe_allow_html=True)
     st.subheader("Stock Removed / Wastage Log")
     pass
 
@@ -11060,26 +11353,24 @@ elif page == "Stock Removed" and user_role == "admin":
 
     if rem_mode == "New Entry":
         pass
-        c1, c2, c3, c4 = st.columns(4)
+        c1, c2, c3, c4, c5 = st.columns([0.95, 0.85, 0.95, 0.85, 1.5], gap="small")
         with c1: removal_date = st.date_input("Removal Date", value=date.today(), key="new_rem_date", format="DD-MM-YYYY")
         with c2: location = st.text_input("Location", value=CITY, key="new_rem_loc")
         with c3: removed_by = st.text_input("Removed By", placeholder="e.g. Staff / Cart Boy", key="new_rem_rby")
         with c4: verified_by = st.text_input("Verified By", value="Admin", key="new_rem_vby")
+        with c5: reason_for_removal = st.text_input("Reason for Removal *", key="new_rem_reason", placeholder="e.g. Broken packaging, expired batch...")
 
-        reason_for_removal = st.text_input("Reason for Removal (Mandatory)", key="new_rem_reason", placeholder="e.g. Broken packaging, expired batch, festival sampling...")
         rem_grid_rows = [{"Flavour": FLAVOR_MAP[code]["name"], "Code": code, "Unit Cost (₹)": float(FLAVOR_MAP[code]["cost_price"]), "Units Removed": 0} for code in FLAVOR_CODES]
 
-        pass
-        rem_editor_df = st.data_editor(pd.DataFrame(rem_grid_rows), column_config={"Flavour": st.column_config.TextColumn(disabled=True), "Code": st.column_config.TextColumn(disabled=True), "Unit Cost (₹)": st.column_config.NumberColumn(format="₹%,.2f", disabled=True), "Units Removed": st.column_config.NumberColumn(min_value=0, step=1, format="%d")}, hide_index=True, use_container_width=True, key="new_rem_editor")
+        rem_editor_df = st.data_editor(pd.DataFrame(rem_grid_rows), column_config={"Flavour": st.column_config.TextColumn(disabled=True), "Code": st.column_config.TextColumn(disabled=True), "Unit Cost (₹)": st.column_config.NumberColumn(format="₹%,.2f", disabled=True), "Units Removed": st.column_config.NumberColumn(min_value=0, step=1, format="%d")}, hide_index=True, use_container_width=True, row_height=28, key="new_rem_editor")
 
         tot_rem_units = int(rem_editor_df["Units Removed"].sum())
         tot_rem_cost = float(sum(rem_editor_df["Units Removed"] * rem_editor_df["Unit Cost (₹)"]))
 
-        st.markdown("#### Removal Summary")
-        m1, m2, m3 = st.columns(3)
+        m1, m2, m3 = st.columns(3, gap="small")
         m1.metric("Total Units Removed", f"{tot_rem_units} units"); m2.metric("Total Cost Value", f"₹{tot_rem_cost:,.2f}"); m3.metric("Date of Removal", removal_date.strftime("%d-%b-%y"))
 
-        if st.button("🗑️ Save Stock Removal", type="primary", use_container_width=True):
+        if st.button("🗑️ Save Stock Removal", type="primary", use_container_width=False, key="submit_new_stock_removal"):
             if tot_rem_units <= 0: st.error("Please enter at least one quantity greater than 0 before saving.")
             elif not reason_for_removal.strip(): st.error("Reason for removal is mandatory. Please provide a brief explanation.")
             else:
@@ -11158,7 +11449,7 @@ elif page == "Stock Removed" and user_role == "admin":
             edit_rem_rows = [{"Flavour": FLAVOR_MAP[code]["name"], "Code": code, "Unit Cost (₹)": float(FLAVOR_MAP[code]["cost_price"]), "Units Removed": int(loaded_rem.get(FLAVOR_MAP[code]["audit_col"], 0))} for code in FLAVOR_CODES]
 
             pass
-            rem_edit_editor_df = st.data_editor(pd.DataFrame(edit_rem_rows), column_config={"Flavour": st.column_config.TextColumn(disabled=True), "Code": st.column_config.TextColumn(disabled=True), "Unit Cost (₹)": st.column_config.NumberColumn(format="₹%,.2f", disabled=True), "Units Removed": st.column_config.NumberColumn(min_value=0, step=1, format="%d")}, hide_index=True, use_container_width=True, key=f"edit_rem_editor_{loaded_rem_id}")
+            rem_edit_editor_df = st.data_editor(pd.DataFrame(edit_rem_rows), column_config={"Flavour": st.column_config.TextColumn(disabled=True), "Code": st.column_config.TextColumn(disabled=True), "Unit Cost (₹)": st.column_config.NumberColumn(format="₹%,.2f", disabled=True), "Units Removed": st.column_config.NumberColumn(min_value=0, step=1, format="%d")}, hide_index=True, use_container_width=True, row_height=28, key=f"edit_rem_editor_{loaded_rem_id}")
 
             e_tot_rem_units = int(rem_edit_editor_df["Units Removed"].sum())
             e_tot_rem_cost = float(sum(rem_edit_editor_df["Units Removed"] * rem_edit_editor_df["Unit Cost (₹)"]))
@@ -11167,7 +11458,7 @@ elif page == "Stock Removed" and user_role == "admin":
             em1, em2, em3 = st.columns(3)
             em1.metric("Total Units Removed", f"{e_tot_rem_units} units"); em2.metric("Total Cost Value", f"₹{e_tot_rem_cost:,.2f}"); em3.metric("Date", e_rem_date.strftime("%d-%b-%y"))
 
-            if st.button("💾 Update Stock Removal", type="primary", use_container_width=True):
+            if st.button("💾 Update Stock Removal", type="primary", use_container_width=False, key="submit_upd_stock_removal"):
                 if e_tot_rem_units <= 0: st.error("Please enter at least one quantity greater than 0.")
                 elif not e_rem_reason.strip(): st.error("Reason for removal cannot be empty.")
                 else:
@@ -11344,6 +11635,7 @@ elif page == "Expenses" and user_role == "admin":
         expenses_summary_df = load_db_expenses_summary_df()
 
         if e_sub_mode == "Add New Expense":
+            st.markdown('<span class="kulfi-entry-80-scope"></span>', unsafe_allow_html=True)
             st.session_state.pop("_editing_expense_id", None)
             if "_pending_ops_spend_to_load" in st.session_state:
                 _populate_expense_from_ops_spend(st.session_state.pop("_pending_ops_spend_to_load"))
@@ -11454,8 +11746,9 @@ elif page == "Expenses" and user_role == "admin":
             with c9: e_po = st.selectbox("Linked PO (Optional)", po_opts, index=0, key="add_e_po")
             with c10: e_stat = st.selectbox("Initial Status", EXPENSE_STATUSES, index=0, key="add_e_stat")
 
-            e_desc = st.text_input("Description", placeholder="Brief description of the purchase...", key="add_e_desc")
-            e_remarks = st.text_input("Remarks / Notes (Optional)", key="add_e_remarks")
+            desc_c1, desc_c2 = st.columns(2, gap="small")
+            with desc_c1: e_desc = st.text_input("Description", placeholder="Brief description of the purchase...", key="add_e_desc")
+            with desc_c2: e_remarks = st.text_input("Remarks / Notes (Optional)", key="add_e_remarks")
 
             st.markdown("---")
             has_direct_pay = st.checkbox("Record immediate payment now", value=False, key="add_e_direct_pay")
@@ -11477,7 +11770,7 @@ elif page == "Expenses" and user_role == "admin":
                 )
                 st.caption("Accepted: JPG, JPEG, PNG, WEBP • maximum 3.5 MB")
 
-            if st.button("💾 Save Expense Entry", type="primary", use_container_width=True):
+            if st.button("💾 Save Expense Entry", type="primary", use_container_width=False, key="submit_save_expense_entry"):
                 if e_amount <= 0: st.error("Please enter an expense amount greater than 0.")
                 else:
                     try:
@@ -11579,12 +11872,14 @@ elif page == "Expenses" and user_role == "admin":
                     with c9: e_edit_po = st.selectbox("Linked PO", po_opts, index=default_po_idx, key=f"ee_po_{loaded_exp_id}")
                     with c10: e_edit_stat = st.selectbox("Status", EXPENSE_STATUSES, index=EXPENSE_STATUSES.index(loaded_exp.get("status", "Pending")) if loaded_exp.get("status", "Pending") in EXPENSE_STATUSES else 0, key=f"ee_stat_{loaded_exp_id}")
 
-                    e_edit_desc = st.text_input("Description", value=_clean_str(loaded_exp.get("description"), ""), key=f"ee_desc_{loaded_exp_id}")
-                    e_edit_remarks = st.text_input("Remarks", value=_clean_str(loaded_exp.get("remarks"), ""), key=f"ee_rem_{loaded_exp_id}")
+                    st.markdown('<span class="kulfi-entry-80-scope"></span>', unsafe_allow_html=True)
+                    ed_c1, ed_c2 = st.columns(2, gap="small")
+                    with ed_c1: e_edit_desc = st.text_input("Description", value=_clean_str(loaded_exp.get("description"), ""), key=f"ee_desc_{loaded_exp_id}")
+                    with ed_c2: e_edit_remarks = st.text_input("Remarks", value=_clean_str(loaded_exp.get("remarks"), ""), key=f"ee_rem_{loaded_exp_id}")
 
                     btn_c1, btn_c2 = st.columns([3.5, 1.2], gap="small")
                     with btn_c1:
-                        if st.button("💾 Update Expense", type="primary", use_container_width=True, key=f"btn_upd_exp_{loaded_exp_id}"):
+                        if st.button("💾 Update Expense", type="primary", use_container_width=False, key=f"btn_upd_exp_{loaded_exp_id}"):
                             if e_edit_amount <= 0: st.error("Amount must be greater than 0.")
                             else:
                                 try:
@@ -11716,6 +12011,7 @@ elif page == "Expenses" and user_role == "admin":
         payments_df, expenses_summary_df = load_db_payments_df(), load_db_expenses_summary_df()
 
         if p_sub_mode == "Record New Payment":
+            st.markdown('<span class="kulfi-entry-80-scope"></span>', unsafe_allow_html=True)
             st.session_state.pop("_editing_payment_id", None)
             pass
             if expenses_summary_df.empty: st.info("No expenses found to make payment against.")
@@ -11839,7 +12135,7 @@ elif page == "Expenses" and user_role == "admin":
                     )
                     st.caption("Accepted: JPG, JPEG, PNG, WEBP • maximum 3.5 MB")
 
-                    if st.button("💳 Disburse Payment", type="primary", use_container_width=True, key=f"btn_disburse_{target_exp_id}"):
+                    if st.button("💳 Disburse Payment", type="primary", use_container_width=False, key=f"btn_disburse_{target_exp_id}"):
                         if new_p_amount <= 0: st.error("Please enter a payment amount greater than 0.")
                         else:
                             try:
@@ -11928,7 +12224,7 @@ elif page == "Expenses" and user_role == "admin":
 
                     p_btn1, p_btn2 = st.columns([3.5, 1.2], gap="small")
                     with p_btn1:
-                        if st.button("💾 Update Payment", type="primary", use_container_width=True, key=f"btn_upd_pay_{loaded_pay_id}"):
+                        if st.button("💾 Update Payment", type="primary", use_container_width=False, key=f"btn_upd_pay_{loaded_pay_id}"):
                             if ep_amt <= 0: st.error("Amount must be greater than 0.")
                             else:
                                 try:
@@ -12143,6 +12439,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
         st_mode = st.radio("Mode", ["View All Staff", "Add New Staff", "Edit Staff Profile & KYC"], horizontal=True, key="staff_dir_mode")
 
         if st_mode == "Add New Staff":
+            st.markdown('<span class="kulfi-entry-80-scope"></span>', unsafe_allow_html=True)
             pass
 
             with st.form("new_staff_form"):
@@ -12302,6 +12599,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                     st.caption(f"Remarks: {s_row['notes']}")
 
         elif st_mode == "Edit Staff Profile & KYC":
+            st.markdown('<span class="kulfi-entry-80-scope"></span>', unsafe_allow_html=True)
             if staff_df.empty:
                 st.info("No staff records found to edit.")
             else:
@@ -12412,6 +12710,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
         att_mode = st.radio("Action", ["Record Staff Leave / Absence", "View Attendance & Leaves", "Edit Past Leave Entry"], horizontal=True, key="att_sub_nav")
 
         if att_mode == "Record Staff Leave / Absence":
+            st.markdown('<span class="kulfi-entry-80-scope"></span>', unsafe_allow_html=True)
             if staff_df.empty:
                 st.info("No staff registered yet.")
             else:
@@ -12479,6 +12778,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 st.dataframe(disp_att, hide_index=True, use_container_width=True)
 
         elif att_mode == "Edit Past Leave Entry":
+            st.markdown('<span class="kulfi-entry-80-scope"></span>', unsafe_allow_html=True)
             att_df = load_staff_attendance_df()
             if att_df.empty:
                 st.info("No attendance records to edit.")
@@ -12504,7 +12804,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                 with c4:
                     e_att_reason = st.text_input("Reason", value=str(loaded_att.get("reason") or ""), key=f"e_att_rs_{loaded_att_id}")
 
-                if st.button("💾 Update Leave Entry", type="primary", use_container_width=True):
+                if st.button("💾 Update Leave Entry", type="primary", use_container_width=False, key="submit_upd_leave_btn"):
                     try:
                         with db_conn.session as s:
                             s.execute(
@@ -13510,12 +13810,10 @@ elif page == "Dashboard" and user_role == "admin":
         daily_df, exp_df = pd.DataFrame(), pd.DataFrame()
         st.warning(f"Could not load data from database ({e}).")
 
-    # Shared Date Filter & Financial Overview Calculations
+    # Shared Date Filter & Financial Overview Calculations (Aligned with Home Landing Page MTD)
     today_cur = date.today()
     month_start_cur = today_cur.replace(day=1)
-    default_end_cur = today_cur - timedelta(days=1)
-    if default_end_cur < month_start_cur:
-        default_end_cur = month_start_cur
+    default_end_cur = today_cur
 
     all_dates = [today_cur, month_start_cur]
     if not daily_df.empty:
@@ -13590,7 +13888,7 @@ elif page == "Dashboard" and user_role == "admin":
             with rc3:
                 apply_clicked = st.form_submit_button("Apply", type="primary", use_container_width=True)
 
-        if apply_clicked:
+        if apply_clicked or dashboard_filter_mode == "Month":
             st.session_state["applied_start"] = pending_start
             st.session_state["applied_end"] = pending_end
         range_start, range_end = st.session_state["applied_start"], st.session_state["applied_end"]
@@ -13598,40 +13896,6 @@ elif page == "Dashboard" and user_role == "admin":
         if range_start > range_end:
             st.error("'From' date is after 'To' date - swap them and click Apply again.")
             range_start, range_end = range_end, range_start
-
-        range_df = daily_df[(daily_df["Date"].dt.date >= range_start) & (daily_df["Date"].dt.date <= range_end)] if not daily_df.empty else daily_df
-        range_exp = exp_df[(exp_df["Date"].dt.date >= range_start) & (exp_df["Date"].dt.date <= range_end)] if not exp_df.empty else exp_df
-
-        total_rev = range_df["Total_Collection"].sum() if not range_df.empty else 0.0
-        total_units = int(round(range_df["Sold_Total"].sum())) if not range_df.empty else 0
-
-        flavor_range_df = load_db_flavor_sales(start_date=range_start, end_date=range_end)
-        exact_cogs_sold = float(flavor_range_df["COGS (₹)"].sum()) if not flavor_range_df.empty else 0.0
-
-        expense_types = range_exp["Expense_Type"].fillna("").astype(str).str.strip().str.upper() if not range_exp.empty else pd.Series(dtype=str)
-        expense_categories = range_exp["Category"].fillna("").astype(str).str.strip().str.casefold() if not range_exp.empty else pd.Series(dtype=str)
-        capex_total = float(range_exp.loc[expense_types == "CAPEX", "Amount"].sum()) if not range_exp.empty else 0.0
-
-        _, _, _, staff_pay_breakdown = calculate_incurred_labour_for_range(
-            range_start, range_end, limit_to_employment=True
-        )
-        staff_salary_total = sum(float(staff["incurred"]) for staff in staff_pay_breakdown.values())
-        unassigned_labour_df = range_exp[
-            (expense_types == "OPEX") & (expense_categories == "labour charges") & range_exp["Staff_Name"].isna()
-        ] if not range_exp.empty else pd.DataFrame()
-        unassigned_labour_total = float(unassigned_labour_df["Amount"].sum()) if not unassigned_labour_df.empty else 0.0
-        tot_labour_incurred = staff_salary_total + unassigned_labour_total
-        non_labour_opex_df = range_exp[(expense_types == "OPEX") & (~expense_categories.isin(["labour charges", "cost of goods"]))] if not range_exp.empty else pd.DataFrame()
-        other_opex_total = float(non_labour_opex_df["Amount"].sum()) if not non_labour_opex_df.empty else 0.0
-
-        total_incurred_opex = tot_labour_incurred + other_opex_total
-
-        gross_profit = total_rev - exact_cogs_sold
-        cogs_margin = (exact_cogs_sold / total_rev * 100) if total_rev > 0 else 0.0
-        gross_margin = (gross_profit / total_rev * 100) if total_rev > 0 else 0.0
-        net_profit = gross_profit - total_incurred_opex
-        net_margin = (net_profit / total_rev * 100) if total_rev > 0 else 0.0
-        opex_margin = (total_incurred_opex / total_rev * 100) if total_rev > 0 else 0.0
 
         today_ref = date.today()
         if dashboard_filter_mode == "Month":
@@ -13641,19 +13905,27 @@ elif page == "Dashboard" and user_role == "admin":
             else:
                 avg_divisor_days = max(1, calendar.monthrange(int(dash_year), int(dash_month_num))[1])
         else:
-            avg_divisor_days = max(1, (range_end - range_start).days + 1)
+            if range_start == today_ref.replace(day=1) and range_end == today_ref:
+                avg_divisor_days = max(1, (today_ref - range_start).days)
+            else:
+                avg_divisor_days = max(1, (range_end - range_start).days + 1)
 
-        avg_rev_per_day = (total_rev / float(avg_divisor_days)) if avg_divisor_days > 0 else 0.0
-        avg_units_per_day = int(round(total_units / float(avg_divisor_days))) if avg_divisor_days > 0 else 0
+        fin_res = compute_period_financials(
+            start_date=range_start,
+            end_date=range_end,
+            avg_divisor_days=avg_divisor_days,
+            daily_df_in=daily_df,
+            exp_df_in=exp_df,
+        )
 
         return (
             dashboard_filter_mode, dash_year, dash_month_num,
-            range_start, range_end, range_df, range_exp,
-            total_rev, total_units, exact_cogs_sold, capex_total,
-            staff_pay_breakdown, unassigned_labour_df, non_labour_opex_df,
-            tot_labour_incurred, other_opex_total, total_incurred_opex,
-            gross_profit, cogs_margin, gross_margin, net_profit, net_margin, opex_margin,
-            avg_divisor_days, avg_rev_per_day, avg_units_per_day
+            range_start, range_end, fin_res["range_df"], fin_res["range_exp"],
+            fin_res["total_rev"], fin_res["total_units"], fin_res["exact_cogs_sold"], fin_res["capex_total"],
+            fin_res["staff_pay_breakdown"], fin_res["unassigned_labour_df"], fin_res["non_labour_opex_df"],
+            fin_res["tot_labour_incurred"], fin_res["other_opex_total"], fin_res["total_incurred_opex"],
+            fin_res["gross_profit"], fin_res["cogs_margin"], fin_res["gross_margin"], fin_res["net_profit"], fin_res["net_margin"], fin_res["opex_margin"],
+            fin_res["avg_divisor_days"], fin_res["avg_rev_per_day"], fin_res["avg_units_per_day"]
         )
 
     def _render_7_financial_overview_boxes(total_rev, avg_rev_per_day, total_units, exact_cogs_sold, cogs_margin, gross_profit, gross_margin, total_incurred_opex, opex_margin, net_profit, net_margin):
@@ -13735,7 +14007,7 @@ elif page == "Dashboard" and user_role == "admin":
             ) = _render_dash_date_filter_and_compute(key_suffix="main_overview")
 
             _render_7_financial_overview_boxes(
-                total_rev, avg_units_per_day, total_units,
+                total_rev, avg_rev_per_day, total_units,
                 exact_cogs_sold, cogs_margin, gross_profit, gross_margin,
                 total_incurred_opex, opex_margin, net_profit, net_margin
             )
@@ -14214,7 +14486,7 @@ elif page == "Dashboard" and user_role == "admin":
 
             st.markdown("### Financials Overview")
             _render_7_financial_overview_boxes(
-                total_rev, avg_units_per_day, total_units,
+                total_rev, avg_rev_per_day, total_units,
                 exact_cogs_sold, cogs_margin, gross_profit, gross_margin,
                 total_incurred_opex, opex_margin, net_profit, net_margin
             )
@@ -14273,12 +14545,12 @@ elif page == "Dashboard" and user_role == "admin":
 
                     # 1. Incurred Staff Labour broken down by Fixed Salary, Commission, Allowances + Staff names
                     tot_fixed_sal_inc = sum(float(v.get("salary", 0.0)) for v in staff_pay_breakdown.values())
-                    tot_comm_inc = sum(float(v.get("commission", 0.0)) for v in staff_pay_breakdown.values())
-                    tot_allow_inc = sum(float(v.get("allowance", 0.0)) for v in staff_pay_breakdown.values())
+                    tot_comm_inc = sum(float(v.get("commissions", v.get("commission", 0.0))) for v in staff_pay_breakdown.values())
+                    tot_allow_inc = sum(float(v.get("allowances", v.get("allowance", 0.0))) for v in staff_pay_breakdown.values())
 
                     if tot_fixed_sal_inc > 0:
                         staff_sal_notes = ", ".join(
-                            f"{sn}: ₹{float(sv['salary']):,.0f} ({int(sv.get('days', 0))}d)"
+                            f"{sn}: ₹{float(sv['salary']):,.0f} ({int(sv.get('payable_days', sv.get('days_worked', 0)))}d)"
                             for sn, sv in sorted(staff_pay_breakdown.items(), key=lambda x: -float(x[1].get("salary", 0)))
                             if float(sv.get("salary", 0)) > 0
                         )
@@ -14291,27 +14563,27 @@ elif page == "Dashboard" and user_role == "admin":
                         })
                     if tot_comm_inc > 0:
                         staff_comm_notes = ", ".join(
-                            f"{sn}: ₹{float(sv['commission']):,.0f}"
-                            for sn, sv in sorted(staff_pay_breakdown.items(), key=lambda x: -float(x[1].get("commission", 0)))
-                            if float(sv.get("commission", 0)) > 0
+                            f"{sn}: ₹{float(sv.get('commissions', sv.get('commission', 0.0))):,.0f}"
+                            for sn, sv in sorted(staff_pay_breakdown.items(), key=lambda x: -float(x[1].get("commissions", x[1].get("commission", 0))))
+                            if float(sv.get("commissions", sv.get("commission", 0.0))) > 0
                         )
                         opex_detail_rows.append({
                             "Category": "Labour Charges",
                             "Sub-Category": "Sales Incentives & Commissions",
-                            "Entries": sum(1 for sv in staff_pay_breakdown.values() if float(sv.get("commission", 0)) > 0),
+                            "Entries": sum(1 for sv in staff_pay_breakdown.values() if float(sv.get("commissions", sv.get("commission", 0.0))) > 0),
                             "Amount": tot_comm_inc,
                             "Details": staff_comm_notes or "Cart shift target commissions",
                         })
                     if tot_allow_inc > 0:
                         staff_allow_notes = ", ".join(
-                            f"{sn}: ₹{float(sv['allowance']):,.0f}"
-                            for sn, sv in sorted(staff_pay_breakdown.items(), key=lambda x: -float(x[1].get("allowance", 0)))
-                            if float(sv.get("allowance", 0)) > 0
+                            f"{sn}: ₹{float(sv.get('allowances', sv.get('allowance', 0.0))):,.0f}"
+                            for sn, sv in sorted(staff_pay_breakdown.items(), key=lambda x: -float(x[1].get("allowances", x[1].get("allowance", 0))))
+                            if float(sv.get("allowances", sv.get("allowance", 0.0))) > 0
                         )
                         opex_detail_rows.append({
                             "Category": "Labour Charges",
                             "Sub-Category": "Daily Food, Tea & Fuel Allowances",
-                            "Entries": sum(1 for sv in staff_pay_breakdown.values() if float(sv.get("allowance", 0)) > 0),
+                            "Entries": sum(1 for sv in staff_pay_breakdown.values() if float(sv.get("allowances", sv.get("allowance", 0.0))) > 0),
                             "Amount": tot_allow_inc,
                             "Details": staff_allow_notes or "Daily shift food/tea & fuel allowances",
                         })
@@ -14682,31 +14954,23 @@ elif page == "Dashboard" and user_role == "admin":
                     if not (min_logged == mo_start and max_logged == mo_end and distinct_days >= days_in_mo):
                         continue
 
-                    m_rev = float(sub_d["Total_Collection"].sum())
-                    m_avg_rev = m_rev / float(days_in_mo)
-                    m_units = int(round(sub_d["Sold_Total"].sum()))
-                    m_cogs = float(cogs_by_month_start.get((yr, mo), 0.0))
-                    m_gp = m_rev - m_cogs
-                    m_gp_pct = (m_gp / m_rev * 100.0) if m_rev > 0 else 0.0
-
-                    # OPEX for this full month (using exact same P&L methodology: incurred staff labour + unassigned labour + non-labour OPEX)
-                    m_exp = exp_df[(exp_df["Date"].dt.date >= mo_start) & (exp_df["Date"].dt.date <= mo_end)] if not exp_df.empty else pd.DataFrame()
-                    m_exp_types = m_exp["Expense_Type"].fillna("").astype(str).str.strip().str.upper() if not m_exp.empty else pd.Series(dtype=str)
-                    m_exp_cats = m_exp["Category"].fillna("").astype(str).str.strip().str.casefold() if not m_exp.empty else pd.Series(dtype=str)
-
-                    _, _, _, m_staff_pay = calculate_incurred_labour_for_range(mo_start, mo_end, limit_to_employment=True)
-                    m_staff_sal = sum(float(st_info["incurred"]) for st_info in m_staff_pay.values())
-                    m_unassigned_lab = float(
-                        m_exp[(m_exp_types == "OPEX") & (m_exp_cats == "labour charges") & m_exp["Staff_Name"].isna()]["Amount"].sum()
-                    ) if not m_exp.empty else 0.0
-                    m_other_opex = float(
-                        m_exp[(m_exp_types == "OPEX") & (~m_exp_cats.isin(["labour charges", "cost of goods"]))]["Amount"].sum()
-                    ) if not m_exp.empty else 0.0
-                    m_opex = m_staff_sal + m_unassigned_lab + m_other_opex
-                    m_opex_pct = (m_opex / m_rev * 100.0) if m_rev > 0 else 0.0
-
-                    m_np = m_gp - m_opex
-                    m_np_pct = (m_np / m_rev * 100.0) if m_rev > 0 else 0.0
+                    m_fin = compute_period_financials(
+                        start_date=mo_start,
+                        end_date=mo_end,
+                        avg_divisor_days=days_in_mo,
+                        daily_df_in=m_daily,
+                        exp_df_in=exp_df,
+                    )
+                    m_rev = m_fin["total_rev"]
+                    m_avg_rev = m_fin["avg_rev_per_day"]
+                    m_units = m_fin["total_units"]
+                    m_cogs = m_fin["exact_cogs_sold"]
+                    m_gp = m_fin["gross_profit"]
+                    m_gp_pct = m_fin["gross_margin"]
+                    m_opex = m_fin["total_incurred_opex"]
+                    m_opex_pct = m_fin["opex_margin"]
+                    m_np = m_fin["net_profit"]
+                    m_np_pct = m_fin["net_margin"]
 
                     full_month_rows.append({
                         "Month_Order": mo_start,
