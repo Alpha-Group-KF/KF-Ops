@@ -392,7 +392,7 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-header) {
     background: #FFFFFF;
     border: 1.5px solid #93C5FD;
     border-radius: 10px;
-    margin-bottom: 6px;
+    margin-bottom: 10px !important;
     box-shadow: 0 2px 5px rgba(30, 34, 82, 0.05);
 }
 div[class*="st-key-deposito_dock_btn_"] {
@@ -440,8 +440,8 @@ div[class*="st-key-deposito_dock_btn_"] button[kind="primary"] {
 .deposito-kpi-strip {
     display: grid;
     grid-template-columns: 0.92fr 1.12fr 1.42fr 1.52fr 1.28fr;
-    gap: 9px;
-    margin-bottom: 8px;
+    gap: 10px;
+    margin-bottom: 12px !important;
 }
 @media (max-width: 1100px) {
     .deposito-kpi-strip {
@@ -511,7 +511,7 @@ div[class*="st-key-deposito_dock_btn_"] button[kind="primary"] {
     position: relative;
     min-height: 256px;
     height: auto;
-    margin-bottom: 4px;
+    margin-bottom: 10px !important;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -574,7 +574,7 @@ div[class*="st-key-deposito_dock_btn_"] button[kind="primary"] {
     box-shadow: 0 3px 12px rgba(30, 34, 82, 0.04);
     min-height: 256px;
     height: auto;
-    margin-bottom: 4px;
+    margin-bottom: 10px !important;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -703,7 +703,7 @@ div[class*="st-key-deposito_dock_btn_"] button[kind="primary"] {
     box-shadow: 0 3px 12px rgba(30, 34, 82, 0.04);
     min-height: 176px;
     height: auto;
-    margin-bottom: 4px;
+    margin-bottom: 10px !important;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -742,7 +742,7 @@ div[class*="st-key-deposito_dock_btn_"] button[kind="primary"] {
     white-space: nowrap;
 }
 .dep-fin-val {
-    font-size: 11px;
+    font-size: 10.2px;
     font-weight: 800;
     color: #0F172A;
     white-space: nowrap;
@@ -5041,6 +5041,8 @@ if page == "Home" and user_role == "admin":
             unsafe_allow_html=True,
         )
 
+        st.markdown("<div style=" + chr(39) + "height: 6px;" + chr(39) + "></div>", unsafe_allow_html=True)
+
         # 2. MIDDLE ROW: EMERALD CAPACITY CARD + LAST 7 DAY SALES MATRIX
         mid_left_col, mid_right_col = st.columns([1.02, 2.53], gap="small")
 
@@ -5180,11 +5182,15 @@ if page == "Home" and user_role == "admin":
                 unsafe_allow_html=True,
             )
 
+        st.markdown("<div style=" + chr(39) + "height: 6px;" + chr(39) + "></div>", unsafe_allow_html=True)
+
         # 3. BOTTOM ROW: FINANCE PERFORMANCE CARD | MONTH-WISE SALE COMPARISON | TOP CARTS
         bot_c1, bot_c2, bot_c3 = st.columns([1.15, 1.30, 1.10], gap="small")
 
         with bot_c1:
-            # CRISP FINANCE PERFORMANCE CARD (Zero Sub-Text)
+            # CRISP FINANCE PERFORMANCE CARD (Zero Sub-Text, with % up to 1 decimal in brackets for COGS, Gr Profit & Net Profit)
+            cogs_pct_home = (exact_cogs_home / period_rev_home * 100.0) if period_rev_home > 0 else 0.0
+            gp_pct_home = (gross_profit_home / period_rev_home * 100.0) if period_rev_home > 0 else 0.0
             gp_str = f"-₹{abs(gross_profit_home):,.0f}" if gross_profit_home < 0 else f"₹{gross_profit_home:,.0f}"
             np_str = f"-₹{abs(net_profit_home):,.0f}" if net_profit_home < 0 else f"₹{net_profit_home:,.0f}"
             np_col = "#065F46" if net_profit_home >= 0 else "#991B1B"
@@ -5213,16 +5219,16 @@ if page == "Home" and user_role == "admin":
                             </div>
                             <div class="dep-fin-item" style="border-left-color:#F59E0B;">
                                 <span class="dep-fin-lbl">COGS</span>
-                                <span class="dep-fin-val" style="color:#B45309;">₹{exact_cogs_home:,.0f}</span>
+                                <span class="dep-fin-val" style="color:#B45309;">₹{exact_cogs_home:,.0f} ({cogs_pct_home:.1f}%)</span>
                             </div>
                             <div class="dep-fin-item" style="border-left-color:#059669;">
                                 <span class="dep-fin-lbl">Gr Profit</span>
-                                <span class="dep-fin-val" style="color:#059669;">{gp_str}</span>
+                                <span class="dep-fin-val" style="color:#059669;">{gp_str} ({gp_pct_home:.1f}%)</span>
                             </div>
                         </div>
                         <div class="dep-fin-net-bar">
                             <span style="font-size:10.5px;font-weight:800;color:#065F46;">Net Profit</span>
-                            <span style="font-size:12.5px;font-weight:900;color:{np_col};">{np_str}</span>
+                            <span style="font-size:12px;font-weight:900;color:{np_col};">{np_str} ({net_margin_pct_home:.1f}%)</span>
                         </div>
                     </div>
                 </div>
@@ -5257,7 +5263,7 @@ if page == "Home" and user_role == "admin":
             if full_months_home:
                 max_m_rev = max(1.0, max(x[1] for x in full_months_home))
                 m_rows_html = []
-                for _mlbl, _mrev, _mavg, _munits in full_months_home[-4:]:
+                for _mlbl, _mrev, _mavg, _munits in reversed(full_months_home[-4:]):
                     _mw = min(100, max(15, int(round((_mrev / max_m_rev) * 100.0))))
                     m_rows_html.append(
                         f'<div style="margin-bottom:6px;">'
@@ -5370,6 +5376,7 @@ if page == "Home" and user_role == "admin":
                         </div>
                     </div>
                 </div>
+                <div style="height:10px;"></div>
                 """,
                 unsafe_allow_html=True,
             )
