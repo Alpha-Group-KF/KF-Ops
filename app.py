@@ -1940,7 +1940,7 @@ def load_configured_locations_list(include_inactive=False):
         conn = globals().get("db_conn")
         if conn is not None:
             where_sql = "" if include_inactive else "WHERE is_active = true"
-            df = conn.query(f"SELECT location_code FROM public.operating_locations {where_sql} ORDER BY location_code ASC;", ttl="30s")
+            df = conn.query(f"SELECT location_code FROM public.operating_locations {where_sql} ORDER BY location_code ASC;", ttl="10m")
             if not df.empty:
                 locs = [str(x).strip().upper() for x in df["location_code"].dropna().tolist() if str(x).strip()]
     except Exception:
@@ -1957,13 +1957,13 @@ def get_carts_for_active_location(include_freezer=False):
             if loc == "ALL":
                 df = conn.query(
                     f"SELECT asset_name FROM public.location_assets WHERE is_active = true {type_clause} ORDER BY location_code ASC, sort_order ASC, asset_name ASC;",
-                    ttl="30s"
+                    ttl="10m"
                 )
             else:
                 df = conn.query(
                     f"SELECT asset_name FROM public.location_assets WHERE is_active = true {type_clause} AND UPPER(TRIM(location_code)) = :loc ORDER BY sort_order ASC, asset_name ASC;",
                     params={"loc": loc},
-                    ttl="30s"
+                    ttl="10m"
                 )
             if not df.empty:
                 return [str(x).strip() for x in df["asset_name"].dropna().tolist() if str(x).strip()]
@@ -1983,7 +1983,7 @@ def get_location_for_cart(cart_name):
             df = db_conn.query(
                 "SELECT location_code FROM public.location_assets WHERE UPPER(TRIM(asset_name)) = UPPER(TRIM(:cname)) LIMIT 1;",
                 params={"cname": c_clean},
-                ttl="30s"
+                ttl="10m"
             )
             if not df.empty and str(df.iloc[0]["location_code"]).strip():
                 return str(df.iloc[0]["location_code"]).strip().upper()
@@ -2228,7 +2228,7 @@ def get_flavor_meta_by_code():
     }
     if db_conn is not None:
         try:
-            df = db_conn.query("SELECT code, name, mrp, cost_price FROM flavors;", ttl="1m")
+            df = db_conn.query("SELECT code, name, mrp, cost_price FROM flavors;", ttl="10m")
             for _, r in df.iterrows():
                 code = str(r["code"]).strip()
                 if code in meta:
@@ -2245,7 +2245,7 @@ def load_active_staff_list():
     if db_conn is not None:
         try:
             loc_sql, loc_params = get_loc_sql_clause("location")
-            df = db_conn.query(f"SELECT name FROM staff WHERE status = 'active' {loc_sql} ORDER BY name ASC;", params=loc_params, ttl="1m")
+            df = db_conn.query(f"SELECT name FROM staff WHERE status = 'active' {loc_sql} ORDER BY name ASC;", params=loc_params, ttl="5m")
             if not df.empty:
                 return ["Select Staff"] + df["name"].tolist()
         except Exception:
@@ -2262,7 +2262,7 @@ def get_latest_cart_closing_state_with_date(cart_name, before_date):
     GROUP BY e.id, e.entry_date, e.staff_name ORDER BY e.entry_date DESC LIMIT 1;
     """
     try:
-        df = db_conn.query(query, params={"cart": cart_name, "bdate": before_date}, ttl="0s")
+        df = db_conn.query(query, params={"cart": cart_name, "bdate": before_date}, ttl="60s")
         if not df.empty:
             r = df.iloc[0]
             prev_dt = pd.to_datetime(r["entry_date"]).date() if pd.notna(r["entry_date"]) else None
@@ -2294,7 +2294,7 @@ def list_daily_entries_with_prefill():
             e.cash_leakage_unexplained, e.remarks
         ORDER BY e.entry_date DESC, e.cart_name ASC;
         """
-        df = db_conn.query(query, params={"active_loc": get_active_location_filter()}, ttl="0s")
+        df = db_conn.query(query, params={"active_loc": get_active_location_filter()}, ttl="60s")
         if not df.empty:
             for _, r in df.iterrows():
                 raw_items = r.get("items") or []
@@ -2540,7 +2540,7 @@ def get_today_cart_stock_state(cart_name, today_date):
             LIMIT 1;
             """,
             params={"dt": today_date, "cart": cart_name},
-            ttl="0s",
+            ttl="60s",
         )
         if entry_df.empty:
             return stock_state, staff_name
@@ -2556,7 +2556,7 @@ def get_today_cart_stock_state(cart_name, today_date):
             WHERE daily_entry_id = :eid;
             """,
             params={"eid": today_id},
-            ttl="0s",
+            ttl="60s",
         )
         for _, row in items_df.iterrows():
             code = str(row.get("flavor_code") or "").strip()
@@ -2610,7 +2610,7 @@ def get_cart_stock_view_data(cart_name, target_date):
                 LIMIT 1;
                 """,
                 params={"dt": target_date, "cart": cart_name},
-                ttl="0s",
+                ttl="60s",
             )
             if not entry_df.empty:
                 eid = int(entry_df.iloc[0]["id"])
@@ -2625,7 +2625,7 @@ def get_cart_stock_view_data(cart_name, target_date):
                     WHERE daily_entry_id = :eid;
                     """,
                     params={"eid": eid},
-                    ttl="0s",
+                    ttl="60s",
                 )
                 for _, r in items_df.iterrows():
                     code = str(r.get("flavor_code") or "").strip()
@@ -2650,7 +2650,7 @@ def get_cart_stock_view_data(cart_name, target_date):
                 WHERE entry_date = :dt AND cart_name = :cart;
                 """,
                 params={"dt": target_date, "cart": cart_name},
-                ttl="0s",
+                ttl="60s",
             )
             if not extra_df.empty:
                 erow = extra_df.iloc[0]
@@ -3018,7 +3018,6 @@ def confirm_move_cart_to_freezer_modal(today_date, cart_name, return_map, staff_
                     st.session_state[f"rm_cart_stock_{cart_name}_{code}"] = "0"
                 st.session_state[f"rm_cart_empty_fill_{cart_name}"] = {}
                 st.cache_data.clear()
-                st.cache_resource.clear()
                 st.session_state["_rm_cart_success_msg"] = f"Moved {moved_cnt} units from {cart_name} back to Freezer!"
                 st.rerun()
             except Exception as e:
@@ -3047,7 +3046,7 @@ def load_db_daily_df():
              e.cash_leakage_explained, e.cash_leakage_unexplained, e.cash_leakage, e.remarks 
     ORDER BY e.entry_date DESC;
     """
-    df = db_conn.query(query, params={"active_loc": get_active_location_filter()}, ttl="0s")
+    df = db_conn.query(query, params={"active_loc": get_active_location_filter()}, ttl="60s")
     if not df.empty: df["Date"] = pd.to_datetime(df["Date"])
     return df
 
@@ -3066,7 +3065,7 @@ def load_db_flavor_sales(start_date=None, end_date=None):
     FROM flavors f LEFT JOIN daily_cart_items i ON f.code = i.flavor_code LEFT JOIN daily_cart_entries e ON i.daily_entry_id = e.id {where_sql}
     GROUP BY f.code, f.name, f.mrp, f.cost_price ORDER BY "Units sold" DESC;
     """
-    return db_conn.query(query, params=params, ttl="0s")
+    return db_conn.query(query, params=params, ttl="60s")
 
 def apply_smart_filters(df, filter_columns, key_prefix):
     """Apply a small set of useful filters without cluttering every table."""
@@ -3096,7 +3095,7 @@ def load_db_expenses_list():
     FROM expenses WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(location, 'HOSUR'))) = :active_loc) ORDER BY expense_date DESC, id DESC;
     """
     try:
-        df = db_conn.query(query, params={"active_loc": get_active_location_filter()}, ttl="0s")
+        df = db_conn.query(query, params={"active_loc": get_active_location_filter()}, ttl="60s")
         if df.empty: return []
         df["Date"] = pd.to_datetime(df["Date"])
         df["Amount"] = df["Amount"].astype(float)
@@ -3133,7 +3132,7 @@ def load_ops_cash_spend_entries_df():
     ORDER BY s.spend_date DESC, s.id DESC;
     """
     try:
-        return db_conn.query(query, params={"active_loc": get_active_location_filter()}, ttl="0s")
+        return db_conn.query(query, params={"active_loc": get_active_location_filter()}, ttl="60s")
     except Exception:
         return pd.DataFrame()
 
@@ -3146,7 +3145,7 @@ def load_db_expenses_summary_df():
     WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(e.location, 'HOSUR'))) = :active_loc)
     GROUP BY e.id, e.expense_date, e.expense_type, e.category, e.sub_category, e.description, e.total_amount, e.attributed_to, e.vendor_name, e.staff_name, e.purchase_order_id, e.status, e.remarks ORDER BY e.expense_date DESC, e.id DESC;
     """
-    try: return db_conn.query(query, params={"active_loc": get_active_location_filter()}, ttl="0s")
+    try: return db_conn.query(query, params={"active_loc": get_active_location_filter()}, ttl="60s")
     except Exception: return pd.DataFrame()
 
 def prepare_payment_receipt(uploaded_file):
@@ -3187,7 +3186,7 @@ def load_db_payments_df():
            e.category, e.sub_category, e.description AS expense_desc, e.total_amount AS expense_total, e.staff_name
     FROM expense_payments p JOIN expenses e ON p.expense_id = e.id WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(e.location, 'HOSUR'))) = :active_loc) ORDER BY p.payment_date DESC, p.id DESC;
     """
-    try: return db_conn.query(query, params={"active_loc": get_active_location_filter()}, ttl="0s")
+    try: return db_conn.query(query, params={"active_loc": get_active_location_filter()}, ttl="60s")
     except Exception: return pd.DataFrame()
 
 def get_db_stock_removed_map():
@@ -3202,7 +3201,7 @@ def get_db_stock_removed_map():
     FROM stock_removed WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(location, 'HOSUR'))) = :active_loc);
     """
     try:
-        df = db_conn.query(query, params={"active_loc": get_active_location_filter()}, ttl="0s")
+        df = db_conn.query(query, params={"active_loc": get_active_location_filter()}, ttl="60s")
         if not df.empty:
             r = df.iloc[0]
             return {code: int(r.get(FLAVOR_MAP[code]["audit_col"], 0)) for code in FLAVOR_CODES}
@@ -3217,7 +3216,7 @@ def get_freezer_asset_name_for_location(loc_code=None):
             df = db_conn.query(
                 "SELECT asset_name FROM public.location_assets WHERE is_active = true AND asset_type = 'FREEZER' AND UPPER(TRIM(location_code)) = :loc ORDER BY sort_order ASC, asset_name ASC LIMIT 1;",
                 params={"loc": loc},
-                ttl="30s"
+                ttl="10m"
             )
             if not df.empty and str(df.iloc[0]["asset_name"]).strip():
                 return str(df.iloc[0]["asset_name"]).strip()
@@ -3626,7 +3625,6 @@ def confirm_delete_freezer_sale_modal(txn_row):
                 delete_freezer_sale_transaction(tid)
                 st.session_state.pop("_editing_freezer_txn_id", None)
                 st.cache_data.clear()
-                st.cache_resource.clear()
                 st.rerun()
             except Exception as e:
                 st.error(f"Could not delete Freezer sale: {e}")
@@ -3663,7 +3661,7 @@ def load_freezer_sale_transactions_df(start_date=None, end_date=None):
             ORDER BY sale_date DESC, id DESC;
             """,
             params=params,
-            ttl="0s"
+            ttl="60s"
         )
     except Exception:
         return pd.DataFrame()
@@ -3687,7 +3685,7 @@ def get_live_cart_sold_map_for_single_cart(cart_name, target_date):
             GROUP BY i.flavor_code;
             """,
             params={"cart": str(cart_name).strip(), "dt": target_date},
-            ttl="0s",
+            ttl="60s",
         )
         for _, r in df.iterrows():
             code = str(r.get("flavor_code") or "").strip().upper()
@@ -3746,7 +3744,7 @@ def get_live_cart_flavour_tables_for_date(target_date, carts_list=None):
             ORDER BY s.cart_name ASC;
             """,
             params={"dt": target_date, "active_loc": active_loc},
-            ttl="0s",
+            ttl="60s",
         )
         for _, srow in shifts_df.iterrows():
             cname = str(srow.get("cart_name") or "").strip()
@@ -3781,7 +3779,7 @@ def get_live_cart_flavour_tables_for_date(target_date, carts_list=None):
             GROUP BY s.cart_name, i.flavor_code;
             """,
             params={"dt": target_date, "active_loc": active_loc},
-            ttl="0s",
+            ttl="60s",
         )
         for _, irow in items_df.iterrows():
             cname = str(irow.get("cart_name") or "").strip()
@@ -4036,7 +4034,6 @@ def confirm_delete_stock_received_modal(receipt_row):
                 delete_stock_received_entry(rid)
                 st.session_state.pop("db_stock_select", None)
                 st.cache_data.clear()
-                st.cache_resource.clear()
                 st.session_state["_sr_deleted_msg"] = f"Stock Receipt #{rid} ({tot_rec_u} units on {rdt}) was deleted and Freezer stock was updated."
                 st.rerun()
             except Exception as e:
@@ -4071,7 +4068,7 @@ def get_db_cart_to_freezer_map(active_loc=None, after_date=None):
             WHERE {where_sql};
             """,
             params=params,
-            ttl="0s",
+            ttl="60s",
         )
         if not df.empty:
             for code in FLAVOR_CODES:
@@ -4085,15 +4082,15 @@ def get_db_freezer_stock():
     if db_conn is None: return pd.DataFrame(columns=["code", "Units in freezer"])
     try:
         active_loc = get_active_location_filter()
-        rec_df = db_conn.query("SELECT ri.flavor_code, SUM(ri.received_units) AS total_recv FROM stock_received_items ri JOIN stock_received r ON r.id = ri.received_id WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(r.location, 'HOSUR'))) = :active_loc) GROUP BY ri.flavor_code;", params={"active_loc": active_loc}, ttl="0s")
+        rec_df = db_conn.query("SELECT ri.flavor_code, SUM(ri.received_units) AS total_recv FROM stock_received_items ri JOIN stock_received r ON r.id = ri.received_id WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(r.location, 'HOSUR'))) = :active_loc) GROUP BY ri.flavor_code;", params={"active_loc": active_loc}, ttl="60s")
         rec_map = dict(zip(rec_df["flavor_code"], rec_df["total_recv"])) if not rec_df.empty else {}
 
         frm_cart_map = get_db_cart_to_freezer_map(active_loc=active_loc, after_date=None)
 
-        added_df = db_conn.query("SELECT i.flavor_code, SUM(i.added_units) AS total_added FROM daily_cart_items i JOIN daily_cart_entries e ON e.id = i.daily_entry_id WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(e.city, 'HOSUR'))) = :active_loc) GROUP BY i.flavor_code;", params={"active_loc": active_loc}, ttl="0s")
+        added_df = db_conn.query("SELECT i.flavor_code, SUM(i.added_units) AS total_added FROM daily_cart_items i JOIN daily_cart_entries e ON e.id = i.daily_entry_id WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(e.city, 'HOSUR'))) = :active_loc) GROUP BY i.flavor_code;", params={"active_loc": active_loc}, ttl="60s")
         added_map = dict(zip(added_df["flavor_code"], added_df["total_added"])) if not added_df.empty else {}
 
-        fzr_df = db_conn.query(f"SELECT i.flavor_code, COALESCE(SUM(i.sold_units), 0) AS total_fzr_sold FROM daily_cart_items i JOIN daily_cart_entries e ON e.id = i.daily_entry_id WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(e.city, 'HOSUR'))) = :active_loc) AND {is_freezer_cart_name_sql('e.cart_name')} GROUP BY i.flavor_code;", params={"active_loc": active_loc}, ttl="0s")
+        fzr_df = db_conn.query(f"SELECT i.flavor_code, COALESCE(SUM(i.sold_units), 0) AS total_fzr_sold FROM daily_cart_items i JOIN daily_cart_entries e ON e.id = i.daily_entry_id WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(e.city, 'HOSUR'))) = :active_loc) AND {is_freezer_cart_name_sql('e.cart_name')} GROUP BY i.flavor_code;", params={"active_loc": active_loc}, ttl="60s")
         fzr_map = dict(zip(fzr_df["flavor_code"], fzr_df["total_fzr_sold"])) if not fzr_df.empty else {}
 
         rem_map = get_db_stock_removed_map()
@@ -4124,28 +4121,28 @@ def get_physical_current_stock_map(as_of_date=None):
             audit_df = db_conn.query(
                 "SELECT * FROM stock_audits_wide WHERE UPPER(TRIM(COALESCE(location, 'HOSUR'))) = :loc ORDER BY audit_date DESC, audit_id DESC LIMIT 1;",
                 params={"loc": loc_code},
-                ttl="0s"
+                ttl="60s"
             )
             if audit_df.empty:
                 rec_df = db_conn.query(
                     "SELECT ri.flavor_code, COALESCE(SUM(ri.received_units), 0) AS recv FROM stock_received_items ri JOIN stock_received r ON r.id = ri.received_id WHERE UPPER(TRIM(COALESCE(r.location, 'HOSUR'))) = :loc GROUP BY ri.flavor_code;",
-                    params={"loc": loc_code}, ttl="0s"
+                    params={"loc": loc_code}, ttl="60s"
                 )
                 rec_map = dict(zip(rec_df["flavor_code"], rec_df["recv"])) if not rec_df.empty else {}
                 frm_cart_map = get_db_cart_to_freezer_map(active_loc=loc_code, after_date=None)
                 added_df = db_conn.query(
                     "SELECT i.flavor_code, COALESCE(SUM(i.added_units), 0) AS added FROM daily_cart_items i JOIN daily_cart_entries e ON e.id = i.daily_entry_id WHERE UPPER(TRIM(COALESCE(e.city, 'HOSUR'))) = :loc GROUP BY i.flavor_code;",
-                    params={"loc": loc_code}, ttl="0s"
+                    params={"loc": loc_code}, ttl="60s"
                 )
                 added_map = dict(zip(added_df["flavor_code"], added_df["added"])) if not added_df.empty else {}
                 fzr_df = db_conn.query(
                     f"SELECT i.flavor_code, COALESCE(SUM(i.sold_units), 0) AS fzr_sold FROM daily_cart_items i JOIN daily_cart_entries e ON e.id = i.daily_entry_id WHERE UPPER(TRIM(COALESCE(e.city, 'HOSUR'))) = :loc AND {is_freezer_cart_name_sql('e.cart_name')} GROUP BY i.flavor_code;",
-                    params={"loc": loc_code}, ttl="0s"
+                    params={"loc": loc_code}, ttl="60s"
                 )
                 fzr_map = dict(zip(fzr_df["flavor_code"], fzr_df["fzr_sold"])) if not fzr_df.empty else {}
                 rem_df = db_conn.query(
                     "SELECT COALESCE(SUM(ml_units),0) AS ml_units, COALESCE(SUM(mm_units),0) AS mm_units, COALESCE(SUM(ps_units),0) AS ps_units, COALESCE(SUM(mn_units),0) AS mn_units, COALESCE(SUM(kb_units),0) AS kb_units, COALESCE(SUM(bm_units),0) AS bm_units, COALESCE(SUM(sg_units),0) AS sg_units, COALESCE(SUM(ch_units),0) AS ch_units, COALESCE(SUM(ra_units),0) AS ra_units FROM stock_removed WHERE UPPER(TRIM(COALESCE(location, 'HOSUR'))) = :loc;",
-                    params={"loc": loc_code}, ttl="0s"
+                    params={"loc": loc_code}, ttl="60s"
                 )
                 rem_map = {c: int(rem_df.iloc[0].get(FLAVOR_MAP[c]["audit_col"], 0)) for c in FLAVOR_CODES} if not rem_df.empty else {}
                 for code in FLAVOR_CODES:
@@ -4170,7 +4167,7 @@ def get_physical_current_stock_map(as_of_date=None):
                 WHERE r.received_date >= :adate
                   AND UPPER(TRIM(COALESCE(r.location, 'HOSUR'))) = :loc
                 GROUP BY ri.flavor_code;
-            """, params={"adate": audit_date, "loc": loc_code}, ttl="0s")
+            """, params={"adate": audit_date, "loc": loc_code}, ttl="60s")
             rec_map = dict(zip(rec_df["flavor_code"], rec_df["recv"])) if not rec_df.empty else {}
 
             frm_cart_map = get_db_cart_to_freezer_map(active_loc=loc_code, after_date=audit_date)
@@ -4182,7 +4179,7 @@ def get_physical_current_stock_map(as_of_date=None):
                 WHERE e.entry_date >= :anext
                   AND UPPER(TRIM(COALESCE(e.city, 'HOSUR'))) = :loc
                 GROUP BY i.flavor_code;
-            """, params={"anext": audit_next_date, "loc": loc_code}, ttl="0s")
+            """, params={"anext": audit_next_date, "loc": loc_code}, ttl="60s")
             added_map = dict(zip(added_df["flavor_code"], added_df["added"])) if not added_df.empty else {}
 
             fzr_df = db_conn.query(f"""
@@ -4193,7 +4190,7 @@ def get_physical_current_stock_map(as_of_date=None):
                   AND UPPER(TRIM(COALESCE(e.city, 'HOSUR'))) = :loc
                   AND {is_freezer_cart_name_sql('e.cart_name')}
                 GROUP BY i.flavor_code;
-            """, params={"anext": audit_next_date, "loc": loc_code}, ttl="0s")
+            """, params={"anext": audit_next_date, "loc": loc_code}, ttl="60s")
             fzr_map = dict(zip(fzr_df["flavor_code"], fzr_df["fzr_sold"])) if not fzr_df.empty else {}
 
             rem_df = db_conn.query("""
@@ -4206,7 +4203,7 @@ def get_physical_current_stock_map(as_of_date=None):
                 FROM stock_removed 
                 WHERE removal_date >= :adate
                   AND UPPER(TRIM(COALESCE(location, 'HOSUR'))) = :loc;
-            """, params={"adate": audit_date, "loc": loc_code}, ttl="0s")
+            """, params={"adate": audit_date, "loc": loc_code}, ttl="60s")
             rem_map = {code: int(rem_df.iloc[0].get(FLAVOR_MAP[code]["audit_col"], 0)) for code in FLAVOR_CODES} if not rem_df.empty else {code: 0 for code in FLAVOR_CODES}
 
             for code in FLAVOR_CODES:
@@ -4245,7 +4242,7 @@ def load_full_staff_df():
     WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(s.location, 'HOSUR'))) = :active_loc)
     ORDER BY s.status ASC, s.name ASC;
     """
-    try: return db_conn.query(query, params={"active_loc": get_active_location_filter()}, ttl="0s")
+    try: return db_conn.query(query, params={"active_loc": get_active_location_filter()}, ttl="60s")
     except Exception: return pd.DataFrame()
 
 def load_staff_comp_plan_as_of(staff_id, as_of_date):
@@ -4267,7 +4264,7 @@ def load_staff_comp_plan_as_of(staff_id, as_of_date):
             LIMIT 1;
             """,
             params={"sid": int(staff_id), "as_of": as_of_date},
-            ttl="0s"
+            ttl="60s"
         )
         return None if df.empty else df.iloc[0]
     except Exception:
@@ -4275,7 +4272,7 @@ def load_staff_comp_plan_as_of(staff_id, as_of_date):
 
 def load_staff_compensation_history(staff_id):
     if db_conn is None: return pd.DataFrame()
-    try: return db_conn.query("SELECT id, staff_id, effective_from, effective_to, monthly_fixed_salary, commission_threshold_daily, commission_percentage, allowance_weekday, allowance_sunday, food_tea_allowance_mode, monthly_food_tea_allowance, monthly_fuel_allowance, created_at FROM staff_compensation_plans WHERE staff_id = :sid ORDER BY effective_from DESC, id DESC;", params={"sid": staff_id}, ttl="0s")
+    try: return db_conn.query("SELECT id, staff_id, effective_from, effective_to, monthly_fixed_salary, commission_threshold_daily, commission_percentage, allowance_weekday, allowance_sunday, food_tea_allowance_mode, monthly_food_tea_allowance, monthly_fuel_allowance, created_at FROM staff_compensation_plans WHERE staff_id = :sid ORDER BY effective_from DESC, id DESC;", params={"sid": staff_id}, ttl="60s")
     except Exception: return pd.DataFrame()
 
 def load_staff_attendance_df(start_date=None, end_date=None):
@@ -4288,7 +4285,7 @@ def load_staff_attendance_df(start_date=None, end_date=None):
     if start_date: where_clauses.append("a.attendance_date >= :sdate"); params["sdate"] = start_date
     if end_date: where_clauses.append("a.attendance_date <= :edate"); params["edate"] = end_date
     where_sql = ("WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
-    try: return db_conn.query(f"SELECT a.id, a.staff_id, s.name AS staff_name, a.attendance_date, a.status, a.leave_type, a.reason, a.recorded_by, a.created_at FROM staff_attendance a JOIN staff s ON a.staff_id = s.id {where_sql} ORDER BY a.attendance_date DESC, a.id DESC;", params=params, ttl="0s")
+    try: return db_conn.query(f"SELECT a.id, a.staff_id, s.name AS staff_name, a.attendance_date, a.status, a.leave_type, a.reason, a.recorded_by, a.created_at FROM staff_attendance a JOIN staff s ON a.staff_id = s.id {where_sql} ORDER BY a.attendance_date DESC, a.id DESC;", params=params, ttl="60s")
     except Exception: return pd.DataFrame()
 
 def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leakage=False, limit_to_employment=True):
@@ -4297,8 +4294,8 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
     if staff_df.empty: return 0.0, 0.0, 0.0, {}
 
     active_loc = get_active_location_filter()
-    entries_df = db_conn.query("SELECT entry_date, cart_name, staff_name, total_collection FROM daily_cart_entries WHERE entry_date >= :sdate AND entry_date <= :edate AND (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(city, 'HOSUR'))) = :active_loc) AND LOWER(TRIM(COALESCE(cart_name, ''))) NOT LIKE '%test%' AND staff_name IS NOT NULL AND staff_name != '' AND staff_name != 'Select Staff';", params={"sdate": start_date, "edate": end_date, "active_loc": active_loc}, ttl="0s")
-    att_df = db_conn.query("SELECT a.staff_id, s.name AS staff_name, a.attendance_date, a.status, a.leave_type FROM staff_attendance a JOIN staff s ON a.staff_id = s.id WHERE a.attendance_date >= :sdate AND a.attendance_date <= :edate AND (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(s.location, 'HOSUR'))) = :active_loc);", params={"sdate": start_date, "edate": end_date, "active_loc": active_loc}, ttl="0s")
+    entries_df = db_conn.query("SELECT entry_date, cart_name, staff_name, total_collection FROM daily_cart_entries WHERE entry_date >= :sdate AND entry_date <= :edate AND (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(city, 'HOSUR'))) = :active_loc) AND LOWER(TRIM(COALESCE(cart_name, ''))) NOT LIKE '%test%' AND staff_name IS NOT NULL AND staff_name != '' AND staff_name != 'Select Staff';", params={"sdate": start_date, "edate": end_date, "active_loc": active_loc}, ttl="60s")
+    att_df = db_conn.query("SELECT a.staff_id, s.name AS staff_name, a.attendance_date, a.status, a.leave_type FROM staff_attendance a JOIN staff s ON a.staff_id = s.id WHERE a.attendance_date >= :sdate AND a.attendance_date <= :edate AND (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(s.location, 'HOSUR'))) = :active_loc);", params={"sdate": start_date, "edate": end_date, "active_loc": active_loc}, ttl="60s")
     pay_df = db_conn.query("""
         SELECT p.amount_paid, p.payment_date, e.staff_name
         FROM expense_payments p
@@ -4311,7 +4308,7 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
               LOWER(TRIM(COALESCE(e.sub_category, ''))) <> 'salary'
               OR LOWER(TRIM(COALESCE(e.month, ''))) = LOWER(:salary_month)
           );
-    """, params={"sdate": start_date, "edate": end_date, "salary_month": start_date.strftime('%B'), "active_loc": active_loc}, ttl="0s")
+    """, params={"sdate": start_date, "edate": end_date, "salary_month": start_date.strftime('%B'), "active_loc": active_loc}, ttl="60s")
 
     exp_ledger_df = db_conn.query("""
         SELECT expense_date, staff_name, sub_category, total_amount, month
@@ -4325,7 +4322,7 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
               LOWER(TRIM(COALESCE(sub_category, ''))) <> 'salary'
               OR LOWER(TRIM(COALESCE(month, ''))) = LOWER(:salary_month)
           );
-    """, params={"sdate": start_date, "edate": end_date, "salary_month": start_date.strftime('%B'), "active_loc": active_loc}, ttl="0s")
+    """, params={"sdate": start_date, "edate": end_date, "salary_month": start_date.strftime('%B'), "active_loc": active_loc}, ttl="60s")
 
     leakage_df = pd.DataFrame()
     if include_cash_leakage:
@@ -4337,7 +4334,7 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
               AND expense_date >= :sdate AND expense_date <= :edate
               AND (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(location, 'HOSUR'))) = :active_loc)
               AND NULLIF(TRIM(staff_name), '') IS NOT NULL;
-        """, params={"sdate": start_date, "edate": end_date, "active_loc": active_loc}, ttl="0s")
+        """, params={"sdate": start_date, "edate": end_date, "active_loc": active_loc}, ttl="60s")
 
     def month_days(d):
         return 30
@@ -4379,6 +4376,36 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
             ledger.sort(key=lambda row: row["date"])
         return sum(by_date.values())
 
+    all_comp_plans_df = pd.DataFrame()
+    try:
+        all_comp_plans_df = db_conn.query(
+            """
+            SELECT id, staff_id, effective_from, effective_to, monthly_fixed_salary,
+                   commission_threshold_daily, commission_percentage,
+                   allowance_weekday, allowance_sunday, food_tea_allowance_mode,
+                   monthly_food_tea_allowance, monthly_fuel_allowance, created_at
+            FROM staff_compensation_plans
+            ORDER BY staff_id ASC, effective_from DESC, id DESC;
+            """,
+            ttl="60s",
+        )
+    except Exception:
+        all_comp_plans_df = pd.DataFrame()
+
+    comp_plans_by_staff = {}
+    if not all_comp_plans_df.empty:
+        for _, _cp in all_comp_plans_df.iterrows():
+            _sid = int(_cp["staff_id"])
+            _ef = pd.to_datetime(_cp["effective_from"]).date() if pd.notna(_cp.get("effective_from")) else date.min
+            _et = pd.to_datetime(_cp["effective_to"]).date() if pd.notna(_cp.get("effective_to")) else None
+            comp_plans_by_staff.setdefault(_sid, []).append((_ef, _et, _cp))
+
+    def _get_cached_comp_plan(sid, as_of_dt):
+        for _ef, _et, _cp in comp_plans_by_staff.get(int(sid), []):
+            if _ef <= as_of_dt and (_et is None or _et >= as_of_dt):
+                return _cp
+        return None
+
     total_labour_incurred, total_labour_paid, breakdown_by_staff = 0.0, 0.0, {}
 
     for _, s_row in staff_df.iterrows():
@@ -4406,7 +4433,7 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
 
         # Always use the compensation plan effective for the payroll period rather than
         # merely the newest plan row. This is important when a future revision exists.
-        plan_row = load_staff_comp_plan_as_of(int(s_row["id"]), employment_end)
+        plan_row = _get_cached_comp_plan(int(s_row["id"]), employment_end)
         plan_source = plan_row if plan_row is not None else s_row
 
         monthly_sal = float(_num(plan_source.get("monthly_fixed_salary")) or 18000.0)
@@ -5570,7 +5597,7 @@ if page == "Home" and user_role == "admin":
                 JOIN daily_cart_items i ON i.daily_entry_id = e.id;
                 """,
                 params={"active_loc": get_active_location_filter()},
-                ttl="0s",
+                ttl="60s",
             )
             for _, _cr in latest_c_df.iterrows():
                 _cn = str(_cr.get("cart_name") or "").strip()
@@ -6104,7 +6131,7 @@ if page == "Locations & Logins" and user_role == "admin":
                     GROUP BY l.location_code, l.display_name, l.is_active
                     ORDER BY l.location_code ASC;
                     """,
-                    ttl="0s"
+                    ttl="60s"
                 )
             except Exception as e:
                 locs_df = pd.DataFrame()
@@ -6183,13 +6210,13 @@ if page == "Locations & Logins" and user_role == "admin":
                 if filter_asset_loc == "All":
                     assets_df = db_conn.query(
                         "SELECT id, location_code, asset_name, asset_type, is_active, sort_order FROM public.location_assets ORDER BY location_code ASC, sort_order ASC, asset_name ASC;",
-                        ttl="0s"
+                        ttl="60s"
                     )
                 else:
                     assets_df = db_conn.query(
                         "SELECT id, location_code, asset_name, asset_type, is_active, sort_order FROM public.location_assets WHERE location_code = :loc ORDER BY sort_order ASC, asset_name ASC;",
                         params={"loc": filter_asset_loc},
-                        ttl="0s"
+                        ttl="60s"
                     )
             except Exception as e:
                 assets_df = pd.DataFrame()
@@ -6256,7 +6283,7 @@ if page == "Locations & Logins" and user_role == "admin":
         with l_right:
             st.markdown("#### 📋 Configured Role Logins")
             try:
-                creds_df = db_conn.query("SELECT * FROM public.list_app_login_credentials();", ttl="0s")
+                creds_df = db_conn.query("SELECT * FROM public.list_app_login_credentials();", ttl="60s")
             except Exception as e:
                 creds_df = pd.DataFrame()
                 st.error(f"Could not load credentials list: {e}")
@@ -6669,7 +6696,6 @@ elif page == "Daily Entry":
                             if entry_date == yesterday_sale_date:
                                 sync_today_opening_after_sales_update(today_val, cart_name, closing_map)
                             st.cache_data.clear()
-                            st.cache_resource.clear()
                             show_success_modal(
                                 f"Sales entry saved successfully for {cart_name}. Total sold: {tot_sold} units."
                             )
@@ -7014,7 +7040,6 @@ elif page == "Daily Entry":
                                 st.session_state.pop("_editing_freezer_txn_id", None)
                                 st.session_state["fzr_sale_form_nonce"] = form_nonce + 1
                                 st.cache_data.clear()
-                                st.cache_resource.clear()
                                 show_success_modal(
                                     f"Freezer Sale #{int(editing_row['id'])} updated! Total: {tot_fzr_sold} units (₹{tot_fzr_value:,.0f})."
                                 )
@@ -7032,7 +7057,6 @@ elif page == "Daily Entry":
                                 )
                                 st.session_state["fzr_sale_form_nonce"] = form_nonce + 1
                                 st.cache_data.clear()
-                                st.cache_resource.clear()
                                 show_success_modal(
                                     f"Freezer sale transaction saved for {freezer_asset_name} on {_entry_date_display(fzr_sale_date)}! Added +{tot_fzr_sold} units (₹{tot_fzr_value:,.0f})."
                                 )
@@ -7134,7 +7158,6 @@ elif page == "Daily Entry":
                     opening_map = {code: int(today_stock_state[code]["opening"]) for code in FLAVOR_CODES}
                     sync_today_restock_entry(today_val, cart_name, selected_staff, opening_map, restock_map)
                     st.cache_data.clear()
-                    st.cache_resource.clear()
                     show_success_modal(
                         f"Restock saved successfully for {cart_name}. Total stock added: {total_restock} units."
                     )
@@ -7236,7 +7259,6 @@ elif page == "Daily Entry":
                         for code in FLAVOR_CODES:
                             st.session_state[f"extra_stock_{cart_name}_{code}"] = "0"
                         st.cache_data.clear()
-                        st.cache_resource.clear()
                         show_success_modal(
                             f"{total_extra} total extra stock units added successfully for {cart_name}."
                         )
@@ -7257,7 +7279,7 @@ elif page == "Daily Entry":
                         LIMIT 25;
                         """,
                         params={"cart": cart_name},
-                        ttl="0s"
+                        ttl="60s"
                     )
                     if extra_log_df.empty:
                         st.caption(f"No extra stock audit logs recorded for {cart_name} yet.")
@@ -7492,7 +7514,7 @@ elif page == "Daily Entry":
                         LIMIT 25;
                         """,
                         params={"cart": cart_name},
-                        ttl="0s",
+                        ttl="60s",
                     )
                     if ctf_df.empty:
                         st.caption(f"No stock transfers from {cart_name} to Freezer recorded yet.")
@@ -8500,7 +8522,7 @@ elif page == "Bulk Orders & Quotes" and user_role == "admin":
                 LIMIT 100;
                 """,
                 params=b_params,
-                ttl="0s",
+                ttl="60s",
             )
         except Exception as e:
             quotes_df = pd.DataFrame()
@@ -8945,7 +8967,7 @@ elif page == "Live Cart Tracking" and user_role == "admin":
             s.status
 
         ORDER BY s.started_at DESC;
-    """, params={"active_loc": active_loc_live}, ttl="0s")
+    """, params={"active_loc": active_loc_live}, ttl="60s")
 
     summary_df = db_conn.query("""
         SELECT
@@ -8957,7 +8979,7 @@ elif page == "Live Cart Tracking" and user_role == "admin":
         JOIN live_cart_shifts s ON t.shift_id = s.id
         WHERE t.created_at >= CURRENT_DATE
           AND (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(s.location, 'HOSUR'))) = :active_loc);
-    """, params={"active_loc": active_loc_live}, ttl="0s")
+    """, params={"active_loc": active_loc_live}, ttl="60s")
 
     active_count_df = db_conn.query("""
         SELECT COUNT(*) AS active_carts
@@ -8965,7 +8987,7 @@ elif page == "Live Cart Tracking" and user_role == "admin":
         WHERE s.shift_date = CURRENT_DATE
           AND s.status = 'Open'
           AND (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(s.location, 'HOSUR'))) = :active_loc);
-    """, params={"active_loc": active_loc_live}, ttl="0s")
+    """, params={"active_loc": active_loc_live}, ttl="60s")
 
     total_sales = 0.0
     total_cash = 0.0
@@ -9111,7 +9133,7 @@ elif page == "Live Cart Tracking" and user_role == "admin":
                 params={
                     "sid": int(shift["id"])
                 },
-                ttl="0s")
+                ttl="60s")
 
                 if not items_df.empty:
 
@@ -9164,7 +9186,7 @@ elif page == "Cash Custody" and user_role == "admin":
             GROUP BY current_holder;
             """,
             params={"active_loc": get_active_location_filter()},
-            ttl="0s"
+            ttl="60s"
         )
     except Exception as e:
         st.error(f"Could not load cash custody summary: {e}")
@@ -9197,7 +9219,7 @@ elif page == "Cash Custody" and user_role == "admin":
             WHERE current_holder IN ('OPS_COORDINATOR', 'YOGESH')
               AND (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(city, 'HOSUR'))) = :active_loc)
             GROUP BY current_holder;
-        """, params={"active_loc": get_active_location_filter()}, ttl="0s")
+        """, params={"active_loc": get_active_location_filter()}, ttl="60s")
         for _, r in holder_dates_df.iterrows():
             holder = str(r["current_holder"] or "").strip().upper()
             if holder in holder_date_ranges and pd.notna(r["first_sales_date"]):
@@ -9231,7 +9253,7 @@ elif page == "Cash Custody" and user_role == "admin":
                 AND LOWER(TRIM(COALESCE(e.sub_category, ''))) IN ('food & tea', 'staff advance')
               )
             ORDER BY p.payment_date DESC, p.id DESC;
-        """, params={"active_loc": get_active_location_filter()}, ttl="0s")
+        """, params={"active_loc": get_active_location_filter()}, ttl="60s")
     except Exception as e:
         cash_payments_df = pd.DataFrame()
         st.warning(f"Could not load cash payment summary: {e}")
@@ -9288,7 +9310,7 @@ elif page == "Cash Custody" and user_role == "admin":
             WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(city, 'HOSUR'))) = :active_loc)
             GROUP BY entry_date, current_holder
             ORDER BY entry_date DESC, current_holder;
-        """, params={"active_loc": get_active_location_filter()}, ttl="0s")
+        """, params={"active_loc": get_active_location_filter()}, ttl="60s")
 
         if custody_by_date_df.empty:
             st.info("No cash sales records are available yet.")
@@ -9323,7 +9345,7 @@ elif page == "Cash Custody" and user_role == "admin":
                 FROM public.v_cash_custody_status
                 WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(city, 'HOSUR'))) = :active_loc)
                 ORDER BY entry_date DESC, cart_name;
-            """, params={"active_loc": get_active_location_filter()}, ttl="0s")
+            """, params={"active_loc": get_active_location_filter()}, ttl="60s")
 
             if custody_detail_df.empty:
                 st.info("No cart-level cash records found.")
@@ -9359,7 +9381,7 @@ elif page == "Cash Custody" and user_role == "admin":
             WHERE current_holder = 'OPS_COORDINATOR'
               AND (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(city, 'HOSUR'))) = :active_loc)
             ORDER BY entry_date ASC, cart_name ASC;
-        """, params={"active_loc": get_active_location_filter()}, ttl="0s")
+        """, params={"active_loc": get_active_location_filter()}, ttl="60s")
 
         if outstanding_df.empty:
             st.success("There is currently no cash pending with the Ops Coordinator.")
@@ -9558,7 +9580,7 @@ elif page == "Cash Custody" and user_role == "admin":
                 b.id, b.collection_date, b.expected_amount,
                 b.actual_collected_amount, b.notes
             ORDER BY b.collection_date DESC, b.id DESC;
-        """, params={"active_loc": get_active_location_filter()}, ttl="0s")
+        """, params={"active_loc": get_active_location_filter()}, ttl="60s")
 
         if yogesh_batches_df.empty:
             st.info("No cash batches are currently with Yogesh.")
@@ -9604,7 +9626,7 @@ elif page == "Cash Custody" and user_role == "admin":
                 JOIN public.daily_cart_entries d ON d.id = i.daily_entry_id
                 WHERE i.batch_id = :batch_id
                 ORDER BY d.entry_date, d.cart_name;
-            """, params={"batch_id": int(selected_batch_id)}, ttl="0s")
+            """, params={"batch_id": int(selected_batch_id)}, ttl="60s")
 
             if not batch_items_df.empty:
                 handover_preview = batch_items_df.copy()
@@ -9701,7 +9723,7 @@ elif page == "Cash Custody" and user_role == "admin":
                 b.actual_collected_amount, b.status, b.handed_over_date,
                 b.handed_over_to, b.notes
             ORDER BY b.collection_date DESC, b.id DESC;
-        """, params={"active_loc": get_active_location_filter()}, ttl="0s")
+        """, params={"active_loc": get_active_location_filter()}, ttl="60s")
 
         if history_df.empty:
             st.info("No cash handover batches have been created yet.")
@@ -9939,12 +9961,13 @@ elif page == "Purchase Orders" and user_role == "admin":
                                 qty = int(row["Order Quantity"])
                                 if qty > 0: s.execute(text("INSERT INTO purchase_order_items (order_id, flavor_code, ordered_units) VALUES (:poid, :code, :qty);"), {"poid": new_poid, "code": row["Code"], "qty": qty})
                             s.commit()
+                        st.cache_data.clear()
                         show_success_modal(f"Purchase Order #{new_poid} created successfully! Total: {total_units} units | Final Amount: ₹{final_amount:,.2f} ({discount_pct:.1f}% off).")
                     except Exception as e: st.error(f"Could not save purchase order to database: {e}")
 
 
     elif po_mode == "Edit / Track Existing Orders":
-        po_query_df = db_conn.query("SELECT p.id, p.order_date, p.expected_date, p.location, p.order_status, p.notes, json_agg(json_build_object('code', pi.flavor_code, 'qty', pi.ordered_units)) AS items FROM purchase_orders p LEFT JOIN purchase_order_items pi ON p.id = pi.order_id WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(p.location, 'HOSUR'))) = :active_loc) GROUP BY p.id ORDER BY p.order_date DESC, p.id DESC;", params={"active_loc": get_active_location_filter()}, ttl="0s")
+        po_query_df = db_conn.query("SELECT p.id, p.order_date, p.expected_date, p.location, p.order_status, p.notes, json_agg(json_build_object('code', pi.flavor_code, 'qty', pi.ordered_units)) AS items FROM purchase_orders p LEFT JOIN purchase_order_items pi ON p.id = pi.order_id WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(p.location, 'HOSUR'))) = :active_loc) GROUP BY p.id ORDER BY p.order_date DESC, p.id DESC;", params={"active_loc": get_active_location_filter()}, ttl="60s")
         if po_query_df.empty: st.info("No purchase orders found in the database.")
         else:
             po_records = po_query_df.to_dict("records")
@@ -9997,6 +10020,7 @@ elif page == "Purchase Orders" and user_role == "admin":
                                 qty = int(row["Order Quantity"])
                                 if qty > 0: s.execute(text("INSERT INTO purchase_order_items (order_id, flavor_code, ordered_units) VALUES (:poid, :code, :qty);"), {"poid": loaded_po_id, "code": row["Code"], "qty": qty})
                             s.commit()
+                        st.cache_data.clear()
                         show_success_modal(f"Purchase Order #{loaded_po_id} updated successfully! Final Amount: ₹{e_final_amount:,.2f}.")
                     except Exception as e: st.error(f"Could not update purchase order: {e}")
 
@@ -10027,7 +10051,7 @@ elif page == "Freezer Stock" and user_role == "admin":
             ORDER BY r.received_date DESC, r.id DESC;
             """,
             params={"active_loc": get_active_location_filter()},
-            ttl="0s",
+            ttl="60s",
         )
         past_receipts = past_receipts_df.to_dict("records") if not past_receipts_df.empty else []
 
@@ -10049,7 +10073,7 @@ elif page == "Freezer Stock" and user_role == "admin":
                     try: default_rec_disc = float(re.search(r"([\d.]+)", disc_match.group(0)).group(1)); clean_rec_notes = re.sub(r"\[Discount:[^\]]*\]\s*", "", existing_rec_notes).strip()
                     except Exception: default_rec_disc = 2.0
 
-            pos_df = db_conn.query("SELECT id, order_date, location FROM purchase_orders WHERE order_status != 'Completed' AND (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(location, 'HOSUR'))) = :active_loc) ORDER BY order_date DESC;", params={"active_loc": get_active_location_filter()}, ttl="0s")
+            pos_df = db_conn.query("SELECT id, order_date, location FROM purchase_orders WHERE order_status != 'Completed' AND (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(location, 'HOSUR'))) = :active_loc) ORDER BY order_date DESC;", params={"active_loc": get_active_location_filter()}, ttl="60s")
             po_options = ["None (Ad-hoc delivery)"] + [f"PO #{r['id']} ({pd.to_datetime(r['order_date']).strftime('%d-%b')})" for _, r in pos_df.iterrows()]
 
             default_po_idx = 0
@@ -10126,6 +10150,7 @@ elif page == "Freezer Stock" and user_role == "admin":
                             for _, row in stock_edited.iterrows():
                                 if int(row["Received"]) > 0 or int(row["Damaged"]) > 0: s.execute(text("INSERT INTO stock_received_items (received_id, flavor_code, received_units, damaged_units, unit_cost_price) VALUES (:rid, :code, :rec, :dam, :cost);"), {"rid": rec_id, "code": row["Code"], "rec": int(row["Received"]), "dam": int(row["Damaged"]), "cost": float(row["Unit Cost Price (₹)"])})
                             s.commit()
+                        st.cache_data.clear()
                         show_success_modal(f"Stock delivery #{rec_id} saved successfully! Logged {tot_received} units (Net Cost: ₹{net_cost_val:,.2f}).")
                     except Exception as e: st.error(f"Could not save to database: {e}")
         else:
@@ -10517,7 +10542,7 @@ elif page == "Freezer Stock" and user_role == "admin":
                     GROUP BY i.flavor_code;
                     """,
                     params={"start_dt": movement_start},
-                    ttl="0s"
+                    ttl="60s"
                 )
                 added_after = (
                     dict(zip(added_after_df["flavor_code"], added_after_df["total_added"]))
@@ -10534,7 +10559,7 @@ elif page == "Freezer Stock" and user_role == "admin":
                     GROUP BY ri.flavor_code;
                     """,
                     params={"start_dt": received_start},
-                    ttl="0s"
+                    ttl="60s"
                 )
                 received_after = (
                     dict(zip(received_after_df["flavor_code"], received_after_df["total_received"]))
@@ -10558,7 +10583,7 @@ elif page == "Freezer Stock" and user_role == "admin":
                       AND removal_date <= CURRENT_DATE;
                     """,
                     params={"start_dt": movement_start},
-                    ttl="0s"
+                    ttl="60s"
                 )
                 removed_after = (
                     {
@@ -10721,7 +10746,7 @@ elif page == "Freezer Stock" and user_role == "admin":
                     LIMIT 1;
                     """,
                     params={"active_loc": get_active_location_filter()},
-                    ttl="0s"
+                    ttl="60s"
                 )
             except Exception as e:
                 last_audit_df = pd.DataFrame()
@@ -10760,7 +10785,7 @@ elif page == "Freezer Stock" and user_role == "admin":
                     ORDER BY audit_date DESC, audit_id DESC;
                     """,
                     params={"active_loc": get_active_location_filter()},
-                    ttl="0s"
+                    ttl="60s"
                 )
             except Exception as e:
                 audit_history_df = pd.DataFrame()
@@ -10992,7 +11017,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
         for loc_c in locs_for_fa:
             loc_audit_df = db_conn.query(
                 "SELECT * FROM stock_audits_wide WHERE UPPER(TRIM(COALESCE(location, 'HOSUR'))) = :loc ORDER BY audit_date DESC, audit_id DESC LIMIT 1;",
-                params={"loc": loc_c}, ttl="0s"
+                params={"loc": loc_c}, ttl="60s"
             )
             if not loc_audit_df.empty:
                 arow = loc_audit_df.iloc[0]
@@ -11004,7 +11029,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
 
                 r_df = db_conn.query(
                     "SELECT ri.flavor_code, COALESCE(SUM(ri.received_units), 0) AS recv FROM stock_received_items ri JOIN stock_received r ON ri.received_id = r.id WHERE r.received_date >= :adate AND UPPER(TRIM(COALESCE(r.location, 'HOSUR'))) = :loc GROUP BY ri.flavor_code;",
-                    params={"adate": adt, "loc": loc_c}, ttl="0s"
+                    params={"adate": adt, "loc": loc_c}, ttl="60s"
                 )
                 for _, rr in r_df.iterrows():
                     c = str(rr["flavor_code"]).strip()
@@ -11017,7 +11042,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
 
                 a_df = db_conn.query(
                     "SELECT i.flavor_code, COALESCE(SUM(i.added_units), 0) AS added FROM daily_cart_items i JOIN daily_cart_entries e ON i.daily_entry_id = e.id WHERE e.entry_date >= :anext AND UPPER(TRIM(COALESCE(e.city, 'HOSUR'))) = :loc GROUP BY i.flavor_code;",
-                    params={"anext": anext, "loc": loc_c}, ttl="0s"
+                    params={"anext": anext, "loc": loc_c}, ttl="60s"
                 )
                 for _, ar in a_df.iterrows():
                     c = str(ar["flavor_code"]).strip()
@@ -11026,7 +11051,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
 
                 fz_df = db_conn.query(
                     f"SELECT i.flavor_code, COALESCE(SUM(i.sold_units), 0) AS fzr_sold FROM daily_cart_items i JOIN daily_cart_entries e ON i.daily_entry_id = e.id WHERE e.entry_date >= :anext AND UPPER(TRIM(COALESCE(e.city, 'HOSUR'))) = :loc AND {is_freezer_cart_name_sql('e.cart_name')} GROUP BY i.flavor_code;",
-                    params={"anext": anext, "loc": loc_c}, ttl="0s"
+                    params={"anext": anext, "loc": loc_c}, ttl="60s"
                 )
                 for _, fr in fz_df.iterrows():
                     c = str(fr["flavor_code"]).strip()
@@ -11035,7 +11060,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
 
                 rm_df = db_conn.query(
                     "SELECT COALESCE(SUM(ml_units),0) AS ml_units, COALESCE(SUM(mm_units),0) AS mm_units, COALESCE(SUM(ps_units),0) AS ps_units, COALESCE(SUM(mn_units),0) AS mn_units, COALESCE(SUM(kb_units),0) AS kb_units, COALESCE(SUM(bm_units),0) AS bm_units, COALESCE(SUM(sg_units),0) AS sg_units, COALESCE(SUM(ch_units),0) AS ch_units, COALESCE(SUM(ra_units),0) AS ra_units FROM stock_removed WHERE removal_date >= :adate AND UPPER(TRIM(COALESCE(location, 'HOSUR'))) = :loc;",
-                    params={"adate": adt, "loc": loc_c}, ttl="0s"
+                    params={"adate": adt, "loc": loc_c}, ttl="60s"
                 )
                 if not rm_df.empty:
                     for code in FLAVOR_CODES:
@@ -11043,7 +11068,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
             else:
                 r_df = db_conn.query(
                     "SELECT ri.flavor_code, COALESCE(SUM(ri.received_units), 0) AS recv FROM stock_received_items ri JOIN stock_received r ON ri.received_id = r.id WHERE UPPER(TRIM(COALESCE(r.location, 'HOSUR'))) = :loc GROUP BY ri.flavor_code;",
-                    params={"loc": loc_c}, ttl="0s"
+                    params={"loc": loc_c}, ttl="60s"
                 )
                 for _, rr in r_df.iterrows():
                     c = str(rr["flavor_code"]).strip()
@@ -11056,7 +11081,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
 
                 a_df = db_conn.query(
                     "SELECT i.flavor_code, COALESCE(SUM(i.added_units), 0) AS added FROM daily_cart_items i JOIN daily_cart_entries e ON i.daily_entry_id = e.id WHERE UPPER(TRIM(COALESCE(e.city, 'HOSUR'))) = :loc GROUP BY i.flavor_code;",
-                    params={"loc": loc_c}, ttl="0s"
+                    params={"loc": loc_c}, ttl="60s"
                 )
                 for _, ar in a_df.iterrows():
                     c = str(ar["flavor_code"]).strip()
@@ -11065,7 +11090,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
 
                 fz_df = db_conn.query(
                     f"SELECT i.flavor_code, COALESCE(SUM(i.sold_units), 0) AS fzr_sold FROM daily_cart_items i JOIN daily_cart_entries e ON i.daily_entry_id = e.id WHERE UPPER(TRIM(COALESCE(e.city, 'HOSUR'))) = :loc AND {is_freezer_cart_name_sql('e.cart_name')} GROUP BY i.flavor_code;",
-                    params={"loc": loc_c}, ttl="0s"
+                    params={"loc": loc_c}, ttl="60s"
                 )
                 for _, fr in fz_df.iterrows():
                     c = str(fr["flavor_code"]).strip()
@@ -11074,7 +11099,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
 
                 rm_df = db_conn.query(
                     "SELECT COALESCE(SUM(ml_units),0) AS ml_units, COALESCE(SUM(mm_units),0) AS mm_units, COALESCE(SUM(ps_units),0) AS ps_units, COALESCE(SUM(mn_units),0) AS mn_units, COALESCE(SUM(kb_units),0) AS kb_units, COALESCE(SUM(bm_units),0) AS bm_units, COALESCE(SUM(sg_units),0) AS sg_units, COALESCE(SUM(ch_units),0) AS ch_units, COALESCE(SUM(ra_units),0) AS ra_units FROM stock_removed WHERE UPPER(TRIM(COALESCE(location, 'HOSUR'))) = :loc;",
-                    params={"loc": loc_c}, ttl="0s"
+                    params={"loc": loc_c}, ttl="60s"
                 )
                 if not rm_df.empty:
                     for code in FLAVOR_CODES:
@@ -11210,7 +11235,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
                 ), 0) AS pending_units;
             """,
             params={"active_loc": get_active_location_filter()},
-            ttl="0s"
+            ttl="60s"
         )
         if not pending_payment_df.empty:
             pending_stock_payment = float(_num(pending_payment_df.iloc[0].get("pending_amount")))
@@ -11238,7 +11263,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
             JOIN daily_cart_items i ON i.daily_entry_id = e.id;
             """,
             params={"active_loc": get_active_location_filter()},
-            ttl="0s"
+            ttl="60s"
         )
         if not cart_stock_df.empty:
             for _, r in cart_stock_df.iterrows():
@@ -11384,7 +11409,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
     m_tab1, m_tab2, m_tab3, m_tab4, m_tab5, m_tab6, m_tab7 = st.tabs(["📋 Purchase Orders", "📦 Received Deliveries", "🔍 Physical Stock Audits", "🗑️ Stock Removed", "➕ Cart Extra Stock", "🔄 Remove Cart Stock", "❄️ Freezer Sales"])
 
     with m_tab1:
-        po_query_df = db_conn.query("SELECT p.id AS \"PO #\", p.order_date AS \"Order Date\", p.expected_date AS \"Expected Date\", p.location AS \"Location\", p.order_status AS \"Status\", json_agg(json_build_object('code', pi.flavor_code, 'qty', pi.ordered_units)) AS items FROM purchase_orders p LEFT JOIN purchase_order_items pi ON p.id = pi.order_id WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(p.location, 'HOSUR'))) = :active_loc) GROUP BY p.id ORDER BY p.order_date DESC;", params={"active_loc": get_active_location_filter()}, ttl="0s")
+        po_query_df = db_conn.query("SELECT p.id AS \"PO #\", p.order_date AS \"Order Date\", p.expected_date AS \"Expected Date\", p.location AS \"Location\", p.order_status AS \"Status\", json_agg(json_build_object('code', pi.flavor_code, 'qty', pi.ordered_units)) AS items FROM purchase_orders p LEFT JOIN purchase_order_items pi ON p.id = pi.order_id WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(p.location, 'HOSUR'))) = :active_loc) GROUP BY p.id ORDER BY p.order_date DESC;", params={"active_loc": get_active_location_filter()}, ttl="60s")
         if not po_query_df.empty:
             po_display = []
             for _, r in po_query_df.iterrows():
@@ -11396,7 +11421,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
         else: st.caption("No purchase orders found in database.")
 
     with m_tab2:
-        rec_query_df = db_conn.query("SELECT r.id AS \"Receipt #\", r.received_date AS \"Received Date\", r.location AS \"Location\", r.purchase_order_id AS \"PO Ref\", r.payment_status AS \"Payment\", json_agg(json_build_object('code', ri.flavor_code, 'rec', ri.received_units)) AS items FROM stock_received r LEFT JOIN stock_received_items ri ON r.id = ri.received_id WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(r.location, 'HOSUR'))) = :active_loc) GROUP BY r.id ORDER BY r.received_date DESC;", params={"active_loc": get_active_location_filter()}, ttl="0s")
+        rec_query_df = db_conn.query("SELECT r.id AS \"Receipt #\", r.received_date AS \"Received Date\", r.location AS \"Location\", r.purchase_order_id AS \"PO Ref\", r.payment_status AS \"Payment\", json_agg(json_build_object('code', ri.flavor_code, 'rec', ri.received_units)) AS items FROM stock_received r LEFT JOIN stock_received_items ri ON r.id = ri.received_id WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(r.location, 'HOSUR'))) = :active_loc) GROUP BY r.id ORDER BY r.received_date DESC;", params={"active_loc": get_active_location_filter()}, ttl="60s")
         if not rec_query_df.empty:
             rec_display = []
             for _, r in rec_query_df.iterrows():
@@ -11408,7 +11433,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
         else: st.caption("No stock receipts recorded in database.")
 
     with m_tab3:
-        audit_query_df = db_conn.query("SELECT audit_id AS \"Audit #\", audit_date AS \"Audit Date\", audit_time AS \"Audit Time\", location AS \"Location\", audited_by AS \"Auditor\", total_physical_units AS \"Total Count\", remarks AS \"Remarks\", ml_units, mm_units, ps_units, mn_units, kb_units, bm_units, sg_units, ch_units, ra_units FROM stock_audits_wide WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(location, 'HOSUR'))) = :active_loc) ORDER BY audit_date DESC, audit_id DESC;", params={"active_loc": get_active_location_filter()}, ttl="0s")
+        audit_query_df = db_conn.query("SELECT audit_id AS \"Audit #\", audit_date AS \"Audit Date\", audit_time AS \"Audit Time\", location AS \"Location\", audited_by AS \"Auditor\", total_physical_units AS \"Total Count\", remarks AS \"Remarks\", ml_units, mm_units, ps_units, mn_units, kb_units, bm_units, sg_units, ch_units, ra_units FROM stock_audits_wide WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(location, 'HOSUR'))) = :active_loc) ORDER BY audit_date DESC, audit_id DESC;", params={"active_loc": get_active_location_filter()}, ttl="60s")
         if not audit_query_df.empty:
             aud_display = []
             for _, r in audit_query_df.iterrows():
@@ -11419,7 +11444,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
         else: st.caption("No physical stock audits recorded in database.")
 
     with m_tab4:
-        rem_query_df = db_conn.query("SELECT id AS \"ID\", removal_date AS \"Date\", location AS \"Location\", ml_units, mm_units, ps_units, mn_units, kb_units, bm_units, sg_units, ch_units, ra_units, total_units AS \"Total Units\", cost_price_of_removed_items AS \"Cost (₹)\", reason_for_removal AS \"Reason\", removed_by AS \"Removed By\", verified_by AS \"Verified By\" FROM stock_removed WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(location, 'HOSUR'))) = :active_loc) ORDER BY removal_date DESC, id DESC;", params={"active_loc": get_active_location_filter()}, ttl="0s")
+        rem_query_df = db_conn.query("SELECT id AS \"ID\", removal_date AS \"Date\", location AS \"Location\", ml_units, mm_units, ps_units, mn_units, kb_units, bm_units, sg_units, ch_units, ra_units, total_units AS \"Total Units\", cost_price_of_removed_items AS \"Cost (₹)\", reason_for_removal AS \"Reason\", removed_by AS \"Removed By\", verified_by AS \"Verified By\" FROM stock_removed WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(location, 'HOSUR'))) = :active_loc) ORDER BY removal_date DESC, id DESC;", params={"active_loc": get_active_location_filter()}, ttl="60s")
         if not rem_query_df.empty:
             rem_display = []
             for _, r in rem_query_df.iterrows():
@@ -11442,7 +11467,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
                 ORDER BY entry_date DESC, id DESC;
                 """,
                 params={"active_loc": get_active_location_filter()},
-                ttl="0s"
+                ttl="60s"
             )
             if not extra_all_df.empty:
                 ext_display = []
@@ -11479,7 +11504,7 @@ elif page == "Freezer Analysis" and user_role == "admin":
                 ORDER BY entry_date DESC, id DESC;
                 """,
                 params={"active_loc": get_active_location_filter()},
-                ttl="0s",
+                ttl="60s",
             )
             if not ctf_all_df.empty:
                 ctf_display = []
@@ -11636,11 +11661,12 @@ elif page == "Stock Removed" and user_role == "admin":
                                 }
                             )
                         s.commit()
+                    st.cache_data.clear()
                     show_success_modal(f"Stock Removal #{new_rem_id} recorded successfully! Logged {tot_rem_units} units (₹{tot_rem_cost:,.2f}).")
                 except Exception as e: st.error(f"Could not save stock removal to database: {e}")
 
     elif rem_mode == "View Entries":
-        rem_query_df = db_conn.query("SELECT id AS \"ID\", removal_date AS \"Date\", location AS \"Location\", ml_units, mm_units, ps_units, mn_units, kb_units, bm_units, sg_units, ch_units, ra_units, total_units AS \"Total Units\", cost_price_of_removed_items AS \"Cost (₹)\", reason_for_removal AS \"Reason\", removed_by AS \"Removed By\", verified_by AS \"Verified By\" FROM stock_removed WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(location, 'HOSUR'))) = :active_loc) ORDER BY removal_date DESC, id DESC;", params={"active_loc": get_active_location_filter()}, ttl="0s")
+        rem_query_df = db_conn.query("SELECT id AS \"ID\", removal_date AS \"Date\", location AS \"Location\", ml_units, mm_units, ps_units, mn_units, kb_units, bm_units, sg_units, ch_units, ra_units, total_units AS \"Total Units\", cost_price_of_removed_items AS \"Cost (₹)\", reason_for_removal AS \"Reason\", removed_by AS \"Removed By\", verified_by AS \"Verified By\" FROM stock_removed WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(location, 'HOSUR'))) = :active_loc) ORDER BY removal_date DESC, id DESC;", params={"active_loc": get_active_location_filter()}, ttl="60s")
         if rem_query_df.empty: st.info("No stock removal logs found in the database.")
         else:
             total_logs = len(rem_query_df)
@@ -11659,7 +11685,7 @@ elif page == "Stock Removed" and user_role == "admin":
             st.dataframe(pd.DataFrame(display_rem_list), hide_index=True, use_container_width=True, column_config={"Cost (₹)": st.column_config.NumberColumn(format="₹%,.2f")})
 
     elif rem_mode == "Edit Past Entry":
-        rem_query_df = db_conn.query("SELECT id, removal_date, location, ml_units, mm_units, ps_units, mn_units, kb_units, bm_units, sg_units, ch_units, ra_units, cost_price_of_removed_items, reason_for_removal, removed_by, verified_by FROM stock_removed WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(location, 'HOSUR'))) = :active_loc) ORDER BY removal_date DESC, id DESC;", params={"active_loc": get_active_location_filter()}, ttl="0s")
+        rem_query_df = db_conn.query("SELECT id, removal_date, location, ml_units, mm_units, ps_units, mn_units, kb_units, bm_units, sg_units, ch_units, ra_units, cost_price_of_removed_items, reason_for_removal, removed_by, verified_by FROM stock_removed WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(location, 'HOSUR'))) = :active_loc) ORDER BY removal_date DESC, id DESC;", params={"active_loc": get_active_location_filter()}, ttl="60s")
         if rem_query_df.empty: st.info("No past stock removals found in database.")
         else:
             rem_records = rem_query_df.to_dict("records")
@@ -11750,6 +11776,7 @@ elif page == "Stock Removed" and user_role == "admin":
                                     }
                                 )
                             s.commit()
+                        st.cache_data.clear()
                         show_success_modal(f"Stock Removal #{loaded_rem_id} updated successfully! Final Value: ₹{e_tot_rem_cost:,.2f}.")
                     except Exception as e: st.error(f"Could not update stock removal entry: {e}")
 
@@ -11795,7 +11822,7 @@ elif page == "Expenses" and user_role == "admin":
         return f"<span class='status-pill {cls}' title='{escape(s)}'>{escape(label)}</span>"
 
     def _populate_expense_clone_state(src_exp):
-        pos_df_cl = db_conn.query("SELECT id, order_date, location FROM purchase_orders ORDER BY order_date DESC;", ttl="0s") if db_conn else pd.DataFrame()
+        pos_df_cl = db_conn.query("SELECT id, order_date, location FROM purchase_orders ORDER BY order_date DESC;", ttl="60s") if db_conn else pd.DataFrame()
         po_opts_cl = ["None"] + [f"PO #{r['id']} ({pd.to_datetime(r['order_date']).strftime('%d-%b')})" for _, r in pos_df_cl.iterrows()] if not pos_df_cl.empty else ["None"]
         staff_opts_cl = load_active_staff_list()
         st.session_state["add_e_type"] = src_exp["expense_type"] if src_exp.get("expense_type") in EXPENSE_TYPES else EXPENSE_TYPES[0]
@@ -11870,7 +11897,7 @@ elif page == "Expenses" and user_role == "admin":
                 _populate_expense_from_ops_spend(st.session_state.pop("_pending_ops_spend_to_load"))
 
             pass
-            pos_df = db_conn.query("SELECT id, order_date, location FROM purchase_orders ORDER BY order_date DESC;", ttl="0s") if db_conn else pd.DataFrame()
+            pos_df = db_conn.query("SELECT id, order_date, location FROM purchase_orders ORDER BY order_date DESC;", ttl="60s") if db_conn else pd.DataFrame()
             po_opts = ["None"] + [f"PO #{r['id']} ({pd.to_datetime(r['order_date']).strftime('%d-%b')})" for _, r in pos_df.iterrows()] if not pos_df.empty else ["None"]
             staff_opts = load_active_staff_list()
 
@@ -12050,6 +12077,7 @@ elif page == "Expenses" and user_role == "admin":
                                     )
                             s.commit()
                         st.session_state.pop("_loaded_ops_spend_banner", None)
+                        st.cache_data.clear()
                         show_success_modal(f"Expense #{new_exp_id} of ₹{e_amount:,.2f} recorded successfully!")
                     except Exception as e: st.error(f"Could not save expense: {e}")
 
@@ -12073,7 +12101,7 @@ elif page == "Expenses" and user_role == "admin":
                     with top_b2:
                         st.markdown(f"#### ✏️ Editing Expense #{loaded_exp_id}")
 
-                    pos_df = db_conn.query("SELECT id, order_date, location FROM purchase_orders ORDER BY order_date DESC;", ttl="0s") if db_conn else pd.DataFrame()
+                    pos_df = db_conn.query("SELECT id, order_date, location FROM purchase_orders ORDER BY order_date DESC;", ttl="60s") if db_conn else pd.DataFrame()
                     po_opts = ["None"] + [f"PO #{r['id']} ({pd.to_datetime(r['order_date']).strftime('%d-%b')})" for _, r in pos_df.iterrows()] if not pos_df.empty else ["None"]
                     default_po_idx = next((i for i, o in enumerate(po_opts) if o.startswith(f"PO #{int(loaded_exp['purchase_order_id'])} ")), 0) if loaded_exp.get("purchase_order_id") and pd.notna(loaded_exp["purchase_order_id"]) else 0
                     staff_opts = load_active_staff_list()
@@ -12142,6 +12170,7 @@ elif page == "Expenses" and user_role == "admin":
                                                 )
                                         s.commit()
                                     st.session_state.pop("_editing_expense_id", None)
+                                    st.cache_data.clear()
                                     show_success_modal(f"Expense #{loaded_exp_id} updated successfully!")
                                 except Exception as e: st.error(f"Could not update expense: {e}")
                     with btn_c2:
@@ -12267,7 +12296,7 @@ elif page == "Expenses" and user_role == "admin":
                                 ), 0) AS po_gross_amount
                             FROM purchase_orders p;
                             """,
-                            ttl="0s"
+                            ttl="60s"
                         )
                         for _, pr in po_rec_df.iterrows():
                             poid = int(pr["po_id"])
@@ -12418,6 +12447,7 @@ elif page == "Expenses" and user_role == "admin":
                                                     }
                                                 )
                                     s.commit()
+                                st.cache_data.clear()
                                 show_success_modal(f"Payment of ₹{new_p_amount:,.2f} recorded successfully for Expense #{target_exp_id}!")
                             except Exception as e: st.error(f"Could not record payment: {e}")
 
@@ -12475,6 +12505,7 @@ elif page == "Expenses" and user_role == "admin":
                                         )
                                         s.commit()
                                     st.session_state.pop("_editing_payment_id", None)
+                                    st.cache_data.clear()
                                     show_success_modal(f"Payment #{loaded_pay_id} updated successfully!")
                                 except Exception as e: st.error(f"Could not update payment: {e}")
                     with p_btn2:
@@ -12982,6 +13013,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                                 }
                             )
                             s.commit()
+                        st.cache_data.clear()
                         show_success_modal(f"{att_status} ({att_type}) recorded for {att_staff_name} on {att_date.strftime('%d-%b-%y')}!")
                     except Exception as e:
                         st.error(f"Could not record attendance: {e}")
@@ -13049,6 +13081,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                                 }
                             )
                             s.commit()
+                        st.cache_data.clear()
                         show_success_modal(f"Attendance record #{loaded_att_id} updated successfully!")
                     except Exception as e:
                         st.error(f"Could not update attendance: {e}")
@@ -13506,7 +13539,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
                     ORDER BY expense_date DESC, id DESC;
                     """,
                     params={"sdate": mfa_start, "edate": mfa_end},
-                    ttl="0s"
+                    ttl="60s"
                 )
 
                 if not mfa_df.empty:
@@ -13613,7 +13646,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
             FROM daily_cart_entries
             WHERE entry_date >= :sdate AND entry_date <= :edate AND staff_name IS NOT NULL AND staff_name != '' AND staff_name != 'Select Staff';
             """
-            daily_month_df = db_conn.query(query_month, params={"sdate": m_start_dt, "edate": m_end_dt}, ttl="0s")
+            daily_month_df = db_conn.query(query_month, params={"sdate": m_start_dt, "edate": m_end_dt}, ttl="60s")
 
             query_att_m = """
             SELECT a.staff_id, s.name AS staff_name, a.attendance_date, a.status, a.leave_type, a.reason
@@ -13621,7 +13654,7 @@ elif page == "Staff & Payroll" and user_role == "admin":
             JOIN staff s ON a.staff_id = s.id
             WHERE a.attendance_date >= :sdate AND a.attendance_date <= :edate;
             """
-            att_month_df = db_conn.query(query_att_m, params={"sdate": m_start_dt, "edate": m_end_dt}, ttl="0s")
+            att_month_df = db_conn.query(query_att_m, params={"sdate": m_start_dt, "edate": m_end_dt}, ttl="60s")
 
             query_labour_payments = """
             SELECT 
@@ -13631,14 +13664,14 @@ elif page == "Staff & Payroll" and user_role == "admin":
             JOIN expenses e ON p.expense_id = e.id
             WHERE e.category = 'Labour Charges' AND e.staff_name IS NOT NULL AND e.staff_name != '' AND p.payment_date >= :sdate AND p.payment_date <= :edate;
             """
-            staff_payments_df = db_conn.query(query_labour_payments, params={"sdate": m_start_dt, "edate": m_end_dt}, ttl="0s")
+            staff_payments_df = db_conn.query(query_labour_payments, params={"sdate": m_start_dt, "edate": m_end_dt}, ttl="60s")
 
             query_exp_ledger = """
             SELECT expense_date, staff_name, sub_category, total_amount 
             FROM expenses 
             WHERE category = 'Labour Charges' AND status = 'Paid' AND expense_date >= :sdate AND expense_date <= :edate;
             """
-            exp_ledger_df = db_conn.query(query_exp_ledger, params={"sdate": m_start_dt, "edate": m_end_dt}, ttl="0s")
+            exp_ledger_df = db_conn.query(query_exp_ledger, params={"sdate": m_start_dt, "edate": m_end_dt}, ttl="60s")
 
         if staff_df.empty:
             st.info("No staff records found.")
@@ -15153,7 +15186,7 @@ elif page == "Dashboard" and user_role == "admin":
                     GROUP BY DATE_TRUNC('month', e.entry_date)::date;
                     """,
                     params={"active_loc": get_active_location_filter()},
-                    ttl="0s"
+                    ttl="60s"
                 )
                 cogs_by_month_start = {}
                 if not monthly_cogs_df.empty:
