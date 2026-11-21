@@ -455,29 +455,47 @@ div[class*="st-key-update_audit_"] .stButton > button {
 /* ======================================================================
    DEPOSITO LEFT-HAND VERTICAL NAVIGATION PANE (ALL ADMIN PAGES)
    ====================================================================== */
-div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-header) {
+/* Keep outer 2-column master layout top-aligned on EVERY page (prevents vertical shift on tall tables) */
+div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-deposito_dock_btn_"]) {
+    align-items: flex-start !important;
+}
+div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-deposito_dock_btn_"]) > div[data-testid="stColumn"]:first-child,
+div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-deposito_dock_btn_"]) > div[data-testid="column"]:first-child {
+    align-self: flex-start !important;
+    justify-content: flex-start !important;
+}
+div[data-testid="stVerticalBlockBorderWrapper"]:has(div[class*="st-key-deposito_dock_btn_"]) {
     background: linear-gradient(180deg, #F8FAFC 0%, #EFF6FF 55%, #E0E7FF 100%) !important;
     border: 1.5px solid #BFDBFE !important;
     border-radius: 14px !important;
-    padding: 12px 10px !important;
+    padding: 10px 10px !important;
     box-shadow: 0 6px 18px rgba(30, 34, 82, 0.07) !important;
 }
-.deposito-nav-dock-header {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    padding: 8px 10px;
-    background: #FFFFFF;
-    border: 1.5px solid #93C5FD;
-    border-radius: 10px;
-    margin-bottom: 6px !important;
-    box-shadow: 0 2px 6px rgba(30, 34, 82, 0.05);
-}
-div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-header) div[data-testid="stVerticalBlock"] {
+div[data-testid="stVerticalBlockBorderWrapper"]:has(div[class*="st-key-deposito_dock_btn_"]) div[data-testid="stVerticalBlock"] {
     gap: 0.28rem !important;
 }
-div[data-testid="stVerticalBlockBorderWrapper"]:has(.deposito-nav-dock-header) div[data-testid="stMarkdownContainer"] {
-    margin-bottom: 0 !important;
+
+/* Compact single-row Daily Entry top mode buttons */
+div[class*="st-key-de_top_mode_"] {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+div[class*="st-key-de_top_mode_"] > div > button,
+div[class*="st-key-de_top_mode_"] button {
+    min-height: 28px !important;
+    height: 28px !important;
+    padding: 2px 5px !important;
+    border-radius: 7px !important;
+    font-size: 10.5px !important;
+    font-weight: 800 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+div[class*="st-key-de_top_mode_"] button * {
+    font-size: 10.5px !important;
+    font-weight: 800 !important;
+    white-space: nowrap !important;
 }
 div[class*="st-key-deposito_dock_btn_"] {
     margin-bottom: 0 !important;
@@ -881,8 +899,8 @@ div[data-testid="stElementContainer"]:has(.kulfi-card-set-4) {
     padding: 0 !important;
 }
 
-div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)) .stButton > button,
-div[data-testid="stHorizontalBlock"]:has(.kulfi-clickable-card-grid) .stButton > button {
+div[data-testid="stVerticalBlock"]:has(.kulfi-clickable-card-grid):not(:has(.kulfi-top-cmd-bar-scope)):not(:has(div[class*="st-key-deposito_dock_btn_"])) .stButton > button,
+div[data-testid="stHorizontalBlock"]:has(.kulfi-clickable-card-grid):not(:has(div[class*="st-key-deposito_dock_btn_"])) .stButton > button {
     background: linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%) !important;
     border: 1.5px solid #CBD5E1 !important;
     border-left: 4px solid #3B82F6 !important;
@@ -900,13 +918,13 @@ div[data-testid="stHorizontalBlock"]:has(.kulfi-clickable-card-grid) .stButton >
 }
 
 /* Compact 30px inline action buttons (Edit, Copy, Delete) inside .ledger-cell table rows */
-div[data-testid="stHorizontalBlock"]:has(.ledger-cell) .stButton,
-div[data-testid="stHorizontalBlock"]:has(.ledger-cell) [data-testid="stTooltipHoverTarget"] {
+div[data-testid="stHorizontalBlock"]:has(.ledger-cell):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) .stButton,
+div[data-testid="stHorizontalBlock"]:has(.ledger-cell):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) [data-testid="stTooltipHoverTarget"] {
     width: 100% !important;
     display: flex !important;
     justify-content: center !important;
 }
-div[data-testid="stHorizontalBlock"]:has(.ledger-cell) .stButton > button,
+div[data-testid="stHorizontalBlock"]:has(.ledger-cell):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) .stButton > button,
 div[class*="st-key-row_edit_"] button,
 div[class*="st-key-row_clone_"] button,
 div[class*="st-key-row_del_"] button {
@@ -1226,10 +1244,10 @@ div[data-testid="InputInstructions"] {
 
 /* Completely collapse hidden widget labels inside entry-grid rows (preserving checkbox labels) */
 label[data-testid="stWidgetLabel"][aria-hidden="true"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) label[data-testid="stWidgetLabel"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) [data-testid="stWidgetLabel"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) label[data-testid="stWidgetLabel"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) [data-testid="stWidgetLabel"] {
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) label[data-testid="stWidgetLabel"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) [data-testid="stWidgetLabel"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) label[data-testid="stWidgetLabel"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) [data-testid="stWidgetLabel"] {
     display: none !important;
     height: 0px !important;
     min-height: 0px !important;
@@ -1241,22 +1259,22 @@ div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) [data-testid="stWidge
 }
 
 /* Eliminate Streamlit's default -1rem bottom margin on stMarkdownContainer inside entry grids so markdown cells and number inputs align on the exact same horizontal axis */
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-header) div[data-testid="stMarkdown"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-header) div[data-testid="stMarkdownContainer"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-header) div[data-testid="stElementContainer"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-header) div[data-testid="stVerticalBlock"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stMarkdown"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stMarkdownContainer"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stElementContainer"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stVerticalBlock"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stMarkdown"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stMarkdownContainer"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stElementContainer"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stVerticalBlock"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-total-row) div[data-testid="stMarkdown"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-total-row) div[data-testid="stMarkdownContainer"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-total-row) div[data-testid="stElementContainer"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-total-row) div[data-testid="stVerticalBlock"] {
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-header):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stMarkdown"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-header):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stMarkdownContainer"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-header):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stElementContainer"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-header):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stVerticalBlock"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stMarkdown"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stMarkdownContainer"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stElementContainer"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stVerticalBlock"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stMarkdown"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stMarkdownContainer"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stElementContainer"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stVerticalBlock"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-total-row):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stMarkdown"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-total-row):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stMarkdownContainer"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-total-row):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stElementContainer"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-total-row):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stVerticalBlock"] {
     margin: 0px !important;
     margin-top: 0px !important;
     margin-bottom: 0px !important;
@@ -1267,33 +1285,33 @@ div[data-testid="stHorizontalBlock"]:has(.entry-grid-total-row) div[data-testid=
 }
 
 /* Force all columns inside entry-grid header, flavour rows, and total rows to align on the exact same horizontal axis & match column widths 100% */
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-header) {
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-header):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) {
     align-items: center !important;
     gap: 6px !important;
     margin-top: 0px !important;
     margin-bottom: 2px !important;
 }
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour),
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) {
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])),
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) {
     align-items: center !important;
     gap: 6px !important;
     margin-top: 0px !important;
     margin-bottom: 1px !important;
 }
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-total-row) {
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-total-row):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) {
     align-items: center !important;
     gap: 6px !important;
     margin-top: 2px !important;
     margin-bottom: 4px !important;
 }
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) > div[data-testid="stColumn"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) > div[data-testid="column"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) > div[data-testid="stColumn"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) > div[data-testid="column"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-header) > div[data-testid="stColumn"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-header) > div[data-testid="column"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-total-row) > div[data-testid="stColumn"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-total-row) > div[data-testid="column"] {
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) > div[data-testid="stColumn"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) > div[data-testid="column"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) > div[data-testid="stColumn"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) > div[data-testid="column"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-header):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) > div[data-testid="stColumn"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-header):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) > div[data-testid="column"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-total-row):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) > div[data-testid="stColumn"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-total-row):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) > div[data-testid="column"] {
     display: flex !important;
     flex-direction: column !important;
     justify-content: center !important;
@@ -1304,16 +1322,16 @@ div[data-testid="stHorizontalBlock"]:has(.entry-grid-total-row) > div[data-testi
 }
 
 /* Ensure stNumberInput and its element-container wrappers inside entry-grid rows span 100% of their column width */
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="element-container"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) .element-container,
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stElementContainer"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="element-container"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) .element-container,
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stElementContainer"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stNumberInput"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stNumberInput"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) .stNumberInput,
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) .stNumberInput {
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="element-container"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) .element-container,
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stElementContainer"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="element-container"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) .element-container,
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stElementContainer"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stNumberInput"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stNumberInput"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) .stNumberInput,
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) .stNumberInput {
     width: 100% !important;
     min-width: 100% !important;
     max-width: 100% !important;
@@ -1327,13 +1345,13 @@ div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) .stNumberInput {
     display: flex !important;
     align-items: center !important;
 }
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stNumberInputContainer"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stNumberInput"] div[data-baseweb="input"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stNumberInput"] div[data-baseweb="base-input"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) .stNumberInput div[data-baseweb="input"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stNumberInputContainer"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stNumberInput"] div[data-baseweb="input"],
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stNumberInput"] div[data-baseweb="base-input"] {
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stNumberInputContainer"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stNumberInput"] div[data-baseweb="input"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stNumberInput"] div[data-baseweb="base-input"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) .stNumberInput div[data-baseweb="input"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stNumberInputContainer"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stNumberInput"] div[data-baseweb="input"],
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stNumberInput"] div[data-baseweb="base-input"] {
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
@@ -1348,10 +1366,10 @@ div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stNu
     display: flex !important;
     align-items: center !important;
 }
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stNumberInput"] input,
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) .stNumberInput input,
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stNumberInput"] input,
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) .stNumberInput input {
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stNumberInput"] input,
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) .stNumberInput input,
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stNumberInput"] input,
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) .stNumberInput input {
     width: 100% !important;
     max-width: 100% !important;
     flex: 1 1 100% !important;
@@ -1366,8 +1384,8 @@ div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) .stNumberInput input 
 }
 
 /* Entry-grid text inputs (used for Restock, Extra Stock, Remove Cart Stock, Freezer Sale): 100% column width, 28px height, centered */
-div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-entry-80-scope) div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stTextInput"],
-div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-entry-80-scope) div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stTextInput"] {
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-entry-80-scope) div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stTextInput"],
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-entry-80-scope) div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stTextInput"] {
     width: 100% !important;
     min-width: 100% !important;
     max-width: 100% !important;
@@ -1377,8 +1395,8 @@ div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .
     min-height: 28px !important;
     max-height: 28px !important;
 }
-div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-entry-80-scope) div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stTextInput"] div[data-baseweb="input"],
-div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-entry-80-scope) div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stTextInput"] div[data-baseweb="input"] {
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-entry-80-scope) div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stTextInput"] div[data-baseweb="input"],
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-entry-80-scope) div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stTextInput"] div[data-baseweb="input"] {
     width: 100% !important;
     min-height: 28px !important;
     height: 28px !important;
@@ -1390,8 +1408,8 @@ div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .
     padding: 0px !important;
     box-sizing: border-box !important;
 }
-div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-entry-80-scope) div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stTextInput"] div[data-baseweb="base-input"],
-div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-entry-80-scope) div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stTextInput"] div[data-baseweb="base-input"] {
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-entry-80-scope) div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stTextInput"] div[data-baseweb="base-input"],
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-entry-80-scope) div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stTextInput"] div[data-baseweb="base-input"] {
     width: 100% !important;
     min-height: 26px !important;
     height: 26px !important;
@@ -1401,8 +1419,8 @@ div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .
     margin: 0px !important;
     padding: 0px !important;
 }
-div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-entry-80-scope) div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stTextInput"] input,
-div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-entry-80-scope) div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell) div[data-testid="stTextInput"] input {
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-entry-80-scope) div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stTextInput"] input,
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .kulfi-entry-80-scope) div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stTextInput"] input {
     width: 100% !important;
     height: 26px !important;
     min-height: 26px !important;
@@ -1416,7 +1434,7 @@ div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] .
 }
 
 /* Center checkboxes cleanly inside Bulk Orders entry-grid rows */
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stCheckbox"] {
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stCheckbox"] {
     height: 28px !important;
     min-height: 28px !important;
     max-height: 28px !important;
@@ -1426,7 +1444,7 @@ div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-test
     align-items: center !important;
     justify-content: center !important;
 }
-div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour) div[data-testid="stCheckbox"] label {
+div[data-testid="stHorizontalBlock"]:has(.entry-grid-cell-flavour):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stCheckbox"] label {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -1674,16 +1692,16 @@ div[data-testid="stNumberInput"] input {
 }
 
 /* Compact No-Scroll Ledger Rows for Expenses & Payments */
-div[data-testid="stHorizontalBlock"]:has(.ledger-tbl-header) {
+div[data-testid="stHorizontalBlock"]:has(.ledger-tbl-header):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) {
     margin-bottom: 10px !important;
     padding-bottom: 2px !important;
     align-items: center !important;
 }
-div[data-testid="stHorizontalBlock"]:has(.ledger-tbl-header) div[data-testid="stMarkdownContainer"],
-div[data-testid="stHorizontalBlock"]:has(.ledger-cell) div[data-testid="stMarkdownContainer"] {
+div[data-testid="stHorizontalBlock"]:has(.ledger-tbl-header):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stMarkdownContainer"],
+div[data-testid="stHorizontalBlock"]:has(.ledger-cell):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) div[data-testid="stMarkdownContainer"] {
     margin-bottom: 0px !important;
 }
-div[data-testid="stHorizontalBlock"]:has(.ledger-cell) {
+div[data-testid="stHorizontalBlock"]:has(.ledger-cell):not(:has(div[data-testid="stHorizontalBlock"])):not(:has(div[class*="st-key-deposito_dock_btn_"])) {
     margin-bottom: 3px !important;
     align-items: center !important;
 }
@@ -1911,9 +1929,14 @@ div[data-testid="stHorizontalBlock"]:has(.ledger-cell) {
 /* Bulk Order Planner Cards */
 .bulk-kpi-strip {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 10px;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 8px;
     margin: 10px 0 14px 0;
+}
+@media (max-width: 1200px) {
+    .bulk-kpi-strip {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
 }
 .bulk-kpi-card {
     background: #FFFFFF;
@@ -5496,7 +5519,7 @@ else:
                 key="top_cmd_entry_btn",
             ):
                 st.session_state["page_nav"] = "Daily Entry"
-                st.session_state["daily_entry_mode"] = None
+                st.session_state["daily_entry_mode"] = "sales"
                 st.rerun()
         with cmd_c4:
             _loc_pop_nonce = int(st.session_state.get("_loc_pop_nonce", 0))
@@ -5534,25 +5557,10 @@ if user_role == "admin":
     left_nav_col, main_page_col = st.columns([0.96, 4.04], gap="medium")
     with left_nav_col:
         with st.container(border=True):
-            st.markdown(
-                f"""
-                <div class="deposito-nav-dock-header">
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        {get_top_left_square_logo_html(30)}
-                        <div>
-                            <div style="font-size:13px;font-weight:900;color:#1E2252;letter-spacing:0.03em;line-height:1.1;">KULFI OPS</div>
-                            <div style="font-size:9.5px;font-weight:800;color:#475569;margin-top:2px;">📍 {escape(loc_badge)}</div>
-                        </div>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
             _dock_menu_items = [
                 ("Home", "🏠  Home", {}),
                 ("Dashboard", "📊  Financials", {"dash_sub_page": None}),
-                ("Daily Entry", "🛒  Daily Entry", {"daily_entry_mode": None}),
+                ("Daily Entry", "🛒  Daily Entry", {"daily_entry_mode": "sales"}),
                 ("Live Cart Tracking", "📡  Live POS", {}),
                 ("Bulk Orders & Quotes", "📦  Bulk Orders", {}),
                 ("Freezer Analysis", "📈  Freezer Analysis", {}),
@@ -6332,9 +6340,10 @@ with _page_body_container:
 
     elif page == "Daily Entry":
         st.markdown('<span class="kulfi-entry-80-scope"></span>', unsafe_allow_html=True)
-        # Split Entry flow to mirror the mobile app: Sales Entry, Restock Entry, Extra Stock.
-        if "daily_entry_mode" not in st.session_state:
-            st.session_state["daily_entry_mode"] = None
+        # Split Entry flow: default directly to Sales Entry with all 7 mode buttons in one compact top row.
+        valid_entry_modes = ("sales", "restock", "extra", "remove_cart_stock", "view_stock", "freezer_sales", "live_flavour_view")
+        if st.session_state.get("daily_entry_mode") not in valid_entry_modes:
+            st.session_state["daily_entry_mode"] = "sales"
         if "entry_cart_shared" not in st.session_state or st.session_state["entry_cart_shared"] not in CARTS:
             st.session_state["entry_cart_shared"] = CARTS[0]
 
@@ -6345,82 +6354,47 @@ with _page_body_container:
         def _entry_date_display(value):
             return value.strftime("%d-%b-%Y")
 
-        if entry_mode is None:
-            st.markdown(
-                f"""
-                <div style='background:linear-gradient(90deg, #EFF6FF 0%, #F8FAFC 100%);
-                            border:1.5px solid #CBD5E1;border-radius:12px;padding:10px 16px;
-                            margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;'>
-                    <div>
-                        <div style='font-family:Plus Jakarta Sans,sans-serif;font-size:17px;font-weight:800;color:#1E2252;'>
-                            🛒 Daily Operations &amp; Stock Entry Hub
-                        </div>
-                        <div style='font-size:11px;color:#475569;margin-top:1px;'>
-                            Cart sales, restocks, returns &amp; freezer sales
-                        </div>
-                    </div>
-                    <div style='background:#BFDBFE;color:#111111;border:1.5px solid #93C5FD;padding:4px 12px;border-radius:999px;font-size:11px;font-weight:800;'>
-                        📅 {_entry_date_display(today_val)}
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-            with st.container():
-                st.markdown('<span class="kulfi-clickable-card-grid"></span>', unsafe_allow_html=True)
-                r1_c1, r1_c2, r1_c3, r1_c4 = st.columns(4, gap="small")
-                with r1_c1:
-                    if st.button("🧾  **Sales Entry (Carts)**", key="open_sales_entry", use_container_width=True):
+        _de_mode_buttons = [
+            ("sales", "🧾 Sales Entry"),
+            ("restock", "📦 Restock"),
+            ("extra", "➕ Extra Stock"),
+            ("remove_cart_stock", "🔄 Remove Stock"),
+            ("view_stock", "📋 View Stock"),
+            ("freezer_sales", "❄️ Freezer Sale"),
+            ("live_flavour_view", "📱 Live POS"),
+        ]
+        _de_top_cols = st.columns(len(_de_mode_buttons), gap="small")
+        for _de_i, (_de_code, _de_lbl) in enumerate(_de_mode_buttons):
+            with _de_top_cols[_de_i]:
+                if st.button(
+                    _de_lbl,
+                    key=f"de_top_mode_{_de_code}",
+                    type="primary" if entry_mode == _de_code else "secondary",
+                    use_container_width=True,
+                ):
+                    if _de_code == "sales":
                         st.session_state.pop("_last_mismatch_modal_target", None)
-                        st.session_state["daily_entry_mode"] = "sales"
-                        st.rerun()
-                with r1_c2:
-                    if st.button("📦  **Restock (Carts)**", key="open_restock_entry", use_container_width=True):
-                        st.session_state["daily_entry_mode"] = "restock"
-                        st.rerun()
-                with r1_c3:
-                    if st.button("➕  **Extra Stock (Carts)**", key="open_extra_stock", use_container_width=True):
+                    elif _de_code == "extra":
                         for _cart in CARTS:
                             for _code in FLAVOR_CODES:
                                 st.session_state[f"extra_stock_{_cart}_{_code}"] = "0"
-                        st.session_state["daily_entry_mode"] = "extra"
-                        st.rerun()
-                with r1_c4:
-                    if st.button("🔄  **Remove Cart Stock**", key="open_remove_cart_stock", use_container_width=True):
+                    elif _de_code == "remove_cart_stock":
                         for _cart in CARTS:
                             for _code in FLAVOR_CODES:
                                 st.session_state[f"rm_cart_stock_{_cart}_{_code}"] = "0"
-                        st.session_state["daily_entry_mode"] = "remove_cart_stock"
-                        st.rerun()
-
-                r2_c1, r2_c2, r2_c3, _ = st.columns(4, gap="small")
-                with r2_c1:
-                    if st.button("📋  **View Cart Stock**", key="open_view_cart_stock", use_container_width=True):
-                        st.session_state["daily_entry_mode"] = "view_stock"
-                        st.rerun()
-                with r2_c2:
-                    if st.button("❄️  **Sales Entry (Freezer)**", key="open_freezer_sales_entry", use_container_width=True):
+                    elif _de_code == "freezer_sales":
                         st.session_state["fzr_sale_form_nonce"] = int(st.session_state.get("fzr_sale_form_nonce", 0)) + 1
                         st.session_state["fzr_entry_sub_mode"] = "new"
                         st.session_state.pop("_editing_freezer_txn_id", None)
-                        st.session_state["daily_entry_mode"] = "freezer_sales"
-                        st.rerun()
-                with r2_c3:
-                    if st.button("📱  **Live Cart Transactions**", key="open_live_flavour_entry_view", use_container_width=True):
-                        st.session_state["daily_entry_mode"] = "live_flavour_view"
-                        st.rerun()
-        else:
+                    st.session_state["daily_entry_mode"] = _de_code
+                    st.rerun()
+
+        if True:
             # --------------------------------------------------------------
             # SALES ENTRY (CARTS) — Compact 80% Single-Page Layout
             # --------------------------------------------------------------
             if entry_mode == "sales":
-                top_c0, top_c1, top_c2, top_c3 = st.columns([0.65, 1.35, 1.05, 1.35], gap="small", vertical_alignment="bottom")
-                with top_c0:
-                    if st.button("⬅ Back", key="back_to_entry_menu_sales", type="secondary", use_container_width=True):
-                        st.session_state.pop("_last_mismatch_modal_target", None)
-                        st.session_state["daily_entry_mode"] = None
-                        st.rerun()
+                top_c1, top_c2, top_c3 = st.columns([1.4, 1.1, 1.4], gap="small", vertical_alignment="bottom")
                 with top_c1:
                     cart_name = st.selectbox("Assigned Cart", CARTS, key="entry_cart_shared")
 
@@ -6745,11 +6719,7 @@ with _page_body_container:
 
                 # MODE A: LIST OF PREVIOUS FREEZER SALE TRANSACTIONS
                 if fzr_sub_mode == "list":
-                    hdr_c0, hdr_c1, hdr_c2, hdr_c3 = st.columns([0.65, 1.75, 1.15, 1.15], gap="small", vertical_alignment="bottom")
-                    with hdr_c0:
-                        if st.button("⬅ Back", key="back_to_entry_menu_freezer_sales", type="secondary", use_container_width=True):
-                            st.session_state["daily_entry_mode"] = None
-                            st.rerun()
+                    hdr_c1, hdr_c2, hdr_c3 = st.columns([1.9, 1.2, 1.2], gap="small", vertical_alignment="bottom")
                     with hdr_c1:
                         st.text_input("Freezer Asset", value=freezer_asset_name, disabled=True, key="fzr_list_asset_ro")
                     with hdr_c2:
@@ -6871,11 +6841,7 @@ with _page_body_container:
                     mode_tag = f"edit_{int(editing_row['id'])}_{form_nonce}" if editing_row else f"new_{form_nonce}"
                     default_sale_dt = pd.to_datetime(editing_row["sale_date"]).date() if editing_row else today_val
 
-                    fs_top0, fs_top1, fs_top2, fs_top3, fs_top4 = st.columns([0.65, 1.05, 1.35, 1.0, 0.95], gap="small", vertical_alignment="bottom")
-                    with fs_top0:
-                        if st.button("⬅ Back", key="back_to_entry_menu_freezer_sales", type="secondary", use_container_width=True):
-                            st.session_state["daily_entry_mode"] = None
-                            st.rerun()
+                    fs_top1, fs_top2, fs_top3, fs_top4 = st.columns([1.15, 1.45, 1.05, 1.0], gap="small", vertical_alignment="bottom")
                     with fs_top1:
                         fzr_sale_date = st.date_input(
                             "Sale Date",
@@ -7095,11 +7061,7 @@ with _page_body_container:
             # RESTOCK ENTRY — Compact 80% Single-Page Layout & Matched Columns
             # --------------------------------------------------------------
             elif entry_mode == "restock":
-                rc_top0, rc_top1, rc_top2, rc_top3 = st.columns([0.65, 1.35, 1.05, 1.35], gap="small", vertical_alignment="bottom")
-                with rc_top0:
-                    if st.button("⬅ Back", key="back_to_entry_menu_restock", type="secondary", use_container_width=True):
-                        st.session_state["daily_entry_mode"] = None
-                        st.rerun()
+                rc_top1, rc_top2, rc_top3 = st.columns([1.4, 1.1, 1.4], gap="small", vertical_alignment="bottom")
                 with rc_top1:
                     cart_name = st.selectbox("Assigned Cart", CARTS, key="entry_cart_shared")
                 with rc_top2:
@@ -7196,11 +7158,7 @@ with _page_body_container:
             # EXTRA STOCK — Compact 80% Single-Page Layout
             # --------------------------------------------------------------
             elif entry_mode == "extra":
-                ec_top0, ec_top1, ec_top2, ec_top3 = st.columns([0.65, 1.35, 1.05, 1.35], gap="small", vertical_alignment="bottom")
-                with ec_top0:
-                    if st.button("⬅ Back", key="back_to_entry_menu_extra", type="secondary", use_container_width=True):
-                        st.session_state["daily_entry_mode"] = None
-                        st.rerun()
+                ec_top1, ec_top2, ec_top3 = st.columns([1.4, 1.1, 1.4], gap="small", vertical_alignment="bottom")
                 with ec_top1:
                     cart_name = st.selectbox("Assigned Cart", CARTS, key="entry_cart_shared")
                 with ec_top2:
@@ -7342,11 +7300,7 @@ with _page_body_container:
                 date_label_map = {_entry_date_display(d): d for d in allowed_stock_dates}
                 date_labels_list = list(date_label_map.keys())
 
-                vc0, vc1, vc2, vc3 = st.columns([0.65, 1.35, 1.05, 1.35], gap="small", vertical_alignment="bottom")
-                with vc0:
-                    if st.button("⬅ Back", key="back_to_entry_menu_view_stock", type="secondary", use_container_width=True):
-                        st.session_state["daily_entry_mode"] = None
-                        st.rerun()
+                vc1, vc2, vc3 = st.columns([1.4, 1.1, 1.4], gap="small", vertical_alignment="bottom")
                 with vc1:
                     cart_name = st.selectbox("Cart Name", CARTS, key="entry_cart_shared")
                 with vc2:
@@ -7418,11 +7372,7 @@ with _page_body_container:
                 if st.session_state.get("_rm_cart_success_msg"):
                     st.success(st.session_state.pop("_rm_cart_success_msg"))
 
-                rc0, rc1, rc2, rc3, rc4 = st.columns([0.65, 1.3, 0.95, 0.95, 0.75], gap="small", vertical_alignment="bottom")
-                with rc0:
-                    if st.button("⬅ Back", key="back_to_entry_menu_remove_cart_stock", type="secondary", use_container_width=True):
-                        st.session_state["daily_entry_mode"] = None
-                        st.rerun()
+                rc1, rc2, rc3, rc4 = st.columns([1.4, 1.0, 1.0, 0.85], gap="small", vertical_alignment="bottom")
                 with rc1:
                     cart_name = st.selectbox("Select Cart", CARTS, key="entry_cart_shared")
                 with rc2:
@@ -7566,11 +7516,6 @@ with _page_body_container:
                         st.caption(f"Remove Cart Stock history log unavailable (run SQL migration if needed): {e}")
 
             elif entry_mode == "live_flavour_view":
-                back_lv, _ = st.columns([1.0, 4.5])
-                with back_lv:
-                    if st.button("⬅ Back", key="back_to_entry_menu_live_flv", type="secondary", use_container_width=True):
-                        st.session_state["daily_entry_mode"] = None
-                        st.rerun()
                 render_live_cart_flavour_tables_section(key_prefix="entry_live_flv")
 
     elif page == "Bulk Orders & Quotes" and user_role == "admin":
@@ -14231,23 +14176,32 @@ with _page_body_container:
             st.markdown('</div>', unsafe_allow_html=True)
 
         active_dash_sub = st.session_state.get("dash_sub_page")
-        if active_dash_sub not in ("sales_log", "dow_patterns"):
+        if active_dash_sub not in ("month_comp", "sales_log", "dow_patterns"):
             active_dash_sub = None
             st.session_state["dash_sub_page"] = None
 
         # ==================================================================
-        # DEFAULT MAIN FINANCIALS PAGE (MONTH-WISE AT TOP + FULL FINANCIALS)
+        # DEFAULT MAIN FINANCIALS PAGE:
+        # 7 KPI Boxes -> Daily Revenue Trend -> OPEX Breakdown & Full P&L
+        # Top-Right Buttons: Month-Wise Performance, Date-wise Sales Log, Day-Wise & Timing Patterns
         # ==================================================================
         if active_dash_sub is None:
-            dash_hdr_c1, dash_hdr_c2, dash_hdr_c3 = st.columns(
-                [2.2, 1.25, 1.45],
+            dash_hdr_c1, dash_hdr_c2, dash_hdr_c3, dash_hdr_c4 = st.columns(
+                [1.85, 1.30, 1.15, 1.35],
                 gap="small",
                 vertical_alignment="center",
             )
             with dash_hdr_c1:
-                st.subheader("📅 Month-Wise Performance Comparison")
-                st.caption("Completed full-data months")
+                st.subheader("💰 Financials Overview")
             with dash_hdr_c2:
+                st.button(
+                    "📅 Month-Wise Performance",
+                    key="dash_open_page_month_comp",
+                    use_container_width=True,
+                    on_click=_open_dash_sub_page,
+                    args=("month_comp",),
+                )
+            with dash_hdr_c3:
                 st.button(
                     "📋 Date-wise Sales Log",
                     key="dash_open_page_sales_log",
@@ -14255,7 +14209,7 @@ with _page_body_container:
                     on_click=_open_dash_sub_page,
                     args=("sales_log",),
                 )
-            with dash_hdr_c3:
+            with dash_hdr_c4:
                 st.button(
                     "📆 Day-Wise & Timing Patterns",
                     key="dash_open_page_dow_patterns",
@@ -14264,142 +14218,7 @@ with _page_body_container:
                     args=("dow_patterns",),
                 )
 
-
-            if not daily_df.empty:
-                m_daily = daily_df.copy()
-                m_daily["EntryDate"] = pd.to_datetime(m_daily["Date"]).dt.date
-                m_daily["YM"] = pd.to_datetime(m_daily["Date"]).dt.to_period("M")
-
-                today_d = date.today()
-                current_ym = pd.Period(today_d, freq="M")
-
-                # Pre-fetch monthly COGS from daily_cart_items joined with flavors
-                monthly_cogs_df = db_conn.query(
-                    """
-                    SELECT
-                        DATE_TRUNC('month', e.entry_date)::date AS month_start,
-                        COALESCE(SUM(i.sold_units * f.cost_price), 0) AS cogs_amount
-                    FROM daily_cart_entries e
-                    JOIN daily_cart_items i ON i.daily_entry_id = e.id
-                    JOIN flavors f ON f.code = i.flavor_code
-                    WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(e.city, 'HOSUR'))) = :active_loc)
-                    GROUP BY DATE_TRUNC('month', e.entry_date)::date;
-                    """,
-                    params={"active_loc": get_active_location_filter()},
-                    ttl="60s"
-                )
-                cogs_by_month_start = {}
-                if not monthly_cogs_df.empty:
-                    for _, cr in monthly_cogs_df.iterrows():
-                        m_dt = pd.to_datetime(cr["month_start"]).date()
-                        cogs_by_month_start[(m_dt.year, m_dt.month)] = float(cr["cogs_amount"] or 0.0)
-
-                full_month_rows = []
-                for ym in sorted(m_daily["YM"].unique()):
-                    # Never include current ongoing or future months
-                    if ym >= current_ym:
-                        continue
-                    yr, mo = int(ym.year), int(ym.month)
-                    days_in_mo = calendar.monthrange(yr, mo)[1]
-                    mo_start = date(yr, mo, 1)
-                    mo_end = date(yr, mo, days_in_mo)
-
-                    sub_d = m_daily[(m_daily["EntryDate"] >= mo_start) & (m_daily["EntryDate"] <= mo_end)]
-                    if sub_d.empty:
-                        continue
-
-                    min_logged = sub_d["EntryDate"].min()
-                    max_logged = sub_d["EntryDate"].max()
-                    distinct_days = sub_d["EntryDate"].nunique()
-
-                    # Strict full-month check: data must start on day 1 and reach the final day of the month (or have all calendar days logged)
-                    if not (min_logged == mo_start and max_logged == mo_end and distinct_days >= days_in_mo):
-                        continue
-
-                    m_fin = compute_period_financials(
-                        start_date=mo_start,
-                        end_date=mo_end,
-                        avg_divisor_days=days_in_mo,
-                        daily_df_in=m_daily,
-                        exp_df_in=exp_df,
-                    )
-                    m_rev = m_fin["total_rev"]
-                    m_avg_rev = m_fin["avg_rev_per_day"]
-                    m_units = m_fin["total_units"]
-                    m_cogs = m_fin["exact_cogs_sold"]
-                    m_gp = m_fin["gross_profit"]
-                    m_gp_pct = m_fin["gross_margin"]
-                    m_opex = m_fin["total_incurred_opex"]
-                    m_opex_pct = m_fin["opex_margin"]
-                    m_np = m_fin["net_profit"]
-                    m_np_pct = m_fin["net_margin"]
-
-                    full_month_rows.append({
-                        "Month_Order": mo_start,
-                        "Month": mo_start.strftime("%b %Y"),
-                        "Revenue_Num": round(m_rev, 2),
-                        "Avg_Rev_Day_Num": round(m_avg_rev, 2),
-                        "Units_Sold_Num": m_units,
-                        "COGS_Num": round(m_cogs, 2),
-                        "Gross_Profit_Num": round(m_gp, 2),
-                        "Gross_Margin_Pct": round(m_gp_pct, 1),
-                        "OPEX_Num": round(m_opex, 2),
-                        "OPEX_Pct": round(m_opex_pct, 1),
-                        "Net_Profit_Num": round(m_np, 2),
-                        "Net_Profit_Pct": round(m_np_pct, 1),
-                        "Revenue": f"₹{m_rev:,.0f}",
-                        "Avg Rev / Day": f"₹{m_avg_rev:,.0f}",
-                        "Units Sold": f"{m_units:,}",
-                        "COGS": f"₹{m_cogs:,.0f}",
-                        "Gr. Profit": f"₹{m_gp:,.0f} ({m_gp_pct:.1f}%)",
-                        "OPEX": f"₹{m_opex:,.0f} ({m_opex_pct:.1f}%)",
-                        "Net Profit": f"₹{m_np:,.0f} ({m_np_pct:.1f}%)",
-                    })
-
-                if not full_month_rows:
-                    st.info("No completed calendar months with full-month data (from 1st to last day of the month) are available yet.")
-                else:
-                    full_m_df = pd.DataFrame(full_month_rows).sort_values("Month_Order")
-                    display_m_cols = ["Month", "Revenue", "Avg Rev / Day", "Units Sold", "COGS", "Gr. Profit", "OPEX", "Net Profit"]
-                    st.dataframe(full_m_df[display_m_cols], hide_index=True, use_container_width=True)
-
-                    st.markdown("##### 📈 Graphic View — Full-Data Months Comparison")
-                    month_sort_order = full_m_df["Month"].tolist()
-
-                    def _build_month_bar_chart(val_col, title_text, bar_color, val_format=",.0f", suffix=""):
-                        base_c = alt.Chart(full_m_df).encode(
-                            x=alt.X("Month:N", sort=month_sort_order, title="", axis=alt.Axis(labelAngle=0, labelFontWeight="bold"))
-                        )
-                        bars_c = base_c.mark_bar(color=bar_color, cornerRadiusTopLeft=5, cornerRadiusTopRight=5, size=42).encode(
-                            y=alt.Y(f"{val_col}:Q", title=title_text),
-                            tooltip=[
-                                alt.Tooltip("Month:N", title="Month"),
-                                alt.Tooltip(f"{val_col}:Q", title=title_text, format=val_format)
-                            ]
-                        )
-                        txt_c = base_c.mark_text(dy=-8, fontWeight="bold", fontSize=11.5, color="#0F172A").encode(
-                            y=alt.Y(f"{val_col}:Q"),
-                            text=alt.Text(f"{val_col}:Q", format=val_format)
-                        )
-                        return (bars_c + txt_c).properties(title=title_text, height=235)
-
-                    gc1, gc2 = st.columns(2)
-                    with gc1:
-                        st.altair_chart(_build_month_bar_chart("Revenue_Num", "Revenue (₹)", "#4F46E5", ",.0f"), use_container_width=True)
-                    with gc2:
-                        st.altair_chart(_build_month_bar_chart("Avg_Rev_Day_Num", "Average Rev / Day (₹)", "#059669", ",.0f"), use_container_width=True)
-
-                    gc3, gc4 = st.columns(2)
-                    with gc3:
-                        st.altair_chart(_build_month_bar_chart("Units_Sold_Num", "Units Sold", "#1E2252", ",.0f"), use_container_width=True)
-                    with gc4:
-                        st.altair_chart(_build_month_bar_chart("Net_Profit_Pct", "Net Profit %", "#047857", ".1f"), use_container_width=True)
-            else:
-                st.info("No sales data available for month-wise comparison.")
-
             if not daily_df.empty or not exp_df.empty:
-                st.markdown("---")
-                st.markdown("### 💰 Financials Overview")
                 (
                     dashboard_filter_mode, dash_year, dash_month_num,
                     range_start, range_end, range_df, range_exp,
@@ -14416,6 +14235,18 @@ with _page_body_container:
                     total_incurred_opex, opex_margin, net_profit, net_margin
                 )
 
+                st.markdown("#### Daily Revenue Trend")
+                if not range_df.empty:
+                    line_chart = alt.Chart(range_df.groupby("Date", as_index=False)["Total_Collection"].sum()).mark_line(point=True, color="#4F46E5").encode(
+                        x=alt.X("Date:T", title="Date", axis=alt.Axis(format="%d-%b")),
+                        y=alt.Y("Total_Collection:Q", title="Revenue (₹)"),
+                        tooltip=[alt.Tooltip("Date:T", format="%d-%b-%y", title="Date"), alt.Tooltip("Total_Collection:Q", format=",.2f", title="Revenue (₹)")]
+                    ).properties(height=270)
+                    st.altair_chart(line_chart, use_container_width=True)
+                else:
+                    st.caption("No revenue data available for this range to plot.")
+
+                st.markdown("<div style='height:4px;'></div>", unsafe_allow_html=True)
                 # ------------------------------------------------------------------
                 # INTERACTIVE OPEX BREAKDOWN & INSIGHTS BUTTON + PANEL
                 # ------------------------------------------------------------------
@@ -14811,25 +14642,15 @@ with _page_body_container:
                     st.caption("No cart sales in this date range.")
 
 
-                st.markdown("---")
-                st.markdown("#### Daily Revenue Trend")
-                if not range_df.empty:
-                    line_chart = alt.Chart(range_df.groupby("Date", as_index=False)["Total_Collection"].sum()).mark_line(point=True, color="#4F46E5").encode(
-                        x=alt.X("Date:T", title="Date", axis=alt.Axis(format="%d-%b")),
-                        y=alt.Y("Total_Collection:Q", title="Revenue (₹)"),
-                        tooltip=[alt.Tooltip("Date:T", format="%d-%b-%y", title="Date"), alt.Tooltip("Total_Collection:Q", format=",.2f", title="Revenue (₹)")]
-                    ).properties(height=270)
-                    st.altair_chart(line_chart, use_container_width=True)
-                else:
-                    st.caption("No revenue data available for this range to plot.")
+
             else:
                 st.info("No sales or expense records logged in database yet.")
 
         # ==================================================================
-        # SEPARATE SUB-PAGES: DATE-WISE SALES LOG & DAY-WISE / TIMING PATTERNS
+        # SEPARATE SUB-PAGES: MONTH-WISE, DATE-WISE SALES LOG & DAY-WISE PATTERNS
         # ==================================================================
         else:
-            nav_b1, nav_b2, nav_b3 = st.columns([1.2, 1.4, 1.6], gap="small")
+            nav_b1, nav_b2, nav_b3, nav_b4 = st.columns([1.15, 1.30, 1.20, 1.35], gap="small")
             with nav_b1:
                 st.button(
                     "⬅ Back to Financials",
@@ -14841,6 +14662,15 @@ with _page_body_container:
                 )
             with nav_b2:
                 st.button(
+                    "📅 Month-Wise Performance",
+                    key="dash_sub_switch_month_comp",
+                    type="primary" if active_dash_sub == "month_comp" else "secondary",
+                    use_container_width=True,
+                    on_click=_open_dash_sub_page,
+                    args=("month_comp",),
+                )
+            with nav_b3:
+                st.button(
                     "📋 Date-wise Sales Log",
                     key="dash_sub_switch_sales_log",
                     type="primary" if active_dash_sub == "sales_log" else "secondary",
@@ -14848,7 +14678,7 @@ with _page_body_container:
                     on_click=_open_dash_sub_page,
                     args=("sales_log",),
                 )
-            with nav_b3:
+            with nav_b4:
                 st.button(
                     "📆 Day-Wise & Timing Patterns",
                     key="dash_sub_switch_dow_patterns",
@@ -15217,7 +15047,157 @@ with _page_body_container:
                     )
 
             # ------------------------------------------------------------------
-            # SUB-PAGE 4: DAY-WISE & TIMING PATTERNS
+            # SUB-PAGE 2: MONTH-WISE PERFORMANCE COMPARISON
+            # ------------------------------------------------------------------
+            elif active_dash_sub == "month_comp":
+                st.subheader("📅 Month-Wise Performance Comparison (Full-Data Months Only)")
+                st.caption("Completed full-data months")
+                if not daily_df.empty:
+                    m_daily = daily_df.copy()
+                    m_daily["EntryDate"] = pd.to_datetime(m_daily["Date"]).dt.date
+                    m_daily["YM"] = pd.to_datetime(m_daily["Date"]).dt.to_period("M")
+
+                    today_d = date.today()
+                    current_ym = pd.Period(today_d, freq="M")
+
+                    # Pre-fetch monthly COGS from daily_cart_items joined with flavors
+                    monthly_cogs_df = db_conn.query(
+                        """
+                        SELECT
+                            DATE_TRUNC('month', e.entry_date)::date AS month_start,
+                            COALESCE(SUM(i.sold_units * f.cost_price), 0) AS cogs_amount
+                        FROM daily_cart_entries e
+                        JOIN daily_cart_items i ON i.daily_entry_id = e.id
+                        JOIN flavors f ON f.code = i.flavor_code
+                        WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(e.city, 'HOSUR'))) = :active_loc)
+                        GROUP BY DATE_TRUNC('month', e.entry_date)::date;
+                        """,
+                        params={"active_loc": get_active_location_filter()},
+                        ttl="60s"
+                    )
+                    cogs_by_month_start = {}
+                    if not monthly_cogs_df.empty:
+                        for _, cr in monthly_cogs_df.iterrows():
+                            m_dt = pd.to_datetime(cr["month_start"]).date()
+                            cogs_by_month_start[(m_dt.year, m_dt.month)] = float(cr["cogs_amount"] or 0.0)
+
+                    full_month_rows = []
+                    for ym in sorted(m_daily["YM"].unique()):
+                        # Never include current ongoing or future months
+                        if ym >= current_ym:
+                            continue
+                        yr, mo = int(ym.year), int(ym.month)
+                        days_in_mo = calendar.monthrange(yr, mo)[1]
+                        mo_start = date(yr, mo, 1)
+                        mo_end = date(yr, mo, days_in_mo)
+
+                        sub_d = m_daily[(m_daily["EntryDate"] >= mo_start) & (m_daily["EntryDate"] <= mo_end)]
+                        if sub_d.empty:
+                            continue
+
+                        min_logged = sub_d["EntryDate"].min()
+                        max_logged = sub_d["EntryDate"].max()
+                        distinct_days = sub_d["EntryDate"].nunique()
+
+                        # Strict full-month check: data must start on day 1 and reach the final day of the month (or have all calendar days logged)
+                        if not (min_logged == mo_start and max_logged == mo_end and distinct_days >= days_in_mo):
+                            continue
+
+                        m_fin = compute_period_financials(
+                            start_date=mo_start,
+                            end_date=mo_end,
+                            avg_divisor_days=days_in_mo,
+                            daily_df_in=m_daily,
+                            exp_df_in=exp_df,
+                        )
+                        m_rev = m_fin["total_rev"]
+                        m_avg_rev = m_fin["avg_rev_per_day"]
+                        m_units = m_fin["total_units"]
+                        m_cogs = m_fin["exact_cogs_sold"]
+                        m_gp = m_fin["gross_profit"]
+                        m_gp_pct = m_fin["gross_margin"]
+                        m_opex = m_fin["total_incurred_opex"]
+                        m_opex_pct = m_fin["opex_margin"]
+                        m_np = m_fin["net_profit"]
+                        m_np_pct = m_fin["net_margin"]
+
+                        full_month_rows.append({
+                            "Month_Order": mo_start,
+                            "Month": mo_start.strftime("%b %Y"),
+                            "Revenue_Num": round(m_rev, 2),
+                            "Avg_Rev_Day_Num": round(m_avg_rev, 2),
+                            "Units_Sold_Num": m_units,
+                            "COGS_Num": round(m_cogs, 2),
+                            "Gross_Profit_Num": round(m_gp, 2),
+                            "Gross_Margin_Pct": round(m_gp_pct, 1),
+                            "OPEX_Num": round(m_opex, 2),
+                            "OPEX_Pct": round(m_opex_pct, 1),
+                            "Net_Profit_Num": round(m_np, 2),
+                            "Net_Profit_Pct": round(m_np_pct, 1),
+                            "Revenue": f"₹{m_rev:,.0f}",
+                            "Avg Rev / Day": f"₹{m_avg_rev:,.0f}",
+                            "Units Sold": f"{m_units:,}",
+                            "COGS": f"₹{m_cogs:,.0f}",
+                            "Gr. Profit": f"₹{m_gp:,.0f} ({m_gp_pct:.1f}%)",
+                            "OPEX": f"₹{m_opex:,.0f} ({m_opex_pct:.1f}%)",
+                            "Net Profit": f"₹{m_np:,.0f} ({m_np_pct:.1f}%)",
+                        })
+
+                    if not full_month_rows:
+                        st.info("No completed calendar months with full-month data (from 1st to last day of the month) are available yet.")
+                    else:
+                        full_m_df = pd.DataFrame(full_month_rows).sort_values("Month_Order")
+                        display_m_cols = ["Month", "Revenue", "Avg Rev / Day", "Units Sold", "COGS", "Gr. Profit", "OPEX", "Net Profit"]
+                        st.dataframe(full_m_df[display_m_cols], hide_index=True, use_container_width=True)
+
+                        st.markdown("##### 📈 Graphic View — Full-Data Months Comparison")
+                        month_sort_order = full_m_df["Month"].tolist()
+
+                        def _build_month_bar_chart(val_col, title_text, bar_color, val_format=",.0f", suffix=""):
+                            base_c = alt.Chart(full_m_df).encode(
+                                x=alt.X("Month:N", sort=month_sort_order, title="", axis=alt.Axis(labelAngle=0, labelFontWeight="bold"))
+                            )
+                            bars_c = base_c.mark_bar(color=bar_color, cornerRadiusTopLeft=5, cornerRadiusTopRight=5, size=42).encode(
+                                y=alt.Y(f"{val_col}:Q", title=title_text),
+                                tooltip=[
+                                    alt.Tooltip("Month:N", title="Month"),
+                                    alt.Tooltip(f"{val_col}:Q", title=title_text, format=val_format)
+                                ]
+                            )
+                            txt_c = base_c.mark_text(dy=-8, fontWeight="bold", fontSize=11.5, color="#0F172A").encode(
+                                y=alt.Y(f"{val_col}:Q"),
+                                text=alt.Text(f"{val_col}:Q", format=val_format)
+                            )
+                            return (bars_c + txt_c).properties(title=title_text, height=235)
+
+                        gc1, gc2 = st.columns(2)
+                        with gc1:
+                            st.altair_chart(_build_month_bar_chart("Revenue_Num", "Revenue (₹)", "#4F46E5", ",.0f"), use_container_width=True)
+                        with gc2:
+                            st.altair_chart(_build_month_bar_chart("Avg_Rev_Day_Num", "Average Rev / Day (₹)", "#059669", ",.0f"), use_container_width=True)
+
+                        gc3, gc4 = st.columns(2)
+                        with gc3:
+                            st.altair_chart(_build_month_bar_chart("Units_Sold_Num", "Units Sold", "#1E2252", ",.0f"), use_container_width=True)
+                        with gc4:
+                            st.altair_chart(_build_month_bar_chart("Net_Profit_Pct", "Net Profit %", "#047857", ".1f"), use_container_width=True)
+                else:
+                    st.info("No sales data available for month-wise comparison.")
+
+                st.markdown("---")
+                b_back3, _ = st.columns([1.5, 3.5])
+                with b_back3:
+                    st.button(
+                        "⬅ Back to Financials",
+                        key="dash_sub_back_bot_mc",
+                        type="primary",
+                        use_container_width=True,
+                        on_click=_open_dash_sub_page,
+                        args=(None,),
+                    )
+
+            # ------------------------------------------------------------------
+            # SUB-PAGE 3: DAY-WISE & TIMING PATTERNS
             # ------------------------------------------------------------------
             elif active_dash_sub == "dow_patterns":
                 st.subheader("📆 Day-Wise & Timing Patterns")
