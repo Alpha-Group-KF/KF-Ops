@@ -19,6 +19,7 @@ import altair as alt
 import pandas as pd
 import hmac
 import re
+import json
 import calendar
 import os
 import io
@@ -2000,6 +2001,268 @@ div[data-testid="stHorizontalBlock"]:has(.ledger-cell):not(:has(div[data-testid=
 DEFAULT_LOCATION_CARTS_MAP = {
     "HOSUR": ["HOSUR CART 01", "HOSUR CART 02", "HOSUR CART 03"],
 }
+
+
+# --- CASH CUSTODY MOBILE-PARITY HELPERS & MODALS ---
+def _cc_fmt_date(val):
+    """Format date/datetime/ISO string as dd-Mon-yyyy (matching mobile App.js)."""
+    if val is None or (isinstance(val, float) and pd.isna(val)):
+        return "—"
+    try:
+        dt = pd.to_datetime(val)
+        if pd.isna(dt):
+            return "—"
+        return dt.strftime("%d-%b-%Y")
+    except Exception:
+        return str(val)
+
+
+def _cc_fmt_inr(val):
+    """Format numeric value as Indian Rupee string ₹X,XXX.XX."""
+    try:
+        v = float(val or 0.0)
+    except Exception:
+        v = 0.0
+    sign = "-" if v < 0 else ""
+    return f"{sign}₹{abs(v):,.2f}"
+
+
+def _cc_apportion_spends_to_sales_dates(rows, spends, date_getter, gross_getter):
+    """
+    Exact Python port of mobile App.js `apportionOpsSpendsToSalesDates`.
+    Two-pass apportionment:
+      Pass 1 (Backward): salesDate <= spendDate, sorted salesDate DESC.
+      Pass 2 (Forward fallback): salesDate > spendDate, sorted salesDate ASC.
+    Returns dict keyed by row index -> {"spent": float, "notes": list[str]}.
+    """
+    pool = []
+    for idx, r in enumerate(rows):
+        d_raw = date_getter(r)
+        try:
+            d_str = pd.to_datetime(d_raw).strftime("%Y-%m-%d") if d_raw is not None and pd.notna(d_raw) else "1970-01-01"
+        except Exception:
+            d_str = str(d_raw or "1970-01-01")[:10]
+        g = max(0.0, float(gross_getter(r) or 0.0))
+        pool.append({
+            "idx": idx,
+            "salesDate": d_str,
+            "rem": round(g, 2),
+            "spent": 0.0,
+            "notes": [],
+        })
+
+    def _spend_sort_key(sp):
+        d_raw = sp.get("spend_date")
+        try:
+            d_str = pd.to_datetime(d_raw).strftime("%Y-%m-%d") if d_raw is not None and pd.notna(d_raw) else "1970-01-01"
+        except Exception:
+            d_str = str(d_raw or "1970-01-01")[:10]
+        return (d_str, int(sp.get("id") or 0))
+
+    sorted_spends = sorted(spends, key=_spend_sort_key)
+
+    for sp in sorted_spends:
+        rem_spend = round(float(sp.get("remaining_amount") or 0.0), 2)
+        if rem_spend <= 0.001:
+            continue
+        d_raw = sp.get("spend_date")
+        try:
+            sp_date_str = pd.to_datetime(d_raw).strftime("%Y-%m-%d") if d_raw is not None and pd.notna(d_raw) else "1970-01-01"
+        except Exception:
+            sp_date_str = str(d_raw or "1970-01-01")[:10]
+        sp_date_disp = _cc_fmt_date(d_raw)
+        sp_notes = str(sp.get("notes") or "").strip()
+
+        # Pass 1: Backward (salesDate <= spendDate, newest first)
+        backward = [p for p in pool if p["salesDate"] <= sp_date_str and p["rem"] > 0.001]
+        backward.sort(key=lambda x: x["salesDate"], reverse=True)
+        for p in backward:
+            if rem_spend <= 0.001:
+                break
+            take = round(min(rem_spend, p["rem"]), 2)
+            if take <= 0.001:
+                continue
+            p["rem"] = round(p["rem"] - take, 2)
+            p["spent"] = round(p["spent"] + take, 2)
+            rem_spend = round(rem_spend - take, 2)
+            note_suffix = f" ({sp_notes})" if sp_notes else ""
+            p["notes"].append(f"{sp_date_disp}: {_cc_fmt_inr(take)}{note_suffix}")
+
+        # Pass 2: Forward fallback (salesDate > spendDate, oldest first)
+        if rem_spend > 0.001:
+            forward = [p for p in pool if p["salesDate"] > sp_date_str and p["rem"] > 0.001]
+            forward.sort(key=lambda x: x["salesDate"])
+            for p in forward:
+                if rem_spend <= 0.001:
+                    break
+                take = round(min(rem_spend, p["rem"]), 2)
+                if take <= 0.001:
+                    continue
+                p["rem"] = round(p["rem"] - take, 2)
+                p["spent"] = round(p["spent"] + take, 2)
+                rem_spend = round(rem_spend - take, 2)
+                note_suffix = f" ({sp_notes})" if sp_notes else ""
+                p["notes"].append(f"{sp_date_disp}: {_cc_fmt_inr(take)}{note_suffix}")
+
+    return {p["idx"]: {"spent": round(p["spent"], 2), "notes": p["notes"]} for p in pool}
+
+
+@st.dialog("🧾 Ops & Admin 1 Cash Spends", width="large")
+def _cc_show_spends_modal(all_spends, tagged_expense_map):
+    if not all_spends:
+        st.info("No cash spend entries recorded for this location yet.")
+        return
+
+    total_sp = sum(float(s.get("amount") or 0) for s in all_spends)
+    unhanded_sp = sum(float(s.get("remaining_amount") or 0) for s in all_spends)
+    st.markdown(
+        f"""
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+            <div style="flex:1;min-width:150px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:10px 14px;">
+                <div style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;">Total Spends Listed</div>
+                <div style="font-size:18px;font-weight:800;color:#1E2252;">{len(all_spends)} entries • {_cc_fmt_inr(total_sp)}</div>
+            </div>
+            <div style="flex:1;min-width:150px;background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;padding:10px 14px;">
+                <div style="font-size:11px;font-weight:700;color:#B91C1C;text-transform:uppercase;">Unhanded / Remaining</div>
+                <div style="font-size:18px;font-weight:800;color:#C43D17;">{_cc_fmt_inr(unhanded_sp)}</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    for s in all_spends:
+        sid = int(s["id"])
+        spent_by = str(s.get("spent_by") or "OPS_COORDINATOR").strip().upper()
+        is_adm1 = spent_by == "ADMIN_1"
+        role_bg = "#EFF6FF" if is_adm1 else "#FFFBEB"
+        role_fg = "#1D4ED8" if is_adm1 else "#B45309"
+        role_bd = "#BFDBFE" if is_adm1 else "#FDE68A"
+        role_lbl = "Admin 1 (Yogesh)" if is_adm1 else "Ops Coordinator"
+        s_dt = _cc_fmt_date(s.get("spend_date"))
+        s_amt = float(s.get("amount") or 0)
+        s_alloc = float(s.get("allocated_amount") or 0)
+        s_rem = float(s.get("remaining_amount") or 0)
+        s_notes = escape(str(s.get("notes") or "—"))
+        linked = tagged_expense_map.get(sid)
+
+        with st.container(border=True):
+            c1, c2, c3 = st.columns([2.4, 1.3, 1.4], vertical_alignment="center")
+            with c1:
+                st.markdown(
+                    f"""
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
+                        <span style="font-weight:800;color:#1E2252;font-size:14px;">Spend #{sid}</span>
+                        <span style="background:{role_bg};color:{role_fg};border:1px solid {role_bd};border-radius:999px;padding:2px 8px;font-size:11px;font-weight:700;">{role_lbl}</span>
+                        <span style="color:#64748B;font-size:12px;font-weight:600;">📅 {s_dt}</span>
+                    </div>
+                    <div style="font-size:13px;color:#334155;">{s_notes}</div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+            with c2:
+                st.markdown(
+                    f"""
+                    <div style="font-size:15px;font-weight:800;color:#C43D17;">{_cc_fmt_inr(s_amt)}</div>
+                    <div style="font-size:11px;color:#64748B;">Allocated: {_cc_fmt_inr(s_alloc)}</div>
+                    <div style="font-size:11px;color:{'#C43D17' if s_rem > 0.001 else '#059669'};font-weight:700;">Remaining: {_cc_fmt_inr(s_rem)}</div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+            with c3:
+                if linked:
+                    st.markdown(
+                        f"<div style='background:#ECFDF5;color:#047857;border:1px solid #A7F3D0;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:700;text-align:center;margin-bottom:6px;'>✓ Expense #{int(linked['id'])} ({escape(str(linked.get('category') or ''))})</div>",
+                        unsafe_allow_html=True,
+                    )
+                else:
+                    st.markdown(
+                        "<div style='background:#FFFBEB;color:#B45309;border:1px solid #FDE68A;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:700;text-align:center;margin-bottom:6px;'>Pending Expense Entry</div>",
+                        unsafe_allow_html=True,
+                    )
+                if st.button(
+                    "🧾 Create Expense →" if not linked else "＋ Create Another →",
+                    key=f"cc_modal_conv_spend_{sid}",
+                    type="primary" if not linked else "secondary",
+                    use_container_width=True,
+                ):
+                    st.session_state["_pending_ops_spend_to_load"] = {
+                        "id": sid,
+                        "spend_date": s.get("spend_date"),
+                        "amount": s_amt,
+                        "notes": s.get("notes") or "",
+                        "spent_by": spent_by,
+                    }
+                    st.session_state["_pending_page_nav"] = "Expenses"
+                    st.session_state["_pending_exp_nav_sec"] = "📋 Expenses (Bills / Invoices)"
+                    st.session_state["_pending_e_sub_mode_rad"] = "Add New Expense"
+                    st.rerun()
+
+
+@st.dialog("📚 Recently Confirmed Collections (Admin 2)", width="large")
+def _cc_show_recent_collections_modal(recent_batches):
+    if not recent_batches:
+        st.info("No confirmed handovers to Admin 2 (Srilalitha) recorded yet.")
+        return
+
+    for b in recent_batches:
+        bid = int(b["id"])
+        ho_dt = _cc_fmt_date(b.get("handed_over_date") or b.get("collection_date"))
+        s_dates = b.get("salesDates") or []
+        if len(s_dates) == 1:
+            dates_lbl = _cc_fmt_date(s_dates[0])
+        elif len(s_dates) > 1:
+            dates_lbl = f"{_cc_fmt_date(s_dates[0])} → {_cc_fmt_date(s_dates[-1])} ({len(s_dates)} days)"
+        else:
+            dates_lbl = _cc_fmt_date(b.get("collection_date"))
+
+        gross = float(b.get("expected_amount") or 0)
+        ops_sp = float(b.get("cash_spent_amount") or 0)
+        adm1_sp = float(b.get("admin1_spent_amount") or 0)
+        final_amt = float(b.get("actual_collected_amount") if b.get("actual_collected_amount") is not None else max(0.0, gross - ops_sp - adm1_sp))
+        notes = escape(str(b.get("notes") or "").strip())
+        ops_notes = escape(str(b.get("cash_spent_notes") or "").strip())
+        adm1_notes = escape(str(b.get("admin1_spent_notes") or "").strip())
+
+        notes_html = ""
+        if ops_notes:
+            notes_html += f"<div style='font-size:12px;color:#B91C1C;margin-top:4px;'><b>Ops Spent:</b> {ops_notes}</div>"
+        if adm1_notes:
+            notes_html += f"<div style='font-size:12px;color:#1D4ED8;margin-top:4px;'><b>Admin 1 Spent:</b> {adm1_notes}</div>"
+        if notes:
+            notes_html += f"<div style='font-size:12px;color:#475569;margin-top:4px;'><b>Notes:</b> {notes}</div>"
+
+        st.markdown(
+            f"""
+            <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-left:4px solid #059669;border-radius:12px;padding:12px 16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(15,23,42,0.04);">
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px;">
+                    <div style="font-weight:800;color:#1E2252;font-size:14px;">Batch #{bid} &nbsp;•&nbsp; Sales: {escape(dates_lbl)}</div>
+                    <span style="background:#ECFDF5;color:#047857;border:1px solid #A7F3D0;border-radius:999px;padding:2px 10px;font-size:11px;font-weight:700;">✓ Handed to Srilalitha on {ho_dt}</span>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(4,minmax(100px,1fr));gap:8px;margin-top:8px;">
+                    <div style="background:#F8FAFC;border-radius:8px;padding:6px 10px;">
+                        <div style="font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;">Gross Sales</div>
+                        <div style="font-size:14px;font-weight:700;color:#0F172A;">{_cc_fmt_inr(gross)}</div>
+                    </div>
+                    <div style="background:#FEF2F2;border-radius:8px;padding:6px 10px;">
+                        <div style="font-size:10px;font-weight:700;color:#B91C1C;text-transform:uppercase;">Ops Spent</div>
+                        <div style="font-size:14px;font-weight:700;color:#C43D17;">{_cc_fmt_inr(ops_sp)}</div>
+                    </div>
+                    <div style="background:#EFF6FF;border-radius:8px;padding:6px 10px;">
+                        <div style="font-size:10px;font-weight:700;color:#1D4ED8;text-transform:uppercase;">Admin 1 Spent</div>
+                        <div style="font-size:14px;font-weight:700;color:#1E40AF;">{_cc_fmt_inr(adm1_sp)}</div>
+                    </div>
+                    <div style="background:#ECFDF5;border-radius:8px;padding:6px 10px;">
+                        <div style="font-size:10px;font-weight:700;color:#047857;text-transform:uppercase;">Final Handed Over</div>
+                        <div style="font-size:14px;font-weight:800;color:#059669;">{_cc_fmt_inr(final_amt)}</div>
+                    </div>
+                </div>
+                {notes_html}
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
 
 def get_active_location_filter():
     """Return 'ALL' when Admin selects All Locations (Aggregated), else the specific city uppercase."""
@@ -9139,706 +9402,1141 @@ with _page_body_container:
     # PAGE: CASH CUSTODY (Admin View)
     # ======================================================================
     elif page == "Cash Custody" and user_role == "admin":
-        st.subheader("💰 Cash Custody & Handover")
         if db_conn is None:
             st.error("Database connection is unavailable.")
             st.stop()
 
-        if st.button("🔄 Refresh Cash Position", key="cash_custody_refresh"):
-            st.rerun()
+        active_loc = get_active_location_filter()
+        write_loc = get_default_write_city()
+
+        # Scoped Deposito styling for Cash Custody (no unisolated :has() rules)
+        st.markdown(
+            """
+            <style>
+            .cc-card {
+                background: #FFFFFF;
+                border: 1px solid #E2E8F0;
+                border-radius: 14px;
+                padding: 16px 18px;
+                box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+                margin-bottom: 12px;
+            }
+            .cc-card-selected {
+                background: #F8FAFC;
+                border: 1.5px solid #2563EB;
+                border-radius: 14px;
+                padding: 16px 18px;
+                box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);
+                margin-bottom: 12px;
+            }
+            .cc-eyebrow {
+                font-size: 11px;
+                font-weight: 800;
+                letter-spacing: 0.06em;
+                text-transform: uppercase;
+                color: #64748B;
+                margin-bottom: 6px;
+            }
+            .cc-big-num {
+                font-size: 26px;
+                font-weight: 800;
+                color: #1E2252;
+                line-height: 1.15;
+            }
+            .cc-kpi-row {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 10px;
+                margin-top: 10px;
+            }
+            .cc-kpi-tile {
+                background: #F8FAFC;
+                border: 1px solid #E2E8F0;
+                border-radius: 10px;
+                padding: 10px 12px;
+            }
+            .cc-kpi-tile.amber { background: #FFFBEB; border-color: #FDE68A; }
+            .cc-kpi-tile.blue { background: #EFF6FF; border-color: #BFDBFE; }
+            .cc-kpi-tile.green { background: #ECFDF5; border-color: #A7F3D0; }
+            .cc-kpi-tile.red { background: #FEF2F2; border-color: #FECACA; }
+            .cc-kpi-lbl {
+                font-size: 10.5px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+                color: #64748B;
+                margin-bottom: 3px;
+            }
+            .cc-kpi-val {
+                font-size: 16px;
+                font-weight: 800;
+                color: #0F172A;
+            }
+            .cc-kpi-sub {
+                font-size: 11px;
+                color: #64748B;
+                margin-top: 2px;
+            }
+            .cc-table-wrap {
+                background: #FFFFFF;
+                border: 1px solid #E2E8F0;
+                border-radius: 14px;
+                overflow: hidden;
+                box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+                margin-bottom: 12px;
+            }
+            .cc-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 13px;
+            }
+            .cc-table th {
+                background: #F8FAFC;
+                color: #475569;
+                font-size: 11px;
+                font-weight: 800;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+                padding: 10px 14px;
+                border-bottom: 1px solid #E2E8F0;
+                text-align: left;
+            }
+            .cc-table th.num, .cc-table td.num { text-align: right; }
+            .cc-table td {
+                padding: 9px 14px;
+                border-bottom: 1px solid #F1F5F9;
+                color: #1E293B;
+                font-weight: 500;
+            }
+            .cc-table tr.cc-total-row td {
+                background: #F8FAFC;
+                font-weight: 800;
+                color: #1E2252;
+                border-top: 1.5px solid #CBD5E1;
+                border-bottom: none;
+            }
+            .cc-banner-net {
+                background: linear-gradient(90deg, #EFF6FF 0%, #F8FAFC 100%);
+                border: 1px solid #BFDBFE;
+                border-left: 4px solid #2563EB;
+                border-radius: 10px;
+                padding: 10px 16px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 16px;
+            }
+            .cc-sec-hdr {
+                font-size: 16px;
+                font-weight: 800;
+                color: #1E2252;
+                margin: 14px 0 6px 0;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .cc-pill {
+                display: inline-block;
+                border-radius: 999px;
+                padding: 2px 10px;
+                font-size: 11px;
+                font-weight: 700;
+            }
+            .cc-pill.amber { background: #FFFBEB; color: #B45309; border: 1px solid #FDE68A; }
+            .cc-pill.blue { background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; }
+            .cc-pill.green { background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0; }
+            .cc-pill.red { background: #FEF2F2; color: #B91C1C; border: 1px solid #FECACA; }
+            .cc-note-box {
+                background: #F8FAFC;
+                border: 1px solid #E2E8F0;
+                border-radius: 8px;
+                padding: 8px 12px;
+                font-size: 12px;
+                color: #475569;
+                margin-top: 8px;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
 
         # ------------------------------------------------------------------
-        # CURRENT CUSTODY SUMMARY
+        # 1. DATA QUERIES (Exact Mobile App.js Parity, Location-Filtered)
         # ------------------------------------------------------------------
         try:
-            custody_summary_df = db_conn.query(
+            custody_rows_df = db_conn.query(
                 """
-                SELECT current_holder, COUNT(*) AS daily_entry_count, COALESCE(SUM(cash_amount), 0) AS total_cash
+                SELECT
+                    daily_entry_id,
+                    entry_date,
+                    cart_name,
+                    city,
+                    cash_amount,
+                    current_holder,
+                    batch_id,
+                    collection_date,
+                    expected_amount,
+                    actual_collected_amount,
+                    batch_status
+                FROM public.v_cash_custody_status
+                WHERE current_holder IN ('OPS_COORDINATOR', 'YOGESH')
+                  AND (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(city, 'HOSUR'))) = :active_loc)
+                ORDER BY entry_date DESC, cart_name ASC;
+                """,
+                params={"active_loc": active_loc},
+                ttl="60s",
+            )
+
+            summary_df = db_conn.query(
+                """
+                SELECT
+                    current_holder,
+                    COUNT(*) AS daily_entry_count,
+                    COALESCE(SUM(cash_amount), 0) AS total_cash
                 FROM public.v_cash_custody_status
                 WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(city, 'HOSUR'))) = :active_loc)
                 GROUP BY current_holder;
                 """,
-                params={"active_loc": get_active_location_filter()},
-                ttl="60s"
+                params={"active_loc": active_loc},
+                ttl="60s",
+            )
+
+            spends_df = db_conn.query(
+                """
+                SELECT
+                    id,
+                    spend_date,
+                    amount,
+                    COALESCE(allocated_amount, 0) AS allocated_amount,
+                    notes,
+                    batch_id,
+                    location,
+                    COALESCE(spent_by, 'OPS_COORDINATOR') AS spent_by,
+                    created_at,
+                    updated_at
+                FROM public.cash_ops_spend_entries
+                WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(location, 'HOSUR'))) = :active_loc)
+                ORDER BY spend_date DESC, id DESC
+                LIMIT 100;
+                """,
+                params={"active_loc": active_loc},
+                ttl="60s",
+            )
+
+            tagged_exp_df = db_conn.query(
+                """
+                SELECT id, category, sub_category, total_amount, remarks
+                FROM public.expenses
+                WHERE remarks ILIKE '%[Ops Cash Spend #%'
+                   OR remarks ILIKE '%[Admin 1 Cash Spend #%'
+                ORDER BY id DESC;
+                """,
+                ttl="60s",
+            )
+
+            recent_batches_df = db_conn.query(
+                """
+                SELECT
+                    id,
+                    collection_date,
+                    expected_amount,
+                    actual_collected_amount,
+                    status,
+                    handed_over_date,
+                    handed_over_to,
+                    notes,
+                    COALESCE(cash_spent_amount, 0) AS cash_spent_amount,
+                    cash_spent_notes,
+                    COALESCE(admin1_spent_amount, 0) AS admin1_spent_amount,
+                    admin1_spent_notes
+                FROM public.cash_handover_batches
+                WHERE status = 'HANDED_TO_SRILALITHA'
+                  AND (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(location, 'HOSUR'))) = :active_loc)
+                ORDER BY handed_over_date DESC NULLS LAST, id DESC
+                LIMIT 10;
+                """,
+                params={"active_loc": active_loc},
+                ttl="60s",
             )
         except Exception as e:
-            st.error(f"Could not load cash custody summary: {e}")
+            st.error(f"Could not load Cash Custody data: {e}")
             st.stop()
 
-        custody_totals = {
-            "OPS_COORDINATOR": 0.0,
-            "YOGESH": 0.0,
-            "SRILALITHA": 0.0,
-        }
-        custody_counts = {
-            "OPS_COORDINATOR": 0,
-            "YOGESH": 0,
-            "SRILALITHA": 0,
-        }
+        # Summary totals by holder
+        summary_by_holder = {"OPS_COORDINATOR": 0.0, "YOGESH": 0.0, "SRILALITHA": 0.0}
+        if not summary_df.empty:
+            for _, r in summary_df.iterrows():
+                h = str(r["current_holder"] or "").strip().upper()
+                if h in summary_by_holder:
+                    summary_by_holder[h] = float(r["total_cash"] or 0.0)
+        total_with_srilalitha = summary_by_holder["SRILALITHA"]
 
-        if not custody_summary_df.empty:
-            for _, r in custody_summary_df.iterrows():
-                holder = str(r["current_holder"] or "").strip().upper()
-                if holder in custody_totals:
-                    custody_totals[holder] = float(r["total_cash"] or 0)
-                    custody_counts[holder] = int(r["daily_entry_count"] or 0)
+        # Tagged expenses map: spend_id -> {id, category, sub_category, total_amount}
+        tagged_expense_map = {}
+        if not tagged_exp_df.empty:
+            _tag_re = re.compile(r"\[(?:Ops|Admin 1) Cash Spend #(\d+)\]", re.IGNORECASE)
+            for _, r in tagged_exp_df.iterrows():
+                m = _tag_re.search(str(r.get("remarks") or ""))
+                if m:
+                    sid_key = int(m.group(1))
+                    if sid_key not in tagged_expense_map:
+                        tagged_expense_map[sid_key] = {
+                            "id": int(r["id"]),
+                            "category": r.get("category") or "",
+                            "sub_category": r.get("sub_category") or "",
+                            "total_amount": float(r.get("total_amount") or 0.0),
+                        }
 
-        # Sales-date ranges for cash currently held by Ops Coordinator / Yogesh
-        holder_date_ranges = {"OPS_COORDINATOR": None, "YOGESH": None}
-        try:
-            holder_dates_df = db_conn.query("""
-                SELECT current_holder, MIN(entry_date) AS first_sales_date, MAX(entry_date) AS last_sales_date
-                FROM public.v_cash_custody_status
-                WHERE current_holder IN ('OPS_COORDINATOR', 'YOGESH')
-                  AND (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(city, 'HOSUR'))) = :active_loc)
-                GROUP BY current_holder;
-            """, params={"active_loc": get_active_location_filter()}, ttl="60s")
-            for _, r in holder_dates_df.iterrows():
-                holder = str(r["current_holder"] or "").strip().upper()
-                if holder in holder_date_ranges and pd.notna(r["first_sales_date"]):
-                    holder_date_ranges[holder] = (
-                        pd.to_datetime(r["first_sales_date"]).strftime("%d-%b-%y"),
-                        pd.to_datetime(r["last_sales_date"]).strftime("%d-%b-%y"),
-                    )
-        except Exception:
-            pass
-
-        def _cash_date_caption(holder):
-            rng = holder_date_ranges.get(holder)
-            if not rng:
-                return "No cash currently held"
-            return f"From sales date {rng[0]} till {rng[1]}"
-
-        # Actual cash payments made from central cash. Daily cart Staff Advance and
-        # Food & Tea are excluded because Daily Entry cash is already net of them.
-        try:
-            cash_payments_df = db_conn.query("""
-                SELECT
-                    p.id, p.payment_date, p.amount_paid, p.payment_mode, p.ref_no,
-                    p.paid_to, p.paid_by, p.notes, e.category, e.sub_category,
-                    e.description AS expense_desc
-                FROM public.expense_payments p
-                JOIN public.expenses e ON e.id = p.expense_id
-                WHERE LOWER(TRIM(COALESCE(p.payment_mode, ''))) = 'cash'
-                  AND (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(e.location, 'HOSUR'))) = :active_loc)
-                  AND NOT (
-                        LOWER(TRIM(COALESCE(e.category, ''))) = 'labour charges'
-                    AND LOWER(TRIM(COALESCE(e.sub_category, ''))) IN ('food & tea', 'staff advance')
-                  )
-                ORDER BY p.payment_date DESC, p.id DESC;
-            """, params={"active_loc": get_active_location_filter()}, ttl="60s")
-        except Exception as e:
-            cash_payments_df = pd.DataFrame()
-            st.warning(f"Could not load cash payment summary: {e}")
-
-        total_cash_payments = (
-            float(cash_payments_df["amount_paid"].fillna(0).astype(float).sum())
-            if not cash_payments_df.empty else 0.0
-        )
-
-        c1, c2, c3, c4 = st.columns(4)
-        with c1:
-            st.metric("🟠 With Ops Coordinator", f"₹{custody_totals['OPS_COORDINATOR']:,.2f}",
-                      help="Cash from daily sales not yet collected by Yogesh.")
-            st.caption(_cash_date_caption("OPS_COORDINATOR"))
-        with c2:
-            st.metric("🔵 With Yogesh", f"₹{custody_totals['YOGESH']:,.2f}",
-                      help="Cash collected from the Ops Coordinator but not yet handed to Srilalitha.")
-            st.caption(_cash_date_caption("YOGESH"))
-        with c3:
-            st.metric("🟢 Handed to Srilalitha", f"₹{custody_totals['SRILALITHA']:,.2f}",
-                      help="Cumulative cash already completed through the handover workflow.")
-        with c4:
-            st.metric("💵 Cash Payments", f"₹{total_cash_payments:,.2f}",
-                      help="All recorded Cash-mode payments excluding cart Food & Tea and Staff Advance payments, because those are paid before Daily Entry cash is determined.")
-
-        st.info(
-            f"**Cash Yogesh needs to collect now: ₹{custody_totals['OPS_COORDINATOR']:,.2f}** "
-            f"across {custody_counts['OPS_COORDINATOR']} daily cart cash record(s)."
-        )
-
-        # Clear the collection-date multiselect only on the next rerun, before
-        # Streamlit instantiates the widget again.
-        if st.session_state.pop("_clear_cash_collect_dates", False):
-            st.session_state.pop("cash_collect_dates", None)
-
-        tab_position, tab_collect, tab_handover, tab_history, tab_cash_payments, tab_ops_spends = st.tabs([
-            "📍 Current Position",
-            "🧾 Collect from Ops Coordinator",
-            "🤝 Handover to Srilalitha",
-            "📚 Handover History",
-            "💵 All Cash Payments",
-            "🧾 Ops Cash Spends",
-        ])
-
-        # ------------------------------------------------------------------
-        # TAB 1: CURRENT POSITION
-        # ------------------------------------------------------------------
-        with tab_position:
-            st.markdown("#### Date-wise Cash Position")
-
-            custody_by_date_df = db_conn.query("""
-                SELECT entry_date, current_holder, COUNT(*) AS cart_count, COALESCE(SUM(cash_amount), 0) AS total_cash
-                FROM public.v_cash_custody_status
-                WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(city, 'HOSUR'))) = :active_loc)
-                GROUP BY entry_date, current_holder
-                ORDER BY entry_date DESC, current_holder;
-            """, params={"active_loc": get_active_location_filter()}, ttl="60s")
-
-            if custody_by_date_df.empty:
-                st.info("No cash sales records are available yet.")
-            else:
-                position_display = custody_by_date_df.copy()
-                position_display["Date"] = pd.to_datetime(position_display["entry_date"]).dt.strftime("%d-%b-%y")
-                holder_labels = {
-                    "OPS_COORDINATOR": "Ops Coordinator",
-                    "YOGESH": "Yogesh",
-                    "SRILALITHA": "Srilalitha",
+        # Normalize spend entries
+        all_spends = []
+        spend_list = []              # OPS_COORDINATOR, batch_id IS NULL, remaining > 0.001
+        admin1_remaining_spends = [] # ADMIN_1, remaining > 0.001
+        if not spends_df.empty:
+            for _, r in spends_df.iterrows():
+                amt = float(r.get("amount") or 0.0)
+                alloc = float(r.get("allocated_amount") or 0.0)
+                rem = max(0.0, round(amt - alloc, 2))
+                sb = str(r.get("spent_by") or "OPS_COORDINATOR").strip().upper()
+                bid = None if pd.isna(r.get("batch_id")) else int(r.get("batch_id"))
+                item = {
+                    "id": int(r["id"]),
+                    "spend_date": r.get("spend_date"),
+                    "amount": amt,
+                    "allocated_amount": alloc,
+                    "remaining_amount": rem,
+                    "notes": str(r.get("notes") or "").strip(),
+                    "batch_id": bid,
+                    "location": str(r.get("location") or write_loc),
+                    "spent_by": sb,
                 }
-                position_display["Current Holder"] = position_display["current_holder"].map(holder_labels).fillna(position_display["current_holder"])
-                position_display["Cart Records"] = position_display["cart_count"].astype(int)
-                position_display["Cash (₹)"] = position_display["total_cash"].astype(float).map(lambda x: f"₹{x:,.2f}")
+                all_spends.append(item)
+                if sb == "OPS_COORDINATOR" and bid is None and rem > 0.001:
+                    spend_list.append(item)
+                elif sb == "ADMIN_1" and rem > 0.001:
+                    admin1_remaining_spends.append(item)
 
-                st.dataframe(
-                    position_display[["Date", "Current Holder", "Cart Records", "Cash (₹)"]],
-                    hide_index=True,
-                    use_container_width=True,
-                )
+        # Fetch batch metadata for all batch_ids present in custody_rows_df
+        batch_ids_in_custody = []
+        if not custody_rows_df.empty:
+            batch_ids_in_custody = sorted({
+                int(x) for x in custody_rows_df["batch_id"].dropna().tolist()
+            })
 
-            with st.expander("View cart-level cash details"):
-                custody_detail_df = db_conn.query("""
+        batch_meta_map = {}
+        if batch_ids_in_custody:
+            try:
+                placeholders = ", ".join(str(int(b)) for b in batch_ids_in_custody)
+                b_meta_df = db_conn.query(
+                    f"""
                     SELECT
-                        entry_date,
-                        cart_name,
-                        cash_amount,
-                        current_holder,
-                        batch_id,
+                        id,
                         collection_date,
-                        handed_over_date
-                    FROM public.v_cash_custody_status
-                    WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(city, 'HOSUR'))) = :active_loc)
-                    ORDER BY entry_date DESC, cart_name;
-                """, params={"active_loc": get_active_location_filter()}, ttl="60s")
+                        expected_amount,
+                        actual_collected_amount,
+                        status,
+                        handed_over_date,
+                        handed_over_to,
+                        notes,
+                        COALESCE(cash_spent_amount, 0) AS cash_spent_amount,
+                        cash_spent_notes,
+                        COALESCE(admin1_spent_amount, 0) AS admin1_spent_amount,
+                        admin1_spent_notes
+                    FROM public.cash_handover_batches
+                    WHERE id IN ({placeholders});
+                    """,
+                    ttl="60s",
+                )
+                for _, br in b_meta_df.iterrows():
+                    batch_meta_map[int(br["id"])] = br.to_dict()
+            except Exception as e:
+                st.warning(f"Could not load batch metadata: {e}")
 
-                if custody_detail_df.empty:
-                    st.info("No cart-level cash records found.")
-                else:
-                    detail_display = custody_detail_df.copy()
-                    detail_display["Date"] = pd.to_datetime(detail_display["entry_date"]).dt.strftime("%d-%b-%y")
-                    detail_display["Cash (₹)"] = detail_display["cash_amount"].astype(float).map(lambda x: f"₹{x:,.2f}")
-                    detail_display["Current Holder"] = detail_display["current_holder"].map({
-                        "OPS_COORDINATOR": "Ops Coordinator",
-                        "YOGESH": "Yogesh",
-                        "SRILALITHA": "Srilalitha",
-                    }).fillna(detail_display["current_holder"])
-                    detail_display["Batch"] = detail_display["batch_id"].apply(
-                        lambda x: f"#{int(x)}" if pd.notna(x) else "—"
+        # Attach sorted salesDates to recent confirmed batches
+        recent_batches = []
+        if not recent_batches_df.empty:
+            rec_ids = [int(x) for x in recent_batches_df["id"].tolist()]
+            rec_dates_map = {}
+            if rec_ids:
+                try:
+                    rec_ph = ", ".join(str(int(b)) for b in rec_ids)
+                    rec_items_df = db_conn.query(
+                        f"""
+                        SELECT batch_id, entry_date, cash_amount
+                        FROM public.v_cash_custody_status
+                        WHERE batch_id IN ({rec_ph});
+                        """,
+                        ttl="60s",
                     )
-                    st.dataframe(
-                        detail_display[["Date", "cart_name", "Cash (₹)", "Current Holder", "Batch"]]
-                        .rename(columns={"cart_name": "Cart"}),
-                        hide_index=True,
-                        use_container_width=True,
-                    )
+                    for _, rr in rec_items_df.iterrows():
+                        rbid = int(rr["batch_id"])
+                        dt_s = pd.to_datetime(rr["entry_date"]).strftime("%Y-%m-%d")
+                        rec_dates_map.setdefault(rbid, set()).add(dt_s)
+                except Exception:
+                    pass
+            for _, rb in recent_batches_df.iterrows():
+                d = rb.to_dict()
+                d["salesDates"] = sorted(rec_dates_map.get(int(d["id"]), set()))
+                recent_batches.append(d)
 
         # ------------------------------------------------------------------
-        # TAB 2: YOGESH COLLECTS FROM OPS COORDINATOR
+        # 2. GROUPING & TWO-PASS SPEND APPORTIONMENT (Exact App.js Logic)
         # ------------------------------------------------------------------
-        with tab_collect:
-            st.markdown("#### Cash Available for Yogesh to Collect")
-            pass
+        grouped = {}
+        if not custody_rows_df.empty:
+            for _, row in custody_rows_df.iterrows():
+                bid = None if pd.isna(row.get("batch_id")) else int(row.get("batch_id"))
+                dt_iso = pd.to_datetime(row["entry_date"]).strftime("%Y-%m-%d")
+                gkey = f"batch:{bid}" if bid is not None else f"date:{dt_iso}"
+                holder = str(row.get("current_holder") or "OPS_COORDINATOR").strip().upper()
+                amt = float(row.get("cash_amount") or 0.0)
+                cart_nm = str(row.get("cart_name") or "").strip()
+                de_id = int(row["daily_entry_id"]) if pd.notna(row.get("daily_entry_id")) else None
 
-            outstanding_df = db_conn.query("""
-                SELECT daily_entry_id, entry_date, cart_name, cash_amount
-                FROM public.v_cash_custody_status
-                WHERE current_holder = 'OPS_COORDINATOR'
-                  AND (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(city, 'HOSUR'))) = :active_loc)
-                ORDER BY entry_date ASC, cart_name ASC;
-            """, params={"active_loc": get_active_location_filter()}, ttl="60s")
+                if gkey not in grouped:
+                    bm = batch_meta_map.get(bid, {}) if bid is not None else {}
+                    grouped[gkey] = {
+                        "key": gkey,
+                        "batchId": bid,
+                        "salesDates": set(),
+                        "salesDate": dt_iso,
+                        "currentHolder": holder,
+                        "batchStatus": str(bm.get("status") or row.get("batch_status") or "").strip().upper(),
+                        "collectionDate": bm.get("collection_date") if bm else row.get("collection_date"),
+                        "cashCollected": 0.0,
+                        "expectedAmount": (
+                            float(bm["expected_amount"])
+                            if bm and pd.notna(bm.get("expected_amount"))
+                            else (float(row["expected_amount"]) if pd.notna(row.get("expected_amount")) else None)
+                        ),
+                        "actualCollectedAmount": (
+                            float(bm["actual_collected_amount"])
+                            if bm and pd.notna(bm.get("actual_collected_amount"))
+                            else (float(row["actual_collected_amount"]) if pd.notna(row.get("actual_collected_amount")) else None)
+                        ),
+                        "handedOverTo": str(bm.get("handed_over_to") or "").strip().upper() if bm else "",
+                        "handedOverDate": bm.get("handed_over_date") if bm else None,
+                        "cashSpent": float(bm.get("cash_spent_amount") or 0.0) if bm else 0.0,
+                        "cashSpentNotes": str(bm.get("cash_spent_notes") or "").strip() if bm else "",
+                        "admin1Spent": float(bm.get("admin1_spent_amount") or 0.0) if bm else 0.0,
+                        "admin1SpentNotes": str(bm.get("admin1_spent_notes") or "").strip() if bm else "",
+                        "batchNotes": str(bm.get("notes") or "").strip() if bm else "",
+                        "carts": [],
+                        "dailyEntryIds": [],
+                    }
+                g = grouped[gkey]
+                g["salesDates"].add(dt_iso)
+                g["cashCollected"] = round(g["cashCollected"] + amt, 2)
+                if cart_nm and cart_nm not in g["carts"]:
+                    g["carts"].append(cart_nm)
+                if de_id is not None:
+                    g["dailyEntryIds"].append(de_id)
 
-            if outstanding_df.empty:
-                st.success("There is currently no cash pending with the Ops Coordinator.")
+        all_groups = []
+        for g in grouped.values():
+            s_sorted = sorted(g["salesDates"])
+            g["salesDates"] = s_sorted
+            g["salesDate"] = s_sorted[0] if s_sorted else g["salesDate"]
+            g["cartCount"] = len(g["carts"])
+            base_exp = g["expectedAmount"] if g["expectedAmount"] is not None else g["cashCollected"]
+            g["netCash"] = max(0.0, round(base_exp - g["cashSpent"] - g["admin1Spent"], 2))
+            all_groups.append(g)
+
+        # Split into 3 buckets matching App.js
+        pending_ops_rows = sorted(
+            [g for g in all_groups if g["batchId"] is None and g["currentHolder"] == "OPS_COORDINATOR"],
+            key=lambda x: x["salesDate"],
+            reverse=True,
+        )
+        with_yogesh_all = [g for g in all_groups if g["batchId"] is not None and g["currentHolder"] == "YOGESH"]
+
+        # Apply 2-pass Ops spend apportionment to unbatched OPS_COORDINATOR rows
+        if pending_ops_rows and spend_list:
+            ops_alloc_map = _cc_apportion_spends_to_sales_dates(
+                pending_ops_rows,
+                spend_list,
+                date_getter=lambda r: r["salesDate"],
+                gross_getter=lambda r: r["cashCollected"],
+            )
+            for idx, r in enumerate(pending_ops_rows):
+                ap = ops_alloc_map.get(idx, {"spent": 0.0, "notes": []})
+                r["expectedAmount"] = r["cashCollected"]
+                r["cashSpent"] = ap["spent"]
+                r["netCash"] = max(0.0, round(r["cashCollected"] - ap["spent"], 2))
+                r["cashSpentNotes"] = " • ".join(ap["notes"])
+        else:
+            for r in pending_ops_rows:
+                r["expectedAmount"] = r["cashCollected"]
+                r["netCash"] = max(0.0, round(r["cashCollected"] - r["cashSpent"], 2))
+
+        # Apply 2-pass Admin 1 remaining spend apportionment to WITH_YOGESH batches
+        if with_yogesh_all and admin1_remaining_spends:
+            adm1_alloc_map = _cc_apportion_spends_to_sales_dates(
+                with_yogesh_all,
+                admin1_remaining_spends,
+                date_getter=lambda r: (r["salesDates"][-1] if r["salesDates"] else (r["salesDate"] or r["collectionDate"])),
+                gross_getter=lambda r: (
+                    r["actualCollectedAmount"]
+                    if r["actualCollectedAmount"] is not None
+                    else max(0.0, (r["expectedAmount"] if r["expectedAmount"] is not None else r["cashCollected"]) - r["cashSpent"] - r["admin1Spent"])
+                ),
+            )
+            for idx, r in enumerate(with_yogesh_all):
+                ap = adm1_alloc_map.get(idx, {"spent": 0.0, "notes": []})
+                extra_adm1 = ap["spent"]
+                if extra_adm1 > 0.001:
+                    r["admin1Spent"] = round(r["admin1Spent"] + extra_adm1, 2)
+                    if ap["notes"]:
+                        extra_note_str = " • ".join(ap["notes"])
+                        r["admin1SpentNotes"] = (
+                            f"{r['admin1SpentNotes']} • {extra_note_str}" if r["admin1SpentNotes"] else extra_note_str
+                        )
+                    base_after_ops = max(0.0, round((r["expectedAmount"] if r["expectedAmount"] is not None else r["cashCollected"]) - r["cashSpent"], 2))
+                    r["netCash"] = max(0.0, round(base_after_ops - r["admin1Spent"], 2))
+                    if r["actualCollectedAmount"] is not None:
+                        r["actualCollectedAmount"] = max(0.0, round(r["actualCollectedAmount"] - extra_adm1, 2))
+
+        # Stage 1 (Ops Marked -> Collect into Admin 1 / Yogesh)
+        marked_rows = sorted(
+            [g for g in with_yogesh_all if g["handedOverTo"] != "YOGESH_CONFIRMED"],
+            key=lambda x: (x["salesDate"], x["batchId"] or 0),
+            reverse=True,
+        )
+        # Stage 2 (With Admin 1 / Yogesh -> Handover to Admin 2 / Srilalitha)
+        with_yogesh_confirmed_rows = sorted(
+            [g for g in with_yogesh_all if g["handedOverTo"] == "YOGESH_CONFIRMED"],
+            key=lambda x: (x["salesDate"], x["batchId"] or 0),
+            reverse=True,
+        )
+
+        # Totals matching App.js
+        ops_gross = round(sum(r["cashCollected"] for r in pending_ops_rows), 2)
+        ops_spent = round(sum(s["remaining_amount"] for s in spend_list), 2)
+        ops_net = round(ops_gross - ops_spent, 2)
+
+        stage1_total_net = round(
+            sum(max(0.0, (r["expectedAmount"] if r["expectedAmount"] is not None else r["cashCollected"]) - r["cashSpent"]) for r in marked_rows),
+            2,
+        )
+        total_with_yogesh_confirmed = round(
+            sum((r["actualCollectedAmount"] if r["actualCollectedAmount"] is not None else r["netCash"]) for r in with_yogesh_confirmed_rows),
+            2,
+        )
+        avail_with_yogesh_total = round(
+            sum((r["actualCollectedAmount"] if r["actualCollectedAmount"] is not None else r["netCash"]) for r in with_yogesh_all),
+            2,
+        )
+
+        # Determine currently selected Stage 1 rows (from session_state checkboxes)
+        selected_stage1_rows = [
+            r for r in marked_rows if st.session_state.get(f"cc_s1_chk_{r['batchId']}", False)
+        ]
+
+        # ------------------------------------------------------------------
+        # 3. TOP HEADER BAR & MODAL TRIGGERS
+        # ------------------------------------------------------------------
+        loc_badge_txt = "All Locations" if active_loc == "ALL" else active_loc
+        hdr_c1, hdr_c2, hdr_c3, hdr_c4 = st.columns([2.4, 1.0, 1.45, 1.55], vertical_alignment="center")
+        with hdr_c1:
+            st.markdown(
+                f"""
+                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                    <span style="font-size:22px;font-weight:800;color:#1E2252;">💰 Cash Custody & Handover</span>
+                    <span class="cc-pill blue">{escape(loc_badge_txt)}</span>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        with hdr_c2:
+            if st.button("🔄 Refresh", key="cc_refresh_btn", use_container_width=True):
+                st.cache_data.clear()
+                st.rerun()
+        with hdr_c3:
+            if st.button(f"🧾 Cash Spends ({len(all_spends)})", key="cc_open_spends_modal", use_container_width=True):
+                _cc_show_spends_modal(all_spends, tagged_expense_map)
+        with hdr_c4:
+            if st.button(f"📚 Recent Confirmed ({len(recent_batches)})", key="cc_open_recent_modal", use_container_width=True):
+                _cc_show_recent_collections_modal(recent_batches)
+
+        # ------------------------------------------------------------------
+        # 4. SUMMARY CARDS ROW (Shared Ops Wallet / Selected Summary + Pipeline)
+        # ------------------------------------------------------------------
+        sum_left, sum_right = st.columns([1.0, 1.15], gap="medium")
+
+        with sum_left:
+            if selected_stage1_rows:
+                sel_gross = round(sum((r["expectedAmount"] if r["expectedAmount"] is not None else r["cashCollected"]) for r in selected_stage1_rows), 2)
+                sel_spent = round(sum(r["cashSpent"] for r in selected_stage1_rows), 2)
+                sel_net = max(0.0, round(sel_gross - sel_spent, 2))
+                st.markdown(
+                    f"""
+                    <div class="cc-card-selected">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <div class="cc-eyebrow" style="color:#1D4ED8;">SELECTED HANDOVER SUMMARY ({len(selected_stage1_rows)})</div>
+                            <span class="cc-pill blue">Stage 1 Selection</span>
+                        </div>
+                        <div class="cc-big-num" style="color:#1D4ED8;">{_cc_fmt_inr(sel_net)}</div>
+                        <div style="font-size:12px;color:#475569;margin-top:2px;">Net cash expected from selected Ops handover batch(es)</div>
+                        <div class="cc-kpi-row">
+                            <div class="cc-kpi-tile">
+                                <div class="cc-kpi-lbl">Selected Gross</div>
+                                <div class="cc-kpi-val">{_cc_fmt_inr(sel_gross)}</div>
+                            </div>
+                            <div class="cc-kpi-tile red">
+                                <div class="cc-kpi-lbl" style="color:#B91C1C;">Ops Spent</div>
+                                <div class="cc-kpi-val" style="color:#C43D17;">-{_cc_fmt_inr(sel_spent)}</div>
+                            </div>
+                            <div class="cc-kpi-tile blue">
+                                <div class="cc-kpi-lbl" style="color:#1D4ED8;">Net to Collect</div>
+                                <div class="cc-kpi-val" style="color:#1E40AF;">{_cc_fmt_inr(sel_net)}</div>
+                            </div>
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
             else:
-                outstanding_df = outstanding_df.copy()
-                outstanding_df["entry_date"] = pd.to_datetime(outstanding_df["entry_date"]).dt.date
-
-                daily_totals = (
-                    outstanding_df.groupby("entry_date", as_index=False)
-                    .agg(total_cash=("cash_amount", "sum"), cart_count=("daily_entry_id", "count"))
-                    .sort_values("entry_date")
+                st.markdown(
+                    f"""
+                    <div class="cc-card">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <div class="cc-eyebrow">SHARED OPS CASH WALLET</div>
+                            <span class="cc-pill amber">{len(pending_ops_rows)} unhanded day(s)</span>
+                        </div>
+                        <div class="cc-big-num">{_cc_fmt_inr(ops_net)}</div>
+                        <div style="font-size:12px;color:#64748B;margin-top:2px;">Net cash currently held by Ops Coordinator</div>
+                        <div class="cc-kpi-row">
+                            <div class="cc-kpi-tile">
+                                <div class="cc-kpi-lbl">Gross Sales Cash</div>
+                                <div class="cc-kpi-val">{_cc_fmt_inr(ops_gross)}</div>
+                            </div>
+                            <div class="cc-kpi-tile red">
+                                <div class="cc-kpi-lbl" style="color:#B91C1C;">Less Ops Spent</div>
+                                <div class="cc-kpi-val" style="color:#C43D17;">-{_cc_fmt_inr(ops_spent)}</div>
+                            </div>
+                            <div class="cc-kpi-tile green">
+                                <div class="cc-kpi-lbl" style="color:#047857;">Net With Ops</div>
+                                <div class="cc-kpi-val" style="color:#059669;">{_cc_fmt_inr(ops_net)}</div>
+                            </div>
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
                 )
 
-                date_options = daily_totals["entry_date"].tolist()
-                date_total_map = {
-                    r["entry_date"]: float(r["total_cash"] or 0)
-                    for _, r in daily_totals.iterrows()
-                }
+        with sum_right:
+            st.markdown(
+                f"""
+                <div class="cc-card">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <div class="cc-eyebrow">TWO-STAGE ADMIN CUSTODY PIPELINE</div>
+                        <span class="cc-pill green">Live Custody</span>
+                    </div>
+                    <div class="cc-big-num" style="color:#059669;">{_cc_fmt_inr(total_with_srilalitha)}</div>
+                    <div style="font-size:12px;color:#64748B;margin-top:2px;">Cumulative confirmed cash with Admin 2 (Srilalitha)</div>
+                    <div class="cc-kpi-row">
+                        <div class="cc-kpi-tile amber">
+                            <div class="cc-kpi-lbl" style="color:#B45309;">Stage 1 • Ops Marked</div>
+                            <div class="cc-kpi-val" style="color:#B45309;">{_cc_fmt_inr(stage1_total_net)}</div>
+                            <div class="cc-kpi-sub">{len(marked_rows)} batch(es) to collect</div>
+                        </div>
+                        <div class="cc-kpi-tile blue">
+                            <div class="cc-kpi-lbl" style="color:#1D4ED8;">Admin 1 • Yogesh</div>
+                            <div class="cc-kpi-val" style="color:#1E40AF;">{_cc_fmt_inr(total_with_yogesh_confirmed)}</div>
+                            <div class="cc-kpi-sub">{len(with_yogesh_confirmed_rows)} batch(es) in hand</div>
+                        </div>
+                        <div class="cc-kpi-tile green">
+                            <div class="cc-kpi-lbl" style="color:#047857;">Admin 2 • Srilalitha</div>
+                            <div class="cc-kpi-val" style="color:#059669;">{_cc_fmt_inr(total_with_srilalitha)}</div>
+                            <div class="cc-kpi-sub">Confirmed total</div>
+                        </div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
-                selected_dates = st.multiselect(
-                    "Select sales date(s) to collect",
-                    options=date_options,
-                    default=[],
-                    format_func=lambda d: f"{d.strftime('%d-%b-%y')}  —  ₹{date_total_map.get(d, 0):,.2f}",
-                    key="cash_collect_dates",
+        # ------------------------------------------------------------------
+        # 5. CASH STILL WITH OPS — SALES-DATE BREAKDOWN TABLE
+        # ------------------------------------------------------------------
+        st.markdown('<div class="cc-sec-hdr">📅 Cash Still With Ops — Sales-Date Breakdown</div>', unsafe_allow_html=True)
+        if pending_ops_rows:
+            rows_html = []
+            for r in pending_ops_rows:
+                carts_txt = ", ".join(r["carts"]) if r["carts"] else f"{r['cartCount']} cart(s)"
+                sp_color = "#C43D17" if r["cashSpent"] > 0.001 else "#64748B"
+                rows_html.append(
+                    f"<tr>"
+                    f"<td><strong>{_cc_fmt_date(r['salesDate'])}</strong></td>"
+                    f"<td>{escape(carts_txt)}</td>"
+                    f"<td class='num'>{_cc_fmt_inr(r['cashCollected'])}</td>"
+                    f"<td class='num' style='color:{sp_color};'>{_cc_fmt_inr(r['cashSpent'])}</td>"
+                    f"<td class='num' style='font-weight:700;color:#1E2252;'>{_cc_fmt_inr(r['netCash'])}</td>"
+                    f"</tr>"
                 )
+            tot_spent_table = round(sum(r["cashSpent"] for r in pending_ops_rows), 2)
+            tot_net_table = round(sum(r["netCash"] for r in pending_ops_rows), 2)
+            rows_html.append(
+                f"<tr class='cc-total-row'>"
+                f"<td colspan='2'>TOTAL ({len(pending_ops_rows)} date(s))</td>"
+                f"<td class='num'>{_cc_fmt_inr(ops_gross)}</td>"
+                f"<td class='num' style='color:#C43D17;'>{_cc_fmt_inr(tot_spent_table)}</td>"
+                f"<td class='num' style='color:#059669;'>{_cc_fmt_inr(tot_net_table)}</td>"
+                f"</tr>"
+            )
+            st.markdown(
+                f"""
+                <div class="cc-table-wrap">
+                    <table class="cc-table">
+                        <thead>
+                            <tr>
+                                <th>Sales Date</th>
+                                <th>Carts</th>
+                                <th class="num">Gross</th>
+                                <th class="num">Spent</th>
+                                <th class="num">Net</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {''.join(rows_html)}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="cc-banner-net">
+                    <div>
+                        <span style="font-size:12px;font-weight:800;color:#1E40AF;text-transform:uppercase;letter-spacing:0.04em;">Net Cash Still With Ops</span>
+                        <span style="font-size:12px;color:#475569;margin-left:8px;">(Gross {_cc_fmt_inr(ops_gross)} − Unhanded Ops Spends {_cc_fmt_inr(ops_spent)})</span>
+                    </div>
+                    <div style="font-size:18px;font-weight:800;color:#1E2252;">{_cc_fmt_inr(ops_net)}</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        else:
+            st.info("No unhanded sales cash is currently sitting with Ops Coordinator.")
 
-                if selected_dates:
-                    selected_cash_df = outstanding_df[outstanding_df["entry_date"].isin(selected_dates)].copy()
-                    selected_cash_df = selected_cash_df.sort_values(["entry_date", "cart_name"])
-                    expected_collection = float(selected_cash_df["cash_amount"].sum())
-
-                    preview_df = selected_cash_df.copy()
-                    preview_df["Date"] = preview_df["entry_date"].apply(lambda d: d.strftime("%d-%b-%y"))
-                    preview_df["Cash (₹)"] = preview_df["cash_amount"].astype(float).map(lambda x: f"₹{x:,.2f}")
-
-                    st.dataframe(
-                        preview_df[["Date", "cart_name", "Cash (₹)"]].rename(columns={"cart_name": "Cart"}),
-                        hide_index=True,
-                        use_container_width=True,
+        # ------------------------------------------------------------------
+        # 6. ADD ADMIN 1 (YOGESH) CASH SPENT
+        # ------------------------------------------------------------------
+        st.markdown('<div class="cc-sec-hdr">💸 Add Admin 1 (Yogesh) Cash Spent</div>', unsafe_allow_html=True)
+        with st.container(border=True):
+            st.caption(
+                f"Available cash with Admin 1 (Yogesh): **{_cc_fmt_inr(avail_with_yogesh_total)}** • "
+                f"Location: **{write_loc}** • Automatically allocates against Admin 1 batches."
+            )
+            with st.form("cc_admin1_spend_form", clear_on_submit=True):
+                sp_c1, sp_c2, sp_c3 = st.columns([1.1, 1.1, 2.2])
+                with sp_c1:
+                    adm1_dt = st.date_input("Expense Date", value=date.today(), key="cc_adm1_dt")
+                with sp_c2:
+                    adm1_amt = st.number_input("Cash Spent (₹)", min_value=0.0, step=10.0, format="%.2f", key="cc_adm1_amt")
+                with sp_c3:
+                    adm1_notes = st.text_input(
+                        "Reason / Details (Required)",
+                        placeholder="e.g., Fuel, dry ice, cart repair, packing supplies...",
+                        key="cc_adm1_notes",
                     )
-
-                    st.metric("Expected Cash to Collect", f"₹{expected_collection:,.2f}")
-
-                    cc1, cc2 = st.columns(2)
-                    with cc1:
-                        collection_date = st.date_input(
-                            "Collection Date",
-                            value=date.today(),
-                            format="DD-MM-YYYY",
-                            key="cash_collection_date",
-                        )
-                    with cc2:
-                        actual_collection = st.number_input(
-                            "Actual Cash Counted (₹)",
-                            min_value=0.0,
-                            value=float(expected_collection),
-                            step=1.0,
-                            format="%.2f",
-                            key=f"cash_actual_collection_{expected_collection:.2f}_{len(selected_cash_df)}",
-                        )
-
-                    latest_selected_sales_date = max(selected_dates)
-                    invalid_collection_date = collection_date < latest_selected_sales_date
-                    if invalid_collection_date:
+                submit_adm1 = st.form_submit_button("💾 Record Admin 1 Cash Spend", type="primary")
+                if submit_adm1:
+                    if float(adm1_amt or 0.0) <= 0.0:
+                        st.error("Please enter a valid cash spend amount greater than ₹0.")
+                    elif not str(adm1_notes or "").strip():
+                        st.error("Please enter reason / details for this cash spend.")
+                    elif float(adm1_amt) > avail_with_yogesh_total + 0.001:
                         st.error(
-                            f"Collection Date cannot be before the latest selected sales date "
-                            f"({latest_selected_sales_date.strftime('%d-%b-%y')})."
-                        )
-
-                    collection_difference = float(actual_collection) - expected_collection
-                    if abs(collection_difference) > 0.001:
-                        st.error(
-                            f"Difference: ₹{collection_difference:,.2f}. "
-                            "Resolve the difference before confirming so the custody balance remains accurate."
+                            f"Spend amount ({_cc_fmt_inr(adm1_amt)}) exceeds available cash with Admin 1 ({_cc_fmt_inr(avail_with_yogesh_total)})."
                         )
                     else:
-                        st.success("Actual cash matches the system amount.")
-
-                    collection_notes = st.text_input(
-                        "Notes (optional)",
-                        placeholder="e.g. Cash collected during Hosur visit",
-                        key="cash_collection_notes",
-                    )
-
-                    if st.button(
-                        f"✅ Confirm Collected by Yogesh — ₹{expected_collection:,.2f}",
-                        type="primary",
-                        use_container_width=True,
-                        disabled=(abs(collection_difference) > 0.001 or invalid_collection_date),
-                        key="confirm_cash_collection",
-                    ):
-                        selected_ids = [int(x) for x in selected_cash_df["daily_entry_id"].tolist()]
-
                         try:
-                            with db_conn.session as s:
-                                # Re-check and lock each selected daily entry. This protects
-                                # against double collection if another admin acts concurrently.
-                                locked_rows = []
-                                for daily_id in selected_ids:
-                                    row = s.execute(text("""
-                                        SELECT d.id, d.entry_date, d.cart_name, COALESCE(d.cash, 0) AS cash
-                                        FROM public.daily_cart_entries d
-                                        WHERE d.id = :daily_id
-                                          AND COALESCE(d.cash, 0) > 0
-                                          AND NOT EXISTS (
-                                              SELECT 1
-                                              FROM public.cash_handover_items chi
-                                              WHERE chi.daily_entry_id = d.id
-                                          )
-                                        FOR UPDATE;
-                                    """), {"daily_id": daily_id}).fetchone()
-
-                                    if row is None:
-                                        raise ValueError(
-                                            "One or more selected cash records were already collected or changed. "
-                                            "Refresh the page and try again."
-                                        )
-                                    locked_rows.append(row)
-
-                                locked_expected = sum(float(r.cash or 0) for r in locked_rows)
-
-                                if abs(locked_expected - expected_collection) > 0.001:
-                                    raise ValueError(
-                                        f"The expected cash changed from ₹{expected_collection:,.2f} "
-                                        f"to ₹{locked_expected:,.2f}. Refresh and review before collecting."
-                                    )
-
-                                if abs(float(actual_collection) - locked_expected) > 0.001:
-                                    raise ValueError(
-                                        "Actual cash must match the current system amount before custody can move to Yogesh."
-                                    )
-
-                                batch_id = s.execute(text("""
-                                    INSERT INTO public.cash_handover_batches
-                                        (collection_date, collected_by, expected_amount,
-                                         actual_collected_amount, status, notes, location)
-                                    VALUES
-                                        (:collection_date, 'Yogesh', :expected_amount,
-                                         :actual_amount, 'WITH_YOGESH', :notes, :loc)
-                                    RETURNING id;
-                                """), {
-                                    "collection_date": collection_date,
-                                    "expected_amount": locked_expected,
-                                    "actual_amount": float(actual_collection),
-                                    "notes": collection_notes.strip() or None,
-                                    "loc": CITY,
-                                }).scalar()
-
-                                for row in locked_rows:
-                                    s.execute(text("""
-                                        INSERT INTO public.cash_handover_items
-                                            (batch_id, daily_entry_id, cash_amount)
-                                        VALUES (:batch_id, :daily_entry_id, :cash_amount);
-                                    """), {
-                                        "batch_id": batch_id,
-                                        "daily_entry_id": int(row.id),
-                                        "cash_amount": float(row.cash or 0),
-                                    })
-
-                                s.commit()
-
-                            st.session_state["_clear_cash_collect_dates"] = True
-                            st.success(
-                                f"Batch #{batch_id} created. ₹{expected_collection:,.2f} is now recorded with Yogesh."
-                            )
-                            st.rerun()
-
-                        except Exception as e:
-                            st.error(f"Could not record cash collection: {e}")
-                else:
-                    st.info("Select at least one sales date to prepare Yogesh's collection batch.")
-
-        # ------------------------------------------------------------------
-        # TAB 3: YOGESH HANDS CASH TO SRILALITHA
-        # ------------------------------------------------------------------
-        with tab_handover:
-            st.markdown("#### Cash Currently with Yogesh")
-
-            yogesh_batches_df = db_conn.query("""
-                SELECT
-                    b.id,
-                    b.collection_date,
-                    b.expected_amount,
-                    b.actual_collected_amount,
-                    b.notes,
-                    COUNT(i.id) AS item_count,
-                    MIN(d.entry_date) AS first_sales_date,
-                    MAX(d.entry_date) AS last_sales_date
-                FROM public.cash_handover_batches b
-                JOIN public.cash_handover_items i ON i.batch_id = b.id
-                JOIN public.daily_cart_entries d ON d.id = i.daily_entry_id
-                WHERE b.status = 'WITH_YOGESH'
-                  AND (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(b.location, d.city, 'HOSUR'))) = :active_loc)
-                GROUP BY
-                    b.id, b.collection_date, b.expected_amount,
-                    b.actual_collected_amount, b.notes
-                ORDER BY b.collection_date DESC, b.id DESC;
-            """, params={"active_loc": get_active_location_filter()}, ttl="60s")
-
-            if yogesh_batches_df.empty:
-                st.info("No cash batches are currently with Yogesh.")
-            else:
-                batch_rows = {
-                    int(r["id"]): r
-                    for _, r in yogesh_batches_df.iterrows()
-                }
-                batch_options = list(batch_rows.keys())
-
-                selected_batch_id = st.selectbox(
-                    "Select Yogesh batch",
-                    options=batch_options,
-                    format_func=lambda bid: (
-                        f"Batch #{bid} — "
-                        f"₹{float(batch_rows[bid]['actual_collected_amount'] or batch_rows[bid]['expected_amount'] or 0):,.2f} — "
-                        f"Collected {pd.to_datetime(batch_rows[bid]['collection_date']).strftime('%d-%b-%y')}"
-                    ),
-                    key="cash_yogesh_batch",
-                )
-
-                selected_batch = batch_rows[int(selected_batch_id)]
-                batch_amount = float(
-                    selected_batch["actual_collected_amount"]
-                    if pd.notna(selected_batch["actual_collected_amount"])
-                    else selected_batch["expected_amount"] or 0
-                )
-
-                hb1, hb2, hb3 = st.columns(3)
-                hb1.metric("Batch", f"#{int(selected_batch_id)}")
-                hb2.metric("Cash with Yogesh", f"₹{batch_amount:,.2f}")
-                hb3.metric("Daily Cart Records", int(selected_batch["item_count"] or 0))
-
-                first_dt = pd.to_datetime(selected_batch["first_sales_date"]).strftime("%d-%b-%y")
-                last_dt = pd.to_datetime(selected_batch["last_sales_date"]).strftime("%d-%b-%y")
-                st.caption(
-                    f"Sales covered: {first_dt}" + (f" to {last_dt}" if first_dt != last_dt else "")
-                )
-
-                batch_items_df = db_conn.query("""
-                    SELECT d.entry_date, d.cart_name, i.cash_amount
-                    FROM public.cash_handover_items i
-                    JOIN public.daily_cart_entries d ON d.id = i.daily_entry_id
-                    WHERE i.batch_id = :batch_id
-                    ORDER BY d.entry_date, d.cart_name;
-                """, params={"batch_id": int(selected_batch_id)}, ttl="60s")
-
-                if not batch_items_df.empty:
-                    handover_preview = batch_items_df.copy()
-                    handover_preview["Date"] = pd.to_datetime(handover_preview["entry_date"]).dt.strftime("%d-%b-%y")
-                    handover_preview["Cash (₹)"] = handover_preview["cash_amount"].astype(float).map(lambda x: f"₹{x:,.2f}")
-                    st.dataframe(
-                        handover_preview[["Date", "cart_name", "Cash (₹)"]].rename(columns={"cart_name": "Cart"}),
-                        hide_index=True,
-                        use_container_width=True,
-                    )
-
-                handover_date = st.date_input(
-                    "Handover Date to Srilalitha",
-                    value=date.today(),
-                    format="DD-MM-YYYY",
-                    key=f"cash_handover_date_{selected_batch_id}",
-                )
-
-                batch_collection_date = pd.to_datetime(selected_batch["collection_date"]).date()
-                invalid_handover_date = handover_date < batch_collection_date
-                if invalid_handover_date:
-                    st.error(
-                        f"Handover Date cannot be before Yogesh's collection date "
-                        f"({batch_collection_date.strftime('%d-%b-%y')})."
-                    )
-
-                confirm_handover = st.checkbox(
-                    f"I confirm Yogesh handed ₹{batch_amount:,.2f} to Srilalitha.",
-                    key=f"cash_handover_confirm_{selected_batch_id}",
-                )
-
-                if st.button(
-                    f"✅ Confirm Handover to Srilalitha — ₹{batch_amount:,.2f}",
-                    type="primary",
-                    use_container_width=True,
-                    disabled=(not confirm_handover or invalid_handover_date),
-                    key=f"cash_handover_button_{selected_batch_id}",
-                ):
-                    try:
-                        with db_conn.session as s:
-                            updated = s.execute(text("""
-                                UPDATE public.cash_handover_batches
-                                SET status = 'HANDED_TO_SRILALITHA',
-                                    handed_over_date = :handover_date,
-                                    handed_over_to = 'Srilalitha'
-                                WHERE id = :batch_id
-                                  AND status = 'WITH_YOGESH'
-                                RETURNING id;
-                            """), {
-                                "handover_date": handover_date,
-                                "batch_id": int(selected_batch_id),
-                            }).fetchone()
-
-                            if updated is None:
-                                raise ValueError(
-                                    "This batch is no longer with Yogesh. Refresh and review its current status."
-                                )
-                            s.commit()
-
-                        st.success(
-                            f"Batch #{int(selected_batch_id)} completed. ₹{batch_amount:,.2f} is now recorded with Srilalitha."
-                        )
-                        st.rerun()
-
-                    except Exception as e:
-                        st.error(f"Could not complete handover: {e}")
-
-        # ------------------------------------------------------------------
-        # TAB 4: FULL HANDOVER HISTORY
-        # ------------------------------------------------------------------
-        with tab_history:
-            st.markdown("#### Cash Handover Batch History")
-
-            history_df = db_conn.query("""
-                SELECT
-                    b.id AS batch_id,
-                    b.collection_date,
-                    b.collected_by,
-                    b.expected_amount,
-                    b.actual_collected_amount,
-                    b.status,
-                    b.handed_over_date,
-                    b.handed_over_to,
-                    b.notes,
-                    COUNT(i.id) AS cart_records,
-                    MIN(d.entry_date) AS first_sales_date,
-                    MAX(d.entry_date) AS last_sales_date
-                FROM public.cash_handover_batches b
-                LEFT JOIN public.cash_handover_items i ON i.batch_id = b.id
-                LEFT JOIN public.daily_cart_entries d ON d.id = i.daily_entry_id
-                WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(b.location, d.city, 'HOSUR'))) = :active_loc)
-                GROUP BY
-                    b.id, b.collection_date, b.collected_by, b.expected_amount,
-                    b.actual_collected_amount, b.status, b.handed_over_date,
-                    b.handed_over_to, b.notes
-                ORDER BY b.collection_date DESC, b.id DESC;
-            """, params={"active_loc": get_active_location_filter()}, ttl="60s")
-
-            if history_df.empty:
-                st.info("No cash handover batches have been created yet.")
-            else:
-                hist = history_df.copy()
-                hist["Batch"] = hist["batch_id"].apply(lambda x: f"#{int(x)}")
-                hist["Collected"] = pd.to_datetime(hist["collection_date"]).dt.strftime("%d-%b-%y")
-                hist["Sales From"] = pd.to_datetime(hist["first_sales_date"], errors="coerce").dt.strftime("%d-%b-%y").fillna("—")
-                hist["Sales To"] = pd.to_datetime(hist["last_sales_date"], errors="coerce").dt.strftime("%d-%b-%y").fillna("—")
-                hist["Amount (₹)"] = hist.apply(
-                    lambda r: f"₹{float(r['actual_collected_amount'] if pd.notna(r['actual_collected_amount']) else r['expected_amount'] or 0):,.2f}",
-                    axis=1,
-                )
-                hist["Status"] = hist["status"].map({
-                    "WITH_YOGESH": "With Yogesh",
-                    "HANDED_TO_SRILALITHA": "Handed to Srilalitha",
-                }).fillna(hist["status"])
-                hist["Handed Over"] = pd.to_datetime(hist["handed_over_date"], errors="coerce").dt.strftime("%d-%b-%y").fillna("—")
-                hist["Records"] = hist["cart_records"].fillna(0).astype(int)
-                hist["Notes"] = hist["notes"].fillna("")
-
-                st.dataframe(
-                    hist[[
-                        "Batch", "Sales From", "Sales To", "Collected", "Amount (₹)",
-                        "Records", "Status", "Handed Over", "Notes"
-                    ]],
-                    hide_index=True,
-                    use_container_width=True,
-                )
-
-
-        # ------------------------------------------------------------------
-        # TAB 5: ALL CASH PAYMENTS
-        # ------------------------------------------------------------------
-        with tab_cash_payments:
-            st.markdown("#### All Cash Payments")
-            pass
-
-            if cash_payments_df.empty:
-                st.info("No qualifying cash payments have been recorded yet.")
-            else:
-                cash_display = cash_payments_df.copy()
-                cash_display["Payment Date"] = pd.to_datetime(cash_display["payment_date"]).dt.strftime("%d-%b-%y")
-                cash_display["Amount (₹)"] = cash_display["amount_paid"].astype(float).map(lambda x: f"₹{x:,.2f}")
-                cash_display["Category"] = cash_display["category"].fillna("")
-                cash_display["Sub Category"] = cash_display["sub_category"].fillna("")
-                cash_display["Description"] = cash_display["expense_desc"].fillna("")
-                cash_display["Paid To"] = cash_display["paid_to"].fillna("")
-                cash_display["Paid By"] = cash_display["paid_by"].fillna("")
-                cash_display["Reference"] = cash_display["ref_no"].fillna("")
-                cash_display["Notes"] = cash_display["notes"].fillna("")
-
-                st.metric("Total Cash Payments", f"₹{total_cash_payments:,.2f}")
-                st.dataframe(
-                    cash_display[[
-                        "Payment Date", "Amount (₹)", "Category", "Sub Category",
-                        "Description", "Paid To", "Paid By", "Reference", "Notes"
-                    ]],
-                    hide_index=True,
-                    use_container_width=True,
-                )
-
-        # ------------------------------------------------------------------
-        # TAB 6: OPS CASH SPENDS (VIEW & CONVERT TO EXPENSE + PAYMENT)
-        # ------------------------------------------------------------------
-        with tab_ops_spends:
-            st.markdown("#### Ops & Admin 1 Cash Spend Entries (`cash_ops_spend_entries`)")
-            pass
-
-            with st.expander("➕ Record New Admin 1 (Yogesh) Cash Spend", expanded=False):
-                with st.form("web_admin1_cash_spend_form"):
-                    a1_c1, a1_c2 = st.columns(2)
-                    with a1_c1:
-                        a1_spend_dt = st.date_input("Spend Date", value=date.today(), format="DD-MM-YYYY", key="web_a1_spend_dt")
-                    with a1_c2:
-                        a1_spend_amt = st.number_input("Cash Spent Amount (₹)", min_value=0.0, step=10.0, format="%.2f", key="web_a1_spend_amt")
-                    a1_spend_notes = st.text_input("Reason / Details *", placeholder="What was the cash spent for by Admin 1 (Yogesh)?", key="web_a1_spend_notes")
-                    submit_a1_spend = st.form_submit_button("💾 Save Admin 1 Cash Spend", type="primary", use_container_width=True)
-                if submit_a1_spend:
-                    if a1_spend_amt <= 0:
-                        st.error("Enter a cash-spent amount greater than zero.")
-                    elif not a1_spend_notes.strip():
-                        st.error("Reason / Details is required.")
-                    else:
-                        try:
+                            alloc_warn = None
                             with db_conn.session as s:
                                 s.execute(
-                                    text("INSERT INTO public.cash_ops_spend_entries (spend_date, amount, notes, location, spent_by) VALUES (:dt, :amt, :notes, :loc, 'ADMIN_1');"),
-                                    {"dt": a1_spend_dt, "amt": float(a1_spend_amt), "notes": a1_spend_notes.strip(), "loc": CITY}
+                                    text(
+                                        """
+                                        INSERT INTO public.cash_ops_spend_entries
+                                            (spend_date, amount, notes, location, spent_by)
+                                        VALUES
+                                            (:dt, :amt, :notes, :loc, 'ADMIN_1');
+                                        """
+                                    ),
+                                    {
+                                        "dt": adm1_dt,
+                                        "amt": float(adm1_amt),
+                                        "notes": str(adm1_notes).strip(),
+                                        "loc": write_loc,
+                                    },
                                 )
+                                try:
+                                    with s.begin_nested():
+                                        s.execute(
+                                            text("SELECT public.allocate_admin1_cash_spends(:loc);"),
+                                            {"loc": write_loc},
+                                        )
+                                except Exception as alloc_err:
+                                    alloc_warn = str(alloc_err)
                                 s.commit()
                             st.cache_data.clear()
-                            show_success_modal(f"Admin 1 (Yogesh) cash spend of ₹{a1_spend_amt:,.2f} recorded!")
-                        except Exception as e:
-                            st.error(f"Could not save Admin 1 cash spend: {e}")
-
-            ops_spends_custody_df = load_ops_cash_spend_entries_df()
-            if ops_spends_custody_df.empty:
-                st.info("No Ops or Admin 1 cash spend entries have been recorded yet.")
-            else:
-                tot_ops_spend_amt = float(ops_spends_custody_df["amount"].fillna(0).astype(float).sum())
-                pending_exp_cnt = int(ops_spends_custody_df["linked_expense_id"].isna().sum())
-                os_c1, os_c2, os_c3 = st.columns(3)
-                os_c1.metric("Total Cash Spends (Ops + Admin 1)", f"₹{tot_ops_spend_amt:,.2f}")
-                os_c2.metric("Total Entries", len(ops_spends_custody_df))
-                os_c3.metric("Pending Expense Conversion", pending_exp_cnt)
-
-                for _, s_row in ops_spends_custody_df.iterrows():
-                    sid = int(s_row["id"])
-                    s_dt = pd.to_datetime(s_row["spend_date"]).strftime("%d-%b-%Y")
-                    s_amt = float(s_row["amount"] or 0.0)
-                    s_alloc = float(s_row["allocated_amount"] or 0.0)
-                    s_rem = float(s_row["remaining_amount"] or 0.0)
-                    s_notes = str(s_row.get("notes") or "—")
-                    s_by = str(s_row.get("spent_by") or "OPS_COORDINATOR").strip().upper()
-                    s_badge = "🔵 Admin 1 (Yogesh)" if s_by == "ADMIN_1" else "🟠 Ops Coordinator"
-                    linked_eid = s_row.get("linked_expense_id")
-
-                    with st.container(border=True):
-                        r1, r2, r3 = st.columns([2.8, 1.4, 1.4])
-                        with r1:
-                            st.markdown(f"**Spend #{sid}** ({s_badge}) &nbsp;•&nbsp; 📅 **{s_dt}** &nbsp;•&nbsp; **₹{s_amt:,.2f}**")
-                            st.caption(f"Reason / Notes: {s_notes}")
-                        with r2:
-                            st.caption(f"Allocated to Handover: ₹{s_alloc:,.2f}")
-                            st.caption(f"Unhanded Remaining: ₹{s_rem:,.2f}")
-                        with r3:
-                            if pd.notna(linked_eid):
-                                st.success(f"✓ Expense #{int(linked_eid)} ({s_row.get('linked_expense_category') or ''})")
+                            if alloc_warn:
+                                st.warning(f"Spend saved, but auto-allocation RPC returned a warning: {alloc_warn}")
                             else:
-                                st.warning("Pending Expense Entry")
-                            if st.button(
-                                "🧾 Create Expense & Payment →" if pd.isna(linked_eid) else "＋ Create Another →",
-                                key=f"conv_ops_spend_{sid}",
-                                type="primary" if pd.isna(linked_eid) else "secondary",
-                                use_container_width=True,
-                            ):
-                                st.session_state["_pending_ops_spend_to_load"] = s_row.to_dict()
-                                st.session_state["_pending_page_nav"] = "Expenses"
-                                st.session_state["_pending_exp_nav_sec"] = "📋 Expenses (Bills / Invoices)"
-                                st.session_state["_pending_e_sub_mode_rad"] = "Add New Expense"
-                                st.rerun()
+                                st.success(f"Recorded Admin 1 cash spend of {_cc_fmt_inr(adm1_amt)}.")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Failed to record Admin 1 cash spend: {e}")
+
+        # ------------------------------------------------------------------
+        # 7. STAGE 1: COLLECT FROM OPS -> ADMIN 1 (YOGESH)
+        # ------------------------------------------------------------------
+        s1_hdr_l, s1_hdr_r1, s1_hdr_r2 = st.columns([3.2, 0.85, 0.85], vertical_alignment="center")
+        with s1_hdr_l:
+            st.markdown(
+                f'<div class="cc-sec-hdr">📥 Stage 1: Collect from Ops → Admin 1 (Yogesh) '
+                f'<span class="cc-pill amber">{len(marked_rows)} pending</span></div>',
+                unsafe_allow_html=True,
+            )
+
+        def _cc_set_all_s1(val, bids):
+            for _b in bids:
+                st.session_state[f"cc_s1_chk_{_b}"] = val
+
+        s1_bids = [r["batchId"] for r in marked_rows]
+        if marked_rows:
+            with s1_hdr_r1:
+                st.button("Select All", key="cc_s1_sel_all", on_click=_cc_set_all_s1, args=(True, s1_bids), use_container_width=True)
+            with s1_hdr_r2:
+                st.button("Clear", key="cc_s1_clr_all", on_click=_cc_set_all_s1, args=(False, s1_bids), use_container_width=True)
+
+        if not marked_rows:
+            st.info("No Ops-marked handovers are currently waiting for Admin 1 (Yogesh) collection.")
+        else:
+            s1_selected_payloads = []
+            for r in marked_rows:
+                bid = int(r["batchId"])
+                gross_val = float(r["expectedAmount"] if r["expectedAmount"] is not None else r["cashCollected"])
+                spent_val = float(r["cashSpent"] or 0.0)
+                exp_net = max(0.0, round(gross_val - spent_val, 2))
+                s_dates = r["salesDates"]
+                dates_str = (
+                    _cc_fmt_date(s_dates[0])
+                    if len(s_dates) == 1
+                    else f"{_cc_fmt_date(s_dates[0])} → {_cc_fmt_date(s_dates[-1])} ({len(s_dates)} days)"
+                )
+                carts_str = ", ".join(r["carts"]) if r["carts"] else f"{r['cartCount']} cart(s)"
+
+                with st.container(border=True):
+                    top_l, top_r = st.columns([3.2, 1.0], vertical_alignment="center")
+                    with top_l:
+                        is_sel = st.checkbox(
+                            f"Batch #{bid}  •  Sales: {dates_str}  •  {carts_str}",
+                            key=f"cc_s1_chk_{bid}",
+                        )
+                    with top_r:
+                        st.markdown(
+                            "<div style='text-align:right;'><span class='cc-pill amber'>Ops Marked</span></div>",
+                            unsafe_allow_html=True,
+                        )
+
+                    st.markdown(
+                        f"""
+                        <div class="cc-kpi-row" style="margin-top:4px;margin-bottom:8px;">
+                            <div class="cc-kpi-tile">
+                                <div class="cc-kpi-lbl">Gross Sales Cash</div>
+                                <div class="cc-kpi-val">{_cc_fmt_inr(gross_val)}</div>
+                            </div>
+                            <div class="cc-kpi-tile red">
+                                <div class="cc-kpi-lbl" style="color:#B91C1C;">Ops Spent Deducted</div>
+                                <div class="cc-kpi-val" style="color:#C43D17;">-{_cc_fmt_inr(spent_val)}</div>
+                            </div>
+                            <div class="cc-kpi-tile blue">
+                                <div class="cc-kpi-lbl" style="color:#1D4ED8;">Expected Net</div>
+                                <div class="cc-kpi-val" style="color:#1E2252;">{_cc_fmt_inr(exp_net)}</div>
+                            </div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+
+                    notes_parts = []
+                    if r["cashSpentNotes"]:
+                        notes_parts.append(f"<b>Ops Spend Breakdown:</b> {escape(r['cashSpentNotes'])}")
+                    if r["batchNotes"]:
+                        notes_parts.append(f"<b>Ops Handover Notes:</b> {escape(r['batchNotes'])}")
+                    if notes_parts:
+                        st.markdown(f"<div class='cc-note-box'>{'<br>'.join(notes_parts)}</div>", unsafe_allow_html=True)
+
+                    in_c1, in_c2 = st.columns([1.15, 2.2])
+                    with in_c1:
+                        actual_val = st.number_input(
+                            "Actual Cash Received (₹)",
+                            min_value=0.0,
+                            value=float(exp_net),
+                            step=10.0,
+                            format="%.2f",
+                            key=f"cc_s1_act_{bid}",
+                        )
+                    diff = round(float(actual_val) - exp_net, 2)
+                    diff_needed = abs(diff) > 0.001
+                    with in_c2:
+                        note_lbl = "Collection Notes (Required — cash difference detected)" if diff_needed else "Collection Notes (Optional)"
+                        coll_note = st.text_input(
+                            note_lbl,
+                            placeholder="Explain shortage/excess or add collection note...",
+                            key=f"cc_s1_note_{bid}",
+                        )
+
+                    if abs(diff) <= 0.001:
+                        st.markdown("<span class='cc-pill green'>✓ Exact Match</span>", unsafe_allow_html=True)
+                    elif diff < 0:
+                        st.markdown(f"<span class='cc-pill red'>⚠ Short by {_cc_fmt_inr(abs(diff))} — note required</span>", unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"<span class='cc-pill blue'>＋ Excess by {_cc_fmt_inr(diff)} — note required</span>", unsafe_allow_html=True)
+
+                    if is_sel:
+                        s1_selected_payloads.append({
+                            "batch_id": bid,
+                            "expected_net": exp_net,
+                            "actual_collected_amount": round(float(actual_val), 2),
+                            "notes": str(coll_note or "").strip(),
+                            "diff_needed": diff_needed,
+                        })
+
+            s1_sel_tot = round(sum(p["actual_collected_amount"] for p in s1_selected_payloads), 2)
+            if st.button(
+                f"✓ Confirm Collected by Admin 1 (Yogesh) — {len(s1_selected_payloads)} batch(es) • {_cc_fmt_inr(s1_sel_tot)}",
+                key="cc_s1_confirm_btn",
+                type="primary",
+                disabled=(len(s1_selected_payloads) == 0),
+                use_container_width=True,
+            ):
+                missing_note_bids = [p["batch_id"] for p in s1_selected_payloads if p["diff_needed"] and not p["notes"]]
+                if missing_note_bids:
+                    st.error(
+                        f"Please enter collection notes for Batch #{', #'.join(str(x) for x in missing_note_bids)} because the actual cash differs from the expected net."
+                    )
+                else:
+                    confirmations = [
+                        {
+                            "batch_id": int(p["batch_id"]),
+                            "actual_collected_amount": float(p["actual_collected_amount"]),
+                            "notes": p["notes"] or None,
+                        }
+                        for p in s1_selected_payloads
+                    ]
+                    try:
+                        with db_conn.session as s:
+                            s.execute(
+                                text("SELECT public.confirm_ops_cash_dates(CAST(:payload AS jsonb));"),
+                                {"payload": json.dumps(confirmations)},
+                            )
+                            s.commit()
+                        for p in s1_selected_payloads:
+                            st.session_state.pop(f"cc_s1_chk_{p['batch_id']}", None)
+                            st.session_state.pop(f"cc_s1_act_{p['batch_id']}", None)
+                            st.session_state.pop(f"cc_s1_note_{p['batch_id']}", None)
+                        st.cache_data.clear()
+                        st.success(f"Confirmed collection of {len(confirmations)} batch(es) ({_cc_fmt_inr(s1_sel_tot)}) into Admin 1 (Yogesh) custody.")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Could not confirm Stage 1 collection: {e}")
+
+        # ------------------------------------------------------------------
+        # 8. STAGE 2: ADMIN 1 (YOGESH) -> HANDOVER TO ADMIN 2 (SRILALITHA)
+        # ------------------------------------------------------------------
+        s2_hdr_l, s2_hdr_r1, s2_hdr_r2 = st.columns([3.2, 0.85, 0.85], vertical_alignment="center")
+        with s2_hdr_l:
+            st.markdown(
+                f'<div class="cc-sec-hdr">🤝 Stage 2: Admin 1 (Yogesh) → Handover to Admin 2 (Srilalitha) '
+                f'<span class="cc-pill blue">{len(with_yogesh_confirmed_rows)} ready</span></div>',
+                unsafe_allow_html=True,
+            )
+
+        def _cc_set_all_s2(val, bids):
+            for _b in bids:
+                st.session_state[f"cc_s2_chk_{_b}"] = val
+
+        s2_bids = [r["batchId"] for r in with_yogesh_confirmed_rows]
+        if with_yogesh_confirmed_rows:
+            with s2_hdr_r1:
+                st.button("Select All", key="cc_s2_sel_all", on_click=_cc_set_all_s2, args=(True, s2_bids), use_container_width=True)
+            with s2_hdr_r2:
+                st.button("Clear", key="cc_s2_clr_all", on_click=_cc_set_all_s2, args=(False, s2_bids), use_container_width=True)
+
+        if not with_yogesh_confirmed_rows:
+            st.info("No Admin 1 (Yogesh) confirmed batches are waiting for handover to Admin 2 (Srilalitha).")
+        else:
+            s2_selected_rows = []
+            for r in with_yogesh_confirmed_rows:
+                bid = int(r["batchId"])
+                gross_val = float(r["expectedAmount"] if r["expectedAmount"] is not None else r["cashCollected"])
+                ops_sp = float(r["cashSpent"] or 0.0)
+                adm1_sp = float(r["admin1Spent"] or 0.0)
+                net_handover = float(r["actualCollectedAmount"] if r["actualCollectedAmount"] is not None else r["netCash"])
+                s_dates = r["salesDates"]
+                dates_str = (
+                    _cc_fmt_date(s_dates[0])
+                    if len(s_dates) == 1
+                    else f"{_cc_fmt_date(s_dates[0])} → {_cc_fmt_date(s_dates[-1])} ({len(s_dates)} days)"
+                )
+                carts_str = ", ".join(r["carts"]) if r["carts"] else f"{r['cartCount']} cart(s)"
+
+                with st.container(border=True):
+                    top_l, top_r = st.columns([3.2, 1.0], vertical_alignment="center")
+                    with top_l:
+                        is_s2_sel = st.checkbox(
+                            f"Batch #{bid}  •  Sales: {dates_str}  •  {carts_str}",
+                            key=f"cc_s2_chk_{bid}",
+                        )
+                    with top_r:
+                        st.markdown(
+                            "<div style='text-align:right;'><span class='cc-pill blue'>With Yogesh</span></div>",
+                            unsafe_allow_html=True,
+                        )
+
+                    st.markdown(
+                        f"""
+                        <div class="cc-kpi-row" style="margin-top:4px;">
+                            <div class="cc-kpi-tile">
+                                <div class="cc-kpi-lbl">Gross / After Ops Spent</div>
+                                <div class="cc-kpi-val">{_cc_fmt_inr(max(0.0, gross_val - ops_sp))}</div>
+                                <div class="cc-kpi-sub">Gross {_cc_fmt_inr(gross_val)} • Ops Spent {_cc_fmt_inr(ops_sp)}</div>
+                            </div>
+                            <div class="cc-kpi-tile red">
+                                <div class="cc-kpi-lbl" style="color:#B91C1C;">Admin 1 Spent</div>
+                                <div class="cc-kpi-val" style="color:#C43D17;">-{_cc_fmt_inr(adm1_sp)}</div>
+                                <div class="cc-kpi-sub">Deducted from Admin 1</div>
+                            </div>
+                            <div class="cc-kpi-tile green">
+                                <div class="cc-kpi-lbl" style="color:#047857;">Net to Handover</div>
+                                <div class="cc-kpi-val" style="color:#059669;">{_cc_fmt_inr(net_handover)}</div>
+                                <div class="cc-kpi-sub">To Admin 2 (Srilalitha)</div>
+                            </div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+
+                    notes_parts = []
+                    if r["admin1SpentNotes"]:
+                        notes_parts.append(f"<b>Admin 1 Spent:</b> {escape(r['admin1SpentNotes'])}")
+                    if r["cashSpentNotes"]:
+                        notes_parts.append(f"<b>Ops Spent:</b> {escape(r['cashSpentNotes'])}")
+                    if r["batchNotes"]:
+                        notes_parts.append(f"<b>Batch Notes:</b> {escape(r['batchNotes'])}")
+                    if notes_parts:
+                        st.markdown(f"<div class='cc-note-box'>{'<br>'.join(notes_parts)}</div>", unsafe_allow_html=True)
+
+                    if is_s2_sel:
+                        s2_selected_rows.append(r)
+
+            s2_handover_note = st.text_input(
+                "Handover Notes to Admin 2 (Srilalitha) (Optional)",
+                placeholder="e.g., Handed over cash in person / deposited...",
+                key="cc_s2_handover_note",
+            )
+            s2_sel_tot = round(
+                sum((r["actualCollectedAmount"] if r["actualCollectedAmount"] is not None else r["netCash"]) for r in s2_selected_rows),
+                2,
+            )
+            if st.button(
+                f"🤝 Confirm Handover to Admin 2 (Srilalitha) — {len(s2_selected_rows)} batch(es) • {_cc_fmt_inr(s2_sel_tot)}",
+                key="cc_s2_confirm_btn",
+                type="primary",
+                disabled=(len(s2_selected_rows) == 0),
+                use_container_width=True,
+            ):
+                sel_batch_ids = [int(r["batchId"]) for r in s2_selected_rows]
+                note_clean = str(s2_handover_note or "").strip() or None
+                try:
+                    with db_conn.session as s:
+                        rpc_ok = False
+                        try:
+                            with s.begin_nested():
+                                s.execute(
+                                    text("SELECT public.handover_yogesh_batches_to_srilalitha(:batch_ids, :notes);"),
+                                    {"batch_ids": sel_batch_ids, "notes": note_clean},
+                                )
+                                rpc_ok = True
+                        except Exception:
+                            rpc_ok = False
+
+                        if not rpc_ok:
+                            # Exact App.js fallback UPDATE
+                            for r in s2_selected_rows:
+                                bid = int(r["batchId"])
+                                prev_n = str(r.get("batchNotes") or "").strip()
+                                if note_clean:
+                                    combined_n = f"{prev_n} | Handover to Srilalitha: {note_clean}" if prev_n else f"Handover to Srilalitha: {note_clean}"
+                                else:
+                                    combined_n = prev_n or None
+                                s.execute(
+                                    text(
+                                        """
+                                        UPDATE public.cash_handover_batches
+                                        SET status = 'HANDED_TO_SRILALITHA',
+                                            handed_over_date = CURRENT_DATE,
+                                            handed_over_to = 'Srilalitha',
+                                            notes = :combined
+                                        WHERE id = :bid
+                                          AND status = 'WITH_YOGESH';
+                                        """
+                                    ),
+                                    {"combined": combined_n, "bid": bid},
+                                )
+                        s.commit()
+
+                    for bid in sel_batch_ids:
+                        st.session_state.pop(f"cc_s2_chk_{bid}", None)
+                    st.session_state.pop("cc_s2_handover_note", None)
+                    st.cache_data.clear()
+                    st.success(f"Confirmed handover of {len(sel_batch_ids)} batch(es) ({_cc_fmt_inr(s2_sel_tot)}) to Admin 2 (Srilalitha).")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Could not complete Stage 2 handover: {e}")
+
+        # ------------------------------------------------------------------
+        # 9. SALES CASH STILL WITH OPS — PER-DATE SUMMARY CARDS
+        # ------------------------------------------------------------------
+        if pending_ops_rows:
+            st.markdown(
+                f'<div class="cc-sec-hdr">🧾 Sales Cash Still With Ops (Per-Date Details) '
+                f'<span class="cc-pill amber">{len(pending_ops_rows)} date(s)</span></div>',
+                unsafe_allow_html=True,
+            )
+            for r in pending_ops_rows:
+                carts_str = ", ".join(r["carts"]) if r["carts"] else f"{r['cartCount']} cart(s)"
+                note_block = (
+                    f"<div class='cc-note-box'><b>Apportioned Ops Spends:</b> {escape(r['cashSpentNotes'])}</div>"
+                    if r["cashSpentNotes"]
+                    else ""
+                )
+                st.markdown(
+                    f"""
+                    <div class="cc-card" style="padding:12px 16px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                            <div>
+                                <span style="font-size:15px;font-weight:800;color:#1E2252;">{_cc_fmt_date(r['salesDate'])}</span>
+                                <span style="font-size:12px;color:#64748B;margin-left:8px;">{escape(carts_str)}</span>
+                            </div>
+                            <span class="cc-pill amber">With Ops Coordinator</span>
+                        </div>
+                        <div class="cc-kpi-row" style="margin-top:8px;">
+                            <div class="cc-kpi-tile">
+                                <div class="cc-kpi-lbl">Gross Cash</div>
+                                <div class="cc-kpi-val">{_cc_fmt_inr(r['cashCollected'])}</div>
+                            </div>
+                            <div class="cc-kpi-tile red">
+                                <div class="cc-kpi-lbl" style="color:#B91C1C;">Apportioned Spent</div>
+                                <div class="cc-kpi-val" style="color:#C43D17;">-{_cc_fmt_inr(r['cashSpent'])}</div>
+                            </div>
+                            <div class="cc-kpi-tile green">
+                                <div class="cc-kpi-lbl" style="color:#047857;">Net Cash</div>
+                                <div class="cc-kpi-val" style="color:#059669;">{_cc_fmt_inr(r['netCash'])}</div>
+                            </div>
+                        </div>
+                        {note_block}
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
 
     elif page == "Purchase Orders" and user_role == "admin":
         st.markdown('<span class="kulfi-entry-80-scope"></span>', unsafe_allow_html=True)
