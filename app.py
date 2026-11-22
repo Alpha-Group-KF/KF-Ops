@@ -9515,6 +9515,60 @@ with _page_body_container:
                 border-top: 1.5px solid #CBD5E1;
                 border-bottom: none;
             }
+            .cc-table th.cc-col-gross {
+                background: #EFF6FF;
+                color: #1E40AF;
+                border-left: 1px solid #DBEAFE;
+            }
+            .cc-table td.cc-col-gross {
+                background: #F8FBFF;
+                color: #1E3A8A;
+                font-weight: 600;
+                border-left: 1px solid #E2E8F0;
+            }
+            .cc-table tr.cc-total-row td.cc-col-gross {
+                background: #EFF6FF;
+                color: #1E3A8A;
+            }
+            .cc-table th.cc-col-spent {
+                background: #FEF2F2;
+                color: #B91C1C;
+                border-left: 1px solid #FECACA;
+            }
+            .cc-table td.cc-col-spent {
+                background: #FFF7F7;
+                color: #C43D17;
+                font-weight: 700;
+                border-left: 1px solid #FEE2E2;
+            }
+            .cc-table td.cc-col-spent-zero {
+                background: #FFFBFB;
+                color: #94A3B8;
+                font-weight: 600;
+                border-left: 1px solid #FEE2E2;
+            }
+            .cc-table tr.cc-total-row td.cc-col-spent {
+                background: #FEE2E2;
+                color: #B91C1C;
+            }
+            .cc-table th.cc-col-net {
+                background: #D1FAE5;
+                color: #065F46;
+                border-left: 2px solid #6EE7B7;
+            }
+            .cc-table td.cc-col-net {
+                background: #ECFDF5;
+                color: #047857;
+                font-weight: 800;
+                border-left: 2px solid #6EE7B7;
+            }
+            .cc-table tr.cc-total-row td.cc-col-net {
+                background: #D1FAE5;
+                color: #065F46;
+                font-size: 14px;
+                font-weight: 900;
+                border-left: 2px solid #34D399;
+            }
             .cc-banner-net {
                 background: linear-gradient(90deg, #EFF6FF 0%, #F8FAFC 100%);
                 border: 1px solid #BFDBFE;
@@ -10063,24 +10117,27 @@ with _page_body_container:
             rows_html = []
             for r in pending_ops_rows:
                 carts_txt = ", ".join(r["carts"]) if r["carts"] else f"{r['cartCount']} cart(s)"
-                sp_color = "#C43D17" if r["cashSpent"] > 0.001 else "#64748B"
+                has_spend = float(r["cashSpent"] or 0.0) > 0.001
+                sp_cls = "num cc-col-spent" if has_spend else "num cc-col-spent-zero"
+                sp_disp = _cc_fmt_inr(r["cashSpent"]) if has_spend else "-"
                 rows_html.append(
                     f"<tr>"
                     f"<td><strong>{_cc_fmt_date(r['salesDate'])}</strong></td>"
                     f"<td>{escape(carts_txt)}</td>"
-                    f"<td class='num'>{_cc_fmt_inr(r['cashCollected'])}</td>"
-                    f"<td class='num' style='color:{sp_color};'>{_cc_fmt_inr(r['cashSpent'])}</td>"
-                    f"<td class='num' style='font-weight:700;color:#1E2252;'>{_cc_fmt_inr(r['netCash'])}</td>"
+                    f"<td class='num cc-col-gross'>{_cc_fmt_inr(r['cashCollected'])}</td>"
+                    f"<td class='{sp_cls}'>{sp_disp}</td>"
+                    f"<td class='num cc-col-net'>{_cc_fmt_inr(r['netCash'])}</td>"
                     f"</tr>"
                 )
             tot_spent_table = round(sum(r["cashSpent"] for r in pending_ops_rows), 2)
             tot_net_table = round(sum(r["netCash"] for r in pending_ops_rows), 2)
+            tot_spent_disp = _cc_fmt_inr(tot_spent_table) if tot_spent_table > 0.001 else "-"
             rows_html.append(
                 f"<tr class='cc-total-row'>"
                 f"<td colspan='2'>TOTAL ({len(pending_ops_rows)} date(s))</td>"
-                f"<td class='num'>{_cc_fmt_inr(ops_gross)}</td>"
-                f"<td class='num' style='color:#C43D17;'>{_cc_fmt_inr(tot_spent_table)}</td>"
-                f"<td class='num' style='color:#059669;'>{_cc_fmt_inr(tot_net_table)}</td>"
+                f"<td class='num cc-col-gross'>{_cc_fmt_inr(ops_gross)}</td>"
+                f"<td class='num cc-col-spent'>{tot_spent_disp}</td>"
+                f"<td class='num cc-col-net'>{_cc_fmt_inr(tot_net_table)}</td>"
                 f"</tr>"
             )
             st.markdown(
@@ -10091,9 +10148,9 @@ with _page_body_container:
                             <tr>
                                 <th>Sales Date</th>
                                 <th>Carts</th>
-                                <th class="num">Gross</th>
-                                <th class="num">Spent</th>
-                                <th class="num">Net</th>
+                                <th class="num cc-col-gross">Gross</th>
+                                <th class="num cc-col-spent">Spent</th>
+                                <th class="num cc-col-net">Net</th>
                             </tr>
                         </thead>
                         <tbody>
