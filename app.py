@@ -483,20 +483,28 @@ div[class*="st-key-de_top_mode_"] {
 }
 div[class*="st-key-de_top_mode_"] > div > button,
 div[class*="st-key-de_top_mode_"] button {
-    min-height: 28px !important;
-    height: 28px !important;
-    padding: 2px 5px !important;
+    min-height: 31px !important;
+    height: 31px !important;
+    padding: 2px 8px !important;
     border-radius: 7px !important;
-    font-size: 10.5px !important;
+    font-size: 11.5px !important;
     font-weight: 800 !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
 }
 div[class*="st-key-de_top_mode_"] button * {
-    font-size: 10.5px !important;
+    font-size: 11.5px !important;
     font-weight: 800 !important;
     white-space: nowrap !important;
+}
+div[class*="st-key-de_top_mode_staging_sales"] button[kind="secondary"] {
+    background: linear-gradient(180deg, #FFFBEB 0%, #FEF3C7 100%) !important;
+    border-color: #F59E0B !important;
+}
+div[class*="st-key-de_top_mode_staging_restock"] button[kind="secondary"] {
+    background: linear-gradient(180deg, #ECFDF5 0%, #D1FAE5 100%) !important;
+    border-color: #10B981 !important;
 }
 div[class*="st-key-deposito_dock_btn_"] {
     margin-bottom: 0 !important;
@@ -2480,8 +2488,6 @@ def show_opening_mismatch_modal(message):
     if st.button("OK", type="primary", use_container_width=True, key="opening_mismatch_ok_btn"):
         st.rerun()
 
-@st.dialog("⚠️ Confirm Delete Expense")
-
 @st.dialog("⚠️ Confirm Delete Stock Audit")
 def confirm_delete_stock_audit_modal(audit_row):
     aid = int(audit_row["audit_id"])
@@ -2517,6 +2523,8 @@ def confirm_delete_stock_audit_modal(audit_row):
         if st.button("Cancel", use_container_width=True, key=f"cancel_del_audit_{aid}"):
             st.rerun()
 
+
+@st.dialog("⚠️ Confirm Delete Expense")
 def confirm_delete_expense_modal(exp_row):
     exp_id = int(exp_row["id"])
     exp_dt = pd.to_datetime(exp_row["expense_date"]).strftime("%d-%b-%Y")
@@ -6676,62 +6684,60 @@ with _page_body_container:
             except Exception:
                 pass
 
-        _de_mode_buttons = [
+        def _handle_de_mode_click(_de_code):
+            if _de_code == "sales":
+                st.session_state.pop("_last_mismatch_modal_target", None)
+            elif _de_code == "extra":
+                for _cart in CARTS:
+                    for _code in FLAVOR_CODES:
+                        st.session_state[f"extra_stock_{_cart}_{_code}"] = "0"
+            elif _de_code == "remove_cart_stock":
+                for _cart in CARTS:
+                    for _code in FLAVOR_CODES:
+                        st.session_state[f"rm_cart_stock_{_cart}_{_code}"] = "0"
+            elif _de_code == "freezer_sales":
+                st.session_state["fzr_sale_form_nonce"] = int(st.session_state.get("fzr_sale_form_nonce", 0)) + 1
+                st.session_state["fzr_entry_sub_mode"] = "new"
+                st.session_state.pop("_editing_freezer_txn_id", None)
+            st.session_state["daily_entry_mode"] = _de_code
+            st.rerun()
+
+        _de_row1_buttons = [
             ("sales", "🧾 Sales Entry"),
             ("restock", "📦 Restock"),
             ("extra", "➕ Extra Stock"),
             ("remove_cart_stock", "🔄 Remove Stock"),
-            ("view_stock", "📋 View Stock"),
             ("freezer_sales", "❄️ Freezer Sale"),
-            ("live_flavour_view", "📱 Live POS"),
         ]
-        _de_top_cols = st.columns(len(_de_mode_buttons), gap="small")
-        for _de_i, (_de_code, _de_lbl) in enumerate(_de_mode_buttons):
-            with _de_top_cols[_de_i]:
-                if st.button(
-                    _de_lbl,
-                    key=f"de_top_mode_{_de_code}",
-                    type="primary" if entry_mode == _de_code else "secondary",
-                    use_container_width=True,
-                ):
-                    if _de_code == "sales":
-                        st.session_state.pop("_last_mismatch_modal_target", None)
-                    elif _de_code == "extra":
-                        for _cart in CARTS:
-                            for _code in FLAVOR_CODES:
-                                st.session_state[f"extra_stock_{_cart}_{_code}"] = "0"
-                    elif _de_code == "remove_cart_stock":
-                        for _cart in CARTS:
-                            for _code in FLAVOR_CODES:
-                                st.session_state[f"rm_cart_stock_{_cart}_{_code}"] = "0"
-                    elif _de_code == "freezer_sales":
-                        st.session_state["fzr_sale_form_nonce"] = int(st.session_state.get("fzr_sale_form_nonce", 0)) + 1
-                        st.session_state["fzr_entry_sub_mode"] = "new"
-                        st.session_state.pop("_editing_freezer_txn_id", None)
-                    st.session_state["daily_entry_mode"] = _de_code
-                    st.rerun()
+        _de_row2_buttons = [
+            ("view_stock", "📋 View Stock"),
+            ("live_flavour_view", "📱 Live POS"),
+            ("staging_sales", f"✅ Approve Sales ({pending_sales_cnt})" if pending_sales_cnt > 0 else "✅ Approve Sales"),
+            ("staging_restock", f"📥 Approve Restock ({pending_restock_cnt})" if pending_restock_cnt > 0 else "📥 Approve Restock"),
+        ]
 
-        _stg_btn_c1, _stg_btn_c2, _stg_spacer = st.columns([1.3, 1.3, 2.4], gap="small")
-        with _stg_btn_c1:
-            _ss_lbl = f"⏳ Staging Sales ({pending_sales_cnt})" if pending_sales_cnt > 0 else "⏳ Staging Sales"
-            if st.button(
-                _ss_lbl,
-                key="de_top_mode_staging_sales",
-                type="primary" if entry_mode == "staging_sales" else "secondary",
-                use_container_width=True,
-            ):
-                st.session_state["daily_entry_mode"] = "staging_sales"
-                st.rerun()
-        with _stg_btn_c2:
-            _sr_lbl = f"📥 Staging Restock ({pending_restock_cnt})" if pending_restock_cnt > 0 else "📥 Staging Restock"
-            if st.button(
-                _sr_lbl,
-                key="de_top_mode_staging_restock",
-                type="primary" if entry_mode == "staging_restock" else "secondary",
-                use_container_width=True,
-            ):
-                st.session_state["daily_entry_mode"] = "staging_restock"
-                st.rerun()
+        with st.container(border=True):
+            _de_r1_cols = st.columns(len(_de_row1_buttons), gap="small")
+            for _de_i, (_de_code, _de_lbl) in enumerate(_de_row1_buttons):
+                with _de_r1_cols[_de_i]:
+                    if st.button(
+                        _de_lbl,
+                        key=f"de_top_mode_{_de_code}",
+                        type="primary" if entry_mode == _de_code else "secondary",
+                        use_container_width=True,
+                    ):
+                        _handle_de_mode_click(_de_code)
+
+            _de_r2_cols = st.columns(len(_de_row2_buttons), gap="small")
+            for _de_i, (_de_code, _de_lbl) in enumerate(_de_row2_buttons):
+                with _de_r2_cols[_de_i]:
+                    if st.button(
+                        _de_lbl,
+                        key=f"de_top_mode_{_de_code}",
+                        type="primary" if entry_mode == _de_code else "secondary",
+                        use_container_width=True,
+                    ):
+                        _handle_de_mode_click(_de_code)
 
         if True:
             # --------------------------------------------------------------
@@ -7056,7 +7062,7 @@ with _page_body_container:
             # --------------------------------------------------------------
             elif entry_mode == "staging_sales":
                 st.markdown(
-                    "<div class='header-box-sales'><span>⏳ Staging Sales Entries — Cart Staff Submissions</span><span><b>Admin Approval</b></span></div>",
+                    "<div class='header-box-sales'><span>✅ Approve Sales — Cart Staff Submissions</span><span><b>Admin Approval</b></span></div>",
                     unsafe_allow_html=True,
                 )
                 sf1, sf2, sf3 = st.columns([1.2, 1.2, 2.0], gap="small", vertical_alignment="bottom")
@@ -7151,7 +7157,7 @@ with _page_body_container:
                                     "+ Added": ad,
                                     "Closing": cl,
                                     "Sold": sd,
-                                    "Sale (₹)": sd * int(f_info["price"]),
+                                    "Sale (₹)": sd * int(f_info["mrp"]),
                                 })
                             st.dataframe(pd.DataFrame(grid_rows), hide_index=True, use_container_width=True)
 
@@ -7245,7 +7251,7 @@ with _page_body_container:
             # --------------------------------------------------------------
             elif entry_mode == "staging_restock":
                 st.markdown(
-                    "<div class='header-box-restock'><span>📥 Staging Restock Entries — Cart Staff Submissions</span><span><b>Admin Approval</b></span></div>",
+                    "<div class='header-box-restock'><span>📥 Approve Restock — Cart Staff Submissions</span><span><b>Admin Approval</b></span></div>",
                     unsafe_allow_html=True,
                 )
                 rf1, rf2, rf3 = st.columns([1.2, 1.2, 2.0], gap="small", vertical_alignment="bottom")
@@ -11557,9 +11563,11 @@ with _page_body_container:
         elif freezer_tab_choice == "Stock Audit (Physical Count)":
             pass
 
+            if st.session_state.get("stock_audit_mode") == "View Last Audit":
+                st.session_state["stock_audit_mode"] = "View / Edit Past Audit"
             audit_mode = st.radio(
                 "Audit Action",
-                ["Log New Audit", "View Last Audit", "View / Edit Past Audit"],
+                ["Log New Audit", "View / Edit Past Audit"],
                 horizontal=True,
                 key="stock_audit_mode"
             )
@@ -11876,40 +11884,6 @@ with _page_body_container:
                         show_success_modal(f"Stock Audit #{aid} logged successfully!")
                     except Exception as e:
                         st.error(f"Could not save audit to database: {e}")
-
-            elif audit_mode == "View Last Audit":
-                try:
-                    last_audit_df = db_conn.query(
-                        """
-                        SELECT *
-                        FROM stock_audits_wide
-                        WHERE (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(location, 'HOSUR'))) = :active_loc)
-                        ORDER BY audit_date DESC, audit_id DESC
-                        LIMIT 1;
-                        """,
-                        params={"active_loc": get_active_location_filter()},
-                        ttl="60s"
-                    )
-                except Exception as e:
-                    last_audit_df = pd.DataFrame()
-                    st.error(f"Could not load the last stock audit: {e}")
-
-                if last_audit_df.empty:
-                    st.info("No stock audits found.")
-                else:
-                    last_audit = last_audit_df.iloc[0]
-                    last_date = pd.to_datetime(last_audit["audit_date"]).strftime("%d-%b-%Y")
-                    last_time = (
-                        str(last_audit.get("audit_time"))[:5]
-                        if pd.notna(last_audit.get("audit_time")) and str(last_audit.get("audit_time")).strip()
-                        else "—"
-                    )
-                    mc1, mc2, mc3, mc4 = st.columns(4)
-                    mc1.metric("Audit #", f"#{int(last_audit['audit_id'])}")
-                    mc2.metric("Audit Date", last_date)
-                    mc3.metric("Audit Time", last_time)
-                    mc4.metric("Audited By", str(last_audit.get("audited_by") or "—"))
-                    display_saved_audit_snapshot(last_audit, key_prefix="last_audit")
 
             else:
                 try:
