@@ -2481,6 +2481,42 @@ def show_opening_mismatch_modal(message):
         st.rerun()
 
 @st.dialog("⚠️ Confirm Delete Expense")
+
+@st.dialog("⚠️ Confirm Delete Stock Audit")
+def confirm_delete_stock_audit_modal(audit_row):
+    aid = int(audit_row["audit_id"])
+    adt = pd.to_datetime(audit_row["audit_date"]).strftime("%d-%b-%Y")
+    atm = str(audit_row.get("audit_time") or "")[:5] or "—"
+    loc = str(audit_row.get("location") or CITY)
+    by = str(audit_row.get("audited_by") or "—")
+    phys_tot = sum(int(_num(audit_row.get(FLAVOR_MAP[c]["audit_col"], 0))) for c in FLAVOR_CODES)
+    var_tot = int(_num(audit_row.get("total_variance_units", 0)))
+
+    st.warning(f"Are you sure you want to permanently delete **Stock Audit #{aid}**?")
+    st.markdown(
+        f'''
+        <div style="background:#FFF8F6;border:1px solid #FECACA;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:13px;">
+            <div><b>Date:</b> {adt} &nbsp;|&nbsp; <b>Time:</b> {atm} &nbsp;|&nbsp; <b>Location:</b> {loc}</div>
+            <div><b>Audited By:</b> {by} &nbsp;|&nbsp; <b>Physical Count:</b> {phys_tot} units &nbsp;|&nbsp; <b>Variance:</b> {var_tot:+d} units</div>
+        </div>
+        ''',
+        unsafe_allow_html=True,
+    )
+    c1, c2 = st.columns(2)
+    with c1:
+        if st.button("🗑️ Yes, Delete Audit", type="primary", use_container_width=True, key=f"confirm_del_audit_{aid}"):
+            try:
+                with db_conn.session as s:
+                    s.execute(text("DELETE FROM stock_audits_wide WHERE audit_id = :aid;"), {"aid": aid})
+                    s.commit()
+                st.cache_data.clear()
+                st.rerun()
+            except Exception as e:
+                st.error(f"Could not delete stock audit: {e}")
+    with c2:
+        if st.button("Cancel", use_container_width=True, key=f"cancel_del_audit_{aid}"):
+            st.rerun()
+
 def confirm_delete_expense_modal(exp_row):
     exp_id = int(exp_row["id"])
     exp_dt = pd.to_datetime(exp_row["expense_date"]).strftime("%d-%b-%Y")
@@ -6604,7 +6640,7 @@ with _page_body_container:
     elif page == "Daily Entry":
         st.markdown('<span class="kulfi-entry-80-scope"></span>', unsafe_allow_html=True)
         # Split Entry flow: default directly to Sales Entry with all 7 mode buttons in one compact top row.
-        valid_entry_modes = ("sales", "restock", "extra", "remove_cart_stock", "view_stock", "freezer_sales", "live_flavour_view")
+        valid_entry_modes = ("sales", "restock", "extra", "remove_cart_stock", "view_stock", "freezer_sales", "live_flavour_view", "staging_sales", "staging_restock")
         if st.session_state.get("daily_entry_mode") not in valid_entry_modes:
             st.session_state["daily_entry_mode"] = "sales"
         if "entry_cart_shared" not in st.session_state or st.session_state["entry_cart_shared"] not in CARTS:
@@ -6616,6 +6652,29 @@ with _page_body_container:
 
         def _entry_date_display(value):
             return value.strftime("%d-%b-%Y")
+
+        pending_sales_cnt = 0
+        pending_restock_cnt = 0
+        if db_conn is not None:
+            try:
+                _stg_cnt_df = db_conn.query(
+                    """
+                    SELECT entry_type, COUNT(*) AS cnt
+                    FROM cart_entry_staging
+                    WHERE status = 'Pending'
+                      AND (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(city, 'HOSUR'))) = :active_loc)
+                    GROUP BY entry_type;
+                    """,
+                    params={"active_loc": get_active_location_filter()},
+                    ttl="15s",
+                )
+                for _, _sr in _stg_cnt_df.iterrows():
+                    if str(_sr["entry_type"]).upper() == "SALES":
+                        pending_sales_cnt = int(_sr["cnt"] or 0)
+                    elif str(_sr["entry_type"]).upper() == "RESTOCK":
+                        pending_restock_cnt = int(_sr["cnt"] or 0)
+            except Exception:
+                pass
 
         _de_mode_buttons = [
             ("sales", "🧾 Sales Entry"),
@@ -6651,6 +6710,28 @@ with _page_body_container:
                         st.session_state.pop("_editing_freezer_txn_id", None)
                     st.session_state["daily_entry_mode"] = _de_code
                     st.rerun()
+
+        _stg_btn_c1, _stg_btn_c2, _stg_spacer = st.columns([1.3, 1.3, 2.4], gap="small")
+        with _stg_btn_c1:
+            _ss_lbl = f"⏳ Staging Sales ({pending_sales_cnt})" if pending_sales_cnt > 0 else "⏳ Staging Sales"
+            if st.button(
+                _ss_lbl,
+                key="de_top_mode_staging_sales",
+                type="primary" if entry_mode == "staging_sales" else "secondary",
+                use_container_width=True,
+            ):
+                st.session_state["daily_entry_mode"] = "staging_sales"
+                st.rerun()
+        with _stg_btn_c2:
+            _sr_lbl = f"📥 Staging Restock ({pending_restock_cnt})" if pending_restock_cnt > 0 else "📥 Staging Restock"
+            if st.button(
+                _sr_lbl,
+                key="de_top_mode_staging_restock",
+                type="primary" if entry_mode == "staging_restock" else "secondary",
+                use_container_width=True,
+            ):
+                st.session_state["daily_entry_mode"] = "staging_restock"
+                st.rerun()
 
         if True:
             # --------------------------------------------------------------
@@ -6970,6 +7051,339 @@ with _page_body_container:
             # --------------------------------------------------------------
             # SALES ENTRY (FREEZER) — Compact 80% Single-Page Layout
             # --------------------------------------------------------------
+            # --------------------------------------------------------------
+            # ADMIN STAGING REVIEW: SALES ENTRIES
+            # --------------------------------------------------------------
+            elif entry_mode == "staging_sales":
+                st.markdown(
+                    "<div class='header-box-sales'><span>⏳ Staging Sales Entries — Cart Staff Submissions</span><span><b>Admin Approval</b></span></div>",
+                    unsafe_allow_html=True,
+                )
+                sf1, sf2, sf3 = st.columns([1.2, 1.2, 2.0], gap="small", vertical_alignment="bottom")
+                with sf1:
+                    stg_sales_status = st.selectbox(
+                        "Status Filter",
+                        ["Pending", "Final", "All"],
+                        index=0,
+                        key="stg_sales_status_filter",
+                    )
+                with sf2:
+                    if st.button("🔄 Refresh Staging", key="stg_sales_refresh_btn", use_container_width=True):
+                        st.cache_data.clear()
+                        st.rerun()
+
+                try:
+                    stg_sales_df = db_conn.query(
+                        """
+                        SELECT *
+                        FROM cart_entry_staging
+                        WHERE entry_type = 'SALES'
+                          AND (:st = 'All' OR status = :st)
+                          AND (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(city, 'HOSUR'))) = :active_loc)
+                        ORDER BY
+                            CASE WHEN status = 'Pending' THEN 0 ELSE 1 END,
+                            entry_date DESC,
+                            submitted_at DESC;
+                        """,
+                        params={"st": stg_sales_status, "active_loc": get_active_location_filter()},
+                        ttl="10s",
+                    )
+                except Exception as e:
+                    stg_sales_df = pd.DataFrame()
+                    st.error(f"Could not load staging sales entries (ensure SQL migration is applied): {e}")
+
+                if stg_sales_df.empty:
+                    st.info(f"No {stg_sales_status.lower() if stg_sales_status != 'All' else ''} staging sales entries found.")
+                else:
+                    for _, srow in stg_sales_df.iterrows():
+                        sid = int(srow["id"])
+                        s_date = pd.to_datetime(srow["entry_date"]).date()
+                        s_cart = str(srow["cart_name"])
+                        s_staff = str(srow.get("staff_name") or "")
+                        s_status = str(srow.get("status") or "Pending")
+                        is_final = s_status == "Final"
+                        s_sub_by = str(srow.get("submitted_by") or "Cart Staff")
+                        s_sub_at = pd.to_datetime(srow["submitted_at"]).strftime("%d-%b %H:%M") if pd.notna(srow.get("submitted_at")) else "—"
+                        s_app_by = str(srow.get("approved_by") or "Admin")
+                        s_app_at = pd.to_datetime(srow["approved_at"]).strftime("%d-%b %H:%M") if pd.notna(srow.get("approved_at")) else "—"
+
+                        raw_items = srow.get("flavor_items") or {}
+                        if isinstance(raw_items, str):
+                            try:
+                                raw_items = json.loads(raw_items)
+                            except Exception:
+                                raw_items = {}
+
+                        badge_html = (
+                            "<span style='background:#DCFCE7;color:#166534;border:1px solid #86EFAC;padding:2px 9px;border-radius:999px;font-weight:800;font-size:12px;'>🔒 Final</span>"
+                            if is_final
+                            else "<span style='background:#FEF3C7;color:#92400E;border:1px solid #FCD34D;padding:2px 9px;border-radius:999px;font-weight:800;font-size:12px;'>⏳ Pending</span>"
+                        )
+
+                        with st.container(border=True):
+                            st.markdown(
+                                f"<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;'>"
+                                f"<div><b style='font-size:15px;color:#4A2418;'>{s_cart}</b> &nbsp;|&nbsp; <span style='color:#6B5138;font-weight:700;'>{_entry_date_display(s_date)}</span> &nbsp;|&nbsp; Staff: <b>{s_staff or '—'}</b></div>"
+                                f"<div>{badge_html}</div>"
+                                f"</div>"
+                                f"<div style='font-size:11.5px;color:#78716C;margin-bottom:8px;'>Submitted by <b>{s_sub_by}</b> at {s_sub_at}"
+                                + (f" &nbsp;•&nbsp; Approved by <b>{s_app_by}</b> at {s_app_at}" if is_final else "")
+                                + "</div>",
+                                unsafe_allow_html=True,
+                            )
+
+                            grid_rows = []
+                            open_map, add_map, close_map, sold_map = {}, {}, {}, {}
+                            for code in FLAVOR_CODES:
+                                f_info = FLAVOR_MAP[code]
+                                it = raw_items.get(code, {}) if isinstance(raw_items, dict) else {}
+                                op = int(_num(it.get("opening", 0)))
+                                ad = int(_num(it.get("added", 0)))
+                                cl = int(_num(it.get("closing", op + ad)))
+                                sd = max(0, op + ad - cl)
+                                open_map[code] = op
+                                add_map[code] = ad
+                                close_map[code] = cl
+                                sold_map[code] = sd
+                                grid_rows.append({
+                                    "Flavour": f_info["name"],
+                                    "Opening": op,
+                                    "+ Added": ad,
+                                    "Closing": cl,
+                                    "Sold": sd,
+                                    "Sale (₹)": sd * int(f_info["price"]),
+                                })
+                            st.dataframe(pd.DataFrame(grid_rows), hide_index=True, use_container_width=True)
+
+                            tot_calc_col = sum(r["Sale (₹)"] for r in grid_rows)
+                            ph_amt = float(_num(srow.get("phonepe", 0)))
+                            adv_amt = float(_num(srow.get("staff_advance", 0)))
+                            food_amt = float(_num(srow.get("food_tea_cash", 0)))
+                            leak_exp_amt = float(_num(srow.get("cash_leakage_explained", 0)))
+                            leak_unexp_amt = float(_num(srow.get("cash_leakage_unexplained", 0)))
+                            leak_tot = float(_num(srow.get("cash_leakage", leak_exp_amt + leak_unexp_amt)))
+                            cash_amt = max(0.0, tot_calc_col - ph_amt - adv_amt - food_amt - leak_tot)
+                            rem_str = str(srow.get("remarks") or "")
+
+                            mc1, mc2, mc3, mc4, mc5 = st.columns(5)
+                            mc1.metric("Total Sale", f"₹{tot_calc_col:,.0f}")
+                            mc2.metric("PhonePe", f"₹{ph_amt:,.0f}")
+                            mc3.metric("Cash", f"₹{cash_amt:,.0f}")
+                            mc4.metric("Advance", f"₹{adv_amt:,.0f}")
+                            mc5.metric("Leakage", f"₹{leak_tot:,.0f}")
+
+                            if not is_final:
+                                st.caption("Review or adjust remarks/staff before approving and posting to `daily_cart_entries`:")
+                                ed_c1, ed_c2 = st.columns([1.2, 2.2], gap="small")
+                                with ed_c1:
+                                    staff_opts = load_active_staff_list()
+                                    if s_staff and s_staff not in staff_opts:
+                                        staff_opts.append(s_staff)
+                                    chosen_staff = st.selectbox(
+                                        "Staff",
+                                        staff_opts,
+                                        index=staff_opts.index(s_staff) if s_staff in staff_opts else 0,
+                                        key=f"stg_sales_staff_{sid}",
+                                    )
+                                with ed_c2:
+                                    chosen_rem = st.text_input("Remarks", value=rem_str, key=f"stg_sales_rem_{sid}")
+
+                                if st.button(
+                                    "✅ Approve & Post to Actuals",
+                                    type="primary",
+                                    key=f"approve_stg_sales_{sid}",
+                                ):
+                                    try:
+                                        final_staff = "" if chosen_staff == "Select Staff" else chosen_staff
+                                        sync_daily_entry(
+                                            s_date,
+                                            s_cart,
+                                            add_map,
+                                            close_map,
+                                            open_map,
+                                            sold_map,
+                                            tot_calc_col,
+                                            ph_amt,
+                                            cash_amt,
+                                            chosen_rem,
+                                            final_staff,
+                                            adv_amt,
+                                            food_amt,
+                                            cash_leakage_explained=leak_exp_amt,
+                                            cash_leakage_unexplained=leak_unexp_amt if leak_tot > 0 and leak_exp_amt == 0 and leak_unexp_amt == 0 else leak_unexp_amt,
+                                        )
+                                        if s_date == yesterday_sale_date:
+                                            sync_today_opening_after_sales_update(today_val, s_cart, close_map)
+                                        with db_conn.session as s:
+                                            posted_row = s.execute(
+                                                text("SELECT id FROM daily_cart_entries WHERE entry_date = :dt AND cart_name = :ct;"),
+                                                {"dt": s_date, "ct": s_cart},
+                                            ).fetchone()
+                                            posted_id = int(posted_row[0]) if posted_row else None
+                                            s.execute(
+                                                text("""
+                                                    UPDATE cart_entry_staging
+                                                    SET status = 'Final',
+                                                        staff_name = :stf,
+                                                        remarks = :rem,
+                                                        approved_by = 'Admin',
+                                                        approved_at = NOW(),
+                                                        posted_daily_entry_id = :pid,
+                                                        updated_at = NOW()
+                                                    WHERE id = :sid;
+                                                """),
+                                                {"stf": final_staff, "rem": chosen_rem, "pid": posted_id, "sid": sid},
+                                            )
+                                            s.commit()
+                                        st.cache_data.clear()
+                                        show_success_modal(f"Staging Sales #{sid} ({s_cart}, {_entry_date_display(s_date)}) approved, posted to actuals, and marked Final!")
+                                    except Exception as e:
+                                        st.error(f"Could not approve staging sales entry: {e}")
+
+            # --------------------------------------------------------------
+            # ADMIN STAGING REVIEW: RESTOCK ENTRIES
+            # --------------------------------------------------------------
+            elif entry_mode == "staging_restock":
+                st.markdown(
+                    "<div class='header-box-restock'><span>📥 Staging Restock Entries — Cart Staff Submissions</span><span><b>Admin Approval</b></span></div>",
+                    unsafe_allow_html=True,
+                )
+                rf1, rf2, rf3 = st.columns([1.2, 1.2, 2.0], gap="small", vertical_alignment="bottom")
+                with rf1:
+                    stg_restock_status = st.selectbox(
+                        "Status Filter",
+                        ["Pending", "Final", "All"],
+                        index=0,
+                        key="stg_restock_status_filter",
+                    )
+                with rf2:
+                    if st.button("🔄 Refresh Staging", key="stg_restock_refresh_btn", use_container_width=True):
+                        st.cache_data.clear()
+                        st.rerun()
+
+                try:
+                    stg_restock_df = db_conn.query(
+                        """
+                        SELECT *
+                        FROM cart_entry_staging
+                        WHERE entry_type = 'RESTOCK'
+                          AND (:st = 'All' OR status = :st)
+                          AND (:active_loc = 'ALL' OR UPPER(TRIM(COALESCE(city, 'HOSUR'))) = :active_loc)
+                        ORDER BY
+                            CASE WHEN status = 'Pending' THEN 0 ELSE 1 END,
+                            entry_date DESC,
+                            submitted_at DESC;
+                        """,
+                        params={"st": stg_restock_status, "active_loc": get_active_location_filter()},
+                        ttl="10s",
+                    )
+                except Exception as e:
+                    stg_restock_df = pd.DataFrame()
+                    st.error(f"Could not load staging restock entries (ensure SQL migration is applied): {e}")
+
+                if stg_restock_df.empty:
+                    st.info(f"No {stg_restock_status.lower() if stg_restock_status != 'All' else ''} staging restock entries found.")
+                else:
+                    for _, rrow in stg_restock_df.iterrows():
+                        rid = int(rrow["id"])
+                        r_date = pd.to_datetime(rrow["entry_date"]).date()
+                        r_cart = str(rrow["cart_name"])
+                        r_staff = str(rrow.get("staff_name") or "")
+                        r_status = str(rrow.get("status") or "Pending")
+                        is_final = r_status == "Final"
+                        r_sub_by = str(rrow.get("submitted_by") or "Cart Staff")
+                        r_sub_at = pd.to_datetime(rrow["submitted_at"]).strftime("%d-%b %H:%M") if pd.notna(rrow.get("submitted_at")) else "—"
+                        r_app_by = str(rrow.get("approved_by") or "Admin")
+                        r_app_at = pd.to_datetime(rrow["approved_at"]).strftime("%d-%b %H:%M") if pd.notna(rrow.get("approved_at")) else "—"
+
+                        raw_items = rrow.get("flavor_items") or {}
+                        if isinstance(raw_items, str):
+                            try:
+                                raw_items = json.loads(raw_items)
+                            except Exception:
+                                raw_items = {}
+
+                        badge_html = (
+                            "<span style='background:#DCFCE7;color:#166534;border:1px solid #86EFAC;padding:2px 9px;border-radius:999px;font-weight:800;font-size:12px;'>🔒 Final</span>"
+                            if is_final
+                            else "<span style='background:#FEF3C7;color:#92400E;border:1px solid #FCD34D;padding:2px 9px;border-radius:999px;font-weight:800;font-size:12px;'>⏳ Pending</span>"
+                        )
+
+                        with st.container(border=True):
+                            st.markdown(
+                                f"<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;'>"
+                                f"<div><b style='font-size:15px;color:#14532D;'>{r_cart}</b> &nbsp;|&nbsp; <span style='color:#6B5138;font-weight:700;'>{_entry_date_display(r_date)}</span> &nbsp;|&nbsp; Staff: <b>{r_staff or '—'}</b></div>"
+                                f"<div>{badge_html}</div>"
+                                f"</div>"
+                                f"<div style='font-size:11.5px;color:#78716C;margin-bottom:8px;'>Submitted by <b>{r_sub_by}</b> at {r_sub_at}"
+                                + (f" &nbsp;•&nbsp; Approved by <b>{r_app_by}</b> at {r_app_at}" if is_final else "")
+                                + "</div>",
+                                unsafe_allow_html=True,
+                            )
+
+                            r_rows = []
+                            r_open_map, r_add_map = {}, {}
+                            for code in FLAVOR_CODES:
+                                f_info = FLAVOR_MAP[code]
+                                it = raw_items.get(code, {}) if isinstance(raw_items, dict) else {}
+                                op = int(_num(it.get("opening", 0)))
+                                ad = int(_num(it.get("restock", it.get("added", 0))))
+                                r_open_map[code] = op
+                                r_add_map[code] = ad
+                                r_rows.append({
+                                    "Flavour": f_info["name"],
+                                    "Opening": op,
+                                    "+ Restock": ad,
+                                    "Total Opening": op + ad,
+                                })
+                            st.dataframe(pd.DataFrame(r_rows), hide_index=True, use_container_width=True)
+                            tot_rstk = sum(r_add_map.values())
+                            st.caption(f"Total Restock Added: **+{tot_rstk} pcs** | Total Opening After Restock: **{sum(r_open_map.values()) + tot_rstk} pcs**")
+
+                            if not is_final:
+                                staff_opts = load_active_staff_list()
+                                if r_staff and r_staff not in staff_opts:
+                                    staff_opts.append(r_staff)
+                                chosen_r_staff = st.selectbox(
+                                    "Staff",
+                                    staff_opts,
+                                    index=staff_opts.index(r_staff) if r_staff in staff_opts else 0,
+                                    key=f"stg_restock_staff_{rid}",
+                                )
+                                if st.button(
+                                    "✅ Approve & Post to Actuals",
+                                    type="primary",
+                                    key=f"approve_stg_restock_{rid}",
+                                ):
+                                    try:
+                                        final_staff = "" if chosen_r_staff == "Select Staff" else chosen_r_staff
+                                        sync_today_restock_entry(r_date, r_cart, final_staff, r_open_map, r_add_map)
+                                        with db_conn.session as s:
+                                            posted_row = s.execute(
+                                                text("SELECT id FROM daily_cart_entries WHERE entry_date = :dt AND cart_name = :ct;"),
+                                                {"dt": r_date, "ct": r_cart},
+                                            ).fetchone()
+                                            posted_id = int(posted_row[0]) if posted_row else None
+                                            s.execute(
+                                                text("""
+                                                    UPDATE cart_entry_staging
+                                                    SET status = 'Final',
+                                                        staff_name = :stf,
+                                                        approved_by = 'Admin',
+                                                        approved_at = NOW(),
+                                                        posted_daily_entry_id = :pid,
+                                                        updated_at = NOW()
+                                                    WHERE id = :rid;
+                                                """),
+                                                {"stf": final_staff, "pid": posted_id, "rid": rid},
+                                            )
+                                            s.commit()
+                                        st.cache_data.clear()
+                                        show_success_modal(f"Staging Restock #{rid} ({r_cart}, {_entry_date_display(r_date)}) approved, posted to actuals, and marked Final!")
+                                    except Exception as e:
+                                        st.error(f"Could not approve staging restock entry: {e}")
+
+
             elif entry_mode == "freezer_sales":
                 if "fzr_entry_sub_mode" not in st.session_state:
                     st.session_state["fzr_entry_sub_mode"] = "new"
@@ -11616,7 +12030,13 @@ with _page_body_container:
                         key=f"edit_audit_remarks_{loaded_audit_id}"
                     )
 
-                    if st.button("💾 Update Stock Audit", type="primary", use_container_width=False, key=f"update_audit_{loaded_audit_id}"):
+                    ab1, ab2, _ab_sp = st.columns([1.2, 1.0, 2.0], gap="small")
+                    with ab2:
+                        if st.button("🗑️ Delete Stock Audit", type="secondary", use_container_width=True, key=f"delete_audit_btn_{loaded_audit_id}"):
+                            confirm_delete_stock_audit_modal(loaded_audit)
+                    with ab1:
+                        _do_update_audit = st.button("💾 Update Stock Audit", type="primary", use_container_width=True, key=f"update_audit_{loaded_audit_id}")
+                    if _do_update_audit:
                         try:
                             edited_phys_by_code = {
                                 row["Code"]: int(row["Physical Counted Units"])
