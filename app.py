@@ -15866,37 +15866,39 @@ with _page_body_container:
                             _c_gm_tot = _c_rev_tot - _c_cogs_tot
                             if _c_gm_tot > 0 and _c_opex_tot > 0:
                                 _cost_pct = (_c_opex_tot / _c_gm_tot) * 100.0
-                                _p_col = "#047857" if _cost_pct < 15 else ("#B91C1C" if _cost_pct > 20 else "#B45309")
-                                _p_bg = "#ECFDF5" if _cost_pct < 15 else ("#FEF2F2" if _cost_pct > 20 else "#FFFBEB")
-                                _perf_html = f'<span style="background:{_p_bg};color:{_p_col};font-weight:800;padding:2px 7px;border-radius:999px;font-size:11.5px;">{_cost_pct:.1f}%</span>'
+                                _p_col = "#047857" if _cost_pct < 35 else ("#B91C1C" if _cost_pct > 50 else "#B45309")
+                                _p_bg = "#ECFDF5" if _cost_pct < 35 else ("#FEF2F2" if _cost_pct > 50 else "#FFFBEB")
+                                _perf_html = f'<span style="background:{_p_bg};color:{_p_col};font-weight:800;padding:2px 7px;border-radius:999px;font-size:11px;">{_cost_pct:.1f}%</span>'
                             else:
                                 _perf_html = '<span style="color:#94A3B8;font-weight:700;">—</span>'
 
                             _row_bg = "#F8FAFC" if _ridx % 2 == 1 else "#FFFFFF"
                             _ca_rows_html.append(
                                 f'<tr style="background:{_row_bg};border-bottom:1px solid #E2E8F0;">'
-                                f'<td style="padding:8px 10px;font-weight:800;color:#1E293B;text-align:left;">{escape(_cname)}</td>'
-                                f'<td style="padding:8px 10px;font-weight:700;color:#475569;text-align:right;">{int(_crow["Active_Days"])}</td>'
-                                f'<td style="padding:8px 10px;font-weight:800;color:#0F5132;text-align:right;">₹{_crow["Avg_Rev_Day"]:,.0f}</td>'
-                                f'<td style="padding:8px 10px;font-weight:700;color:#1B5E91;text-align:right;">{_crow["Avg_Units_Day"]:,.1f}</td>'
-                                f'<td style="padding:8px 10px;font-weight:700;color:#334155;text-align:right;">₹{_c_rev_tot:,.0f}</td>'
-                                f'<td style="padding:8px 10px;font-weight:700;color:#475569;text-align:right;">{int(round(_crow["Total_Units"])):,}</td>'
-                                f'<td style="padding:8px 10px;text-align:right;">{_perf_html}</td>'
+                                f'<td style="padding:7px 9px;font-weight:800;color:#1E293B;text-align:left;">{escape(_cname)}</td>'
+                                f'<td style="padding:7px 9px;font-weight:700;color:#475569;text-align:right;">{int(_crow["Active_Days"])}</td>'
+                                f'<td style="padding:7px 9px;font-weight:800;color:#0F5132;text-align:right;">₹{_crow["Avg_Rev_Day"]:,.0f}</td>'
+                                f'<td style="padding:7px 9px;font-weight:700;color:#1B5E91;text-align:right;">{_crow["Avg_Units_Day"]:,.1f}</td>'
+                                f'<td style="padding:7px 9px;font-weight:800;color:#334155;text-align:right;">₹{_c_rev_tot:,.0f}</td>'
+                                f'<td style="padding:7px 9px;font-weight:800;color:#047857;text-align:right;">₹{_c_gm_tot:,.0f}</td>'
+                                f'<td style="padding:7px 9px;font-weight:700;color:#475569;text-align:right;">{int(round(_crow["Total_Units"])):,}</td>'
+                                f'<td style="padding:7px 9px;text-align:right;">{_perf_html}</td>'
                                 f'</tr>'
                             )
 
                         _ca_table_html = f"""
                         <div style="border:1px solid #E2E8F0;border-radius:10px;overflow-x:auto;background:#FFFFFF;margin-bottom:12px;">
-                            <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
+                            <table style="width:100%;border-collapse:collapse;font-size:12px;">
                                 <thead>
-                                    <tr style="background:#1E293B;color:#FFFFFF;font-size:11px;text-transform:uppercase;letter-spacing:0.3px;">
-                                        <th style="padding:8px 10px;text-align:left;font-weight:800;">Cart</th>
-                                        <th style="padding:8px 10px;text-align:right;font-weight:800;">Days</th>
-                                        <th style="padding:8px 10px;text-align:right;font-weight:800;">Avg Rev/Day</th>
-                                        <th style="padding:8px 10px;text-align:right;font-weight:800;">Avg Units/Day</th>
-                                        <th style="padding:8px 10px;text-align:right;font-weight:800;">Total Rev</th>
-                                        <th style="padding:8px 10px;text-align:right;font-weight:800;">Total Units</th>
-                                        <th style="padding:8px 10px;text-align:right;font-weight:800;">Cost</th>
+                                    <tr style="background:#1E293B;color:#FFFFFF;font-size:10.5px;text-transform:uppercase;letter-spacing:0.3px;">
+                                        <th style="padding:8px 9px;text-align:left;font-weight:800;">Cart</th>
+                                        <th style="padding:8px 9px;text-align:right;font-weight:800;">Days</th>
+                                        <th style="padding:8px 9px;text-align:right;font-weight:800;">Avg Rev/Day</th>
+                                        <th style="padding:8px 9px;text-align:right;font-weight:800;">Avg Units/Day</th>
+                                        <th style="padding:8px 9px;text-align:right;font-weight:800;">Cart Rev</th>
+                                        <th style="padding:8px 9px;text-align:right;font-weight:800;">Gross Margin</th>
+                                        <th style="padding:8px 9px;text-align:right;font-weight:800;">Total Units</th>
+                                        <th style="padding:8px 9px;text-align:right;font-weight:800;">Cost</th>
                                     </tr>
                                 </thead>
                                 <tbody>
