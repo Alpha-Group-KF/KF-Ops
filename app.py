@@ -15856,11 +15856,19 @@ with _page_body_container:
 
                             _c_opex_tot = _c_lab_opex + _c_other_opex
                             _c_rev_tot = float(_crow["Total_Rev"])
-                            if _c_rev_tot > 0 and _c_opex_tot > 0:
-                                _perf_pct = (_c_opex_tot / _c_rev_tot) * 100.0
-                                _p_col = "#047857" if _perf_pct <= 30 else ("#B45309" if _perf_pct <= 50 else "#B91C1C")
-                                _p_bg = "#ECFDF5" if _perf_pct <= 30 else ("#FFFBEB" if _perf_pct <= 50 else "#FEF2F2")
-                                _perf_html = f'<span style="background:{_p_bg};color:{_p_col};font-weight:800;padding:2px 7px;border-radius:999px;font-size:11.5px;">{_perf_pct:.1f}%</span>'
+                            _c_cogs_tot = 0.0
+                            try:
+                                _c_flv_df = load_db_flavor_sales(start_date=range_start, end_date=range_end, allowed_carts=[_cup])
+                                if _c_flv_df is not None and not _c_flv_df.empty and "COGS (₹)" in _c_flv_df.columns:
+                                    _c_cogs_tot = float(_c_flv_df["COGS (₹)"].sum())
+                            except Exception:
+                                pass
+                            _c_gm_tot = _c_rev_tot - _c_cogs_tot
+                            if _c_gm_tot > 0 and _c_opex_tot > 0:
+                                _cost_pct = (_c_opex_tot / _c_gm_tot) * 100.0
+                                _p_col = "#047857" if _cost_pct < 15 else ("#B91C1C" if _cost_pct > 20 else "#B45309")
+                                _p_bg = "#ECFDF5" if _cost_pct < 15 else ("#FEF2F2" if _cost_pct > 20 else "#FFFBEB")
+                                _perf_html = f'<span style="background:{_p_bg};color:{_p_col};font-weight:800;padding:2px 7px;border-radius:999px;font-size:11.5px;">{_cost_pct:.1f}%</span>'
                             else:
                                 _perf_html = '<span style="color:#94A3B8;font-weight:700;">—</span>'
 
@@ -15888,7 +15896,7 @@ with _page_body_container:
                                         <th style="padding:8px 10px;text-align:right;font-weight:800;">Avg Units/Day</th>
                                         <th style="padding:8px 10px;text-align:right;font-weight:800;">Total Rev</th>
                                         <th style="padding:8px 10px;text-align:right;font-weight:800;">Total Units</th>
-                                        <th style="padding:8px 10px;text-align:right;font-weight:800;">Perf</th>
+                                        <th style="padding:8px 10px;text-align:right;font-weight:800;">Cost</th>
                                     </tr>
                                 </thead>
                                 <tbody>
