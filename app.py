@@ -15900,7 +15900,7 @@ with _page_body_container:
                                         <th style="padding:8px 9px;text-align:right;font-weight:800;">Gross Margin</th>
                                         <th style="padding:8px 9px;text-align:right;font-weight:800;">Cart OPEX</th>
                                         <th style="padding:8px 9px;text-align:right;font-weight:800;">Total Units</th>
-                                        <th style="padding:8px 9px;text-align:right;font-weight:800;">Cost</th>
+                                        <th style="padding:8px 9px;text-align:right;font-weight:800;line-height:1.15;">Cost<div style="font-size:9px;font-weight:600;color:#CBD5E1;text-transform:none;">(% of GM)</div></th>
                                     </tr>
                                 </thead>
                                 <tbody>
