@@ -15881,6 +15881,7 @@ with _page_body_container:
                                 f'<td style="padding:7px 9px;font-weight:700;color:#1B5E91;text-align:right;">{_crow["Avg_Units_Day"]:,.1f}</td>'
                                 f'<td style="padding:7px 9px;font-weight:800;color:#334155;text-align:right;">₹{_c_rev_tot:,.0f}</td>'
                                 f'<td style="padding:7px 9px;font-weight:800;color:#047857;text-align:right;">₹{_c_gm_tot:,.0f}</td>'
+                                f'<td style="padding:7px 9px;font-weight:800;color:#B45309;text-align:right;">₹{_c_opex_tot:,.0f}</td>'
                                 f'<td style="padding:7px 9px;font-weight:700;color:#475569;text-align:right;">{int(round(_crow["Total_Units"])):,}</td>'
                                 f'<td style="padding:7px 9px;text-align:right;">{_perf_html}</td>'
                                 f'</tr>'
@@ -15897,6 +15898,7 @@ with _page_body_container:
                                         <th style="padding:8px 9px;text-align:right;font-weight:800;">Avg Units/Day</th>
                                         <th style="padding:8px 9px;text-align:right;font-weight:800;">Cart Rev</th>
                                         <th style="padding:8px 9px;text-align:right;font-weight:800;">Gross Margin</th>
+                                        <th style="padding:8px 9px;text-align:right;font-weight:800;">Cart OPEX</th>
                                         <th style="padding:8px 9px;text-align:right;font-weight:800;">Total Units</th>
                                         <th style="padding:8px 9px;text-align:right;font-weight:800;">Cost</th>
                                     </tr>
