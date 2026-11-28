@@ -5264,6 +5264,13 @@ def compute_period_financials(start_date, end_date, avg_divisor_days=None, daily
         "tot_labour_incurred": tot_labour_incurred,
         "other_opex_total": other_opex_total,
         "total_incurred_opex": total_incurred_opex,
+        "opex_common": opex_common,
+        "opex_common_pct": opex_common_pct,
+        "opex_cart_specific": opex_cart_specific,
+        "opex_cart_pct": opex_cart_pct,
+        "rev_to_cart_opex": rev_to_cart_opex,
+        "gm_to_cart_opex": gm_to_cart_opex,
+        "nm_to_cart_opex": nm_to_cart_opex,
         "gross_profit": gross_profit,
         "cogs_margin": cogs_margin,
         "gross_margin": gross_margin,
@@ -5360,6 +5367,46 @@ def compute_what_if_financials(start_date, end_date, enabled_carts, all_carts, a
     else:
         filtered_exp = pd.DataFrame()
 
+    try:
+        _, _, _, staff_pay_breakdown = calculate_incurred_labour_for_range(
+            start_date, end_date, limit_to_employment=True, allowed_carts=list(enabled_upper)
+        )
+    except Exception:
+        staff_pay_breakdown = {}
+
+    cart_staff_names_lower = set()
+    cart_specific_labour = 0.0
+    common_labour = 0.0
+    for _sn, _sv in staff_pay_breakdown.items():
+        _role_l = str(_sv.get("role") or "Cart Operator").strip().lower()
+        _inc_v = float(_sv.get("incurred", 0.0))
+        if _role_l == "cart operator":
+            cart_specific_labour += _inc_v
+            cart_staff_names_lower.add(str(_sn).strip().lower())
+        else:
+            common_labour += _inc_v
+
+    def _is_enabled_cart_expense(row):
+        if not enabled_upper:
+            return False
+        attr = str(row.get("Attributed_To") or "").strip().upper()
+        if attr and attr in enabled_upper:
+            return True
+        st_n = str(row.get("Staff_Name") or "").strip().lower()
+        if st_n and st_n in cart_staff_names_lower:
+            return True
+        if not attr:
+            desc_comb = (str(row.get("Description") or "") + " " + str(row.get("Remarks") or "")).upper()
+            for ec in enabled_upper:
+                if ec and ec in desc_comb:
+                    return True
+        return False
+
+    cart_specific_other_opex = 0.0
+    common_other_opex = 0.0
+    unassigned_labour_total = 0.0
+    other_opex_total = 0.0
+
     if not filtered_exp.empty:
         expense_types = filtered_exp["Expense_Type"].fillna("").astype(str).str.strip().str.upper()
         expense_categories = filtered_exp["Category"].fillna("").astype(str).str.strip().str.casefold()
@@ -5370,25 +5417,28 @@ def compute_what_if_financials(start_date, end_date, enabled_carts, all_carts, a
         unassigned_labour_df = filtered_exp[
             (expense_types == "OPEX") & (expense_categories == "labour charges") & staff_blank_mask
         ].copy()
-        unassigned_labour_total = float(unassigned_labour_df["Amount"].sum()) if not unassigned_labour_df.empty else 0.0
         non_labour_opex_df = filtered_exp[
             (expense_types == "OPEX") & (~expense_categories.isin(["labour charges", "cost of goods"]))
         ].copy()
-        other_opex_total = float(non_labour_opex_df["Amount"].sum()) if not non_labour_opex_df.empty else 0.0
-    else:
-        unassigned_labour_total = 0.0
-        other_opex_total = 0.0
 
-    try:
-        _, _, _, staff_pay_breakdown = calculate_incurred_labour_for_range(
-            start_date, end_date, limit_to_employment=True, allowed_carts=list(enabled_upper)
-        )
-    except Exception:
-        staff_pay_breakdown = {}
+        for _sub_df, _is_ul in ((unassigned_labour_df, True), (non_labour_opex_df, False)):
+            if not _sub_df.empty:
+                for _, _erow in _sub_df.iterrows():
+                    _amt = float(_erow.get("Amount") or 0.0)
+                    if _is_ul:
+                        unassigned_labour_total += _amt
+                    else:
+                        other_opex_total += _amt
+                    if _is_enabled_cart_expense(_erow):
+                        cart_specific_other_opex += _amt
+                    else:
+                        common_other_opex += _amt
 
-    staff_salary_total = sum(float(staff.get("incurred", 0.0)) for staff in staff_pay_breakdown.values())
+    staff_salary_total = cart_specific_labour + common_labour
     tot_labour_incurred = staff_salary_total + unassigned_labour_total
     total_incurred_opex = tot_labour_incurred + other_opex_total
+    opex_cart_specific = cart_specific_labour + cart_specific_other_opex
+    opex_common = common_labour + common_other_opex
 
     gross_profit = total_rev - exact_cogs_sold
     cogs_margin = (exact_cogs_sold / total_rev * 100.0) if total_rev > 0 else 0.0
@@ -5396,6 +5446,12 @@ def compute_what_if_financials(start_date, end_date, enabled_carts, all_carts, a
     net_profit = gross_profit - total_incurred_opex
     net_margin = (net_profit / total_rev * 100.0) if total_rev > 0 else 0.0
     opex_margin = (total_incurred_opex / total_rev * 100.0) if total_rev > 0 else 0.0
+    opex_common_pct = (opex_common / total_rev * 100.0) if total_rev > 0 else 0.0
+    opex_cart_pct = (opex_cart_specific / total_rev * 100.0) if total_rev > 0 else 0.0
+
+    rev_to_cart_opex = (total_rev / opex_cart_specific) if opex_cart_specific > 0 else 0.0
+    gm_to_cart_opex = (gross_profit / opex_cart_specific) if opex_cart_specific > 0 else 0.0
+    nm_to_cart_opex = (net_profit / opex_cart_specific) if opex_cart_specific > 0 else 0.0
 
     if avg_divisor_days is None or int(avg_divisor_days) <= 0:
         today_ref = date.today()
@@ -16955,14 +17011,42 @@ with _page_body_container:
                 with _r2c2:
                     st.markdown(_wi_card("Gross Margin", f"₹{_wi_res['gross_profit']:,.0f}", f"{_wi_res['gross_margin']:.1f}%", bg="#ECFDF5", border="#6EE7B7", val_color="#047857"), unsafe_allow_html=True)
                 with _r2c3:
-                    st.markdown(_wi_card("OPEX", f"₹{_wi_res['total_incurred_opex']:,.0f}", f"{_wi_res['opex_margin']:.1f}%", bg="#FEFCE8", border="#FDE047", val_color="#A16207"), unsafe_allow_html=True)
+                    st.markdown(_wi_card("OPEX (Total)", f"₹{_wi_res['total_incurred_opex']:,.0f}", f"{_wi_res['opex_margin']:.1f}%", bg="#FEFCE8", border="#FDE047", val_color="#A16207"), unsafe_allow_html=True)
                 with _r2c4:
                     _nm_col = "#047857" if _wi_res["net_profit"] >= 0 else "#B91C1C"
                     _nm_bg = "#ECFDF5" if _wi_res["net_profit"] >= 0 else "#FEF2F2"
                     _nm_bd = "#6EE7B7" if _wi_res["net_profit"] >= 0 else "#FCA5A5"
                     st.markdown(_wi_card("Net Margin", f"₹{_wi_res['net_profit']:,.0f}", f"{_wi_res['net_margin']:.1f}%", bg=_nm_bg, border=_nm_bd, val_color=_nm_col), unsafe_allow_html=True)
 
+                st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
+
+                def _ratio_badge(wi_v, act_v):
+                    _d = wi_v - act_v
+                    if abs(_d) < 0.005:
+                        return "<span style='color:#64748B;'>— 0.00x</span>"
+                    if _d > 0:
+                        return f"<span style='color:#047857;'>▲ +{_d:.2f}x</span>"
+                    return f"<span style='color:#B91C1C;'>▼ {_d:.2f}x</span>"
+
+                _r3c1, _r3c2, _r3c3, _r3c4, _r3c5 = st.columns(5, gap="small")
+                with _r3c1:
+                    st.markdown(_wi_card("OPEX (Common)", f"₹{_wi_res['opex_common']:,.0f}", f"{_wi_res['opex_common_pct']:.1f}%", bg="#F8FAFC", border="#CBD5E1", val_color="#334155"), unsafe_allow_html=True)
+                with _r3c2:
+                    st.markdown(_wi_card("OPEX (Cart Specific)", f"₹{_wi_res['opex_cart_specific']:,.0f}", f"{_wi_res['opex_cart_pct']:.1f}%", bg="#FFFBEB", border="#FCD34D", val_color="#B45309"), unsafe_allow_html=True)
+                with _r3c3:
+                    st.markdown(_wi_card("Rev / Cart OPEX", f"{_wi_res['rev_to_cart_opex']:.2f}x", _ratio_badge(_wi_res['rev_to_cart_opex'], _act_res['rev_to_cart_opex']), bg="#F0FDFA", border="#99F6E4", val_color="#0F766E"), unsafe_allow_html=True)
+                with _r3c4:
+                    st.markdown(_wi_card("Gross Margin / Cart OPEX", f"{_wi_res['gm_to_cart_opex']:.2f}x", _ratio_badge(_wi_res['gm_to_cart_opex'], _act_res['gm_to_cart_opex']), bg="#F0FDF4", border="#86EFAC", val_color="#15803D"), unsafe_allow_html=True)
+                with _r3c5:
+                    st.markdown(_wi_card("Net Margin / Cart OPEX", f"{_wi_res['nm_to_cart_opex']:.2f}x", _ratio_badge(_wi_res['nm_to_cart_opex'], _act_res['nm_to_cart_opex']), bg="#EFF6FF", border="#93C5FD", val_color="#1D4ED8"), unsafe_allow_html=True)
+
                 st.markdown("<div style='height:14px;'></div>", unsafe_allow_html=True)
+
+                def _ratio_diff_txt(wi_v, act_v):
+                    _d = wi_v - act_v
+                    if abs(_d) < 0.005:
+                        return "— 0.00x"
+                    return f"▲ +{_d:.2f}x" if _d > 0 else f"▼ {_d:.2f}x"
 
                 _cmp_rows = [
                     ("Revenue", f"₹{_act_res['total_rev']:,.0f}", f"₹{_wi_res['total_rev']:,.0f}", f"₹{_wi_res['total_rev'] - _act_res['total_rev']:+,.0f}"),
@@ -16971,8 +17055,13 @@ with _page_body_container:
                     ("Avg Units / Day", f"{_act_res['avg_units_per_day']:,.1f}", f"{_wi_res['avg_units_per_day']:,.1f}", f"{_wi_res['avg_units_per_day'] - _act_res['avg_units_per_day']:+,.1f}"),
                     ("COGS", f"₹{_act_res['exact_cogs_sold']:,.0f} ({_act_res['cogs_margin']:.1f}%)", f"₹{_wi_res['exact_cogs_sold']:,.0f} ({_wi_res['cogs_margin']:.1f}%)", f"₹{_wi_res['exact_cogs_sold'] - _act_res['exact_cogs_sold']:+,.0f}"),
                     ("Gross Margin", f"₹{_act_res['gross_profit']:,.0f} ({_act_res['gross_margin']:.1f}%)", f"₹{_wi_res['gross_profit']:,.0f} ({_wi_res['gross_margin']:.1f}%)", f"₹{_wi_res['gross_profit'] - _act_res['gross_profit']:+,.0f}"),
-                    ("OPEX", f"₹{_act_res['total_incurred_opex']:,.0f} ({_act_res['opex_margin']:.1f}%)", f"₹{_wi_res['total_incurred_opex']:,.0f} ({_wi_res['opex_margin']:.1f}%)", f"₹{_wi_res['total_incurred_opex'] - _act_res['total_incurred_opex']:+,.0f}"),
+                    ("OPEX (Common)", f"₹{_act_res['opex_common']:,.0f} ({_act_res['opex_common_pct']:.1f}%)", f"₹{_wi_res['opex_common']:,.0f} ({_wi_res['opex_common_pct']:.1f}%)", f"₹{_wi_res['opex_common'] - _act_res['opex_common']:+,.0f}"),
+                    ("OPEX (Cart Specific)", f"₹{_act_res['opex_cart_specific']:,.0f} ({_act_res['opex_cart_pct']:.1f}%)", f"₹{_wi_res['opex_cart_specific']:,.0f} ({_wi_res['opex_cart_pct']:.1f}%)", f"₹{_wi_res['opex_cart_specific'] - _act_res['opex_cart_specific']:+,.0f}"),
+                    ("OPEX (Total)", f"₹{_act_res['total_incurred_opex']:,.0f} ({_act_res['opex_margin']:.1f}%)", f"₹{_wi_res['total_incurred_opex']:,.0f} ({_wi_res['opex_margin']:.1f}%)", f"₹{_wi_res['total_incurred_opex'] - _act_res['total_incurred_opex']:+,.0f}"),
                     ("Net Margin", f"₹{_act_res['net_profit']:,.0f} ({_act_res['net_margin']:.1f}%)", f"₹{_wi_res['net_profit']:,.0f} ({_wi_res['net_margin']:.1f}%)", f"₹{_wi_res['net_profit'] - _act_res['net_profit']:+,.0f}"),
+                    ("Rev / Cart OPEX", f"{_act_res['rev_to_cart_opex']:.2f}x", f"{_wi_res['rev_to_cart_opex']:.2f}x", _ratio_diff_txt(_wi_res['rev_to_cart_opex'], _act_res['rev_to_cart_opex'])),
+                    ("Gross Margin / Cart OPEX", f"{_act_res['gm_to_cart_opex']:.2f}x", f"{_wi_res['gm_to_cart_opex']:.2f}x", _ratio_diff_txt(_wi_res['gm_to_cart_opex'], _act_res['gm_to_cart_opex'])),
+                    ("Net Margin / Cart OPEX", f"{_act_res['nm_to_cart_opex']:.2f}x", f"{_wi_res['nm_to_cart_opex']:.2f}x", _ratio_diff_txt(_wi_res['nm_to_cart_opex'], _act_res['nm_to_cart_opex'])),
                 ]
                 _cmp_df = pd.DataFrame(_cmp_rows, columns=["Metric", "Actual", "What-If", "Difference"])
-                st.dataframe(_cmp_df, hide_index=True, use_container_width=True, height=320)
+                st.dataframe(_cmp_df, hide_index=True, use_container_width=True, height=495)
