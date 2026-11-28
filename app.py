@@ -15800,7 +15800,12 @@ with _page_body_container:
                         )
                         _cart_avg_df["Avg_Rev_Day"] = _cart_avg_df["Total_Rev"] / _cart_avg_df["Active_Days"]
                         _cart_avg_df["Avg_Units_Day"] = _cart_avg_df["Total_Units"] / _cart_avg_df["Active_Days"]
-                        _cart_avg_df = _cart_avg_df.sort_values("Avg_Rev_Day", ascending=False).reset_index(drop=True)
+                        def _cart_num_sort_key(_cn):
+                            _s = str(_cn or "").strip()
+                            _m = re.search(r"(\d+)", _s)
+                            return (int(_m.group(1)) if _m else 999999, _s.upper())
+                        _cart_avg_df["_cart_sort_k"] = _cart_avg_df["Cart"].map(_cart_num_sort_key)
+                        _cart_avg_df = _cart_avg_df.sort_values("_cart_sort_k", ascending=True).drop(columns=["_cart_sort_k"]).reset_index(drop=True)
 
                         # Pre-filter OPEX expense rows once for per-cart attribution
                         _ca_opex_rows = []
