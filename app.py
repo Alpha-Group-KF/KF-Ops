@@ -3444,8 +3444,14 @@ def load_db_daily_df():
     if not df.empty: df["Date"] = pd.to_datetime(df["Date"])
     return df
 
-def load_db_flavor_sales(start_date=None, end_date=None):
+def load_db_flavor_sales(start_date=None, end_date=None, allowed_carts=None):
     if db_conn is None: return pd.DataFrame()
+    if allowed_carts is not None:
+        _norm_carts = [str(c).strip().upper() for c in allowed_carts if str(c).strip()]
+        if not _norm_carts:
+            return pd.DataFrame()
+    else:
+        _norm_carts = None
     where_clauses, params = ["LOWER(TRIM(COALESCE(e.cart_name, ''))) NOT LIKE '%test%'"], {}
     active_loc = get_active_location_filter()
     if active_loc != "ALL":
@@ -3453,6 +3459,13 @@ def load_db_flavor_sales(start_date=None, end_date=None):
         params["active_loc"] = active_loc
     if start_date: where_clauses.append("e.entry_date >= :sdate"); params["sdate"] = start_date
     if end_date: where_clauses.append("e.entry_date <= :edate"); params["edate"] = end_date
+    if _norm_carts is not None:
+        _c_placeholders = []
+        for _ci, _cn in enumerate(_norm_carts):
+            _pk = f"ac_{_ci}"
+            _c_placeholders.append(f":{_pk}")
+            params[_pk] = _cn
+        where_clauses.append(f"UPPER(TRIM(COALESCE(e.cart_name, ''))) IN ({', '.join(_c_placeholders)})")
     where_sql = ("WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
     query = f"""
     SELECT f.code, f.name AS "Flavour", f.mrp, f.cost_price, COALESCE(SUM(i.sold_units), 0) AS "Units sold", COALESCE(SUM(i.sold_units), 0) * f.mrp AS "Est. revenue (₹)", COALESCE(SUM(i.sold_units), 0) * f.cost_price AS "COGS (₹)"
@@ -4682,7 +4695,7 @@ def load_staff_attendance_df(start_date=None, end_date=None):
     try: return db_conn.query(f"SELECT a.id, a.staff_id, s.name AS staff_name, a.attendance_date, a.status, a.leave_type, a.reason, a.recorded_by, a.created_at FROM staff_attendance a JOIN staff s ON a.staff_id = s.id {where_sql} ORDER BY a.attendance_date DESC, a.id DESC;", params=params, ttl="60s")
     except Exception: return pd.DataFrame()
 
-def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leakage=False, limit_to_employment=True):
+def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leakage=False, limit_to_employment=True, allowed_carts=None):
     if db_conn is None: return 0.0, 0.0, 0.0, {}
     staff_df = load_full_staff_df()
     if staff_df.empty: return 0.0, 0.0, 0.0, {}
@@ -4851,6 +4864,14 @@ def calculate_incurred_labour_for_range(start_date, end_date, include_cash_leaka
         if not st_leaves.empty:
             lv_dates = pd.to_datetime(st_leaves["attendance_date"]).dt.date
             st_leaves = st_leaves[(lv_dates >= employment_start) & (lv_dates <= employment_end)]
+
+        if allowed_carts is not None and role_lower == "cart operator":
+            _allowed_upper = {str(c).strip().upper() for c in allowed_carts if str(c).strip()}
+            _had_any_shift = not st_shifts.empty
+            if not st_shifts.empty:
+                st_shifts = st_shifts[st_shifts["cart_name"].fillna("").astype(str).str.strip().str.upper().isin(_allowed_upper)].copy()
+            if _had_any_shift and st_shifts.empty:
+                st_leaves = st_leaves.iloc[0:0].copy()
 
         st_pay = pay_df[pay_df["staff_name"] == st_name].copy() if not pay_df.empty else pd.DataFrame()
         if not st_pay.empty and "payment_date" in st_pay.columns:
@@ -5240,6 +5261,158 @@ def compute_period_financials(start_date, end_date, avg_divisor_days=None, daily
         "staff_pay_breakdown": staff_pay_breakdown,
         "unassigned_labour_df": unassigned_labour_df,
         "non_labour_opex_df": non_labour_opex_df,
+        "tot_labour_incurred": tot_labour_incurred,
+        "other_opex_total": other_opex_total,
+        "total_incurred_opex": total_incurred_opex,
+        "gross_profit": gross_profit,
+        "cogs_margin": cogs_margin,
+        "gross_margin": gross_margin,
+        "net_profit": net_profit,
+        "net_margin": net_margin,
+        "opex_margin": opex_margin,
+        "avg_divisor_days": avg_divisor_days,
+        "avg_rev_per_day": avg_rev_per_day,
+        "avg_units_per_day": avg_units_per_day,
+    }
+
+
+def compute_what_if_financials(start_date, end_date, enabled_carts, all_carts, avg_divisor_days=None, daily_df_in=None, exp_df_in=None):
+    """Recalculate P&L and OPEX for a subset of enabled carts, excluding disabled-cart staff & expenses."""
+    d_df = daily_df_in if daily_df_in is not None else load_db_daily_df()
+    if d_df is not None and not d_df.empty and "Cart" in d_df.columns:
+        d_df = d_df[~d_df["Cart"].astype(str).str.lower().str.contains("test", na=False)].copy()
+    else:
+        d_df = pd.DataFrame()
+
+    if exp_df_in is not None:
+        e_df = exp_df_in.copy()
+    else:
+        try:
+            e_df = pd.DataFrame(load_db_expenses_list())
+        except Exception:
+            e_df = pd.DataFrame()
+
+    if not d_df.empty and "Date" in d_df.columns:
+        full_range_df = d_df[(d_df["Date"].dt.date >= start_date) & (d_df["Date"].dt.date <= end_date)].copy()
+    else:
+        full_range_df = pd.DataFrame()
+
+    if not e_df.empty and "Date" in e_df.columns and e_df["Date"].notna().any():
+        range_exp = e_df[(e_df["Date"].dt.date >= start_date) & (e_df["Date"].dt.date <= end_date)].copy()
+    else:
+        range_exp = pd.DataFrame()
+
+    enabled_upper = {str(c).strip().upper() for c in (enabled_carts or []) if str(c).strip()}
+    all_upper = {str(c).strip().upper() for c in (all_carts or []) if str(c).strip()}
+    disabled_upper = all_upper - enabled_upper
+
+    if not full_range_df.empty:
+        cart_upper_series = full_range_df["Cart"].fillna("").astype(str).str.strip().str.upper()
+        range_df = full_range_df[cart_upper_series.isin(enabled_upper)].copy()
+    else:
+        range_df = pd.DataFrame()
+
+    # Identify Cart Operators who worked ONLY on disabled carts in this range
+    disabled_only_staff_lower = set()
+    if not full_range_df.empty and "Staff" in full_range_df.columns and disabled_upper:
+        staff_carts_map = {}
+        for _, _r in full_range_df.iterrows():
+            _sn = str(_r.get("Staff") or "").strip().lower()
+            _cn = str(_r.get("Cart") or "").strip().upper()
+            if _sn and _sn not in ("none", "nan", "select staff"):
+                staff_carts_map.setdefault(_sn, set()).add(_cn)
+        for _sn, _cset in staff_carts_map.items():
+            if _cset and _cset.isdisjoint(enabled_upper):
+                disabled_only_staff_lower.add(_sn)
+
+    total_rev = float(range_df["Total_Collection"].sum()) if not range_df.empty else 0.0
+    total_units = int(round(range_df["Sold_Total"].sum())) if not range_df.empty else 0
+
+    try:
+        flavor_range_df = load_db_flavor_sales(start_date=start_date, end_date=end_date, allowed_carts=list(enabled_upper))
+    except Exception:
+        flavor_range_df = pd.DataFrame()
+    exact_cogs_sold = (
+        float(flavor_range_df["COGS (₹)"].sum())
+        if not flavor_range_df.empty and "COGS (₹)" in flavor_range_df.columns
+        else 0.0
+    )
+
+    def _is_disabled_cart_expense(row):
+        if not disabled_upper:
+            return False
+        attr = str(row.get("Attributed_To") or "").strip().upper()
+        if attr and attr in disabled_upper:
+            return True
+        st_n = str(row.get("Staff_Name") or "").strip().lower()
+        if st_n and st_n in disabled_only_staff_lower:
+            return True
+        if not attr:
+            desc_comb = (str(row.get("Description") or "") + " " + str(row.get("Remarks") or "")).upper()
+            for dc in disabled_upper:
+                if dc and dc in desc_comb:
+                    return True
+        return False
+
+    if not range_exp.empty:
+        keep_mask = ~range_exp.apply(_is_disabled_cart_expense, axis=1)
+        filtered_exp = range_exp[keep_mask].copy()
+    else:
+        filtered_exp = pd.DataFrame()
+
+    if not filtered_exp.empty:
+        expense_types = filtered_exp["Expense_Type"].fillna("").astype(str).str.strip().str.upper()
+        expense_categories = filtered_exp["Category"].fillna("").astype(str).str.strip().str.casefold()
+        staff_blank_mask = (
+            filtered_exp["Staff_Name"].isna()
+            | filtered_exp["Staff_Name"].astype(str).str.strip().isin(["", "None", "nan", "null", "Select Staff"])
+        )
+        unassigned_labour_df = filtered_exp[
+            (expense_types == "OPEX") & (expense_categories == "labour charges") & staff_blank_mask
+        ].copy()
+        unassigned_labour_total = float(unassigned_labour_df["Amount"].sum()) if not unassigned_labour_df.empty else 0.0
+        non_labour_opex_df = filtered_exp[
+            (expense_types == "OPEX") & (~expense_categories.isin(["labour charges", "cost of goods"]))
+        ].copy()
+        other_opex_total = float(non_labour_opex_df["Amount"].sum()) if not non_labour_opex_df.empty else 0.0
+    else:
+        unassigned_labour_total = 0.0
+        other_opex_total = 0.0
+
+    try:
+        _, _, _, staff_pay_breakdown = calculate_incurred_labour_for_range(
+            start_date, end_date, limit_to_employment=True, allowed_carts=list(enabled_upper)
+        )
+    except Exception:
+        staff_pay_breakdown = {}
+
+    staff_salary_total = sum(float(staff.get("incurred", 0.0)) for staff in staff_pay_breakdown.values())
+    tot_labour_incurred = staff_salary_total + unassigned_labour_total
+    total_incurred_opex = tot_labour_incurred + other_opex_total
+
+    gross_profit = total_rev - exact_cogs_sold
+    cogs_margin = (exact_cogs_sold / total_rev * 100.0) if total_rev > 0 else 0.0
+    gross_margin = (gross_profit / total_rev * 100.0) if total_rev > 0 else 0.0
+    net_profit = gross_profit - total_incurred_opex
+    net_margin = (net_profit / total_rev * 100.0) if total_rev > 0 else 0.0
+    opex_margin = (total_incurred_opex / total_rev * 100.0) if total_rev > 0 else 0.0
+
+    if avg_divisor_days is None or int(avg_divisor_days) <= 0:
+        today_ref = date.today()
+        if start_date.day == 1 and start_date.year == today_ref.year and start_date.month == today_ref.month and end_date >= today_ref:
+            avg_divisor_days = max(1, (today_ref - start_date).days)
+        else:
+            avg_divisor_days = max(1, (end_date - start_date).days + 1)
+    else:
+        avg_divisor_days = max(1, int(avg_divisor_days))
+
+    avg_rev_per_day = (total_rev / float(avg_divisor_days)) if avg_divisor_days > 0 else 0.0
+    avg_units_per_day = (total_units / float(avg_divisor_days)) if avg_divisor_days > 0 else 0.0
+
+    return {
+        "total_rev": total_rev,
+        "total_units": total_units,
+        "exact_cogs_sold": exact_cogs_sold,
         "tot_labour_incurred": tot_labour_incurred,
         "other_opex_total": other_opex_total,
         "total_incurred_opex": total_incurred_opex,
@@ -6703,17 +6876,17 @@ with _page_body_container:
             st.rerun()
 
         _de_row1_buttons = [
+            ("staging_sales", f"✅ Approve Sales ({pending_sales_cnt})" if pending_sales_cnt > 0 else "✅ Approve Sales"),
+            ("staging_restock", f"📥 Approve Restock ({pending_restock_cnt})" if pending_restock_cnt > 0 else "📥 Approve Restock"),
             ("sales", "🧾 Sales Entry"),
             ("restock", "📦 Restock"),
             ("extra", "➕ Extra Stock"),
-            ("remove_cart_stock", "🔄 Remove Stock"),
-            ("freezer_sales", "❄️ Freezer Sale"),
         ]
         _de_row2_buttons = [
+            ("remove_cart_stock", "🔄 Remove Stock"),
+            ("freezer_sales", "❄️ Freezer Sale"),
             ("view_stock", "📋 View Stock"),
             ("live_flavour_view", "📱 Live POS"),
-            ("staging_sales", f"✅ Approve Sales ({pending_sales_cnt})" if pending_sales_cnt > 0 else "✅ Approve Sales"),
-            ("staging_restock", f"📥 Approve Restock ({pending_restock_cnt})" if pending_restock_cnt > 0 else "📥 Approve Restock"),
         ]
 
         with st.container(border=True):
@@ -7062,9 +7235,11 @@ with _page_body_container:
             # --------------------------------------------------------------
             elif entry_mode == "staging_sales":
                 st.markdown(
-                    "<div class='header-box-sales'><span>✅ Approve Sales — Cart Staff Submissions</span><span><b>Admin Approval</b></span></div>",
+                    "<div class='header-box-sales' style='margin-bottom:14px;'><span>✅ Approve Sales — Cart Staff Submissions</span><span><b>Admin Approval</b></span></div>",
                     unsafe_allow_html=True,
                 )
+                st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
+
                 sf1, sf2, sf3 = st.columns([1.2, 1.2, 2.0], gap="small", vertical_alignment="bottom")
                 with sf1:
                     stg_sales_status = st.selectbox(
@@ -7128,132 +7303,289 @@ with _page_body_container:
 
                         with st.container(border=True):
                             st.markdown(
-                                f"<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;'>"
-                                f"<div><b style='font-size:15px;color:#4A2418;'>{s_cart}</b> &nbsp;|&nbsp; <span style='color:#6B5138;font-weight:700;'>{_entry_date_display(s_date)}</span> &nbsp;|&nbsp; Staff: <b>{s_staff or '—'}</b></div>"
+                                f"<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;'>"
+                                f"<div><b style='font-size:15px;color:#1E2252;'>{escape(s_cart)}</b> &nbsp;|&nbsp; <span style='color:#475569;font-weight:700;'>{_entry_date_display(s_date)}</span> &nbsp;|&nbsp; Staff: <b>{escape(s_staff or '—')}</b></div>"
                                 f"<div>{badge_html}</div>"
                                 f"</div>"
-                                f"<div style='font-size:11.5px;color:#78716C;margin-bottom:8px;'>Submitted by <b>{s_sub_by}</b> at {s_sub_at}"
-                                + (f" &nbsp;•&nbsp; Approved by <b>{s_app_by}</b> at {s_app_at}" if is_final else "")
+                                f"<div style='font-size:11.5px;color:#64748B;margin-bottom:8px;'>Submitted by <b>{escape(s_sub_by)}</b> at {s_sub_at}"
+                                + (f" &nbsp;•&nbsp; Approved by <b>{escape(s_app_by)}</b> at {s_app_at}" if is_final else "")
                                 + "</div>",
                                 unsafe_allow_html=True,
                             )
 
-                            grid_rows = []
-                            open_map, add_map, close_map, sold_map = {}, {}, {}, {}
+                            # Flavour Table: Open | +Add | Close (Editable) | Sold | Sale (₹)
+                            stg_col_w = [1.9, 0.85, 0.85, 1.0, 0.85, 1.1]
+                            sh1, sh2, sh3, sh4, sh5, sh6 = st.columns(stg_col_w, gap="small", vertical_alignment="center")
+                            sh1.markdown("<div class='entry-grid-header' style='text-align:left;'>Flavour (MRP)</div>", unsafe_allow_html=True)
+                            sh2.markdown("<div class='entry-grid-header'>Open</div>", unsafe_allow_html=True)
+                            sh3.markdown("<div class='entry-grid-header'>+ Add</div>", unsafe_allow_html=True)
+                            sh4.markdown("<div class='entry-grid-header'>Close" + ("" if is_final else " ✏️") + "</div>", unsafe_allow_html=True)
+                            sh5.markdown("<div class='entry-grid-header'>Sold</div>", unsafe_allow_html=True)
+                            sh6.markdown("<div class='entry-grid-header' style='text-align:right;'>Sale (₹)</div>", unsafe_allow_html=True)
+
+                            open_map, add_map, close_map, sold_map, amount_map = {}, {}, {}, {}, {}
                             for code in FLAVOR_CODES:
                                 f_info = FLAVOR_MAP[code]
                                 it = raw_items.get(code, {}) if isinstance(raw_items, dict) else {}
                                 op = int(_num(it.get("opening", 0)))
                                 ad = int(_num(it.get("added", 0)))
-                                cl = int(_num(it.get("closing", op + ad)))
-                                sd = max(0, op + ad - cl)
+                                orig_cl = int(_num(it.get("closing", op + ad)))
+
+                                k_cls = f"stg_s_cls_{sid}_{code}"
+                                if k_cls not in st.session_state:
+                                    st.session_state[k_cls] = orig_cl
+
+                                rc1, rc2, rc3, rc4, rc5, rc6 = st.columns(stg_col_w, gap="small", vertical_alignment="center")
+                                with rc1:
+                                    st.markdown(
+                                        f"<div class='entry-grid-cell-flavour'><span>{escape(f_info['name'])}</span><span style='color:#2563EB;font-size:10.5px;'>₹{f_info['mrp']:.0f}</span></div>",
+                                        unsafe_allow_html=True,
+                                    )
+                                with rc2:
+                                    st.markdown(f"<div class='entry-grid-cell'>{op}</div>", unsafe_allow_html=True)
+                                with rc3:
+                                    st.markdown(f"<div class='entry-grid-cell'>{ad}</div>", unsafe_allow_html=True)
+                                with rc4:
+                                    if is_final:
+                                        cur_cl = orig_cl
+                                        st.markdown(f"<div class='entry-grid-cell'>{cur_cl}</div>", unsafe_allow_html=True)
+                                    else:
+                                        cur_cl = _int_num(
+                                            st.number_input(
+                                                f"Close {sid} {code}",
+                                                min_value=0,
+                                                step=1,
+                                                format="%d",
+                                                key=k_cls,
+                                                label_visibility="collapsed",
+                                            )
+                                        )
+                                cur_sd = op + ad - cur_cl
+                                cur_amt = max(0, cur_sd) * float(f_info["mrp"])
                                 open_map[code] = op
                                 add_map[code] = ad
-                                close_map[code] = cl
-                                sold_map[code] = sd
-                                grid_rows.append({
-                                    "Flavour": f_info["name"],
-                                    "Opening": op,
-                                    "+ Added": ad,
-                                    "Closing": cl,
-                                    "Sold": sd,
-                                    "Sale (₹)": sd * int(f_info["mrp"]),
-                                })
-                            st.dataframe(pd.DataFrame(grid_rows), hide_index=True, use_container_width=True)
+                                close_map[code] = cur_cl
+                                sold_map[code] = cur_sd
+                                amount_map[code] = cur_amt
 
-                            tot_calc_col = sum(r["Sale (₹)"] for r in grid_rows)
-                            ph_amt = float(_num(srow.get("phonepe", 0)))
-                            adv_amt = float(_num(srow.get("staff_advance", 0)))
-                            food_amt = float(_num(srow.get("food_tea_cash", 0)))
-                            leak_exp_amt = float(_num(srow.get("cash_leakage_explained", 0)))
-                            leak_unexp_amt = float(_num(srow.get("cash_leakage_unexplained", 0)))
-                            leak_tot = float(_num(srow.get("cash_leakage", leak_exp_amt + leak_unexp_amt)))
-                            cash_amt = max(0.0, tot_calc_col - ph_amt - adv_amt - food_amt - leak_tot)
+                                with rc5:
+                                    sold_style = "color:#DC2626;background:#FEF2F2;border-color:#FCA5A5;" if cur_sd < 0 else ""
+                                    st.markdown(f"<div class='entry-grid-cell-sold' style='{sold_style}'>{cur_sd}</div>", unsafe_allow_html=True)
+                                with rc6:
+                                    st.markdown(f"<div class='entry-grid-cell-amount'>₹{cur_amt:,.0f}</div>", unsafe_allow_html=True)
+
+                            tot_open = sum(open_map.values())
+                            tot_add = sum(add_map.values())
+                            tot_close = sum(close_map.values())
+                            tot_sold = sum(sold_map.values())
+                            calc_mrp_total = float(sum(amount_map.values()))
+
+                            tc1, tc2, tc3, tc4, tc5, tc6 = st.columns(stg_col_w, gap="small", vertical_alignment="center")
+                            tc1.markdown("<div class='entry-grid-total-row' style='text-align:left;'>TOTAL</div>", unsafe_allow_html=True)
+                            tc2.markdown(f"<div class='entry-grid-total-row'>{tot_open}</div>", unsafe_allow_html=True)
+                            tc3.markdown(f"<div class='entry-grid-total-row'>{tot_add}</div>", unsafe_allow_html=True)
+                            tc4.markdown(f"<div class='entry-grid-total-row'>{tot_close}</div>", unsafe_allow_html=True)
+                            tc5.markdown(f"<div class='entry-grid-total-row' style='color:#C43D17;'>{tot_sold} pcs</div>", unsafe_allow_html=True)
+                            tc6.markdown(f"<div class='entry-grid-total-row' style='text-align:right;color:#047857;'>₹{calc_mrp_total:,.0f}</div>", unsafe_allow_html=True)
+
+                            # Live Financial Fields (All Editable for Admin when Pending, Auto-Recalculated on Close Change)
+                            init_tot = float(_num(srow.get("total_collection", calc_mrp_total)))
+                            init_ph = float(_num(srow.get("phonepe", 0)))
+                            init_adv = float(_num(srow.get("staff_advance", 0)))
+                            init_food = float(_num(srow.get("food_tea_cash", 0)))
+                            init_l_expl = float(_num(srow.get("cash_leakage_explained", 0)))
+                            init_l_unexpl = float(_num(srow.get("cash_leakage_unexplained", 0)))
+                            init_l_tot = float(_num(srow.get("cash_leakage", init_l_expl + init_l_unexpl)))
+                            if init_l_expl == 0 and init_l_unexpl == 0 and init_l_tot > 0:
+                                init_l_unexpl = init_l_tot
+                            init_cash = float(_num(srow.get("cash", max(0.0, init_tot - init_ph - init_adv - init_food - init_l_expl - init_l_unexpl))))
+
+                            k_tot = f"stg_s_tot_{sid}"
+                            k_prev_calc = f"stg_s_prev_calc_{sid}"
+                            k_ph = f"stg_s_ph_{sid}"
+                            k_cs = f"stg_s_cs_{sid}"
+                            k_adv = f"stg_s_adv_{sid}"
+                            k_lexp = f"stg_s_lexp_{sid}"
+                            k_lunexp = f"stg_s_lunexp_{sid}"
+                            k_sig = f"stg_s_sig_{sid}"
+
+                            if k_tot not in st.session_state:
+                                st.session_state[k_tot] = f"{(init_tot if init_tot > 0 else calc_mrp_total):.2f}"
+                                st.session_state[k_prev_calc] = calc_mrp_total
+                            elif not is_final and st.session_state.get(k_prev_calc) != calc_mrp_total:
+                                st.session_state[k_tot] = f"{calc_mrp_total:.2f}"
+                                st.session_state[k_prev_calc] = calc_mrp_total
+
+                            if k_ph not in st.session_state:
+                                st.session_state[k_ph] = f"{init_ph:.2f}"
+                            if k_cs not in st.session_state:
+                                st.session_state[k_cs] = f"{init_cash:.2f}"
+                            if k_adv not in st.session_state:
+                                st.session_state[k_adv] = f"{init_adv:.2f}"
+                            if k_lexp not in st.session_state:
+                                st.session_state[k_lexp] = f"{init_l_expl:.2f}"
+                            if k_lunexp not in st.session_state:
+                                st.session_state[k_lunexp] = f"{init_l_unexpl:.2f}"
+
+                            # Compact Summary Strip
+                            st.markdown(
+                                f"<div style='display:flex;justify-content:space-between;align-items:center;background:#F8FAFC;border:1px solid #CBD5E1;border-radius:8px;padding:6px 12px;margin:8px 0 6px 0;font-size:12.5px;'>"
+                                f"<span>🍦 <b>Total Units Sold:</b> <span style='color:#C43D17;font-weight:900;'>{tot_sold} pcs</span></span>"
+                                f"<span>💰 <b>Calculated Sale Value:</b> <span style='color:#047857;font-weight:900;'>₹{calc_mrp_total:,.0f}</span></span>"
+                                f"</div>",
+                                unsafe_allow_html=True,
+                            )
+
+                            fr1_c1, fr1_c2, fr1_c3 = st.columns(3, gap="small")
+                            with fr1_c1:
+                                ed_tot = max(0.0, _num(st.text_input("Total Collection (₹)", key=k_tot, disabled=is_final)))
+                            with fr1_c2:
+                                ed_ph = max(0.0, _num(st.text_input("PhonePe (₹)", key=k_ph, disabled=is_final)))
+                            with fr1_c3:
+                                ed_cash = max(0.0, _num(st.text_input("Cash (₹)", key=k_cs, disabled=is_final)))
+
+                            fr2_c1, fr2_c2, fr2_c3 = st.columns(3, gap="small")
+                            with fr2_c1:
+                                ed_adv = max(0.0, _num(st.text_input("Advance (₹)", key=k_adv, disabled=is_final)))
+                            with fr2_c2:
+                                ed_lexp = max(0.0, _num(st.text_input("Leakage (Expl) (₹)", key=k_lexp, disabled=is_final)))
+
+                            # Auto-recalculate Leakage (Unexpl) whenever Close/Total/PhonePe/Cash/Advance/Leakage(Expl) changes,
+                            # while still allowing Admin to manually edit Leakage (Unexpl) directly.
+                            curr_sig = f"{ed_tot:.2f}|{ed_ph:.2f}|{ed_cash:.2f}|{ed_adv:.2f}|{ed_lexp:.2f}"
+                            auto_unexpl = max(0.0, ed_tot - ed_ph - ed_cash - ed_adv - init_food - ed_lexp)
+                            if not is_final:
+                                if k_sig not in st.session_state:
+                                    st.session_state[k_sig] = curr_sig
+                                elif st.session_state.get(k_sig) != curr_sig:
+                                    st.session_state[k_lunexp] = f"{auto_unexpl:.2f}"
+                                    st.session_state[k_sig] = curr_sig
+
+                            with fr2_c3:
+                                ed_lunexp = max(0.0, _num(st.text_input("Leakage (Unexpl) (₹)", key=k_lunexp, disabled=is_final)))
+
                             rem_str = str(srow.get("remarks") or "")
+                            ed_c1, ed_c2 = st.columns([1.2, 2.5], gap="small")
+                            with ed_c1:
+                                staff_opts = load_active_staff_list()
+                                if s_staff and s_staff not in staff_opts:
+                                    staff_opts.append(s_staff)
+                                chosen_staff = st.selectbox(
+                                    "Staff",
+                                    staff_opts,
+                                    index=staff_opts.index(s_staff) if s_staff in staff_opts else 0,
+                                    key=f"stg_sales_staff_{sid}",
+                                    disabled=is_final,
+                                )
+                            with ed_c2:
+                                chosen_rem = st.text_input(
+                                    "Admin Remarks (why changes were made)",
+                                    value=rem_str,
+                                    placeholder="Add reason for any edits or approval notes...",
+                                    key=f"stg_sales_rem_{sid}",
+                                    disabled=is_final,
+                                )
 
-                            mc1, mc2, mc3, mc4, mc5 = st.columns(5)
-                            mc1.metric("Total Sale", f"₹{tot_calc_col:,.0f}")
-                            mc2.metric("PhonePe", f"₹{ph_amt:,.0f}")
-                            mc3.metric("Cash", f"₹{cash_amt:,.0f}")
-                            mc4.metric("Advance", f"₹{adv_amt:,.0f}")
-                            mc5.metric("Leakage", f"₹{leak_tot:,.0f}")
+                            if any(sd < 0 for sd in sold_map.values()):
+                                st.error("Close cannot exceed Open + Add for any flavour (Sold is negative).")
 
                             if not is_final:
-                                st.caption("Review or adjust remarks/staff before approving and posting to `daily_cart_entries`:")
-                                ed_c1, ed_c2 = st.columns([1.2, 2.2], gap="small")
-                                with ed_c1:
-                                    staff_opts = load_active_staff_list()
-                                    if s_staff and s_staff not in staff_opts:
-                                        staff_opts.append(s_staff)
-                                    chosen_staff = st.selectbox(
-                                        "Staff",
-                                        staff_opts,
-                                        index=staff_opts.index(s_staff) if s_staff in staff_opts else 0,
-                                        key=f"stg_sales_staff_{sid}",
-                                    )
-                                with ed_c2:
-                                    chosen_rem = st.text_input("Remarks", value=rem_str, key=f"stg_sales_rem_{sid}")
-
                                 if st.button(
                                     "✅ Approve & Post to Actuals",
                                     type="primary",
                                     key=f"approve_stg_sales_{sid}",
                                 ):
-                                    try:
-                                        final_staff = "" if chosen_staff == "Select Staff" else chosen_staff
-                                        sync_daily_entry(
-                                            s_date,
-                                            s_cart,
-                                            add_map,
-                                            close_map,
-                                            open_map,
-                                            sold_map,
-                                            tot_calc_col,
-                                            ph_amt,
-                                            cash_amt,
-                                            chosen_rem,
-                                            final_staff,
-                                            adv_amt,
-                                            food_amt,
-                                            cash_leakage_explained=leak_exp_amt,
-                                            cash_leakage_unexplained=leak_unexp_amt if leak_tot > 0 and leak_exp_amt == 0 and leak_unexp_amt == 0 else leak_unexp_amt,
-                                        )
-                                        if s_date == yesterday_sale_date:
-                                            sync_today_opening_after_sales_update(today_val, s_cart, close_map)
-                                        with db_conn.session as s:
-                                            posted_row = s.execute(
-                                                text("SELECT id FROM daily_cart_entries WHERE entry_date = :dt AND cart_name = :ct;"),
-                                                {"dt": s_date, "ct": s_cart},
-                                            ).fetchone()
-                                            posted_id = int(posted_row[0]) if posted_row else None
-                                            s.execute(
-                                                text("""
-                                                    UPDATE cart_entry_staging
-                                                    SET status = 'Final',
-                                                        staff_name = :stf,
-                                                        remarks = :rem,
-                                                        approved_by = 'Admin',
-                                                        approved_at = NOW(),
-                                                        posted_daily_entry_id = :pid,
-                                                        updated_at = NOW()
-                                                    WHERE id = :sid;
-                                                """),
-                                                {"stf": final_staff, "rem": chosen_rem, "pid": posted_id, "sid": sid},
+                                    if any(sd < 0 for sd in sold_map.values()):
+                                        st.error("Fix negative Sold units before approving.")
+                                    else:
+                                        try:
+                                            final_staff = "" if chosen_staff == "Select Staff" else chosen_staff
+                                            final_leak_tot = ed_lexp + ed_lunexp
+                                            sync_daily_entry(
+                                                s_date,
+                                                s_cart,
+                                                add_map,
+                                                close_map,
+                                                open_map,
+                                                sold_map,
+                                                ed_tot,
+                                                ed_ph,
+                                                ed_cash,
+                                                chosen_rem,
+                                                final_staff,
+                                                ed_adv,
+                                                init_food,
+                                                cash_leakage_explained=ed_lexp,
+                                                cash_leakage_unexplained=ed_lunexp,
                                             )
-                                            s.commit()
-                                        st.cache_data.clear()
-                                        show_success_modal(f"Staging Sales #{sid} ({s_cart}, {_entry_date_display(s_date)}) approved, posted to actuals, and marked Final!")
-                                    except Exception as e:
-                                        st.error(f"Could not approve staging sales entry: {e}")
+                                            if s_date == yesterday_sale_date:
+                                                sync_today_opening_after_sales_update(today_val, s_cart, close_map)
+
+                                            updated_flavor_items = {
+                                                code: {
+                                                    "opening": int(open_map[code]),
+                                                    "added": int(add_map[code]),
+                                                    "closing": int(close_map[code]),
+                                                    "sold": int(sold_map[code]),
+                                                }
+                                                for code in FLAVOR_CODES
+                                            }
+                                            with db_conn.session as s:
+                                                posted_row = s.execute(
+                                                    text("SELECT id FROM daily_cart_entries WHERE entry_date = :dt AND cart_name = :ct;"),
+                                                    {"dt": s_date, "ct": s_cart},
+                                                ).fetchone()
+                                                posted_id = int(posted_row[0]) if posted_row else None
+                                                s.execute(
+                                                    text("""
+                                                        UPDATE cart_entry_staging
+                                                        SET status = 'Final',
+                                                            staff_name = :stf,
+                                                            flavor_items = CAST(:fitems AS jsonb),
+                                                            total_collection = :tot,
+                                                            phonepe = :ph,
+                                                            cash = :cs,
+                                                            staff_advance = :adv,
+                                                            cash_leakage_explained = :lexp,
+                                                            cash_leakage_unexplained = :lunexp,
+                                                            cash_leakage = :ltot,
+                                                            remarks = :rem,
+                                                            approved_by = 'Admin',
+                                                            approved_at = NOW(),
+                                                            posted_daily_entry_id = :pid,
+                                                            updated_at = NOW()
+                                                        WHERE id = :sid;
+                                                    """),
+                                                    {
+                                                        "stf": final_staff,
+                                                        "fitems": json.dumps(updated_flavor_items),
+                                                        "tot": float(ed_tot),
+                                                        "ph": float(ed_ph),
+                                                        "cs": float(ed_cash),
+                                                        "adv": float(ed_adv),
+                                                        "lexp": float(ed_lexp),
+                                                        "lunexp": float(ed_lunexp),
+                                                        "ltot": float(final_leak_tot),
+                                                        "rem": chosen_rem,
+                                                        "pid": posted_id,
+                                                        "sid": sid,
+                                                    },
+                                                )
+                                                s.commit()
+                                            st.cache_data.clear()
+                                            show_success_modal(f"Staging Sales #{sid} ({s_cart}, {_entry_date_display(s_date)}) approved, posted to actuals, and marked Final!")
+                                        except Exception as e:
+                                            st.error(f"Could not approve staging sales entry: {e}")
 
             # --------------------------------------------------------------
             # ADMIN STAGING REVIEW: RESTOCK ENTRIES
             # --------------------------------------------------------------
             elif entry_mode == "staging_restock":
                 st.markdown(
-                    "<div class='header-box-restock'><span>📥 Approve Restock — Cart Staff Submissions</span><span><b>Admin Approval</b></span></div>",
+                    "<div class='header-box-restock' style='margin-bottom:14px;'><span>📥 Approve Restock — Cart Staff Submissions</span><span><b>Admin Approval</b></span></div>",
                     unsafe_allow_html=True,
                 )
+                st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
                 rf1, rf2, rf3 = st.columns([1.2, 1.2, 2.0], gap="small", vertical_alignment="bottom")
                 with rf1:
                     stg_restock_status = st.selectbox(
@@ -15325,18 +15657,17 @@ with _page_body_container:
             st.markdown('</div>', unsafe_allow_html=True)
 
         active_dash_sub = st.session_state.get("dash_sub_page")
-        if active_dash_sub not in ("month_comp", "sales_log", "dow_patterns"):
+        if active_dash_sub not in ("month_comp", "sales_log", "dow_patterns", "what_if"):
             active_dash_sub = None
             st.session_state["dash_sub_page"] = None
 
         # ==================================================================
         # DEFAULT MAIN FINANCIALS PAGE:
-        # 7 KPI Boxes -> Daily Revenue Trend -> OPEX Breakdown & Full P&L
-        # Top-Right Buttons: Month-Wise Performance, Date-wise Sales Log, Day-Wise & Timing Patterns
+        # 7 KPI Boxes -> Per-Cart Daily Average -> Daily Revenue Trend -> OPEX Breakdown & Full P&L
         # ==================================================================
         if active_dash_sub is None:
-            dash_hdr_c1, dash_hdr_c2, dash_hdr_c3, dash_hdr_c4 = st.columns(
-                [1.85, 1.30, 1.15, 1.35],
+            dash_hdr_c1, dash_hdr_c2, dash_hdr_c3, dash_hdr_c4, dash_hdr_c5 = st.columns(
+                [1.55, 1.10, 1.25, 1.10, 1.25],
                 gap="small",
                 vertical_alignment="center",
             )
@@ -15344,13 +15675,22 @@ with _page_body_container:
                 st.subheader("💰 Financials Overview")
             with dash_hdr_c2:
                 st.button(
+                    "🔮 What-If Analysis",
+                    key="dash_open_page_what_if",
+                    type="primary",
+                    use_container_width=True,
+                    on_click=_open_dash_sub_page,
+                    args=("what_if",),
+                )
+            with dash_hdr_c3:
+                st.button(
                     "📅 Month-Wise Performance",
                     key="dash_open_page_month_comp",
                     use_container_width=True,
                     on_click=_open_dash_sub_page,
                     args=("month_comp",),
                 )
-            with dash_hdr_c3:
+            with dash_hdr_c4:
                 st.button(
                     "📋 Date-wise Sales Log",
                     key="dash_open_page_sales_log",
@@ -15358,7 +15698,7 @@ with _page_body_container:
                     on_click=_open_dash_sub_page,
                     args=("sales_log",),
                 )
-            with dash_hdr_c4:
+            with dash_hdr_c5:
                 st.button(
                     "📆 Day-Wise & Timing Patterns",
                     key="dash_open_page_dow_patterns",
@@ -15383,6 +15723,45 @@ with _page_body_container:
                     exact_cogs_sold, cogs_margin, gross_profit, gross_margin,
                     total_incurred_opex, opex_margin, net_profit, net_margin
                 )
+
+                st.markdown("#### Cart Daily Average")
+                if not range_df.empty and "Cart" in range_df.columns:
+                    _cart_day_df = range_df.copy()
+                    _cart_day_df["_d_only"] = pd.to_datetime(_cart_day_df["Date"]).dt.date
+                    _cart_day_agg = (
+                        _cart_day_df.groupby(["Cart", "_d_only"], as_index=False)
+                        .agg(Day_Rev=("Total_Collection", "sum"), Day_Units=("Sold_Total", "sum"))
+                    )
+                    _cart_nonzero = _cart_day_agg[_cart_day_agg["Day_Rev"] > 0].copy()
+                    if not _cart_nonzero.empty:
+                        _cart_avg_df = (
+                            _cart_nonzero.groupby("Cart", as_index=False)
+                            .agg(
+                                Active_Days=("_d_only", "nunique"),
+                                Total_Rev=("Day_Rev", "sum"),
+                                Total_Units=("Day_Units", "sum"),
+                            )
+                        )
+                        _cart_avg_df["Avg Rev / Day (₹)"] = _cart_avg_df["Total_Rev"] / _cart_avg_df["Active_Days"]
+                        _cart_avg_df["Avg Units / Day"] = _cart_avg_df["Total_Units"] / _cart_avg_df["Active_Days"]
+                        _cart_avg_df = _cart_avg_df.sort_values("Avg Rev / Day (₹)", ascending=False).reset_index(drop=True)
+                        _cart_avg_disp = _cart_avg_df[["Cart", "Active_Days", "Avg Rev / Day (₹)", "Avg Units / Day", "Total_Rev", "Total_Units"]].rename(
+                            columns={"Active_Days": "Active Days", "Total_Rev": "Total Revenue (₹)", "Total_Units": "Total Units"}
+                        )
+                        st.dataframe(
+                            _cart_avg_disp,
+                            hide_index=True,
+                            use_container_width=True,
+                            height=min(320, 40 + len(_cart_avg_disp) * 36),
+                            column_config={
+                                "Cart": st.column_config.TextColumn("Cart"),
+                                "Active Days": st.column_config.NumberColumn("Active Days", format="%d"),
+                                "Avg Rev / Day (₹)": st.column_config.NumberColumn("Avg Rev / Day (₹)", format="₹%,.0f"),
+                                "Avg Units / Day": st.column_config.NumberColumn("Avg Units / Day", format="%,.1f"),
+                                "Total Revenue (₹)": st.column_config.NumberColumn("Total Revenue (₹)", format="₹%,.0f"),
+                                "Total Units": st.column_config.NumberColumn("Total Units", format="%,d"),
+                            },
+                        )
 
                 st.markdown("#### Daily Revenue Trend")
                 if not range_df.empty:
@@ -15799,7 +16178,7 @@ with _page_body_container:
         # SEPARATE SUB-PAGES: MONTH-WISE, DATE-WISE SALES LOG & DAY-WISE PATTERNS
         # ==================================================================
         else:
-            nav_b1, nav_b2, nav_b3, nav_b4 = st.columns([1.15, 1.30, 1.20, 1.35], gap="small")
+            nav_b1, nav_b2, nav_b3, nav_b4, nav_b5 = st.columns([1.05, 1.15, 1.25, 1.15, 1.25], gap="small")
             with nav_b1:
                 st.button(
                     "⬅ Back to Financials",
@@ -15811,6 +16190,15 @@ with _page_body_container:
                 )
             with nav_b2:
                 st.button(
+                    "🔮 What-If Analysis",
+                    key="dash_sub_switch_what_if",
+                    type="primary" if active_dash_sub == "what_if" else "secondary",
+                    use_container_width=True,
+                    on_click=_open_dash_sub_page,
+                    args=("what_if",),
+                )
+            with nav_b3:
+                st.button(
                     "📅 Month-Wise Performance",
                     key="dash_sub_switch_month_comp",
                     type="primary" if active_dash_sub == "month_comp" else "secondary",
@@ -15818,7 +16206,7 @@ with _page_body_container:
                     on_click=_open_dash_sub_page,
                     args=("month_comp",),
                 )
-            with nav_b3:
+            with nav_b4:
                 st.button(
                     "📋 Date-wise Sales Log",
                     key="dash_sub_switch_sales_log",
@@ -15827,7 +16215,7 @@ with _page_body_container:
                     on_click=_open_dash_sub_page,
                     args=("sales_log",),
                 )
-            with nav_b4:
+            with nav_b5:
                 st.button(
                     "📆 Day-Wise & Timing Patterns",
                     key="dash_sub_switch_dow_patterns",
@@ -16435,3 +16823,156 @@ with _page_body_container:
                         on_click=_open_dash_sub_page,
                         args=(None,),
                     )
+
+            # ------------------------------------------------------------------
+            # SUB-PAGE 4: WHAT-IF ANALYSIS (CLEAN, NO SUB-TEXT)
+            # ------------------------------------------------------------------
+            elif active_dash_sub == "what_if":
+                st.subheader("🔮 What-If Analysis")
+
+                _wi_today = date.today()
+                _wi_default_start = _wi_today.replace(day=1)
+                _wi_months = [
+                    "January", "February", "March", "April", "May", "June",
+                    "July", "August", "September", "October", "November", "December"
+                ]
+
+                _wi_f1, _wi_f2, _wi_f3 = st.columns([1.15, 1.35, 1.15], gap="small", vertical_alignment="bottom")
+                with _wi_f1:
+                    _wi_mode = st.radio(
+                        "Period",
+                        ["Current / Month", "Date Range"],
+                        horizontal=True,
+                        key="wi_filter_mode",
+                        label_visibility="collapsed",
+                    )
+
+                if _wi_mode == "Current / Month":
+                    with _wi_f2:
+                        _wi_m_name = st.selectbox(
+                            "Month",
+                            _wi_months,
+                            index=_wi_today.month - 1,
+                            key="wi_month_sel",
+                            label_visibility="collapsed",
+                        )
+                    with _wi_f3:
+                        _wi_years = sorted(list({2024, 2025, 2026, _wi_today.year}), reverse=True)
+                        _wi_yr = st.selectbox(
+                            "Year",
+                            _wi_years,
+                            index=_wi_years.index(_wi_today.year),
+                            key="wi_year_sel",
+                            label_visibility="collapsed",
+                        )
+                    _wi_m_num = _wi_months.index(_wi_m_name) + 1
+                    _wi_last_day = calendar.monthrange(_wi_yr, _wi_m_num)[1]
+                    wi_start = date(_wi_yr, _wi_m_num, 1)
+                    _wi_full_end = date(_wi_yr, _wi_m_num, _wi_last_day)
+                    wi_end = min(_wi_full_end, _wi_today) if (_wi_yr == _wi_today.year and _wi_m_num == _wi_today.month) else _wi_full_end
+                    if _wi_yr == _wi_today.year and _wi_m_num == _wi_today.month:
+                        wi_divisor = max(1, (_wi_today - wi_start).days)
+                    else:
+                        wi_divisor = max(1, _wi_last_day)
+                else:
+                    with _wi_f2:
+                        wi_start = st.date_input("From", value=_wi_default_start, key="wi_start_dt")
+                    with _wi_f3:
+                        wi_end = st.date_input("To", value=_wi_today, key="wi_end_dt")
+                    if wi_start > wi_end:
+                        wi_start, wi_end = wi_end, wi_start
+                    wi_divisor = max(1, (wi_end - wi_start).days + 1)
+
+                # Discover all non-test carts for this location & date range
+                _wi_carts_ordered = []
+                for _c in CARTS:
+                    if "test" not in str(_c).lower() and _c not in _wi_carts_ordered:
+                        _wi_carts_ordered.append(_c)
+                if daily_df is not None and not daily_df.empty and "Date" in daily_df.columns and "Cart" in daily_df.columns:
+                    _wi_r_tmp = daily_df[(daily_df["Date"].dt.date >= wi_start) & (daily_df["Date"].dt.date <= wi_end)]
+                    for _c in _wi_r_tmp["Cart"].dropna().astype(str).str.strip().unique().tolist():
+                        if _c and "test" not in _c.lower() and _c not in _wi_carts_ordered:
+                            _wi_carts_ordered.append(_c)
+
+                with st.container(border=True):
+                    _wi_h1, _wi_h2 = st.columns([3.5, 1.0], vertical_alignment="center")
+                    with _wi_h1:
+                        st.markdown("##### Carts")
+                    with _wi_h2:
+                        if st.button("Enable All", key="wi_enable_all_btn", use_container_width=True):
+                            for _c in _wi_carts_ordered:
+                                st.session_state[f"wi_tog_{_c}"] = True
+                            st.rerun()
+
+                    _wi_enabled_carts = []
+                    _n_cols = min(5, max(1, len(_wi_carts_ordered)))
+                    for _row_start in range(0, len(_wi_carts_ordered), _n_cols):
+                        _row_slice = _wi_carts_ordered[_row_start:_row_start + _n_cols]
+                        _t_cols = st.columns(_n_cols, gap="small")
+                        for _ci, _cname in enumerate(_row_slice):
+                            with _t_cols[_ci]:
+                                _k = f"wi_tog_{_cname}"
+                                if _k not in st.session_state:
+                                    st.session_state[_k] = True
+                                _is_on = st.toggle(_cname, key=_k)
+                                if _is_on:
+                                    _wi_enabled_carts.append(_cname)
+
+                _wi_res = compute_what_if_financials(
+                    wi_start, wi_end, _wi_enabled_carts, _wi_carts_ordered,
+                    avg_divisor_days=wi_divisor, daily_df_in=daily_df, exp_df_in=exp_df,
+                )
+                _act_res = compute_what_if_financials(
+                    wi_start, wi_end, _wi_carts_ordered, _wi_carts_ordered,
+                    avg_divisor_days=wi_divisor, daily_df_in=daily_df, exp_df_in=exp_df,
+                )
+
+                def _wi_card(title, val_str, pct_str="", bg="#FFFFFF", border="#CBD5E1", val_color="#0F172A"):
+                    _pct_html = f'<div style="font-size:13px;font-weight:800;color:#475569;margin-top:2px;">{pct_str}</div>' if pct_str else ""
+                    return f"""
+                    <div style="background:{bg};border:1.5px solid {border};border-radius:12px;padding:14px 16px;height:100%;">
+                        <div style="font-size:11.5px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:0.4px;">{title}</div>
+                        <div style="font-size:24px;font-weight:900;color:{val_color};margin-top:4px;line-height:1.15;">{val_str}</div>
+                        {_pct_html}
+                    </div>
+                    """
+
+                _r1c1, _r1c2, _r1c3, _r1c4 = st.columns(4, gap="small")
+                with _r1c1:
+                    st.markdown(_wi_card("Revenue", f"₹{_wi_res['total_rev']:,.0f}", bg="#FFF7ED", border="#FDBA74", val_color="#C2410C"), unsafe_allow_html=True)
+                with _r1c2:
+                    st.markdown(_wi_card("Units Sold", f"{_wi_res['total_units']:,}", bg="#EFF6FF", border="#93C5FD", val_color="#1D4ED8"), unsafe_allow_html=True)
+                with _r1c3:
+                    st.markdown(_wi_card("Avg Rev / Day", f"₹{_wi_res['avg_rev_per_day']:,.0f}", bg="#F0FDF4", border="#86EFAC", val_color="#15803D"), unsafe_allow_html=True)
+                with _r1c4:
+                    st.markdown(_wi_card("Avg Units / Day", f"{_wi_res['avg_units_per_day']:,.1f}", bg="#F5F3FF", border="#C4B5FD", val_color="#6D28D9"), unsafe_allow_html=True)
+
+                st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
+
+                _r2c1, _r2c2, _r2c3, _r2c4 = st.columns(4, gap="small")
+                with _r2c1:
+                    st.markdown(_wi_card("COGS", f"₹{_wi_res['exact_cogs_sold']:,.0f}", f"{_wi_res['cogs_margin']:.1f}%", bg="#FEF2F2", border="#FCA5A5", val_color="#B91C1C"), unsafe_allow_html=True)
+                with _r2c2:
+                    st.markdown(_wi_card("Gross Margin", f"₹{_wi_res['gross_profit']:,.0f}", f"{_wi_res['gross_margin']:.1f}%", bg="#ECFDF5", border="#6EE7B7", val_color="#047857"), unsafe_allow_html=True)
+                with _r2c3:
+                    st.markdown(_wi_card("OPEX", f"₹{_wi_res['total_incurred_opex']:,.0f}", f"{_wi_res['opex_margin']:.1f}%", bg="#FEFCE8", border="#FDE047", val_color="#A16207"), unsafe_allow_html=True)
+                with _r2c4:
+                    _nm_col = "#047857" if _wi_res["net_profit"] >= 0 else "#B91C1C"
+                    _nm_bg = "#ECFDF5" if _wi_res["net_profit"] >= 0 else "#FEF2F2"
+                    _nm_bd = "#6EE7B7" if _wi_res["net_profit"] >= 0 else "#FCA5A5"
+                    st.markdown(_wi_card("Net Margin", f"₹{_wi_res['net_profit']:,.0f}", f"{_wi_res['net_margin']:.1f}%", bg=_nm_bg, border=_nm_bd, val_color=_nm_col), unsafe_allow_html=True)
+
+                st.markdown("<div style='height:14px;'></div>", unsafe_allow_html=True)
+
+                _cmp_rows = [
+                    ("Revenue", f"₹{_act_res['total_rev']:,.0f}", f"₹{_wi_res['total_rev']:,.0f}", f"₹{_wi_res['total_rev'] - _act_res['total_rev']:+,.0f}"),
+                    ("Units Sold", f"{_act_res['total_units']:,}", f"{_wi_res['total_units']:,}", f"{_wi_res['total_units'] - _act_res['total_units']:+,}"),
+                    ("Avg Rev / Day", f"₹{_act_res['avg_rev_per_day']:,.0f}", f"₹{_wi_res['avg_rev_per_day']:,.0f}", f"₹{_wi_res['avg_rev_per_day'] - _act_res['avg_rev_per_day']:+,.0f}"),
+                    ("Avg Units / Day", f"{_act_res['avg_units_per_day']:,.1f}", f"{_wi_res['avg_units_per_day']:,.1f}", f"{_wi_res['avg_units_per_day'] - _act_res['avg_units_per_day']:+,.1f}"),
+                    ("COGS", f"₹{_act_res['exact_cogs_sold']:,.0f} ({_act_res['cogs_margin']:.1f}%)", f"₹{_wi_res['exact_cogs_sold']:,.0f} ({_wi_res['cogs_margin']:.1f}%)", f"₹{_wi_res['exact_cogs_sold'] - _act_res['exact_cogs_sold']:+,.0f}"),
+                    ("Gross Margin", f"₹{_act_res['gross_profit']:,.0f} ({_act_res['gross_margin']:.1f}%)", f"₹{_wi_res['gross_profit']:,.0f} ({_wi_res['gross_margin']:.1f}%)", f"₹{_wi_res['gross_profit'] - _act_res['gross_profit']:+,.0f}"),
+                    ("OPEX", f"₹{_act_res['total_incurred_opex']:,.0f} ({_act_res['opex_margin']:.1f}%)", f"₹{_wi_res['total_incurred_opex']:,.0f} ({_wi_res['opex_margin']:.1f}%)", f"₹{_wi_res['total_incurred_opex'] - _act_res['total_incurred_opex']:+,.0f}"),
+                    ("Net Margin", f"₹{_act_res['net_profit']:,.0f} ({_act_res['net_margin']:.1f}%)", f"₹{_wi_res['net_profit']:,.0f} ({_wi_res['net_margin']:.1f}%)", f"₹{_wi_res['net_profit'] - _act_res['net_profit']:+,.0f}"),
+                ]
+                _cmp_df = pd.DataFrame(_cmp_rows, columns=["Metric", "Actual", "What-If", "Difference"])
+                st.dataframe(_cmp_df, hide_index=True, use_container_width=True, height=320)
