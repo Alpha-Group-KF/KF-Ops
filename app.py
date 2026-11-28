@@ -15856,11 +15856,11 @@ with _page_body_container:
 
                             _c_opex_tot = _c_lab_opex + _c_other_opex
                             _c_rev_tot = float(_crow["Total_Rev"])
-                            if _c_opex_tot > 0:
-                                _perf_pct = (_c_rev_tot / _c_opex_tot) * 100.0
-                                _p_col = "#047857" if _perf_pct >= 200 else ("#B45309" if _perf_pct >= 100 else "#B91C1C")
-                                _p_bg = "#ECFDF5" if _perf_pct >= 200 else ("#FFFBEB" if _perf_pct >= 100 else "#FEF2F2")
-                                _perf_html = f'<span style="background:{_p_bg};color:{_p_col};font-weight:800;padding:2px 7px;border-radius:999px;font-size:11.5px;">{_perf_pct:,.0f}%</span>'
+                            if _c_rev_tot > 0 and _c_opex_tot > 0:
+                                _perf_pct = (_c_opex_tot / _c_rev_tot) * 100.0
+                                _p_col = "#047857" if _perf_pct <= 30 else ("#B45309" if _perf_pct <= 50 else "#B91C1C")
+                                _p_bg = "#ECFDF5" if _perf_pct <= 30 else ("#FFFBEB" if _perf_pct <= 50 else "#FEF2F2")
+                                _perf_html = f'<span style="background:{_p_bg};color:{_p_col};font-weight:800;padding:2px 7px;border-radius:999px;font-size:11.5px;">{_perf_pct:.1f}%</span>'
                             else:
                                 _perf_html = '<span style="color:#94A3B8;font-weight:700;">—</span>'
 
