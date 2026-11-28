@@ -15780,7 +15780,7 @@ with _page_body_container:
                     total_incurred_opex, opex_margin, net_profit, net_margin
                 )
 
-                st.markdown("#### Cart Daily Average")
+                st.markdown("#### Cart-wise analysis")
                 if not range_df.empty and "Cart" in range_df.columns:
                     _cart_day_df = range_df.copy()
                     _cart_day_df["_d_only"] = pd.to_datetime(_cart_day_df["Date"]).dt.date
@@ -15863,44 +15863,66 @@ with _page_body_container:
                                     _c_cogs_tot = float(_c_flv_df["COGS (₹)"].sum())
                             except Exception:
                                 pass
-                            _c_gm_tot = _c_rev_tot - _c_cogs_tot
-                            if _c_gm_tot > 0 and _c_opex_tot > 0:
-                                _cost_pct = (_c_opex_tot / _c_gm_tot) * 100.0
-                                _p_col = "#047857" if _cost_pct < 35 else ("#B91C1C" if _cost_pct > 50 else "#B45309")
-                                _p_bg = "#ECFDF5" if _cost_pct < 35 else ("#FEF2F2" if _cost_pct > 50 else "#FFFBEB")
-                                _perf_html = f'<span style="background:{_p_bg};color:{_p_col};font-weight:800;padding:2px 7px;border-radius:999px;font-size:11px;">{_cost_pct:.1f}%</span>'
-                            else:
-                                _perf_html = '<span style="color:#94A3B8;font-weight:700;">—</span>'
 
-                            _row_bg = "#F8FAFC" if _ridx % 2 == 1 else "#FFFFFF"
+                            _c_gm_tot = _c_rev_tot - _c_cogs_tot
+                            _c_gm_pct = (_c_gm_tot / _c_rev_tot * 100.0) if _c_rev_tot > 0 else 0.0
+                            _c_opex_pct = (_c_opex_tot / _c_rev_tot * 100.0) if _c_rev_tot > 0 else 0.0
+                            _c_margin_tot = _c_gm_tot - _c_opex_tot
+                            _c_margin_pct = (_c_margin_tot / _c_rev_tot * 100.0) if _c_rev_tot > 0 else None
+
+                            if _c_margin_pct is not None:
+                                _m_col = "#047857" if _c_margin_pct > 30 else ("#B91C1C" if _c_margin_pct < 20 else "#B45309")
+                                _m_bg = "#DCFCE7" if _c_margin_pct > 30 else ("#FEE2E2" if _c_margin_pct < 20 else "#FEF3C7")
+                                _m_bd = "#86EFAC" if _c_margin_pct > 30 else ("#FCA5A5" if _c_margin_pct < 20 else "#FCD34D")
+                                _m_sign = "-" if _c_margin_tot < 0 else ""
+                                _cm_html = (
+                                    f'<div style="font-weight:900;color:{_m_col};font-size:12.5px;">{_m_sign}₹{abs(_c_margin_tot):,.0f}</div>'
+                                    f'<span style="display:inline-block;margin-top:2px;background:{_m_bg};color:{_m_col};border:1px solid {_m_bd};font-weight:800;padding:1px 7px;border-radius:999px;font-size:10.5px;">{_c_margin_pct:.1f}%</span>'
+                                )
+                            else:
+                                _cm_html = '<span style="color:#94A3B8;font-weight:700;">—</span>'
+
+                            _gm_sign = "-" if _c_gm_tot < 0 else ""
+                            _gm_html = (
+                                f'<div style="font-weight:800;color:#047857;font-size:12.5px;">{_gm_sign}₹{abs(_c_gm_tot):,.0f}</div>'
+                                f'<div style="font-size:10.5px;font-weight:700;color:#059669;margin-top:1px;">{_c_gm_pct:.1f}%</div>'
+                            )
+                            _opex_html = (
+                                f'<div style="font-weight:800;color:#B45309;font-size:12.5px;">₹{_c_opex_tot:,.0f}</div>'
+                                f'<div style="font-size:10.5px;font-weight:700;color:#D97706;margin-top:1px;">{_c_opex_pct:.1f}%</div>'
+                            )
+
+                            _base_bg = "#F8FAFC" if _ridx % 2 == 1 else "#FFFFFF"
+                            _unit_bg = "#EEF2FF" if _ridx % 2 == 1 else "#F5F7FF"
+                            _rev_bg = "#F0FDF4" if _ridx % 2 == 1 else "#F7FEFA"
                             _ca_rows_html.append(
-                                f'<tr style="background:{_row_bg};border-bottom:1px solid #E2E8F0;">'
-                                f'<td style="padding:7px 9px;font-weight:800;color:#1E293B;text-align:left;">{escape(_cname)}</td>'
-                                f'<td style="padding:7px 9px;font-weight:700;color:#475569;text-align:right;">{int(_crow["Active_Days"])}</td>'
-                                f'<td style="padding:7px 9px;font-weight:800;color:#0F5132;text-align:right;">₹{_crow["Avg_Rev_Day"]:,.0f}</td>'
-                                f'<td style="padding:7px 9px;font-weight:700;color:#1B5E91;text-align:right;">{_crow["Avg_Units_Day"]:,.1f}</td>'
-                                f'<td style="padding:7px 9px;font-weight:800;color:#334155;text-align:right;">₹{_c_rev_tot:,.0f}</td>'
-                                f'<td style="padding:7px 9px;font-weight:800;color:#047857;text-align:right;">₹{_c_gm_tot:,.0f}</td>'
-                                f'<td style="padding:7px 9px;font-weight:800;color:#B45309;text-align:right;">₹{_c_opex_tot:,.0f}</td>'
-                                f'<td style="padding:7px 9px;font-weight:700;color:#475569;text-align:right;">{int(round(_crow["Total_Units"])):,}</td>'
-                                f'<td style="padding:7px 9px;text-align:right;">{_perf_html}</td>'
+                                f'<tr style="border-bottom:1px solid #E2E8F0;">'
+                                f'<td style="padding:8px 10px;font-weight:800;color:#1E293B;text-align:left;background:{_base_bg};">{escape(_cname)}</td>'
+                                f'<td style="padding:8px 9px;font-weight:700;color:#475569;text-align:right;background:{_base_bg};">{int(_crow["Active_Days"])}</td>'
+                                f'<td style="padding:8px 9px;font-weight:800;color:#312E81;text-align:right;background:{_unit_bg};border-left:2px solid #818CF8;">{int(round(_crow["Total_Units"])):,}</td>'
+                                f'<td style="padding:8px 9px;font-weight:800;color:#3730A3;text-align:right;background:{_unit_bg};border-right:2px solid #818CF8;">{_crow["Avg_Units_Day"]:,.1f}</td>'
+                                f'<td style="padding:8px 9px;font-weight:800;color:#0F5132;text-align:right;background:{_rev_bg};border-left:2px solid #34D399;">₹{_crow["Avg_Rev_Day"]:,.0f}</td>'
+                                f'<td style="padding:8px 9px;font-weight:800;color:#1E293B;text-align:right;background:{_rev_bg};">₹{_c_rev_tot:,.0f}</td>'
+                                f'<td style="padding:8px 9px;text-align:right;background:{_rev_bg};">{_gm_html}</td>'
+                                f'<td style="padding:8px 9px;text-align:right;background:{_rev_bg};">{_opex_html}</td>'
+                                f'<td style="padding:8px 10px;text-align:right;background:{_rev_bg};border-right:2px solid #34D399;">{_cm_html}</td>'
                                 f'</tr>'
                             )
 
                         _ca_table_html = f"""
-                        <div style="border:1px solid #E2E8F0;border-radius:10px;overflow-x:auto;background:#FFFFFF;margin-bottom:12px;">
-                            <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                        <div style="border:1.5px solid #CBD5E1;border-radius:11px;overflow-x:auto;background:#FFFFFF;margin-bottom:14px;box-shadow:0 2px 8px rgba(15,23,42,0.04);">
+                            <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
                                 <thead>
-                                    <tr style="background:#1E293B;color:#FFFFFF;font-size:10.5px;text-transform:uppercase;letter-spacing:0.3px;">
-                                        <th style="padding:8px 9px;text-align:left;font-weight:800;">Cart</th>
-                                        <th style="padding:8px 9px;text-align:right;font-weight:800;">Days</th>
-                                        <th style="padding:8px 9px;text-align:right;font-weight:800;">Avg Rev/Day</th>
-                                        <th style="padding:8px 9px;text-align:right;font-weight:800;">Avg Units/Day</th>
-                                        <th style="padding:8px 9px;text-align:right;font-weight:800;">Cart Rev</th>
-                                        <th style="padding:8px 9px;text-align:right;font-weight:800;">Gross Margin</th>
-                                        <th style="padding:8px 9px;text-align:right;font-weight:800;">Cart OPEX</th>
-                                        <th style="padding:8px 9px;text-align:right;font-weight:800;">Total Units</th>
-                                        <th style="padding:8px 9px;text-align:right;font-weight:800;line-height:1.15;">Cost<div style="font-size:9px;font-weight:600;color:#CBD5E1;text-transform:none;">(% of GM)</div></th>
+                                    <tr style="font-size:10.5px;text-transform:uppercase;letter-spacing:0.35px;">
+                                        <th style="padding:9px 10px;text-align:left;font-weight:800;background:#1E293B;color:#FFFFFF;">Cart</th>
+                                        <th style="padding:9px 9px;text-align:right;font-weight:800;background:#1E293B;color:#FFFFFF;">Days</th>
+                                        <th style="padding:9px 9px;text-align:right;font-weight:800;background:#3730A3;color:#FFFFFF;border-left:2px solid #818CF8;">Total Units</th>
+                                        <th style="padding:9px 9px;text-align:right;font-weight:800;background:#3730A3;color:#FFFFFF;border-right:2px solid #818CF8;">Avg Units/Day</th>
+                                        <th style="padding:9px 9px;text-align:right;font-weight:800;background:#065F46;color:#FFFFFF;border-left:2px solid #34D399;">Avg Rev/Day</th>
+                                        <th style="padding:9px 9px;text-align:right;font-weight:800;background:#065F46;color:#FFFFFF;">Cart Rev</th>
+                                        <th style="padding:9px 9px;text-align:right;font-weight:800;background:#065F46;color:#FFFFFF;">Gross Margin</th>
+                                        <th style="padding:9px 9px;text-align:right;font-weight:800;background:#065F46;color:#FFFFFF;">Cart OPEX</th>
+                                        <th style="padding:9px 10px;text-align:right;font-weight:800;background:#065F46;color:#FFFFFF;border-right:2px solid #34D399;">Cart Margin</th>
                                     </tr>
                                 </thead>
                                 <tbody>
