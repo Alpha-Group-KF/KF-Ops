@@ -15798,26 +15798,106 @@ with _page_body_container:
                                 Total_Units=("Day_Units", "sum"),
                             )
                         )
-                        _cart_avg_df["Avg Rev / Day (₹)"] = _cart_avg_df["Total_Rev"] / _cart_avg_df["Active_Days"]
-                        _cart_avg_df["Avg Units / Day"] = _cart_avg_df["Total_Units"] / _cart_avg_df["Active_Days"]
-                        _cart_avg_df = _cart_avg_df.sort_values("Avg Rev / Day (₹)", ascending=False).reset_index(drop=True)
-                        _cart_avg_disp = _cart_avg_df[["Cart", "Active_Days", "Avg Rev / Day (₹)", "Avg Units / Day", "Total_Rev", "Total_Units"]].rename(
-                            columns={"Active_Days": "Active Days", "Total_Rev": "Total Revenue (₹)", "Total_Units": "Total Units"}
-                        )
-                        st.dataframe(
-                            _cart_avg_disp,
-                            hide_index=True,
-                            use_container_width=True,
-                            height=min(320, 40 + len(_cart_avg_disp) * 36),
-                            column_config={
-                                "Cart": st.column_config.TextColumn("Cart"),
-                                "Active Days": st.column_config.NumberColumn("Active Days", format="%d"),
-                                "Avg Rev / Day (₹)": st.column_config.NumberColumn("Avg Rev / Day (₹)", format="₹%,.0f"),
-                                "Avg Units / Day": st.column_config.NumberColumn("Avg Units / Day", format="%,.1f"),
-                                "Total Revenue (₹)": st.column_config.NumberColumn("Total Revenue (₹)", format="₹%,.0f"),
-                                "Total Units": st.column_config.NumberColumn("Total Units", format="%,d"),
-                            },
-                        )
+                        _cart_avg_df["Avg_Rev_Day"] = _cart_avg_df["Total_Rev"] / _cart_avg_df["Active_Days"]
+                        _cart_avg_df["Avg_Units_Day"] = _cart_avg_df["Total_Units"] / _cart_avg_df["Active_Days"]
+                        _cart_avg_df = _cart_avg_df.sort_values("Avg_Rev_Day", ascending=False).reset_index(drop=True)
+
+                        # Pre-filter OPEX expense rows once for per-cart attribution
+                        _ca_opex_rows = []
+                        if range_exp is not None and not range_exp.empty:
+                            _ca_types = range_exp["Expense_Type"].fillna("").astype(str).str.strip().str.upper()
+                            _ca_cats = range_exp["Category"].fillna("").astype(str).str.strip().str.casefold()
+                            _ca_sblank = (
+                                range_exp["Staff_Name"].isna()
+                                | range_exp["Staff_Name"].astype(str).str.strip().isin(["", "None", "nan", "null", "Select Staff"])
+                            )
+                            _ca_mask = (_ca_types == "OPEX") & (
+                                (~_ca_cats.isin(["labour charges", "cost of goods"]))
+                                | ((_ca_cats == "labour charges") & _ca_sblank)
+                            )
+                            _ca_opex_df = range_exp[_ca_mask]
+                            if not _ca_opex_df.empty:
+                                _ca_opex_rows = _ca_opex_df.to_dict("records")
+
+                        _ca_rows_html = []
+                        for _ridx, _crow in _cart_avg_df.iterrows():
+                            _cname = str(_crow["Cart"]).strip()
+                            _cup = _cname.upper()
+                            _c_lab_opex = 0.0
+                            _c_staff_set = set()
+                            try:
+                                _, _, _, _c_spb = calculate_incurred_labour_for_range(
+                                    range_start, range_end, limit_to_employment=True, allowed_carts=[_cup]
+                                )
+                                for _sn_k, _sv_k in _c_spb.items():
+                                    if str(_sv_k.get("role") or "Cart Operator").strip().lower() == "cart operator":
+                                        _inc_k = float(_sv_k.get("incurred", 0.0))
+                                        if _inc_k > 0:
+                                            _c_lab_opex += _inc_k
+                                            _c_staff_set.add(str(_sn_k).strip().lower())
+                            except Exception:
+                                pass
+
+                            _c_other_opex = 0.0
+                            for _er in _ca_opex_rows:
+                                _attr_u = str(_er.get("Attributed_To") or "").strip().upper()
+                                _stn_l = str(_er.get("Staff_Name") or "").strip().lower()
+                                _is_match = False
+                                if _attr_u and _attr_u == _cup:
+                                    _is_match = True
+                                elif _stn_l and _stn_l in _c_staff_set:
+                                    _is_match = True
+                                elif not _attr_u:
+                                    _d_comb = (str(_er.get("Description") or "") + " " + str(_er.get("Remarks") or "")).upper()
+                                    if _cup and _cup in _d_comb:
+                                        _is_match = True
+                                if _is_match:
+                                    _c_other_opex += float(_er.get("Amount") or 0.0)
+
+                            _c_opex_tot = _c_lab_opex + _c_other_opex
+                            _c_rev_tot = float(_crow["Total_Rev"])
+                            if _c_opex_tot > 0:
+                                _perf_pct = (_c_rev_tot / _c_opex_tot) * 100.0
+                                _p_col = "#047857" if _perf_pct >= 200 else ("#B45309" if _perf_pct >= 100 else "#B91C1C")
+                                _p_bg = "#ECFDF5" if _perf_pct >= 200 else ("#FFFBEB" if _perf_pct >= 100 else "#FEF2F2")
+                                _perf_html = f'<span style="background:{_p_bg};color:{_p_col};font-weight:800;padding:2px 7px;border-radius:999px;font-size:11.5px;">{_perf_pct:,.0f}%</span>'
+                            else:
+                                _perf_html = '<span style="color:#94A3B8;font-weight:700;">—</span>'
+
+                            _row_bg = "#F8FAFC" if _ridx % 2 == 1 else "#FFFFFF"
+                            _ca_rows_html.append(
+                                f'<tr style="background:{_row_bg};border-bottom:1px solid #E2E8F0;">'
+                                f'<td style="padding:8px 10px;font-weight:800;color:#1E293B;text-align:left;">{escape(_cname)}</td>'
+                                f'<td style="padding:8px 10px;font-weight:700;color:#475569;text-align:right;">{int(_crow["Active_Days"])}</td>'
+                                f'<td style="padding:8px 10px;font-weight:800;color:#0F5132;text-align:right;">₹{_crow["Avg_Rev_Day"]:,.0f}</td>'
+                                f'<td style="padding:8px 10px;font-weight:700;color:#1B5E91;text-align:right;">{_crow["Avg_Units_Day"]:,.1f}</td>'
+                                f'<td style="padding:8px 10px;font-weight:700;color:#334155;text-align:right;">₹{_c_rev_tot:,.0f}</td>'
+                                f'<td style="padding:8px 10px;font-weight:700;color:#475569;text-align:right;">{int(round(_crow["Total_Units"])):,}</td>'
+                                f'<td style="padding:8px 10px;text-align:right;">{_perf_html}</td>'
+                                f'</tr>'
+                            )
+
+                        _ca_table_html = f"""
+                        <div style="border:1px solid #E2E8F0;border-radius:10px;overflow-x:auto;background:#FFFFFF;margin-bottom:12px;">
+                            <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
+                                <thead>
+                                    <tr style="background:#1E293B;color:#FFFFFF;font-size:11px;text-transform:uppercase;letter-spacing:0.3px;">
+                                        <th style="padding:8px 10px;text-align:left;font-weight:800;">Cart</th>
+                                        <th style="padding:8px 10px;text-align:right;font-weight:800;">Days</th>
+                                        <th style="padding:8px 10px;text-align:right;font-weight:800;">Avg Rev/Day</th>
+                                        <th style="padding:8px 10px;text-align:right;font-weight:800;">Avg Units/Day</th>
+                                        <th style="padding:8px 10px;text-align:right;font-weight:800;">Total Rev</th>
+                                        <th style="padding:8px 10px;text-align:right;font-weight:800;">Total Units</th>
+                                        <th style="padding:8px 10px;text-align:right;font-weight:800;">Perf</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {''.join(_ca_rows_html)}
+                                </tbody>
+                            </table>
+                        </div>
+                        """
+                        st.markdown(_ca_table_html, unsafe_allow_html=True)
 
                 st.markdown("#### Daily Revenue Trend")
                 if not range_df.empty:
